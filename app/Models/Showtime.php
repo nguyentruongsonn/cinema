@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Showtime extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'movie_id',
+        'screen_id',
+        'format_id',
+        'sound_id',
+        'subtitle_id',
+        'price_rule_id',
+        'scheduled_at',
+        'price',
+        'pricing_snapshot',
+        'status',
+    ];
+
+    protected $casts = [
+        'scheduled_at' => 'datetime',
+        'price' => 'decimal:2',
+        'pricing_snapshot' => 'json',
+        'status' => 'boolean',
+    ];
+
+    public function movie(): BelongsTo
+    {
+        return $this->belongsTo(Movie::class);
+    }
+
+    public function screen(): BelongsTo
+    {
+        return $this->belongsTo(Screen::class);
+    }
+
+    public function format(): BelongsTo
+    {
+        return $this->belongsTo(Format::class);
+    }
+
+    public function sound(): BelongsTo
+    {
+        return $this->belongsTo(Sound::class);
+    }
+
+    public function subtitle(): BelongsTo
+    {
+        return $this->belongsTo(Subtitle::class);
+    }
+
+    public function priceRule(): BelongsTo
+    {
+        return $this->belongsTo(PriceRule::class);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function seatLayoutSnapshot(): HasOne
+    {
+        return $this->hasOne(ShowtimeSeatLayoutSnapshot::class);
+    }
+
+    public function seatHolds(): HasMany
+    {
+        return $this->hasMany(SeatHold::class);
+    }
+
+    // Scope: available showtimes
+    public function scopeAvailable($query)
+    {
+        return $query->where('status', 1);
+    }
+
+    // Scope: upcoming showtimes
+    public function scopeUpcoming($query)
+    {
+        return $query->where('scheduled_at', '>=', now());
+    }
+
+    // Scope: showtimes by movie
+    public function scopeForMovie($query, $movieId)
+    {
+        return $query->where('movie_id', $movieId);
+    }
+
+    // Scope: showtimes by screen
+    public function scopeForScreen($query, $screenId)
+    {
+        return $query->where('screen_id', $screenId);
+    }
+
+    // Scope: showtimes by date
+    public function scopeOnDate($query, $date)
+    {
+        return $query->whereDate('scheduled_at', $date);
+    }
+}

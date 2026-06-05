@@ -1,0 +1,146 @@
+/* Skeleton Loading Styles */
+.skeleton {
+    background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Hero Section Skeleton */
+.skeleton-hero {
+    width: 100%;
+    height: 600px;
+    margin-bottom: 2rem;
+}
+
+.skeleton-hero-content {
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 600px;
+}
+
+.skeleton-badge {
+    width: 80px;
+    height: 24px;
+}
+
+.skeleton-title {
+    width: 100%;
+    height: 60px;
+}
+
+.skeleton-text {
+    width: 100%;
+    height: 20px;
+}
+
+.skeleton-text-short {
+    width: 70%;
+    height: 20px;
+}
+
+.skeleton-button {
+    width: 150px;
+    height: 48px;
+    border-radius: 24px;
+}
+
+/* Quick Booking Skeleton */
+.skeleton-booking {
+    width: 100%;
+    height: 80px;
+    margin: 20px 0;
+}
+
+/* Movie Card Skeleton */
+.skeleton-movie-card {
+    background: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.skeleton-movie-poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+}
+
+.skeleton-movie-info {
+    padding: 15px;
+}
+
+.skeleton-movie-title {
+    width: 80%;
+    height: 24px;
+    margin-bottom: 10px;
+}
+
+.skeleton-movie-meta {
+    width: 60%;
+    height: 16px;
+}
+
+/* Grid Skeleton */
+.skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+@media (max-width: 768px) {
+    .skeleton-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .skeleton-hero-content {
+        padding: 30px;
+    }
+
+    .skeleton-title {
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .skeleton-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Section Skeleton */
+.skeleton-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.skeleton-section-title {
+    width: 200px;
+    height: 36px;
+}
+
+.skeleton-link {
+    width: 100px;
+    height: 20px;
+}
+
+/* Hide content while loading */
+.loading .content-loaded {
+    display: none;
+}
+
+.loaded .skeleton {
+    display: none;
+}

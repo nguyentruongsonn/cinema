@@ -1,0 +1,368 @@
+/* Payment Page Styles */
+
+.payment-container {
+    min-height: calc(100vh - 200px);
+    background: #f8f9fa;
+}
+
+/* Movie Info Section */
+.movie-poster {
+    width: 80px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.movie-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+    line-height: 1.4;
+}
+
+.movie-details {
+    line-height: 1.8;
+}
+
+/* Seats Info */
+.seat-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.seat-badge.regular {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.seat-badge.vip {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+/* Price Breakdown */
+.price-breakdown {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.price-breakdown .text-danger {
+    font-size: 1.3rem;
+}
+
+/* Payment Methods */
+.payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.payment-method {
+    position: relative;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-method:hover {
+    border-color: #0d6efd;
+    background: #f8f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
+}
+
+.payment-method input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.payment-method input[type="radio"]:checked ~ label {
+    color: #0d6efd;
+}
+
+.payment-method input[type="radio"]:checked ~ label::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 24px;
+    height: 24px;
+    background: #0d6efd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.payment-method input[type="radio"]:checked ~ label::after {
+    content: '✓';
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 24px;
+    height: 24px;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.payment-method label {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    margin: 0;
+    width: 100%;
+    position: relative;
+}
+
+.method-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.method-icon img {
+    max-width: 50px;
+    max-height: 50px;
+    object-fit: contain;
+}
+
+.method-info {
+    flex: 1;
+}
+
+.method-info strong {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+/* Order Summary Sidebar */
+.order-code {
+    border: 2px dashed #dee2e6;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 0.95rem;
+}
+
+.summary-row:not(:last-child) {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Buttons */
+#btnPayment {
+    font-weight: 600;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    transition: all 0.3s ease;
+}
+
+#btnPayment:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.4);
+}
+
+#btnPayment:active {
+    transform: translateY(0);
+}
+
+#btnCancelOrder {
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#btnCancelOrder:hover {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+/* Timer */
+#orderTimer {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    color: #dc3545;
+}
+
+#orderTimer.warning {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.card-header {
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+/* Alert */
+.alert-warning {
+    background: #fff3cd;
+    border-color: #ffecb5;
+    border-radius: 8px;
+}
+
+/* Payment Secure Badge */
+.payment-secure {
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 991px) {
+    .sticky-top {
+        position: relative !important;
+        top: 0 !important;
+    }
+    
+    .payment-container {
+        padding-bottom: 20px;
+    }
+}
+
+@media (max-width: 767px) {
+    .movie-poster {
+        width: 60px;
+        height: 90px;
+    }
+    
+    .movie-title {
+        font-size: 1rem;
+    }
+    
+    .movie-details {
+        font-size: 0.85rem;
+    }
+    
+    .seat-badge {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+    
+    .payment-method {
+        padding: 12px;
+    }
+    
+    .method-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .method-icon img {
+        max-width: 40px;
+        max-height: 40px;
+    }
+    
+    .method-info strong {
+        font-size: 0.9rem;
+    }
+    
+    .method-info small {
+        font-size: 0.75rem;
+    }
+    
+    #btnPayment,
+    #btnCancelOrder {
+        font-size: 0.9rem;
+        padding: 10px;
+    }
+}
+
+@media (max-width: 575px) {
+    .container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .price-breakdown {
+        padding: 12px;
+    }
+    
+    .seat-badge {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+}
+
+/* Smooth Transitions */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+button,
+.payment-method {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Print Styles */
+@media print {
+    .payment-methods,
+    #btnPayment,
+    #btnCancelOrder,
+    .loading-overlay {
+        display: none !important;
+    }
+}
