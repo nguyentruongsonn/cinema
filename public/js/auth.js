@@ -52,6 +52,18 @@ class AuthManager {
             btn.addEventListener('click', (e) => this.togglePassword(e));
         });
 
+        // Auth required mode buttons
+        const showLoginFormBtn = document.getElementById('showLoginFormBtn');
+        const showRegisterFormBtn = document.getElementById('showRegisterFormBtn');
+
+        if (showLoginFormBtn) {
+            showLoginFormBtn.addEventListener('click', () => this.showAuthForms('login'));
+        }
+
+        if (showRegisterFormBtn) {
+            showRegisterFormBtn.addEventListener('click', () => this.showAuthForms('register'));
+        }
+
         // Logout
         document.querySelectorAll('[data-auth-action="logout"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -227,7 +239,7 @@ class AuthManager {
                 this.updateUI();
             }
         } catch (error) {
-            console.error('Auth check failed:', error);
+            console.error('Check auth status error:', error);
             this.clearToken();
             this.updateUI();
         }
@@ -388,13 +400,34 @@ class AuthManager {
     }
 
     showModal(tab = 'login') {
-        if (tab === 'register') {
-            document.getElementById('register-tab').click();
-        } else {
-            document.getElementById('login-tab').click();
-        }
+        this.showAuthForms(tab);
         this.clearErrors();
         this.modal.show();
+    }
+
+    showAuthRequired() {
+        // Khi người dùng chưa đăng nhập vào trang đặt vé, hiển thị trực tiếp form
+        // đăng nhập đầy đủ thay vì màn hình trung gian chỉ có 2 nút Đăng nhập/Đăng ký.
+        this.showAuthForms('login');
+        this.clearErrors();
+        this.modal.show();
+    }
+
+    showAuthForms(tab = 'login') {
+        const modal = document.getElementById('authModal');
+        const authRequiredSection = modal?.querySelector('.auth-required-section');
+        const authFormsSection = modal?.querySelector('.auth-forms-section');
+
+        if (authRequiredSection && authFormsSection) {
+            authRequiredSection.classList.add('d-none');
+            authFormsSection.classList.remove('d-none');
+        }
+
+        if (tab === 'register') {
+            document.getElementById('register-tab')?.click();
+        } else {
+            document.getElementById('login-tab')?.click();
+        }
     }
 
     updateUI() {
@@ -444,7 +477,7 @@ class AuthManager {
     }
 
     isAuthenticated() {
-        return !!this.token && !!this.user;
+        return !!this.token;
     }
 
     getUser() {

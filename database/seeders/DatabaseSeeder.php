@@ -21,17 +21,21 @@ class DatabaseSeeder extends Seeder
             SubtitleSeeder::class,
             SeatTypeSeeder::class,
             UserSeeder::class,
-            
+
             // Branch and Theater hierarchy
             BranchSeeder::class,
             TheaterSeeder::class,
-            
+
             // Screens and Seats (depends on Theater and SeatType)
             ScreenSeeder::class,
-            
+
+            // Promotions and concessions
+            PromotionSeeder::class,
+            ProductSeeder::class,
+
             // Movies (independent)
             MovieSeeder::class,
-            
+
             // Showtimes (depends on Movie and Screen)
             ShowtimeSeeder::class,
         ]);

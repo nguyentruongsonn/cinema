@@ -34,23 +34,29 @@ class SeatService
 
         $bookedSeatIds = $this->getBookedSeatIds($showtimeId);
 
-        $currentUserHolds = SeatHold::query()
-            ->valid()
-            ->where('showtime_id', $showtimeId)
-            ->where('user_id', $user->id)
-            ->get();
+        $currentUserHolds = collect();
+        $currentUserHoldSeatIds = [];
+        $userId = $user?->id;
 
-        $currentUserHoldSeatIds = $currentUserHolds
-            ->flatMap(fn (SeatHold $hold) => (array) $hold->seat_ids)
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
+        if ($userId) {
+            $currentUserHolds = SeatHold::query()
+                ->valid()
+                ->where('showtime_id', $showtimeId)
+                ->where('user_id', $userId)
+                ->get();
+
+            $currentUserHoldSeatIds = $currentUserHolds
+                ->flatMap(fn (SeatHold $hold) => (array) $hold->seat_ids)
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+        }
 
         $otherUserHolds = SeatHold::query()
             ->valid()
             ->where('showtime_id', $showtimeId)
-            ->where('user_id', '!=', $user->id)
+            ->when($userId, fn ($query) => $query->where('user_id', '!=', $userId))
             ->get();
 
         $otherUserHoldSeatIds = $otherUserHolds

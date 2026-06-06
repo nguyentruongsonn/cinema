@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Crypt;
 
 class Showtime extends Model
 {
@@ -25,12 +26,22 @@ class Showtime extends Model
         'status',
     ];
 
+    protected $appends = ['encrypted_id'];
+
     protected $casts = [
         'scheduled_at' => 'datetime',
         'price' => 'decimal:2',
         'pricing_snapshot' => 'json',
         'status' => 'boolean',
     ];
+
+    /**
+     * Get the encrypted ID for the showtime.
+     */
+    public function getEncryptedIdAttribute()
+    {
+        return Crypt::encryptString($this->id);
+    }
 
     public function movie(): BelongsTo
     {

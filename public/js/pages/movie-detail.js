@@ -385,7 +385,7 @@
 
                         <div class="showtime-times">
                             ${formatGroup.showtimes.map((showtime) => `
-                                <a href="/booking/${sanitize(showtime.id)}" class="showtime-time-card">
+                                <a href="/booking/${sanitize(encodeURIComponent(showtime.encrypted_id || showtime.id))}" class="showtime-time-card">
                                     <span class="time-value">${sanitize(showtime.time)}</span>
                                     <span class="time-extra">${sanitize(showtime.screen?.name || '')}</span>
                                 </a>

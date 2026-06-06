@@ -53,19 +53,10 @@ class BookingManager {
     }
 
     async init() {
-        // Check authentication
-        if (!this.auth?.isAuthenticated()) {
-            this.showToast('Vui lòng đăng nhập để đặt vé', 'warning');
-            setTimeout(() => {
-                this.auth?.showModal('login');
-            }, 1000);
-            return;
-        }
-
         // Setup event listeners
         this.setupEventListeners();
 
-        // Load page data
+        // Load page data (seats should always load, auth check happens on seat click)
         await Promise.all([
             this.loadSeats(),
             this.loadProducts()
@@ -73,8 +64,8 @@ class BookingManager {
     }
 
     setupEventListeners() {
-        // Tab navigation
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        // Tab navigation - scoped to booking page only, avoid affecting Bootstrap/auth modal tabs
+        document.querySelectorAll('.booking-page .tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const tabName = btn.dataset.tab;
                 const stepIndex = this.steps.indexOf(tabName);
@@ -127,14 +118,14 @@ class BookingManager {
         this.currentStep = step;
         const tabName = this.steps[step - 1];
 
-        // Update tab buttons
-        document.querySelectorAll('.tab-btn').forEach((btn, index) => {
+        // Update tab buttons - scoped to booking page only
+        document.querySelectorAll('.booking-page .tab-btn').forEach((btn, index) => {
             btn.classList.toggle('active', index === step - 1);
             btn.classList.toggle('completed', index < step - 1);
         });
 
-        // Update tab content
-        document.querySelectorAll('.tab-content').forEach((content, index) => {
+        // Update tab content - scoped to booking page only, do not touch auth modal .tab-content
+        document.querySelectorAll('.booking-page .tab-content').forEach((content, index) => {
             content.classList.toggle('active', index === step - 1);
         });
 
@@ -506,9 +497,20 @@ class BookingManager {
         // Seat label
         seatDiv.textContent = seat.label || `${seat.row}${seat.number}`;
 
-        // VIP indicator
-        if (seat.seat_type?.name?.toLowerCase().includes('vip')) {
+        // Seat type indicators
+        const seatTypeName = (seat.seat_type?.name || '').toLowerCase();
+
+        if (seatTypeName.includes('vip')) {
             seatDiv.classList.add('seat-vip');
+        }
+
+        if (
+            seatTypeName.includes('đôi') ||
+            seatTypeName.includes('doi') ||
+            seatTypeName.includes('couple') ||
+            seatTypeName.includes('double')
+        ) {
+            seatDiv.classList.add('seat-couple');
         }
 
         // Click handler
@@ -550,6 +552,19 @@ class BookingManager {
     }
 
     async handleSeatClick(seat) {
+        // Check authentication when user tries to select seats
+        if (!this.auth?.isAuthenticated()) {
+            if (window.authManager?.showAuthRequired) {
+                window.authManager.showAuthRequired();
+            } else {
+                this.showToast('Vui lòng đăng nhập để chọn ghế', 'warning');
+                setTimeout(() => {
+                    this.auth?.showModal('login');
+                }, 500);
+            }
+            return;
+        }
+
         const seatId = seat.id;
         const status = this.getSeatStatus(seat);
 

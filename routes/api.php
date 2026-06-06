@@ -67,6 +67,10 @@ Route::prefix('showtimes')->group(function () {
     Route::get('{id}', [ShowtimeController::class, 'show']);
 });
 
+Route::prefix('seats')->group(function () {
+    Route::get('showtime/{showtimeId}', [SeatController::class, 'getByShowtime']);
+});
+
 // Protected routes
 Route::middleware('auth:api')->group(function () {
     // Auth routes
@@ -81,7 +85,6 @@ Route::middleware('auth:api')->group(function () {
 
     // Seat routes
     Route::prefix('seats')->group(function () {
-        Route::get('showtime/{showtimeId}', [SeatController::class, 'getByShowtime']);
         Route::post('lock', [SeatController::class, 'lock']);
         Route::delete('unlock/{holdId}', [SeatController::class, 'unlock']);
     });

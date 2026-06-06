@@ -44,6 +44,18 @@ body {
     margin: 0;
 }
 
+/* === TAB NAVIGATION === */
+.booking-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    background-color: var(--bg-primary);
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
 /* === MAIN CONTAINER === */
 .booking-container {
     display: grid;
@@ -60,51 +72,32 @@ body {
     overflow: hidden;
 }
 
-/* === TAB NAVIGATION === */
-.booking-tabs {
-    display: flex;
-    background-color: var(--bg-tertiary);
-    border-bottom: 2px solid var(--border-color);
-    padding: 0;
-}
-
 .tab-btn {
-    flex: 1;
-    background: transparent;
+    flex: none;
+    background: rgba(255, 255, 255, 0.1);
     border: none;
-    padding: 20px 16px;
+    border-radius: 24px;
+    padding: 12px 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    position: relative;
     color: var(--text-secondary);
-}
-
-.tab-btn::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: transparent;
-    transition: background-color 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 140px;
 }
 
 .tab-btn:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.15);
     color: var(--text-primary);
 }
 
 .tab-btn.active {
-    color: var(--text-primary);
-}
-
-.tab-btn.active::after {
     background-color: var(--accent-primary);
+    color: white;
 }
 
 .tab-btn.completed .tab-number {
@@ -112,39 +105,25 @@ body {
 }
 
 .tab-number {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 14px;
-    transition: all 0.3s ease;
-}
-
-.tab-btn.active .tab-number {
-    background-color: var(--accent-primary);
-    color: white;
+    display: none; /* Hide numbers for cleaner look like reference */
 }
 
 .tab-label {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
 }
 
 /* === TAB CONTENTS === */
-.tab-contents {
+.booking-page .tab-contents {
     padding: 32px;
 }
 
-.tab-content {
+.booking-page .tab-content {
     display: none;
     animation: fadeIn 0.3s ease;
 }
 
-.tab-content.active {
+.booking-page .tab-content.active {
     display: block;
 }
 
@@ -317,12 +296,28 @@ body {
 .seat.seat-vip {
     background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
     border-color: #ffd700;
-    width: 70px;
 }
 
 .seat.seat-vip.seat-selected {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
+}
+
+/* Ghế đôi - rộng gấp đôi như ghế dài */
+.seat.seat-couple {
+    width: 70px;
+    background-color: rgba(255, 179, 217, 0.3);
+    border-color: rgba(255, 179, 217, 0.5);
+}
+
+.seat.seat-couple.seat-selected {
+    background-color: #ff69b4;
+    border-color: #ff1493;
+}
+
+.seat.seat-couple.seat-available:hover {
+    background-color: rgba(255, 105, 180, 0.4);
+    border-color: #ff69b4;
 }
 
 /* === SEAT LEGEND === */
@@ -369,6 +364,12 @@ body {
 .seat-demo.seat-vip {
     background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
     border-color: #ffd700;
+}
+
+.seat-demo.seat-couple {
+    width: 40px;
+    background-color: rgba(255, 179, 217, 0.3);
+    border-color: rgba(255, 179, 217, 0.5);
 }
 
 /* === PRODUCTS / COMBO === */
@@ -785,6 +786,513 @@ body {
 
 .loading-overlay.d-none {
     display: none !important;
+}
+
+/* === REFERENCE DESIGN OVERRIDES === */
+.booking-page {
+    background: #0d0d0d;
+}
+
+.booking-container {
+    grid-template-columns: minmax(0, 676px) 326px;
+    gap: 24px;
+    max-width: 1040px;
+    padding: 18px 0 24px;
+    align-items: start;
+}
+
+.booking-main {
+    background: transparent;
+    border-radius: 0;
+    overflow: visible;
+}
+
+.booking-tabs {
+    width: fit-content;
+    margin: 0 auto 22px;
+    padding: 5px;
+    gap: 4px;
+    background: #1d1d1d;
+    border: 1px solid #2b2b2b;
+    border-radius: 999px;
+}
+
+.tab-btn {
+    min-width: 104px;
+    height: 38px;
+    padding: 0 22px;
+    border-radius: 999px;
+    background: transparent;
+    color: #aab2bf;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.tab-btn.active {
+    background: #ed0712;
+    color: #fff;
+    box-shadow: none;
+}
+
+.booking-page .tab-contents {
+    padding: 0;
+}
+
+.booking-page .movie-info-card,
+.booking-page .tab-content {
+    background: #1b1b1b;
+    border: 1px solid #2c2c2c;
+    border-radius: 12px;
+}
+
+.movie-info-card {
+    min-height: 92px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+}
+
+.movie-info-card .section-title {
+    font-size: 24px;
+    line-height: 1.25;
+    margin-bottom: 4px;
+    font-weight: 800;
+}
+
+.movie-meta {
+    justify-content: space-between;
+}
+
+.theater-info {
+    color: #7d8a99;
+    font-size: 12px;
+}
+
+.format-badge {
+    min-width: 96px;
+    height: 44px;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0;
+    background: #7d8791;
+    border-radius: 4px;
+}
+
+.badge-label {
+    color: #c5cad0;
+    font-size: 9px;
+    line-height: 1;
+}
+
+.badge-value {
+    color: #fff;
+    font-size: 12px;
+}
+
+.booking-page .tab-content {
+    padding: 42px 20px 30px;
+    min-height: 390px;
+}
+
+.booking-page #tab-seats.tab-content {
+    padding-top: 28px;
+}
+
+.section-header {
+    margin: 0 0 22px;
+}
+
+.section-title {
+    font-size: 26px;
+    line-height: 1.25;
+    font-weight: 800;
+}
+
+.section-subtitle {
+    color: #7f8a99;
+    font-size: 14px;
+}
+
+.screen-display {
+    margin: 14px 0 28px;
+}
+
+.screen-label {
+    min-width: 420px;
+    padding: 22px 70px 10px;
+    background: radial-gradient(ellipse at center top, rgba(229, 9, 20, 0.28), rgba(229, 9, 20, 0.03) 58%, transparent 70%);
+    border: none;
+    border-top: 1px solid rgba(229, 9, 20, 0.6);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    color: #707784;
+    font-size: 10px;
+    letter-spacing: 7px;
+}
+
+.seat-map-container {
+    min-height: 430px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.seat-map {
+    gap: 8px;
+    padding: 8px 0 30px;
+    min-width: max-content;
+}
+
+.seat-row {
+    gap: 7px;
+    justify-content: center;
+}
+
+.row-label,
+.seat-row-label {
+    width: 22px;
+    color: #8b96a6;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.seat {
+    width: 28px;
+    height: 25px;
+    border-radius: 7px 7px 4px 4px;
+    background: #c9d0d6;
+    border: 0;
+    box-shadow: inset 0 -3px 0 rgba(45, 52, 61, 0.45);
+    color: #121820;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.seat.seat-selected {
+    background: #ed0712;
+    box-shadow: inset 0 -3px 0 rgba(120, 0, 0, 0.45);
+    color: #fff;
+}
+
+.seat.seat-holding,
+.seat.seat-booked,
+.seat.seat-locked {
+    background: #6d747c;
+    color: #1b1b1b;
+    box-shadow: inset 0 -3px 0 rgba(30, 30, 30, 0.45);
+}
+
+.seat.seat-vip {
+    width: 28px;
+    background: #ffd21f;
+    border: 0;
+    color: #1b1b1b;
+}
+
+/* Ghế đôi - Màu hồng, hai ô hợp thành 1 */
+.seat.seat-couple {
+    width: 56px;
+    background: linear-gradient(135deg, #ff6b9d 0%, #ffc3d0 100%);
+    border: 2px solid #ff6b9d;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: inset 0 -3px 0 rgba(199, 0, 81, 0.45);
+}
+
+.seat.seat-couple:hover {
+    background: linear-gradient(135deg, #ff5a8a 0%, #ffb0c0 100%);
+    border-color: #ff5a8a;
+}
+
+.seat.seat-couple.seat-selected {
+    background: linear-gradient(135deg, #c70051 0%, #ff4081 100%);
+    border-color: #c70051;
+    box-shadow: inset 0 -3px 0 rgba(100, 0, 40, 0.6);
+}
+
+.seat-legend {
+    margin-top: 18px;
+    padding: 20px 0 0;
+    gap: 6px;
+    background: transparent;
+    border-top: 1px solid #8d8d8d;
+    border-radius: 0;
+}
+
+.legend-item {
+    gap: 4px;
+    color: #838b98;
+    font-size: 12px;
+}
+
+.seat-demo {
+    width: 20px;
+    height: 20px;
+    border-radius: 7px 7px 4px 4px;
+    border: 0;
+    box-shadow: inset 0 -3px 0 rgba(45, 52, 61, 0.45);
+}
+
+.seat-demo.seat-available {
+    background: #c9d0d6;
+}
+
+.seat-demo.seat-selected {
+    background: #ed0712;
+}
+
+.seat-demo.seat-holding {
+    background: #6d747c;
+}
+
+.seat-demo.seat-vip {
+    background: #ffd21f;
+}
+
+/* Demo ghế đôi với icon */
+.seat-demo.seat-couple {
+    background: linear-gradient(135deg, #ff6b9d 0%, #ffc3d0 100%);
+    border: 2px solid #ff6b9d;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.seat-demo i {
+    font-size: 14px;
+    color: inherit;
+}
+
+.seat-demo.seat-available i {
+    color: #8b96a6;
+}
+
+.seat-demo.seat-selected i,
+.seat-demo.seat-couple i {
+    color: #fff;
+}
+
+.seat-demo.seat-holding i {
+    color: #1b1b1b;
+}
+.quantity-control {
+    gap: 9px;
+}
+
+.quantity-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #2e3238;
+    border: 1px solid #4a5159;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.quantity-btn.plus {
+    background: #ed0712;
+    border-color: #ed0712;
+    box-shadow: 0 4px 12px rgba(237, 7, 18, 0.35);
+}
+
+.quantity-btn:hover:not(:disabled) {
+    transform: none;
+    background: #c9070f;
+    border-color: #c9070f;
+}
+
+.quantity-value {
+    min-width: 12px;
+    color: #fff;
+    font-size: 15px;
+}
+
+/* Promotion tab */
+.booking-page #tab-promotion {
+    padding: 44px 40px 40px;
+}
+
+.promotion-section {
+    max-width: none;
+}
+
+.promotion-input-box,
+.points-section {
+    padding: 20px;
+    background: #1b1b1b;
+    border: 1px solid #2f2f2f;
+    border-radius: 9px;
+}
+
+.promotion-label {
+    color: #ed0712;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.promotion-input-group {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 120px;
+    gap: 36px;
+    align-items: center;
+}
+
+.promo-input {
+    height: 42px;
+    border-radius: 6px;
+    background: #e7efff;
+    color: #10131a;
+    font-size: 14px;
+}
+
+.promo-btn {
+    height: 42px;
+    min-width: 120px;
+    border-radius: 6px;
+    background: #ed0712;
+    font-size: 14px;
+}
+
+.voucher-title,
+.points-title {
+    margin-top: 22px;
+    color: #fff;
+    font-size: 14px;
+}
+
+.voucher-tabs {
+    margin-top: 14px;
+    grid-template-columns: 1fr 2fr 1fr 1fr;
+    background: #202020;
+    border-bottom: 1px solid #c9c9c9;
+}
+
+.voucher-tab {
+    padding: 13px 12px;
+    color: #aab2bf;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 1px;
+}
+
+.voucher-content {
+    min-height: 44px;
+    padding: 14px 12px;
+    background: #202020;
+    border-bottom: 1px solid #2e2e2e;
+    color: #7f8a99;
+    font-size: 12px;
+}
+
+.points-section {
+    margin-top: 34px;
+}
+
+.points-input-group {
+    display: flex;
+    max-width: 405px;
+}
+
+.points-input {
+    width: 305px;
+    height: 42px;
+    border-radius: 6px 0 0 6px;
+    background: #242424;
+    color: #aab2bf;
+    border: 1px solid #444;
+}
+
+.points-btn {
+    width: 100px;
+    height: 42px;
+    border-radius: 0 6px 6px 0;
+    background: transparent;
+    border: 1px solid #565b63;
+    color: #fff;
+}
+
+/* Sidebar */
+.booking-sidebar {
+    top: 88px;
+}
+
+.summary-card {
+    min-height: 360px;
+    padding: 20px;
+    background: #1b1b1b;
+    border: 1px solid #2c2c2c;
+    border-radius: 12px;
+}
+
+.summary-poster {
+    width: 54px;
+    height: 80px;
+    margin-right: 14px;
+    border-radius: 4px;
+}
+
+.summary-movie-info {
+    min-height: 104px;
+}
+
+.summary-movie-info .movie-title {
+    font-size: 22px;
+    line-height: 1.12;
+    font-weight: 800;
+}
+
+.detail-item {
+    color: #7d8a99;
+    font-size: 12px;
+}
+
+.summary-section {
+    gap: 9px;
+}
+
+.summary-label {
+    color: #7d8a99;
+    font-size: 12px;
+}
+
+.summary-value {
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.divider {
+    margin: 20px 0 26px;
+    background: #d6d6d6;
+}
+
+.total-label {
+    color: #7d8a99;
+    font-size: 16px;
+}
+
+.total-value {
+    color: #ed0712;
+    font-size: 28px;
+    font-weight: 500;
+}
+
+.sidebar-continue-btn,
+.nav-btn {
+    height: 50px;
+    margin-top: 18px;
+    border-radius: 4px;
+    background: #ed0712;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.sidebar-continue-btn:hover:not(:disabled),
+.nav-btn:hover:not(:disabled) {
+    background: #d80712;
 }
 
 /* === RESPONSIVE === */

@@ -96,6 +96,7 @@ class ShowtimeService
 
             $grouped[$theaterId]['formats'][$formatId]['showtimes'][] = [
                 'id' => $showtime->id,
+                'encrypted_id' => $showtime->encrypted_id,
                 'time' => $showtime->scheduled_at->format('H:i'),
                 'screen' => [
                     'id' => $showtime->screen->id,

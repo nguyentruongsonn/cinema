@@ -9,7 +9,14 @@
 
 @section('content')
 <div class="booking-page" data-showtime-id="{{ $showtime->id }}">
-    <!-- Movie Info Header -->
+    {{--
+        BOOKING HEADER:
+        Hiển thị thông tin phim và suất chiếu đang đặt vé
+        - Tên phim
+        - Rạp và phòng chiếu
+        - Thời gian suất chiếu
+        - Nút quay lại trang trước
+    --}}
     <div class="booking-header">
         <div class="container-fluid px-4 py-3">
             <div class="row align-items-center">
@@ -30,28 +37,28 @@
         </div>
     </div>
 
+    {{-- Tab Navigation - Đặt bên ngoài booking-container để không ảnh hưởng grid layout --}}
+    <div class="booking-tabs">
+        <button class="tab-btn active" data-tab="seats">
+            <span class="tab-number">1</span>
+            <span class="tab-label">Chọn ghế</span>
+        </button>
+        <button class="tab-btn" data-tab="food">
+            <span class="tab-number">2</span>
+            <span class="tab-label">Chọn thức ăn</span>
+        </button>
+        <button class="tab-btn" data-tab="promotion">
+            <span class="tab-number">3</span>
+            <span class="tab-label">Khuyến mãi</span>
+        </button>
+        <button class="tab-btn" data-tab="confirm">
+            <span class="tab-number">4</span>
+            <span class="tab-label">Xác nhận</span>
+        </button>
+    </div>
+
     <div class="booking-container">
         <div class="booking-main">
-            <!-- Tab Navigation -->
-            <div class="booking-tabs">
-                <button class="tab-btn active" data-tab="seats">
-                    <span class="tab-number">1</span>
-                    <span class="tab-label">Chọn ghế</span>
-                </button>
-                <button class="tab-btn" data-tab="food">
-                    <span class="tab-number">2</span>
-                    <span class="tab-label">Chọn thức ăn</span>
-                </button>
-                <button class="tab-btn" data-tab="promotion">
-                    <span class="tab-number">3</span>
-                    <span class="tab-label">Khuyến mãi</span>
-                </button>
-                <button class="tab-btn" data-tab="confirm">
-                    <span class="tab-number">4</span>
-                    <span class="tab-label">Xác nhận</span>
-                </button>
-            </div>
-
             <!-- Tab Content Sections -->
             <div class="tab-contents">
                 <!-- Step 1: Seat Selection -->
@@ -61,7 +68,7 @@
                         <div class="movie-meta">
                             <span class="format-badge">
                                 <span class="badge-label">FORMAT</span>
-                                <span class="badge-value">2D Standard</span>
+                                <span class="badge-value">{{ $showtime->format?->name ?? '2D Standard' }}</span>
                             </span>
                             <span class="theater-info">
                                 <i class="bi bi-geo-alt-fill"></i>
@@ -91,23 +98,27 @@
                         <div id="seatMap" class="seat-map d-none"></div>
                     </div>
 
-                    <!-- Seat Legend -->
+                    <!-- Seat Legend - Icon ghế thống nhất, chỉ khác màu -->
                     <div class="seat-legend">
                         <div class="legend-item">
                             <span class="seat-demo seat-available"></span>
-                            <span>Trống</span>
+                            <span>Ghế trống</span>
                         </div>
                         <div class="legend-item">
                             <span class="seat-demo seat-selected"></span>
                             <span>Đang chọn</span>
                         </div>
                         <div class="legend-item">
+                            <span class="seat-demo seat-vip"></span>
+                            <span>Ghế VIP</span>
+                        </div>
+                        <div class="legend-item">
                             <span class="seat-demo seat-holding"></span>
                             <span>Đã bán</span>
                         </div>
                         <div class="legend-item">
-                            <span class="seat-demo seat-vip"></span>
-                            <span>Ghế Đôi</span>
+                            <span class="seat-demo seat-couple"></span>
+                            <span>Ghế đôi</span>
                         </div>
                     </div>
                 </div>
@@ -156,7 +167,7 @@
                                 <button class="voucher-tab active" data-voucher-tab="all">MÃ VOUCHER</button>
                                 <button class="voucher-tab" data-voucher-tab="available">NỘI DUNG</button>
                                 <button class="voucher-tab" data-voucher-tab="expired">HẾT HẠN</button>
-                                <button class="voucher-tab" data-voucher-tab="history">TRAO TẶC</button>
+                                <button class="voucher-tab" data-voucher-tab="history">TRAO ĐỔI</button>
                             </div>
                             <div class="voucher-content">
                                 <div class="empty-voucher">
@@ -265,7 +276,7 @@
                     <h4 class="movie-title">{{ $showtime->movie->title }}</h4>
                     <div class="movie-details">
                         <span class="detail-item">
-                            <i class="bi bi-tag-fill"></i> Phụ đề • 2D Standard
+                            <i class="bi bi-tag-fill"></i> {{ $showtime->subtitle?->name ?? 'Phụ đề' }} • {{ $showtime->format?->name ?? '2D Standard' }}
                         </span>
                         <span class="detail-item">
                             <i class="bi bi-clock-fill"></i> {{ $showtime->movie->duration ?? 120 }} phút
@@ -278,15 +289,15 @@
                 <!-- Selected Seats Info -->
                 <div class="summary-section">
                     <div class="summary-row">
-                        <span class="summary-label">Selected Seats</span>
+                        <span class="summary-label">Ghế đã chọn</span>
                         <span id="selectedSeatsDisplay" class="summary-value text-danger">Chưa chọn ghế</span>
                     </div>
                     <div class="summary-row">
-                        <span class="summary-label">Ticket Price</span>
+                        <span class="summary-label">Giá vé</span>
                         <span id="ticketPriceDisplay" class="summary-value">0 đ</span>
                     </div>
                     <div class="summary-row">
-                        <span class="summary-label">Convenience Fee</span>
+                        <span class="summary-label">Phí tiện lợi</span>
                         <span id="convenienceFeeDisplay" class="summary-value">0 đ</span>
                     </div>
                 </div>

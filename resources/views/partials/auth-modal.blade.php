@@ -1,9 +1,35 @@
 <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content cinema-auth-modal">
-            {{-- Modal Header with Tabs --}}
-            <div class="modal-header cinema-auth-header border-0">
-                <ul class="nav nav-tabs cinema-auth-tabs w-100 border-0" role="tablist">
+            {{-- Auth Required Message (hiển thị khi chưa đăng nhập vào trang booking) --}}
+            <div class="auth-required-section d-none">
+                <div class="modal-header cinema-auth-header border-0 justify-content-center">
+                    <h5 class="modal-title text-center">
+                        <i class="bi bi-lock-fill text-danger me-2"></i>
+                        Yêu cầu đăng nhập
+                    </h5>
+                    <button type="button" class="btn-close cinema-auth-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body cinema-auth-body text-center py-5">
+                    <p class="text-white mb-4">Bạn cần đăng nhập để đặt vé xem phim.</p>
+                    <div class="d-grid gap-3 mx-auto" style="max-width: 300px;">
+                        <button type="button" class="btn cinema-auth-submit" id="showLoginFormBtn">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            Đăng nhập ngay
+                        </button>
+                        <button type="button" class="btn cinema-auth-submit bg-secondary" id="showRegisterFormBtn">
+                            <i class="bi bi-person-plus me-2"></i>
+                            Đăng ký tài khoản
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Normal Auth Forms (hiển thị khi click vào buttons) --}}
+            <div class="auth-forms-section">
+                {{-- Modal Header with Tabs --}}
+                <div class="modal-header cinema-auth-header border-0">
+                    <ul class="nav nav-tabs cinema-auth-tabs w-100 border-0" role="tablist">
                     <li class="nav-item flex-fill" role="presentation">
                         <button class="nav-link active w-100" id="login-tab" data-bs-toggle="tab"
                             data-bs-target="#loginForm" type="button" role="tab"
@@ -18,11 +44,11 @@
                             Đăng ký
                         </button>
                     </li>
-                </ul>
-                <button type="button" class="btn-close cinema-auth-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+                    </ul>
+                    <button type="button" class="btn-close cinema-auth-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
 
-            <div class="modal-body cinema-auth-body">
+                <div class="modal-body cinema-auth-body">
                 <div class="tab-content">
                     {{-- Login Form --}}
                     <div class="tab-pane fade show active" id="loginForm" role="tabpanel">
@@ -163,6 +189,7 @@
                         {{-- Error display --}}
                         <div class="alert alert-danger d-none mt-3" id="registerAlert" role="alert"></div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
