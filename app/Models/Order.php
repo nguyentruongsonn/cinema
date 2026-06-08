@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
+    public const STATUS_CANCELLED = 0;
+    public const STATUS_PENDING = 1;
+    public const STATUS_CONFIRMED = 2;
+    public const STATUS_PAID = 2; // Alias for confirmed in this context
     protected $fillable = [
         'code',
         'gateway_order_code',

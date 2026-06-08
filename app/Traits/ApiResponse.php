@@ -31,6 +31,38 @@ trait ApiResponse
     }
 
     /**
+     * Success shorthand
+     */
+    protected function ok($data = null, $message = 'Success'): JsonResponse
+    {
+        return $this->successResponse($data, $message, 200);
+    }
+
+    /**
+     * Error shorthand
+     */
+    protected function error($message = 'Error', $code = 400, $errors = null): JsonResponse
+    {
+        return $this->errorResponse($message, $code, $errors);
+    }
+
+    /**
+     * Unauthorized shorthand
+     */
+    protected function unauthorized($message = 'Unauthorized'): JsonResponse
+    {
+        return $this->errorResponse($message, 401);
+    }
+
+    /**
+     * Not found shorthand
+     */
+    protected function notFound($message = 'Not found'): JsonResponse
+    {
+        return $this->errorResponse($message, 404);
+    }
+
+    /**
      * Paginated response
      */
     protected function paginatedResponse($data, $message = 'Success', $code = 200): JsonResponse

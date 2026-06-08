@@ -10,7 +10,7 @@ use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\User\PaymentController as UserPaymentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PromotionController;
@@ -99,9 +99,8 @@ Route::middleware('auth:api')->group(function () {
 
     // Payment routes
     Route::prefix('payments')->group(function () {
-        Route::post('/', [PaymentController::class, 'store']);
-        Route::get('{id}', [PaymentController::class, 'show']);
-        Route::post('{id}/verify', [PaymentController::class, 'verify']);
+        Route::post('/', [UserPaymentController::class, 'createPayment']);
+        Route::get('orders/{orderCode}', [UserPaymentController::class, 'showOrderSummary']);
     });
 });
 
@@ -152,3 +151,12 @@ Route::get('products', [ProductController::class, 'index']);
 Route::prefix('promotions')->group(function () {
     Route::post('validate', [PromotionController::class, 'validate']);
 });
+
+// PayOS Webhook
+Route::post('payos/webhook', [UserPaymentController::class, 'handleWebhook']);
+
+// Broadcasting channel auth – uses JWT instead of web session
+Route::middleware('auth:api')->post('broadcasting/auth', function (\Illuminate\Http\Request $request) {
+    return \Illuminate\Support\Facades\Broadcast::auth($request);
+});
+

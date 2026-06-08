@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\SeatStatusUpdated;
 use App\Models\OrderItem;
 use App\Models\Seat;
 use App\Models\SeatHold;
@@ -83,7 +84,11 @@ class SeatService
                 'row' => $seat->row,
                 'number' => $seat->number,
                 'label' => $seat->label ?: ($seat->row . $seat->number),
-                'seat_type' => $seat->seatType?->name,
+                'seat_type' => $seat->seatType ? [
+                    'id' => $seat->seatType->id,
+                    'name' => $seat->seatType->name,
+                    'surcharge' => (float) $seat->seatType->surcharge,
+                ] : null,
                 'seat_type_id' => $seat->seat_type_id,
                 'surcharge' => (float) ($seat->seatType?->surcharge ?? 0),
                 'status' => $status,
@@ -159,11 +164,21 @@ class SeatService
             ]);
         });
 
+        // Broadcast real-time seat status to all connected clients
+        foreach ($hold->seat_ids as $seatId) {
+            broadcast(new SeatStatusUpdated(
+                showtimeId: $hold->showtime_id,
+                seatId:     (int) $seatId,
+                status:     'locked',
+                userId:     $hold->user_id,
+            ));
+        }
+
         return [
-            'hold_id' => $hold->id,
-            'showtime_id' => $hold->showtime_id,
-            'seat_ids' => $hold->seat_ids,
-            'held_until' => $hold->held_until->toISOString(),
+            'hold_id'          => $hold->id,
+            'showtime_id'      => $hold->showtime_id,
+            'seat_ids'         => $hold->seat_ids,
+            'held_until'       => $hold->held_until->toISOString(),
             'expires_in_seconds' => now()->diffInSeconds($hold->held_until, false),
         ];
     }
@@ -180,10 +195,21 @@ class SeatService
             throw new \RuntimeException('Unauthorized', 403);
         }
 
-        $unlockedCount = count((array) $hold->seat_ids);
+        $showtimeId = $hold->showtime_id;
+        $seatIds    = (array) $hold->seat_ids;
+
         SeatHold::query()->whereKey($hold->getKey())->delete();
 
-        return ['unlocked_count' => $unlockedCount];
+        // Broadcast real-time unlock to all connected clients
+        foreach ($seatIds as $seatId) {
+            broadcast(new SeatStatusUpdated(
+                showtimeId: $showtimeId,
+                seatId:     (int) $seatId,
+                status:     'available',
+            ));
+        }
+
+        return ['unlocked_count' => count($seatIds)];
     }
 
     private function cleanupExpiredReservations(?int $showtimeId = null): void

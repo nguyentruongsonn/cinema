@@ -292,10 +292,14 @@ class PaymentManager {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Check authentication
+    // Check authentication - if not logged in, show login modal instead of redirect
     if (!window.authManager || !window.authManager.isAuthenticated()) {
-        alert('Vui lòng đăng nhập để tiếp tục');
-        window.location.href = '/';
+        if (window.authManager && window.authManager.showModal) {
+            window.authManager.showModal('login');
+        } else {
+            alert('Vui lòng đăng nhập để tiếp tục');
+            window.location.href = '/';
+        }
         return;
     }
 

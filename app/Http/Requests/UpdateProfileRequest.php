@@ -20,6 +20,9 @@ class UpdateProfileRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'avatar_url' => ['nullable', 'string', 'max:255'],
+            'birthday' => ['nullable', 'date'],
+            'gender' => ['nullable', 'in:male,female,other'],
+            'address' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

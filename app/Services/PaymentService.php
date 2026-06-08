@@ -2,186 +2,161 @@
 
 namespace App\Services;
 
+use App\Exceptions\PaymentGatewayException;
 use App\Models\Order;
-use App\Models\Payment;
-use App\Services\PayOS\PayOSService;
+use App\Models\Showtime;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
+/**
+ * Orchestrator: điều phối toàn bộ luồng tạo và xử lý thanh toán.
+ */
 class PaymentService
 {
-    private const ORDER_STATUS_CANCELLED = 0;
-    private const ORDER_STATUS_PENDING = 1;
-    private const ORDER_STATUS_CONFIRMED = 2;
-
-    private const PAYMENT_STATUS_PENDING = 1;
-    private const PAYMENT_STATUS_COMPLETED = 2;
-    private const PAYMENT_STATUS_FAILED = 3;
-
     public function __construct(
-        private readonly OrderExpirationService $orderExpirationService,
-        private readonly PayOSService $payOSService
-    ) {
-    }
+        private readonly PayOSGateway            $gateway,
+        private readonly PricingService          $pricing,
+        private readonly OrderFulfillmentService $fulfillment,
+    ) {}
 
-    public function create(array $data, $user): Payment
-    {
-        return DB::transaction(function () use ($data, $user) {
-            $order = Order::with('payment')
-                ->lockForUpdate()
-                ->findOrFail($data['order_id']);
+    /**
+     * Tạo đơn hàng và link thanh toán.
+     */
+    public function initiate(
+        User      $user,
+        Showtime  $showtime,
+        array     $validated,
+        string    $baseUrl
+    ): array {
+        $items = collect($validated['items'] ?? []);
 
-            if ((int) $order->user_id !== (int) $user->id) {
-                throw new \RuntimeException('Unauthorized', 403);
-            }
+        $seatRequests    = $items->where('type', 'seat')->all();
+        $productRequests = $items->where('type', 'product')->all();
 
-            $order = $this->orderExpirationService->expireOrder($order);
+        $pricing = $this->pricing->buildSnapshot(
+            $user,
+            $showtime,
+            $seatRequests,
+            $productRequests,
+            $validated['voucher_code'] ?? null,
+            (int) ($validated['points_used'] ?? 0),
+        );
 
-            if (!$this->orderExpirationService->isPayable($order)) {
-                throw new \RuntimeException('Đơn hàng không còn khả dụng để thanh toán hoặc đã hết hạn.', 422);
-            }
-
-            if (round((float) $order->total_amount, 2) !== round((float) $data['amount'], 2)) {
-                throw new \RuntimeException('Số tiền thanh toán không khớp với đơn hàng.', 422);
-            }
-
-            if ($order->payment && (int) $order->payment->status === self::PAYMENT_STATUS_COMPLETED) {
-                throw new \RuntimeException('Đơn hàng đã được thanh toán.', 422);
-            }
-
-            $paymentMethod = $data['payment_method'];
-            $transactionCode = $order->payment?->transaction_code ?: 'TXN-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6));
-
-            $payload = [
-                'source' => 'web',
-                'method' => $paymentMethod,
-                'gateway' => $paymentMethod === 'payos' ? 'payos' : 'mock',
-                'created_ip' => request()->ip(),
-            ];
-
-            if ($paymentMethod === 'payos') {
-                $payOSResult = $this->payOSService->createPaymentLink([
-                    'order_code' => (int) $order->id,
-                    'amount' => (int) round((float) $order->total_amount),
-                    'description' => 'Ve phim #' . $order->id,
-                ]);
-
-                $payload = array_merge($payload, [
-                    'checkout_url' => $payOSResult['checkout_url'] ?? null,
-                    'qr_code' => $payOSResult['qr_code'] ?? null,
-                    'payment_link_id' => $payOSResult['payment_link_id'] ?? null,
-                ]);
-            }
-
-            $payment = Payment::updateOrCreate(
-                ['order_id' => $order->id],
-                [
-                    'method' => $paymentMethod,
-                    'transaction_code' => $transactionCode,
-                    'amount' => $data['amount'],
-                    'status' => self::PAYMENT_STATUS_PENDING,
-                    'payload' => $payload,
-                    'paid_at' => null,
-                ]
-            );
-
-            $order->update([
-                'payment_provider' => $data['payment_method'],
+        $order = DB::transaction(function () use ($user, $showtime, $pricing) {
+            return Order::create([
+                'code'               => $this->generateOrderNumber(),
+                'gateway_order_code' => $this->generateOrderCode(),
+                'payment_provider'   => 'payos',
+                'user_id'            => $user->id,
+                'showtime_id'        => $showtime->id,
+                'total_amount'       => $pricing['final_amount'],
+                'payload'            => [
+                    'subtotal'         => $pricing['subtotal'],
+                    'discount_amount'  => $pricing['discount_amount'],
+                    'voucher_discount' => $pricing['voucher_discount'],
+                    'point_discount'   => $pricing['point_discount'],
+                    'points_used'      => $pricing['points_used'],
+                    'voucher'          => $pricing['voucher'],
+                    'seats'            => $pricing['seats'],
+                    'products'         => $pricing['products'],
+                ],
+                'status'         => Order::STATUS_PENDING,
                 'payment_status' => 'pending',
+                'expired_at'     => now()->addMinutes(15),
             ]);
-
-            return $payment->load('order');
         });
-    }
 
-    public function findForUser(int $id, $user): Payment
-    {
-        $payment = Payment::with('order')->findOrFail($id);
-
-        if ($payment->order->user_id !== $user->id && !$this->isStaffUser($user)) {
-            throw new \RuntimeException('Unauthorized', 403);
+        try {
+            $response = $this->gateway->createPaymentLink([
+                'orderCode'   => $order->gateway_order_code,
+                'amount'      => (int) round($order->total_amount),
+                'description' => substr('DH ' . $order->code, 0, 25),
+                'cancelUrl'   => $baseUrl . '/booking/' . $order->showtime_id . '?paymentStatus=cancelled&orderCode=' . $order->gateway_order_code,
+                'returnUrl'   => $baseUrl . '/booking/' . $order->showtime_id . '?paymentStatus=success&orderCode=' . $order->gateway_order_code,
+                'items'       => [[
+                    'name'     => 'Don hang ' . $order->code,
+                    'quantity' => 1,
+                    'price'    => (int) round($order->total_amount),
+                ]],
+            ]);
+        } catch (PaymentGatewayException $e) {
+            // Hủy đơn nếu tạo link thất bại
+            $order->update(['status' => Order::STATUS_CANCELLED, 'payment_status' => 'failed']);
+            throw $e;
         }
 
-        return $payment;
-    }
-
-    public function verify(int $id, array $data, $user): Payment
-    {
-        return DB::transaction(function () use ($id, $data, $user) {
-            $payment = Payment::with('order')
-                ->lockForUpdate()
-                ->findOrFail($id);
-
-            if ($payment->order->user_id !== $user->id && !$this->isStaffUser($user)) {
-                throw new \RuntimeException('Unauthorized', 403);
-            }
-
-            $order = $this->orderExpirationService->expireOrder($payment->order);
-
-            if ((int) $order->status === self::ORDER_STATUS_CANCELLED) {
-                throw new \RuntimeException('Đơn hàng đã bị hủy hoặc hết hạn, không thể xác nhận thanh toán.', 422);
-            }
-
-            if ((int) $order->status === self::ORDER_STATUS_CONFIRMED || (int) $payment->status === self::PAYMENT_STATUS_COMPLETED) {
-                return $payment->fresh('order');
-            }
-
-            $isCompleted = $data['status'] === 'completed';
-            $paidAt = $isCompleted ? now() : null;
-
-            $payment->update([
-                'status' => $isCompleted ? self::PAYMENT_STATUS_COMPLETED : self::PAYMENT_STATUS_FAILED,
-                'paid_at' => $paidAt,
-                'payload' => array_merge($payment->payload ?? [], [
-                    'verified_at' => now()->toISOString(),
-                    'verified_by' => $user->id,
-                    'verified_status' => $data['status'],
-                ]),
-            ]);
-
-            $order->update([
-                'status' => $isCompleted ? self::ORDER_STATUS_CONFIRMED : self::ORDER_STATUS_PENDING,
-                'payment_status' => $isCompleted ? 'paid' : 'failed',
-                'paid_at' => $paidAt,
-            ]);
-
-            return $payment->fresh('order');
-        });
-    }
-
-    public function format(Payment $payment): array
-    {
-        $statusMap = [
-            self::PAYMENT_STATUS_PENDING => 'pending',
-            self::PAYMENT_STATUS_COMPLETED => 'completed',
-            self::PAYMENT_STATUS_FAILED => 'failed',
-        ];
+        $checkoutUrl = $response['checkoutUrl'] ?? null;
+        $order->forceFill(['checkout_url' => $checkoutUrl])->save();
 
         return [
-            'id' => $payment->id,
-            'order_id' => $payment->order_id,
-            'payment_method' => $payment->method,
-            'method' => $payment->method,
-            'transaction_code' => $payment->transaction_code,
-            'payment_code' => $payment->transaction_code,
-            'amount' => (float) $payment->amount,
-            'status' => $statusMap[(int) $payment->status] ?? 'unknown',
-            'status_code' => (int) $payment->status,
-            'checkout_url' => $payment->payload['checkout_url'] ?? null,
-            'qr_code' => $payment->payload['qr_code'] ?? null,
-            'payment_link_id' => $payment->payload['payment_link_id'] ?? null,
-            'payload' => $payment->payload,
-            'paid_at' => $payment->paid_at,
-            'created_at' => $payment->created_at,
-            'order' => $payment->order,
+            'checkout_url'       => $checkoutUrl,
+            'gateway_order_code' => $order->gateway_order_code,
+            'order_number'       => $order->code,
         ];
     }
 
-    private function isStaffUser($user): bool
+    /**
+     * Xử lý webhook PayOS.
+     */
+    public function handleWebhook(array $rawData): array
     {
-        return method_exists($user, 'roles')
-            && $user->roles()
-                ->whereIn('name', ['admin', 'manager', 'staff'])
-                ->exists();
+        $webhookData = $this->gateway->verifyWebhook($rawData);
+
+        $orderCode = $webhookData['orderCode'] ?? $webhookData['order_code'] ?? null;
+        $status    = strtoupper((string) ($webhookData['status'] ?? ''));
+
+        if (! $orderCode) {
+            throw new \InvalidArgumentException('Thiếu orderCode trong webhook.');
+        }
+
+        if ($status !== 'PAID' && $status !== 'COMPLETED') {
+            Order::where('gateway_order_code', (int) $orderCode)
+                ->where('status', Order::STATUS_PENDING)
+                ->update(['payment_status' => strtolower($status ?: 'failed')]);
+
+            return ['already_processed' => false, 'skipped' => true];
+        }
+
+        return $this->fulfillment->finalize((int) $orderCode);
+    }
+
+    /**
+     * Đồng bộ trạng thái đơn hàng với PayOS (polling từ frontend).
+     */
+    public function syncFromGateway(Order $order): void
+    {
+        try {
+            $info   = $this->gateway->getPaymentInfo($order->gateway_order_code);
+            $status = strtoupper((string) ($info['status'] ?? ''));
+
+            if ($status === 'PAID') {
+                $this->fulfillment->finalize((int) $order->gateway_order_code);
+            } elseif (in_array($status, ['CANCELLED', 'EXPIRED'], true)) {
+                $lower = strtolower($status);
+                $order->forceFill([
+                    'status'         => $lower === 'cancelled' ? Order::STATUS_CANCELLED : Order::STATUS_PENDING, // Nếu expired vẫn để pending nhưng hết hạn check at finalize
+                    'payment_status' => $lower,
+                    'cancelled_at'   => $lower === 'cancelled' ? now() : $order->cancelled_at,
+                ])->save();
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function generateOrderNumber(): string
+    {
+        return 'DH' . strtoupper(Str::random(10));
+    }
+
+    private function generateOrderCode(): int
+    {
+        do {
+            $value = (int) (now()->format('ymdHis') . random_int(10, 99));
+        } while (Order::where('gateway_order_code', $value)->exists());
+
+        return $value;
     }
 }

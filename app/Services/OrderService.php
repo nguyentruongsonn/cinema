@@ -111,8 +111,11 @@ class OrderService
         $orders = Order::where('user_id', $user->id)
             ->with([
                 'showtime.movie',
-                'showtime.screen.theater',
-                'orderItems',
+                'showtime.format',
+                'showtime.sound',
+                'showtime.subtitle',
+                'showtime.screen.theater.branch',
+                'orderItems.item',
                 'payment',
             ])
             ->latest()
@@ -172,6 +175,14 @@ class OrderService
             'paid_at' => $order->paid_at,
             'cancelled_at' => $order->cancelled_at,
             'created_at' => $order->created_at,
+            // Flatten movie data for easier frontend access
+            'movie_title' => $order->showtime?->movie?->title,
+            'poster_url' => $order->showtime?->movie?->poster_url,
+            'show_date' => $order->showtime?->scheduled_at,
+            'show_time' => $order->showtime?->scheduled_at,
+            'theater_name' => $order->showtime?->screen?->theater?->name,
+            'screen_name' => $order->showtime?->screen?->name,
+            'branch_name' => $order->showtime?->screen?->theater?->branch?->name,
         ];
     }
 

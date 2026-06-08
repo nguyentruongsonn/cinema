@@ -26,7 +26,7 @@ class Showtime extends Model
         'status',
     ];
 
-    protected $appends = ['encrypted_id'];
+    protected $appends = [];
 
     protected $casts = [
         'scheduled_at' => 'datetime',
@@ -35,12 +35,16 @@ class Showtime extends Model
         'status' => 'boolean',
     ];
 
-    /**
-     * Get the encrypted ID for the showtime.
-     */
-    public function getEncryptedIdAttribute()
+
+
+    public function getFormattedStartTimeAttribute()
     {
-        return Crypt::encryptString($this->id);
+        return $this->scheduled_at ? $this->scheduled_at->format('H:i') : null;
+    }
+
+    public function getFormattedStartDateAttribute()
+    {
+        return $this->scheduled_at ? $this->scheduled_at->format('H:i, d/m/Y') : null;
     }
 
     public function movie(): BelongsTo

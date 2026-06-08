@@ -25,7 +25,7 @@
                         <a class="nav-link" href="#food">Food</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#tickets">My Tickets</a>
+                        <a class="nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">My Tickets</a>
                     </li>
                 </ul>
 
@@ -51,12 +51,12 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow">
                             <li>
-                                <a class="dropdown-item" href="#profile">
+                                <a class="dropdown-item" href="{{ route('profile.index') }}">
                                     <i class="bi bi-person me-2"></i>Tài khoản
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="#tickets">
+                                <a class="dropdown-item" href="{{ route('tickets.index') }}">
                                     <i class="bi bi-ticket-perforated me-2"></i>Vé của tôi
                                 </a>
                             </li>

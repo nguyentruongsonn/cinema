@@ -3,41 +3,15 @@
 @section('title', 'Đặt vé - ' . $showtime->movie->title)
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/booking.css') }}">
+<link rel="stylesheet" href="{{ asset('css/booking.css') }}?v={{ time() }}">
 <link rel="stylesheet" href="{{ asset('css/skeleton.css') }}">
 @endpush
 
 @section('content')
 <div class="booking-page" data-showtime-id="{{ $showtime->id }}">
-    {{--
-        BOOKING HEADER:
-        Hiển thị thông tin phim và suất chiếu đang đặt vé
-        - Tên phim
-        - Rạp và phòng chiếu
-        - Thời gian suất chiếu
-        - Nút quay lại trang trước
-    --}}
-    <div class="booking-header">
-        <div class="container-fluid px-4 py-3">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <a href="{{ url()->previous() }}" class="btn btn-link text-white p-0">
-                        <i class="bi bi-arrow-left fs-4"></i>
-                    </a>
-                </div>
-                <div class="col">
-                    <h1 class="h5 mb-1 text-white">{{ $showtime->movie->title }}</h1>
-                    <div class="small text-white-50">
-                        <i class="bi bi-geo-alt"></i> {{ $showtime->screen->theater->name }} - {{ $showtime->screen->name }}
-                        <span class="mx-2">|</span>
-                        <i class="bi bi-calendar-event"></i> {{ \Carbon\Carbon::parse($showtime->start_time)->format('H:i, d/m/Y') }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    {{-- Tab Navigation - Đặt bên ngoài booking-container để không ảnh hưởng grid layout --}}
+@if(!$paymentHandled)
+    {{-- Tab Navigation - Chỉ hiển thị khi không ở trang kết quả thanh toán --}}
     <div class="booking-tabs">
         <button class="tab-btn active" data-tab="seats">
             <span class="tab-number">1</span>
@@ -74,7 +48,7 @@
                                 <i class="bi bi-geo-alt-fill"></i>
                                 {{ $showtime->screen->theater->name }} - Phòng {{ $showtime->screen->name }} -
                                 {{ $showtime->format?->name ?? '2D Standard' }} -
-                                Hôm nay, {{ \Carbon\Carbon::parse($showtime->start_time)->format('H:i') }}
+                                Hôm nay, {{ $showtime->formatted_start_time }}
                             </span>
                         </div>
                     </div>
@@ -217,7 +191,7 @@
                             </div>
                             <div class="confirm-info-row">
                                 <span class="info-label">Suất chiếu:</span>
-                                <span class="info-value">{{ \Carbon\Carbon::parse($showtime->start_time)->format('H:i, d/m/Y') }}</span>
+                                <span class="info-value">{{ $showtime->formatted_start_date }}</span>
                             </div>
                         </div>
 
@@ -266,7 +240,7 @@
             <div class="summary-card">
                 <!-- Movie Poster -->
                 <div class="summary-poster">
-                    <img src="{{ $showtime->movie->poster_url ?? '/images/placeholder.jpg' }}"
+                    <img src="{{ optional($showtime->movie)->poster_url ?? asset('images/placeholder.jpg') }}"
                          alt="{{ $showtime->movie->title }}"
                          class="poster-img">
                 </div>
@@ -324,7 +298,82 @@
             </div>
         </div>
     </div>
-</div>
+@endif {{-- end !paymentHandled --}}
+
+    <!-- Payment Result Screens -->
+    @if($isPaymentSuccess)
+    <!-- Success Screen (server-rendered visible) -->
+    <div id="successScreen" class="payment-result-screen">
+        <div class="result-content">
+            <h1 class="brand-title">CINEMA PREMIUM</h1>
+
+            <div class="status-icon success-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+
+            <h2 class="status-title">Đặt vé thành công!</h2>
+
+            <p class="status-message">
+                Cảm ơn bạn đã đặt vé. Chúng tôi sẽ gửi thông tin vé qua email. Vui lòng có mặt tại rạp trước 15 phút.
+            </p>
+
+            <a href="{{ route('home') }}" class="btn-action-primary">
+                Về trang chủ <i class="bi bi-arrow-right"></i>
+            </a>
+
+            <div class="transaction-info">
+                <div class="info-block">
+                    <span class="info-label">MÃ GIAO DỊCH</span>
+                    <span class="info-value">{{ $paymentData['orderCode'] ?? '' }}</span>
+                </div>
+                <div class="info-divider"></div>
+                <div class="info-block">
+                    <span class="info-label">TỔNG TIỀN</span>
+                    <span class="info-value">{{ $paymentData['totalAmount'] ?? '' }}</span>
+                </div>
+                <div class="info-divider"></div>
+                <div class="info-block">
+                    <span class="info-label">NGÀY ĐẶT</span>
+                    <span class="info-value">{{ $paymentData['date'] ?? '' }}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    @elseif($isPaymentCancelled)
+    <!-- Failure Screen (server-rendered visible) -->
+    <div id="failureScreen" class="payment-result-screen">
+        <div class="result-content">
+            <h1 class="brand-title">CINEMA PREMIUM</h1>
+
+            <div class="status-icon failure-icon">
+                <i class="bi bi-x-circle"></i>
+            </div>
+
+            <h2 class="status-title">Thanh toán bị huỷ</h2>
+
+            <p class="status-message">
+                Bạn đã huỷ giao dịch hoặc thanh toán không thành công. Vui lòng thử lại.
+            </p>
+
+            <a href="{{ route('home') }}" class="btn-action-primary failure-btn">
+                Quay về trang chủ <i class="bi bi-arrow-right"></i>
+            </a>
+
+            <div class="transaction-info">
+                <div class="info-block">
+                    <span class="info-label">MÃ GIAO DỊCH</span>
+                    <span class="info-value">{{ $paymentData['orderCode'] ?? '' }}</span>
+                </div>
+                <div class="info-divider"></div>
+                <div class="info-block">
+                    <span class="info-label">NGÀY HUỶ</span>
+                    <span class="info-value">{{ $paymentData['date'] ?? '' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
 <!-- Loading Overlay -->
 <div id="loadingOverlay" class="loading-overlay d-none">
@@ -332,6 +381,20 @@
         <span class="visually-hidden">Loading...</span>
     </div>
     <p class="mt-3">Đang xử lý...</p>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 10000;">
+    <div id="bookingToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong class="me-auto">Thông báo</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            <!-- Message will be injected here -->
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -342,8 +405,9 @@
         basePrice: {{ $showtime->price ?? 0 }},
         screenId: {{ $showtime->screen_id }},
         movieTitle: @json($showtime->movie->title),
-        startTime: @json($showtime->start_time),
+        startTime: @json($showtime->start_time ?? $showtime->scheduled_at),
+        paymentHandled: {{ $paymentHandled ? 'true' : 'false' }},
     };
 </script>
-<script src="{{ asset('js/pages/booking.js') }}"></script>
+<script src="{{ asset('js/pages/booking.js') }}?v={{ time() }}"></script>
 @endpush

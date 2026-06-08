@@ -53,6 +53,10 @@ class BookingManager {
     }
 
     async init() {
+        // Check URL parameters for payment status
+        const shouldContinue = this.checkUrlParams();
+        if (!shouldContinue) return;
+
         // Setup event listeners
         this.setupEventListeners();
 
@@ -61,6 +65,236 @@ class BookingManager {
             this.loadSeats(),
             this.loadProducts()
         ]);
+
+        // Subscribe to real-time WebSocket channels
+        this.subscribeToRealtimeChannels();
+    }
+
+    /**
+     * Subscribe to Laravel Reverb real-time channels.
+     * - showtime.{id}   → public channel: seat lock/unlock updates for all viewers
+     * - order.{code}    → private channel: payment confirmation for the buyer
+     */
+    subscribeToRealtimeChannels() {
+        if (typeof window.Echo === 'undefined') return;
+
+        const showtimeId = this.config.showtimeId;
+        if (!showtimeId) return;
+
+        // 1. Real-time seat status (public – no auth needed)
+        window.Echo.channel(`showtime.${showtimeId}`)
+            .listen('.seat.status.updated', (event) => {
+                this.applyRealtimeSeatStatus(event.seat_id, event.status);
+            });
+
+        // 2. Real-time payment result (private – requires auth)
+        //    Subscribe only when user has initiated a payment (orderCode present).
+        //    The orderCode is stored on `this.currentOrderCode` after fetchAPI payment.
+        if (this.currentOrderCode) {
+            this.subscribeToOrderChannel(this.currentOrderCode);
+        }
+    }
+
+    subscribeToOrderChannel(orderCode) {
+        if (typeof window.Echo === 'undefined' || !orderCode) return;
+
+        window.Echo.private(`order.${orderCode}`)
+            .listen('.order.paid', () => {
+                // Auto-transition to success screen in real-time (no redirect needed)
+                this.showSuccessScreen(orderCode);
+            });
+    }
+
+    /**
+     * Update a single seat element in the DOM based on a real-time event.
+     * This avoids re-rendering the whole seat map.
+     */
+    applyRealtimeSeatStatus(seatId, status) {
+        // Update in-memory seat data
+        const seat = this.seats.find(s => s.id === seatId);
+        if (seat) {
+            seat.status      = status;
+            seat.is_locked    = status === 'locked';
+            seat.is_available = status === 'available';
+        }
+
+        // Update DOM element directly
+        const seatEl = this.seatMapContainer?.querySelector(`[data-seat-id="${seatId}"]`);
+        if (!seatEl) return;
+
+        // Remove all status classes
+        seatEl.classList.remove('seat-available', 'seat-locked', 'seat-booked', 'seat-holding', 'seat-selected');
+
+        if (status === 'available') {
+            // Only restore to available if this seat is not selected by current user
+            if (!this.selectedSeats.has(seatId)) {
+                seatEl.classList.add('seat-available');
+                seatEl.setAttribute('role', 'button');
+                seatEl.setAttribute('tabindex', '0');
+                seatEl.removeAttribute('aria-disabled');
+                // Re-attach click handler by re-rendering (safe since seat data updated)
+                const freshSeat = this.seats.find(s => s.id === seatId);
+                if (freshSeat) {
+                    seatEl.onclick = () => this.handleSeatClick(freshSeat);
+                }
+            }
+        } else {
+            // Locked by someone else – remove from selection if user had it
+            if (this.selectedSeats.has(seatId)) {
+                this.selectedSeats.delete(seatId);
+                this.updateSummary();
+                this.showToast('Ghế bạn chọn vừa bị người khác đặt. Vui lòng chọn ghế khác.', 'warning');
+            }
+            seatEl.classList.add('seat-locked');
+            seatEl.removeAttribute('role');
+            seatEl.removeAttribute('tabindex');
+            seatEl.setAttribute('aria-disabled', 'true');
+            seatEl.onclick = null;
+        }
+    }
+
+    checkUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentStatus = urlParams.get('paymentStatus');
+        const orderCode = urlParams.get('orderCode');
+
+        if (paymentStatus) {
+            // Clean up URL without reloading
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            if (paymentStatus === 'success' || paymentStatus === 'PAID') {
+                if (orderCode) {
+                    this.showSuccessScreen(orderCode);
+                    return false; // Stop normal initialization
+                }
+            } else if (paymentStatus === 'cancelled') {
+                if (orderCode) {
+                    this.showFailureScreen(orderCode);
+                    return false;
+                } else {
+                    setTimeout(() => {
+                        this.showToast('Bạn đã huỷ thanh toán. Vui lòng thử lại.', 'warning');
+                    }, 500);
+                }
+            }
+        }
+        return true;
+    }
+
+    async showSuccessScreen(orderCode) {
+        // Hide normal booking elements safely
+        const tabsEl = document.querySelector('.booking-tabs');
+        if (tabsEl) tabsEl.style.display = 'none';
+
+        const containerEl = document.querySelector('.booking-container');
+        if (containerEl) containerEl.style.display = 'none';
+
+        const successScreen = document.getElementById('successScreen');
+        if (!successScreen) return;
+
+        successScreen.classList.remove('d-none');
+        this.showLoading('Đang tải thông tin vé...');
+
+        try {
+            const response = await this.fetchAPI(`/payments/orders/${orderCode}`, {
+                method: 'GET'
+            });
+
+            if (response.success && response.data) {
+                const order = response.data;
+                const showtime = order.showtime || {};
+                
+                // Show success toast notification
+                this.showToast('Thanh toán thành công!', 'success');
+                
+                // Populate UI safely with optional chaining
+                const movieTitleEl = document.getElementById('successMovieTitle');
+                if (movieTitleEl) movieTitleEl.textContent = showtime.movie_title || '---';
+                
+                const showDateEl = document.getElementById('successShowDate');
+                const showTimeEl = document.getElementById('successShowTime');
+                if (showtime.scheduled_at) {
+                    const date = new Date(showtime.scheduled_at);
+                    if (showDateEl) showDateEl.textContent = date.toLocaleDateString('vi-VN');
+                    if (showTimeEl) showTimeEl.textContent = date.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+                } else {
+                    // Use current date if no showtime
+                    if (showDateEl) showDateEl.textContent = new Date().toLocaleDateString('vi-VN');
+                }
+                
+                const theaterEl = document.getElementById('successTheater');
+                if (theaterEl) theaterEl.textContent = showtime.theater_name || '---';
+                
+                const screenEl = document.getElementById('successScreenName');
+                if (screenEl) screenEl.textContent = showtime.screen_name || '---';
+                
+                const orderCodeEl = document.getElementById('successOrderCode');
+                if (orderCodeEl) orderCodeEl.textContent = order.gateway_order_code || order.order_code;
+                
+                const totalAmtEl = document.getElementById('successTotalAmount');
+                if (totalAmtEl) totalAmtEl.textContent = this.formatCurrency(order.total_amount);
+
+                // Populate Items (Seats & Products)
+                const seatsContainer = document.getElementById('successSeats');
+                const productsContainer = document.getElementById('successProducts');
+                const productsWrapper = document.getElementById('successProductsContainer');
+                
+                if (seatsContainer) seatsContainer.innerHTML = '';
+                if (productsContainer) productsContainer.innerHTML = '';
+                let hasProducts = false;
+
+                if (order.items && Array.isArray(order.items)) {
+                    order.items.forEach(item => {
+                        if (item.type === 'Seat' && seatsContainer) {
+                            const badge = document.createElement('span');
+                            badge.className = 'seat-badge';
+                            badge.textContent = item.metadata?.seat_label || `Ghế ID ${item.id}`;
+                            seatsContainer.appendChild(badge);
+                        } else if (item.type === 'Product' && productsContainer) {
+                            hasProducts = true;
+                            const prodLine = document.createElement('div');
+                            prodLine.textContent = `${item.quantity}x ${item.metadata?.product_name || 'Combo'}`;
+                            productsContainer.appendChild(prodLine);
+                        }
+                    });
+                }
+
+                if (hasProducts && productsWrapper) {
+                    productsWrapper.style.display = 'block';
+                }
+            } else {
+                throw new Error(response.message || 'Không thể tải thông tin đơn hàng');
+            }
+        } catch (error) {
+            console.error('Lỗi load success screen:', error);
+            this.showToast('Có lỗi xảy ra khi tải thông tin vé: ' + error.message, 'danger');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    showFailureScreen(orderCode) {
+        // Hide normal booking elements
+        const tabsEl = document.querySelector('.booking-tabs');
+        if (tabsEl) tabsEl.style.display = 'none';
+        
+        const containerEl = document.querySelector('.booking-container');
+        if (containerEl) containerEl.style.display = 'none';
+        
+        const failureScreen = document.getElementById('failureScreen');
+        if (!failureScreen) return;
+        
+        failureScreen.classList.remove('d-none');
+        
+        const orderCodeEl = document.getElementById('failureOrderCode');
+        if (orderCodeEl && orderCode) {
+            orderCodeEl.textContent = orderCode;
+        }
+        
+        const dateEl = document.getElementById('failureDate');
+        if (dateEl) {
+            dateEl.textContent = new Date().toLocaleDateString('vi-VN');
+        }
     }
 
     setupEventListeners() {
@@ -809,24 +1043,54 @@ class BookingManager {
         try {
             this.showLoading('Đang tạo đơn hàng...');
 
-            // Create order
-            const response = await this.fetchAPI('/orders', {
+            // Build items array matching CreatePaymentRequest
+            const items = [];
+            
+            // Add seats
+            Array.from(this.selectedSeats).forEach(seatId => {
+                items.push({
+                    type: 'seat',
+                    id: seatId,
+                    quantity: 1
+                });
+            });
+            
+            // Add products
+            const products = this.getSelectedProductsPayload();
+            products.forEach(p => {
+                items.push({
+                    type: 'product',
+                    id: p.id,
+                    quantity: p.quantity
+                });
+            });
+
+            // Create order and payment link
+            const response = await this.fetchAPI('/payments', {
                 method: 'POST',
                 body: JSON.stringify({
                     showtime_id: this.config.showtimeId,
-                    seat_ids: Array.from(this.selectedSeats),
-                    seat_hold_id: this.currentHold.hold_id,
-                    products: this.getSelectedProductsPayload(),
-                    promotion_code: this.appliedPromotion?.code || null
+                    items: items,
+                    voucher_code: this.appliedPromotion?.code || null,
+                    points_used: 0 // Default to 0 for now
                 })
             });
 
-            if (response.success) {
-                this.showToast('Đơn hàng đã tạo thành công!', 'success');
+            if (response.success && response.data?.checkout_url) {
+                this.showToast('Đang chuyển hướng đến cổng thanh toán...', 'success');
 
-                // Redirect to payment page (will create in next phase)
+                // Store order code and subscribe to private WebSocket channel.
+                // If user pays on mobile (QR scan), the desktop browser will receive
+                // the OrderPaid event and auto-show the success screen.
+                const orderCode = response.data?.gateway_order_code;
+                if (orderCode) {
+                    this.currentOrderCode = orderCode;
+                    this.subscribeToOrderChannel(orderCode);
+                }
+
+                // Redirect directly to PayOS checkout
                 setTimeout(() => {
-                    window.location.href = `/payment/${response.data.id}`;
+                    window.location.href = response.data.checkout_url;
                 }, 1000);
             } else {
                 throw new Error(response.message || 'Không thể tạo đơn hàng');

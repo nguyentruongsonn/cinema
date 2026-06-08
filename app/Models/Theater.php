@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -11,6 +12,7 @@ class Theater extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'branch_id',
         'name',
         'address',
         'city',
@@ -24,6 +26,11 @@ class Theater extends Model
         'status' => 'boolean',
         'pricing_profile' => 'json',
     ];
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function screens(): HasMany
     {
