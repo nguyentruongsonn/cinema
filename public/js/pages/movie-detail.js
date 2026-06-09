@@ -58,6 +58,34 @@
         return div.innerHTML;
     }
 
+    function sanitizeUrl(value, fallback = '') {
+        if (!value) return fallback;
+
+        const url = String(value).trim();
+
+        // Allow safe relative URLs and root-relative paths.
+        if (url.startsWith('/') && !url.startsWith('//')) {
+            return sanitize(url);
+        }
+
+        try {
+            const parsed = new URL(url, window.location.origin);
+            const allowedProtocols = ['http:', 'https:'];
+
+            if (allowedProtocols.includes(parsed.protocol)) {
+                return sanitize(parsed.href);
+            }
+        } catch (error) {
+            // Invalid URLs fall through to fallback.
+        }
+
+        return fallback;
+    }
+
+    function safePathSegment(value) {
+        return encodeURIComponent(String(value ?? ''));
+    }
+
     function getMovieSlugFromUrl() {
         const pathParts = window.location.pathname.split('/').filter(Boolean);
         return pathParts[pathParts.length - 1] || null;
@@ -219,8 +247,8 @@
     function renderMovieHero(movie) {
         if (!els.heroContent) return;
 
-        const backdropUrl = movie.backdrops?.length ? movie.backdrops[0] : movie.poster_url;
-        const posterUrl = movie.poster_url || '/images/placeholder-poster.jpg';
+        const backdropUrl = sanitizeUrl(movie.backdrops?.length ? movie.backdrops[0] : movie.poster_url);
+        const posterUrl = sanitizeUrl(movie.poster_url, '/images/placeholder-poster.jpg');
         const categories = Array.isArray(movie.categories) ? movie.categories : [];
         const genresHtml = categories
             .map((category) => `<span class="movie-detail-genre">${sanitize(category.name)}</span>`)
@@ -229,7 +257,7 @@
         els.heroContent.innerHTML = `
             ${backdropUrl ? `
                 <div class="movie-detail-backdrop">
-                    <img src="${sanitize(backdropUrl)}" alt="${sanitize(movie.title)} backdrop">
+                    <img src="${backdropUrl}" alt="${sanitize(movie.title)} backdrop">
                 </div>
                 <div class="movie-detail-overlay"></div>
             ` : ''}
@@ -238,7 +266,7 @@
                 <div class="container">
                     <div class="movie-detail-layout">
                         <div class="movie-detail-poster-col">
-                            <img src="${sanitize(posterUrl)}"
+                            <img src="${posterUrl}"
                                  alt="${sanitize(movie.title)}"
                                  class="movie-detail-poster">
                         </div>
@@ -301,8 +329,8 @@
                                     Book Tickets
                                 </button>
 
-                                ${movie.trailer_url ? `
-                                    <a href="${sanitize(movie.trailer_url)}" target="_blank" rel="noopener" class="btn-trailer">
+                                ${sanitizeUrl(movie.trailer_url) ? `
+                                    <a href="${sanitizeUrl(movie.trailer_url)}" target="_blank" rel="noopener noreferrer" class="btn-trailer">
                                         <i class="bi bi-play-circle"></i>
                                         Watch Trailer
                                     </a>
@@ -385,7 +413,7 @@
 
                         <div class="showtime-times">
                             ${formatGroup.showtimes.map((showtime) => `
-                                <a href="/booking/${sanitize(encodeURIComponent(showtime.id))}" class="showtime-time-card">
+                                <a href="/booking/${safePathSegment(showtime.id)}" class="showtime-time-card">
                                     <span class="time-value">${sanitize(showtime.time)}</span>
                                     <span class="time-extra">${sanitize(showtime.screen?.name || '')}</span>
                                 </a>
@@ -423,8 +451,8 @@
                 : 'Movie';
 
             return `
-                <a href="/movies/${sanitize(movie.slug || movie.id)}" class="trending-item">
-                    <img src="${sanitize(movie.poster_url || '/images/placeholder-poster.jpg')}"
+                <a href="/movies/${safePathSegment(movie.slug || movie.id)}" class="trending-item">
+                    <img src="${sanitizeUrl(movie.poster_url, '/images/placeholder-poster.jpg')}"
                          alt="${sanitize(movie.title)}"
                          class="trending-poster"
                          loading="lazy">

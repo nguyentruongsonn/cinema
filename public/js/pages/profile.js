@@ -356,7 +356,7 @@ class ProfilePage {
             } else {
                 if (loadMoreBtn) {
                     loadMoreBtn.disabled = true;
-                    loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tải...';
+                    loadMoreBtn.textContent = 'Đang tải...';
                 }
             }
 
@@ -400,7 +400,7 @@ class ProfilePage {
                     if (currentPage < lastPage) {
                         loadMoreBtn.style.display = 'inline-block';
                         loadMoreBtn.disabled = false;
-                        loadMoreBtn.innerHTML = '<i class="bi bi-chevron-down me-2"></i>Xem thêm lịch sử';
+                        loadMoreBtn.textContent = 'Xem thêm lịch sử';
                     } else {
                         loadMoreBtn.style.display = 'none';
                     }
@@ -413,7 +413,7 @@ class ProfilePage {
             }
             if (loadMoreBtn) {
                 loadMoreBtn.disabled = false;
-                loadMoreBtn.innerHTML = '<i class="bi bi-chevron-down me-2"></i>Xem thêm lịch sử';
+                loadMoreBtn.textContent = 'Xem thêm lịch sử';
             }
         }
     }
@@ -490,13 +490,7 @@ class ProfilePage {
         // Status
         const status = card.querySelector('.ticket-status');
         if (status) {
-            if (order.status === 'completed') {
-                status.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Đã hoàn thành</span>';
-            } else if (order.status === 'pending') {
-                status.innerHTML = '<i class="bi bi-clock-fill text-warning me-1"></i><span class="text-warning">Chờ thanh toán</span>';
-            } else if (order.status === 'cancelled') {
-                status.innerHTML = '<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Đã hủy</span>';
-            }
+            this.renderTicketStatus(status, order.status);
         }
 
         // Rebook button
@@ -508,6 +502,46 @@ class ProfilePage {
         }
 
         return card;
+    }
+
+    renderTicketStatus(container, status) {
+        if (!container) return;
+
+        container.textContent = '';
+
+        const statusConfig = {
+            completed: {
+                iconClass: 'bi-check-circle-fill',
+                textClass: 'text-success',
+                label: 'Đã hoàn thành',
+            },
+            pending: {
+                iconClass: 'bi-clock-fill',
+                textClass: 'text-warning',
+                label: 'Chờ thanh toán',
+            },
+            cancelled: {
+                iconClass: 'bi-x-circle-fill',
+                textClass: 'text-danger',
+                label: 'Đã hủy',
+            },
+        };
+
+        const config = statusConfig[status] || {
+            iconClass: 'bi-info-circle-fill',
+            textClass: 'text-secondary',
+            label: String(status || 'Không rõ'),
+        };
+
+        const icon = document.createElement('i');
+        icon.className = `bi ${config.iconClass} ${config.textClass} me-1`;
+
+        const label = document.createElement('span');
+        label.className = config.textClass;
+        label.textContent = config.label;
+
+        container.appendChild(icon);
+        container.appendChild(label);
     }
 
     async apiRequest(endpoint, options = {}) {

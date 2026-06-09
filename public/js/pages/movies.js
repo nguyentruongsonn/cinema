@@ -1,6 +1,25 @@
 (function() {
     'use strict';
 
+    // Security utilities
+    function escapeHtml(value) {
+        if (value == null) return '';
+        return String(value)
+            .replace(/&/g, "\u0026amp;")
+            .replace(/</g, "\u0026lt;")
+            .replace(/>/g, "\u0026gt;")
+            .replace(/"/g, "\u0026quot;")
+            .replace(/'/g, "\u0026#039;");
+    }
+
+    function escapeAttr(value) {
+        if (value == null) return '';
+        return String(value)
+            .replace(/&/g, "\u0026amp;")
+            .replace(/"/g, "\u0026quot;")
+            .replace(/'/g, "\u0026#039;");
+    }
+
     const API_BASE = '/api';
     let els = {};
     let currentFilters = {
@@ -23,7 +42,7 @@
             moviesGrid: document.getElementById('moviesGrid'),
             emptyState: document.getElementById('emptyState'),
             paginationContainer: document.getElementById('paginationContainer'),
-            
+
             statusFilter: document.getElementById('statusFilter'),
             categoryFilter: document.getElementById('categoryFilter'),
             sortFilter: document.getElementById('sortFilter'),
@@ -35,12 +54,12 @@
     // Parse URL params and set initial filters
     function parseUrlParams() {
         const params = new URLSearchParams(window.location.search);
-        
+
         if (params.get('status')) currentFilters.status = params.get('status');
         if (params.get('category_id')) currentFilters.category_id = params.get('category_id');
         if (params.get('q')) currentFilters.q = params.get('q');
         if (params.get('page')) currentFilters.page = parseInt(params.get('page'));
-        
+
         const sort = params.get('sort');
         if (sort) {
             const [sortBy, sortDir] = sort.split('-');
@@ -52,15 +71,15 @@
     // Update URL with current filters
     function updateUrl() {
         const params = new URLSearchParams();
-        
+
         if (currentFilters.status !== 'active') params.set('status', currentFilters.status);
         if (currentFilters.category_id) params.set('category_id', currentFilters.category_id);
         if (currentFilters.q) params.set('q', currentFilters.q);
         if (currentFilters.page > 1) params.set('page', currentFilters.page);
-        
+
         const sort = `${currentFilters.sort_by}-${currentFilters.sort_dir}`;
         if (sort !== 'release_date-desc') params.set('sort', sort);
-        
+
         const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
         window.history.pushState({}, '', newUrl);
     }
@@ -77,7 +96,7 @@
                 { id: 5, name: 'Sci-Fi' },
                 { id: 6, name: 'Romance' }
             ];
-            
+
             renderCategories();
         } catch (err) {
             console.error('[Movies] Failed to load categories:', err);
@@ -87,13 +106,13 @@
     // Render category options
     function renderCategories() {
         if (!els.categoryFilter) return;
-        
-        const options = categories.map(cat => 
-            `<option value="${cat.id}" ${currentFilters.category_id == cat.id ? 'selected' : ''}>
-                ${cat.name}
+
+        const options = categories.map(cat =>
+            `<option value="${escapeAttr(cat.id)}" ${currentFilters.category_id == cat.id ? 'selected' : ''}>
+                ${escapeHtml(cat.name)}
             </option>`
         ).join('');
-        
+
         els.categoryFilter.innerHTML = '<option value="">All Categories</option>' + options;
     }
 
@@ -101,7 +120,7 @@
     async function loadMovies() {
         try {
             const params = new URLSearchParams();
-            
+
             if (currentFilters.status) params.set('status', currentFilters.status);
             if (currentFilters.category_id) params.set('category_id', currentFilters.category_id);
             if (currentFilters.q) params.set('q', currentFilters.q);
@@ -109,15 +128,15 @@
             if (currentFilters.sort_dir) params.set('sort_dir', currentFilters.sort_dir);
             params.set('page', currentFilters.page);
             params.set('per_page', currentFilters.per_page);
-            
+
             const res = await fetch(`${API_BASE}/movies?${params.toString()}`);
             const json = await res.json();
-            
+
             if (!json.success) throw new Error(json.message || 'Failed to load movies');
-            
+
             renderMovies(json.data.data);
             renderPagination(json.data);
-            
+
             setTimeout(showLoaded, 350);
         } catch (err) {
             console.error('[Movies] Load error:', err);
@@ -128,97 +147,104 @@
     // Render movies grid
     function renderMovies(movies) {
         if (!els.moviesGrid) return;
-        
+
         if (movies.length === 0) {
             els.moviesGrid.classList.add('d-none');
             els.emptyState?.classList.remove('d-none');
             els.paginationContainer?.classList.add('d-none');
             return;
         }
-        
+
         els.moviesGrid.classList.remove('d-none');
         els.emptyState?.classList.add('d-none');
-        
-        els.moviesGrid.innerHTML = movies.map(movie => `
-            <div class="movie-card">
-                <a href="/movies/${movie.slug || movie.id}" class="movie-card-link">
-                    <img src="${movie.poster_url || '/images/placeholder-poster.jpg'}" 
-                         alt="${movie.title}" 
-                         class="movie-poster"
-                         loading="lazy">
-                    <div class="movie-gradient"></div>
-                    <div class="movie-info">
-                        <h3 class="movie-title">${movie.title}</h3>
-                        <p class="movie-meta">${formatMovieMeta(movie)}</p>
-                    </div>
-                </a>
-            </div>
-        `).join('');
+
+        els.moviesGrid.innerHTML = movies.map(movie => {
+            const movieUrl = movie.slug ? '/movies/' + escapeAttr(movie.slug) : '/movies/' + escapeAttr(movie.id);
+            const posterUrl = escapeAttr(movie.poster_url || '/images/placeholder-poster.jpg');
+            const title = escapeHtml(movie.title);
+            const meta = escapeHtml(formatMovieMeta(movie));
+
+            return `
+                <div class="movie-card">
+                    <a href="${movieUrl}" class="movie-card-link">
+                        <img src="${posterUrl}"
+                             alt="${title}"
+                             class="movie-poster"
+                             loading="lazy">
+                        <div class="movie-gradient"></div>
+                        <div class="movie-info">
+                            <h3 class="movie-title">${title}</h3>
+                            <p class="movie-meta">${meta}</p>
+                        </div>
+                    </a>
+                </div>
+            `;
+        }).join('');
     }
 
     // Format movie metadata
     function formatMovieMeta(movie) {
         const parts = [];
-        
+
         if (movie.age_rating) parts.push(movie.age_rating);
         if (movie.duration) parts.push(`${movie.duration} min`);
-        
+
         if (movie.categories && movie.categories.length > 0) {
             parts.push(movie.categories[0].name);
         }
-        
+
         return parts.join(' • ');
     }
 
     // Render pagination
     function renderPagination(data) {
         if (!els.paginationContainer) return;
-        
+
         const { current_page, last_page, from, to, total } = data;
-        
+
         if (last_page <= 1) {
             els.paginationContainer.classList.add('d-none');
             return;
         }
-        
+
         els.paginationContainer.classList.remove('d-none');
-        
+
         let html = `
             <button class="pagination-btn" ${current_page === 1 ? 'disabled' : ''} data-page="${current_page - 1}">
                 <i class="bi bi-chevron-left"></i>
             </button>
         `;
-        
+
         // Page numbers
         const startPage = Math.max(1, current_page - 2);
         const endPage = Math.min(last_page, current_page + 2);
-        
+
         if (startPage > 1) {
             html += `<button class="pagination-page" data-page="1">1</button>`;
             if (startPage > 2) html += `<span class="pagination-info">...</span>`;
         }
-        
+
         for (let i = startPage; i <= endPage; i++) {
             html += `<button class="pagination-page ${i === current_page ? 'active' : ''}" data-page="${i}">${i}</button>`;
         }
-        
+
         if (endPage < last_page) {
             if (endPage < last_page - 1) html += `<span class="pagination-info">...</span>`;
             html += `<button class="pagination-page" data-page="${last_page}">${last_page}</button>`;
         }
-        
+
         html += `
             <button class="pagination-btn" ${current_page === last_page ? 'disabled' : ''} data-page="${current_page + 1}">
                 <i class="bi bi-chevron-right"></i>
             </button>
         `;
-        
+
         if (from && to && total) {
             html += `<span class="pagination-info">Showing ${from}-${to} of ${total}</span>`;
         }
-        
+
         els.paginationContainer.innerHTML = html;
-        
+
         // Add click handlers
         els.paginationContainer.querySelectorAll('[data-page]').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -259,7 +285,7 @@
         els.moviesGrid.innerHTML = `
             <div class="error-state" style="grid-column: 1 / -1;">
                 <i class="bi bi-exclamation-circle"></i>
-                <p>${message}</p>
+                <p>${escapeHtml(message)}</p>
                 <button onclick="location.reload()" class="cinema-primary-btn">Retry</button>
             </div>
         `;
@@ -270,10 +296,10 @@
         // Set initial filter values
         if (els.statusFilter) els.statusFilter.value = currentFilters.status;
         if (els.searchInput) els.searchInput.value = currentFilters.q;
-        
+
         const sortValue = `${currentFilters.sort_by}-${currentFilters.sort_dir}`;
         if (els.sortFilter) els.sortFilter.value = sortValue;
-        
+
         // Status filter
         els.statusFilter?.addEventListener('change', (e) => {
             currentFilters.status = e.target.value;
@@ -282,7 +308,7 @@
             showSkeleton();
             loadMovies();
         });
-        
+
         // Category filter
         els.categoryFilter?.addEventListener('change', (e) => {
             currentFilters.category_id = e.target.value;
@@ -291,7 +317,7 @@
             showSkeleton();
             loadMovies();
         });
-        
+
         // Sort filter
         els.sortFilter?.addEventListener('change', (e) => {
             const [sortBy, sortDir] = e.target.value.split('-');
@@ -302,7 +328,7 @@
             showSkeleton();
             loadMovies();
         });
-        
+
         // Search
         const performSearch = () => {
             currentFilters.q = els.searchInput.value.trim();
@@ -311,7 +337,7 @@
             showSkeleton();
             loadMovies();
         };
-        
+
         els.searchBtn?.addEventListener('click', performSearch);
         els.searchInput?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') performSearch();
@@ -323,7 +349,7 @@
         cacheDoms();
         parseUrlParams();
         setupFilters();
-        
+
         await loadCategories();
         await loadMovies();
     }

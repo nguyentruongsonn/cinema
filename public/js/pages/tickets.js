@@ -172,10 +172,10 @@
             const response = await fetch(
                 `${window.APP_CONFIG.apiUrl}/orders/user/me?page=${page}&per_page=${state.perPage}`,
                 {
+                    credentials: 'include',
                     headers: {
-                        'Accept': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-                    },
+                        'Accept': 'application/json'
+                    }
                 }
             );
 
@@ -315,7 +315,7 @@
         // Seats
         const seats = card.querySelector('.ticket-seats');
         let seatNamesStr = 'N/A';
-        
+
         if (order.items && order.items.length > 0) {
             const seatNames = order.items
                 .filter(item => item.item_type === 'App\\Models\\Seat' || item.type === 'Seat' || item.type === 'seat')
@@ -331,7 +331,7 @@
         } else if (order.payload && order.payload.seats && order.payload.seats.length > 0) {
             seatNamesStr = order.payload.seats.map(s => s.name || (s.row + s.number)).join(', ');
         }
-        
+
         seats.textContent = seatNamesStr;
 
         // Status

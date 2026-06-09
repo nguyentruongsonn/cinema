@@ -203,14 +203,14 @@ class BookingManager {
             if (response.success && response.data) {
                 const order = response.data;
                 const showtime = order.showtime || {};
-                
+
                 // Show success toast notification
                 this.showToast('Thanh toán thành công!', 'success');
-                
+
                 // Populate UI safely with optional chaining
                 const movieTitleEl = document.getElementById('successMovieTitle');
                 if (movieTitleEl) movieTitleEl.textContent = showtime.movie_title || '---';
-                
+
                 const showDateEl = document.getElementById('successShowDate');
                 const showTimeEl = document.getElementById('successShowTime');
                 if (showtime.scheduled_at) {
@@ -221,16 +221,16 @@ class BookingManager {
                     // Use current date if no showtime
                     if (showDateEl) showDateEl.textContent = new Date().toLocaleDateString('vi-VN');
                 }
-                
+
                 const theaterEl = document.getElementById('successTheater');
                 if (theaterEl) theaterEl.textContent = showtime.theater_name || '---';
-                
+
                 const screenEl = document.getElementById('successScreenName');
                 if (screenEl) screenEl.textContent = showtime.screen_name || '---';
-                
+
                 const orderCodeEl = document.getElementById('successOrderCode');
                 if (orderCodeEl) orderCodeEl.textContent = order.gateway_order_code || order.order_code;
-                
+
                 const totalAmtEl = document.getElementById('successTotalAmount');
                 if (totalAmtEl) totalAmtEl.textContent = this.formatCurrency(order.total_amount);
 
@@ -238,7 +238,7 @@ class BookingManager {
                 const seatsContainer = document.getElementById('successSeats');
                 const productsContainer = document.getElementById('successProducts');
                 const productsWrapper = document.getElementById('successProductsContainer');
-                
+
                 if (seatsContainer) seatsContainer.innerHTML = '';
                 if (productsContainer) productsContainer.innerHTML = '';
                 let hasProducts = false;
@@ -277,20 +277,20 @@ class BookingManager {
         // Hide normal booking elements
         const tabsEl = document.querySelector('.booking-tabs');
         if (tabsEl) tabsEl.style.display = 'none';
-        
+
         const containerEl = document.querySelector('.booking-container');
         if (containerEl) containerEl.style.display = 'none';
-        
+
         const failureScreen = document.getElementById('failureScreen');
         if (!failureScreen) return;
-        
+
         failureScreen.classList.remove('d-none');
-        
+
         const orderCodeEl = document.getElementById('failureOrderCode');
         if (orderCodeEl && orderCode) {
             orderCodeEl.textContent = orderCode;
         }
-        
+
         const dateEl = document.getElementById('failureDate');
         if (dateEl) {
             dateEl.textContent = new Date().toLocaleDateString('vi-VN');
@@ -1045,7 +1045,7 @@ class BookingManager {
 
             // Build items array matching CreatePaymentRequest
             const items = [];
-            
+
             // Add seats
             Array.from(this.selectedSeats).forEach(seatId => {
                 items.push({
@@ -1054,7 +1054,7 @@ class BookingManager {
                     quantity: 1
                 });
             });
-            
+
             // Add products
             const products = this.getSelectedProductsPayload();
             products.forEach(p => {
@@ -1120,12 +1120,9 @@ class BookingManager {
             this.applyPromotionBtn.disabled = true;
             this.applyPromotionBtn.textContent = 'Đang kiểm tra...';
 
-            const response = await this.fetchAPI('/promotions/validate', {
-                method: 'POST',
-                body: JSON.stringify({
-                    code,
-                    subtotal: this.calculateSubtotal()
-                })
+            const subtotal = this.calculateSubtotal();
+            const response = await this.fetchAPI(`/promotions/${encodeURIComponent(code)}/validate?order_total=${subtotal}`, {
+                method: 'GET'
             });
 
             if (!response.success) {
@@ -1215,29 +1212,43 @@ class BookingManager {
     }
 
     escapeHtml(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&')
-            .replace(/</g, '<')
-            .replace(/>/g, '>')
-            .replace(/"/g, '"')
-            .replace(/'/g, '&#039;');
+        if (value == null) return '';
+        return String(value)
+            .replace(/&/g, "\u0026amp;")
+            .replace(/</g, "\u0026lt;")
+            .replace(/>/g, "\u0026gt;")
+            .replace(/"/g, "\u0026quot;")
+            .replace(/'/g, "\u0026#039;");
     }
 
     // Utility Methods
     async fetchAPI(endpoint, options = {}) {
-        const token = this.auth?.getToken();
+        // Get CSRF token for POST/PUT/DELETE requests
+        const getCsrfToken = () => {
+            return document.querySelector('meta[name="csrf-token"]')?.content || '';
+        };
 
         const defaultOptions = {
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                ...(token && { 'Authorization': `Bearer ${token}` })
+                'Accept': 'application/json'
             }
         };
+
+        // Add CSRF token for state-changing requests
+        const method = (options.method || 'GET').toUpperCase();
+        if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+            const csrfToken = getCsrfToken();
+            if (csrfToken) {
+                defaultOptions.headers['X-CSRF-TOKEN'] = csrfToken;
+            }
+        }
 
         const response = await fetch(`${this.apiUrl}${endpoint}`, {
             ...defaultOptions,
             ...options,
+            credentials: 'include',
             headers: {
                 ...defaultOptions.headers,
                 ...options.headers
@@ -1246,7 +1257,6 @@ class BookingManager {
 
         if (!response.ok) {
             if (response.status === 401) {
-                this.auth?.clearToken();
                 this.showToast('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.', 'warning');
                 setTimeout(() => {
                     window.location.href = '/';

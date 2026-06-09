@@ -1,6 +1,19 @@
  // API Configuration
 const API_URL = '/api';
-let authToken = localStorage.getItem('authToken');
+
+// Security utilities (inline for Phase 1 - will be modularized in Phase 4)
+const Security = {
+    escapeHtml(unsafe) {
+        if (unsafe == null) return '';
+        return String(unsafe)
+            .replace(/&/g, "\u0026amp;")
+            .replace(/</g, "\u0026lt;")
+            .replace(/>/g, "\u0026gt;")
+            .replace(/"/g, "\u0026quot;")
+            .replace(/'/g, "\u0026#039;");
+    }
+};
+
 let currentUser = null;
 
 // Initialize app
@@ -71,26 +84,32 @@ function showResetPasswordForm(email = '') {
 }
 
 function getAuthHeaders(includeJson = true) {
-    return {
+    const headers = {
         ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
-        'Accept': 'application/json',
-        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        'Accept': 'application/json'
     };
+
+    // Add CSRF token for state-changing requests
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (csrfToken) {
+        headers['X-CSRF-TOKEN'] = csrfToken;
+    }
+
+    return headers;
 }
 
-function persistAuth(token, user) {
-    authToken = token;
+function persistAuth(user) {
+    // Cookies are set automatically by server (HttpOnly)
     currentUser = user;
-    localStorage.setItem('authToken', authToken);
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    // Store user info only (not sensitive token)
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
     updateAuthUI();
 }
 
 function clearAuth() {
-    authToken = null;
+    // Cookies cleared by server
     currentUser = null;
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentUser');
     updateAuthUI();
 }
 
@@ -102,7 +121,8 @@ function handleValidationErrors(errors) {
         .filter(Boolean);
 
     if (messages.length) {
-        showAlert(messages.join('<br>'), 'danger');
+        const safeMessages = messages.map(message => Security.escapeHtml(message));
+        showAlert(safeMessages.join('<br>'), 'danger', true);
         return true;
     }
 
@@ -124,7 +144,7 @@ async function login() {
         const data = await response.json();
 
         if (data.success) {
-            persistAuth(data.data.token, data.data.user);
+            persistAuth(data.data.user);
             bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
             showAlert('Đăng nhập thành công!', 'success');
         } else {
@@ -158,7 +178,7 @@ async function register() {
         const data = await response.json();
 
         if (data.success) {
-            persistAuth(data.data.token, data.data.user);
+            persistAuth(data.data.user);
             bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
             showAlert('Đăng ký thành công!', 'success');
         } else {
@@ -170,32 +190,33 @@ async function register() {
 }
 
 function logout() {
-    if (authToken) {
-        // Try to invalidate token on server
-        fetch(`${API_URL}/auth/logout`, {
-            method: 'POST',
-            headers: getAuthHeaders(false)
-        }).catch(() => {});
-    }
+    // Try to invalidate token on server
+    fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: getAuthHeaders(false),
+        credentials: 'include'
+    }).catch(() => {});
+
     clearAuth();
     showAlert('Đã đăng xuất', 'info');
 }
 
 async function loadUserProfile() {
-    if (!authToken) {
+    if (!currentUser) {
         toggleAuth();
         return;
     }
 
     try {
         const response = await fetch(`${API_URL}/auth/profile`, {
-            headers: getAuthHeaders(false)
+            headers: getAuthHeaders(false),
+            credentials: 'include'
         });
         const data = await response.json();
 
         if (data.success) {
             currentUser = data.data;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
             fillProfileForm(currentUser);
             const profileSection = document.getElementById('profile');
             if (profileSection) profileSection.style.display = 'block';
@@ -220,7 +241,7 @@ function fillProfileForm(user) {
 }
 
 async function updateProfile() {
-    if (!authToken) return;
+    if (!currentUser) return;
 
     const payload = {
         name: document.getElementById('profileName')?.value || '',
@@ -233,13 +254,14 @@ async function updateProfile() {
         const response = await fetch(`${API_URL}/auth/profile`, {
             method: 'PUT',
             headers: getAuthHeaders(),
+            credentials: 'include',
             body: JSON.stringify(payload)
         });
         const data = await response.json();
 
         if (data.success) {
             currentUser = data.data;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
             updateAuthUI();
             showAlert('Cập nhật hồ sơ thành công!', 'success');
         } else {
@@ -251,7 +273,7 @@ async function updateProfile() {
 }
 
 async function changePassword() {
-    if (!authToken) return;
+    if (!currentUser) return;
 
     const current_password = document.getElementById('currentPassword')?.value || '';
     const password = document.getElementById('newPassword')?.value || '';
@@ -266,6 +288,7 @@ async function changePassword() {
         const response = await fetch(`${API_URL}/auth/change-password`, {
             method: 'POST',
             headers: getAuthHeaders(),
+            credentials: 'include',
             body: JSON.stringify({ current_password, password, password_confirmation })
         });
         const data = await response.json();
@@ -335,12 +358,13 @@ async function resetPassword() {
 }
 
 async function sendVerificationEmail() {
-    if (!authToken) return;
+    if (!currentUser) return;
 
     try {
         const response = await fetch(`${API_URL}/auth/send-verification-email`, {
             method: 'POST',
-            headers: getAuthHeaders()
+            headers: getAuthHeaders(),
+            credentials: 'include'
         });
         const data = await response.json();
 
@@ -355,12 +379,27 @@ async function sendVerificationEmail() {
 }
 
 function checkAuth() {
-    const stored = localStorage.getItem('currentUser');
-    if (stored) {
-        currentUser = JSON.parse(stored);
-        authToken = localStorage.getItem('authToken');
-        updateAuthUI();
-    }
+    // Check via API (cookies sent automatically)
+    fetch(`${API_URL}/auth/me`, {
+        headers: getAuthHeaders(false),
+        credentials: 'include'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            currentUser = data.data;
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            updateAuthUI();
+        }
+    })
+    .catch(() => {
+        // Not authenticated or error
+        const stored = sessionStorage.getItem('currentUser');
+        if (stored) {
+            currentUser = JSON.parse(stored);
+            updateAuthUI();
+        }
+    });
 }
 
 function updateAuthUI() {
@@ -373,7 +412,8 @@ function updateAuthUI() {
 
     if (currentUser) {
         if (authBtn) {
-            authBtn.innerHTML = `<i class="bi bi-person-circle"></i> ${currentUser.name || currentUser.full_name} (Đăng Xuất)`;
+            const userName = Security.escapeHtml(currentUser.name || currentUser.full_name);
+            authBtn.innerHTML = `<i class="bi bi-person-circle"></i> ${userName} (Đăng Xuất)`;
             authBtn.onclick = logout;
         }
         if (userMenu) userMenu.style.display = 'block';
@@ -956,9 +996,8 @@ async function releaseCurrentSeatHold() {
     try {
         await fetch(`${API_URL}/seats/unlock/${holdId}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
+            headers: getAuthHeaders(false),
+            credentials: 'include'
         });
     } catch (error) {
         console.warn('Failed to release seat hold:', error);
@@ -1001,7 +1040,8 @@ async function refreshSeatStatuses() {
 
     try {
         const response = await fetch(`${API_URL}/seats/showtime/${currentShowtimeId}`, {
-            headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+            headers: getAuthHeaders(false),
+            credentials: 'include'
         });
         const data = await response.json();
 
@@ -1047,10 +1087,8 @@ async function holdSelectedSeats() {
 
     const response = await fetch(`${API_URL}/seats/lock`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-        },
+        headers: getAuthHeaders(),
+        credentials: 'include',
         body: JSON.stringify({
             showtime_id: currentShowtimeId,
             seat_ids: selectedSeats
@@ -1075,7 +1113,8 @@ async function selectShowtime(showtimeId, price) {
         await releaseCurrentSeatHold();
 
         const response = await fetch(`${API_URL}/seats/showtime/${showtimeId}`, {
-            headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+            headers: getAuthHeaders(false),
+            credentials: 'include'
         });
         const data = await response.json();
 
@@ -1206,10 +1245,8 @@ async function proceedToPayment() {
 
         const response = await fetch(`${API_URL}/orders`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
+            headers: getAuthHeaders(),
+            credentials: 'include',
             body: JSON.stringify({
                 showtime_id: currentShowtimeId,
                 seat_ids: selectedSeats,
@@ -1298,10 +1335,8 @@ async function processPayment(orderId, totalPrice) {
     try {
         const response = await fetch(`${API_URL}/payments`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
+            headers: getAuthHeaders(),
+            credentials: 'include',
             body: JSON.stringify({
                 order_id: orderId,
                 payment_method: paymentMethod,
@@ -1334,10 +1369,8 @@ async function verifyPayment(paymentId) {
     try {
         const response = await fetch(`${API_URL}/payments/${paymentId}/verify`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
+            headers: getAuthHeaders(),
+            credentials: 'include',
             body: JSON.stringify({
                 status: 'completed'
             })
@@ -1363,7 +1396,7 @@ async function verifyPayment(paymentId) {
 
 // Admin Dashboard
 async function loadAdminDashboard() {
-    if (!authToken || !isAdminUser()) return;
+    if (!currentUser || !isAdminUser()) return;
 
     const section = document.getElementById('adminDashboard');
     const cardsEl = document.getElementById('adminStatsCards');
@@ -1383,10 +1416,8 @@ async function loadAdminDashboard() {
 
     try {
         const response = await fetch(`${API_URL}/admin/dashboard/stats`, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Accept': 'application/json'
-            }
+            headers: getAuthHeaders(false),
+            credentials: 'include'
         });
 
         const data = await response.json();
@@ -1553,7 +1584,7 @@ function getStatusLabel(status) {
 }
 
 async function loadUserOrders(page = 1) {
-    if (!authToken) {
+    if (!currentUser) {
         toggleAuth();
         return;
     }
@@ -1672,7 +1703,7 @@ function renderOrdersPagination(pagination) {
 }
 
 async function showTicket(orderId) {
-    if (!authToken) {
+    if (!currentUser) {
         toggleAuth();
         return;
     }
@@ -1756,8 +1787,8 @@ async function cancelOrder(orderId) {
     if (!confirm('Bạn chắc chắn muốn hủy đơn hàng này?')) return;
 
     try {
-        const response = await fetch(`${API_URL}/orders/${orderId}/cancel`, {
-            method: 'PUT',
+        const response = await fetch(`${API_URL}/orders/${orderId}`, {
+            method: 'DELETE',
             headers: getAuthHeaders(false)
         });
         const data = await response.json();
@@ -1817,12 +1848,14 @@ function formatCurrency(amount) {
     return Number(amount || 0).toLocaleString('vi-VN') + ' VNĐ';
 }
 
-function showAlert(message, type = 'info') {
+function showAlert(message, type = 'info', trusted = false) {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3 shadow`;
     alert.style.zIndex = '9999';
+
+    const safeMessage = trusted ? message : Security.escapeHtml(message);
     alert.innerHTML = `
-        <span>${message}</span>
+        <span>${safeMessage}</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
 

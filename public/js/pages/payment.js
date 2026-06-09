@@ -9,7 +9,7 @@ class PaymentManager {
         this.selectedMethod = 'payos';
         this.timerInterval = null;
         this.isProcessing = false;
-        
+
         this.init();
     }
 
@@ -25,7 +25,7 @@ class PaymentManager {
         this.initTimer();
         this.initPaymentMethods();
         this.initButtons();
-        
+
         console.log('Payment page initialized for order:', this.orderData.code);
     }
 
@@ -71,7 +71,7 @@ class PaymentManager {
         const minutes = Math.floor(seconds / 60);
         const secs = seconds % 60;
         const display = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        
+
         const timerEl = document.getElementById('orderTimer');
         if (timerEl) {
             timerEl.textContent = display;
@@ -87,7 +87,7 @@ class PaymentManager {
         }
 
         this.showToast('Đơn hàng đã hết hạn thanh toán', 'error');
-        
+
         // Disable payment button
         const btnPayment = document.getElementById('btnPayment');
         if (btnPayment) {
@@ -106,7 +106,7 @@ class PaymentManager {
      */
     initPaymentMethods() {
         const methods = document.querySelectorAll('.payment-method');
-        
+
         methods.forEach(method => {
             method.addEventListener('click', () => {
                 const radio = method.querySelector('input[type="radio"]');
@@ -161,13 +161,19 @@ class PaymentManager {
         this.showLoading(true);
 
         try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            if (csrfToken) {
+                headers['X-CSRF-TOKEN'] = csrfToken;
+            }
+
             const response = await fetch(`${window.APP_CONFIG.apiUrl}/payments`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${window.authManager.getToken()}`,
-                    'Accept': 'application/json'
-                },
+                headers: headers,
+                credentials: 'include',
                 body: JSON.stringify({
                     order_id: this.orderData.id,
                     payment_method: this.selectedMethod,
@@ -184,7 +190,7 @@ class PaymentManager {
             // Success - redirect to payment gateway
             if (data.data && data.data.checkout_url) {
                 this.showToast('Đang chuyển đến cổng thanh toán...', 'success');
-                
+
                 // Redirect after short delay
                 setTimeout(() => {
                     window.location.href = data.data.checkout_url;
@@ -215,19 +221,25 @@ class PaymentManager {
             'Bạn có chắc chắn muốn hủy đơn hàng này?\n' +
             'Ghế đã chọn sẽ được mở lại và đơn hàng không thể khôi phục.'
         );
-        
+
         if (!confirmed) return;
 
         this.isProcessing = true;
         this.showLoading(true);
 
         try {
-            const response = await fetch(`${window.APP_CONFIG.apiUrl}/orders/${this.orderData.id}/cancel`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${window.authManager.getToken()}`,
-                    'Accept': 'application/json'
-                }
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const headers = {
+                'Accept': 'application/json'
+            };
+            if (csrfToken) {
+                headers['X-CSRF-TOKEN'] = csrfToken;
+            }
+
+            const response = await fetch(`${window.APP_CONFIG.apiUrl}/orders/${this.orderData.id}`, {
+                method: 'DELETE',
+                headers: headers,
+                credentials: 'include'
             });
 
             const data = await response.json();
@@ -237,7 +249,7 @@ class PaymentManager {
             }
 
             this.showToast('Đã hủy đơn hàng thành công', 'success');
-            
+
             // Clear timer
             if (this.timerInterval) {
                 clearInterval(this.timerInterval);
@@ -305,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize payment manager
     const paymentManager = new PaymentManager();
-    
+
     // Store globally for debugging
     window.paymentManager = paymentManager;
 
