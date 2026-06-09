@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Movie;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -141,6 +142,9 @@ class MovieService
                 return $movie->load('categories');
             });
 
+            // Invalidate statistics cache
+            Cache::forget('movies:statistics');
+
             Log::info('Movie created successfully', [
                 'movie_id' => $movie->id,
                 'title' => $movie->title
@@ -157,7 +161,7 @@ class MovieService
     }
 
     /**
-     * Get movie by ID or slug
+     * Get movie by ID or slug (cached for 30 minutes)
      *
      * @param string|int $idOrSlug
      * @return Movie
@@ -165,16 +169,22 @@ class MovieService
     public function getMovie($idOrSlug): Movie
     {
         try {
-            $movie = Movie::with(['categories', 'showtimes.screen.theater'])
-                ->where(function ($query) use ($idOrSlug) {
-                    $query->where('id', $idOrSlug)
-                        ->orWhere('slug', $idOrSlug);
-                })
-                ->firstOrFail();
+            $cacheKey = is_numeric($idOrSlug)
+                ? "movie:id:{$idOrSlug}"
+                : "movie:slug:{$idOrSlug}";
 
-            Log::info('Movie retrieved', ['movie_id' => $movie->id]);
+            return Cache::remember($cacheKey, 1800, function () use ($idOrSlug) {
+                $movie = Movie::with(['categories', 'showtimes.screen.theater'])
+                    ->where(function ($query) use ($idOrSlug) {
+                        $query->where('id', $idOrSlug)
+                            ->orWhere('slug', $idOrSlug);
+                    })
+                    ->firstOrFail();
 
-            return $movie;
+                Log::info('Movie retrieved (cached)', ['movie_id' => $movie->id]);
+
+                return $movie;
+            });
         } catch (\Exception $e) {
             Log::warning('Movie not found', ['identifier' => $idOrSlug]);
             throw $e;
@@ -193,6 +203,7 @@ class MovieService
         try {
             $movie = DB::transaction(function () use ($id, $data) {
                 $movie = Movie::findOrFail($id);
+                $oldSlug = $movie->slug;
 
                 // Extract category IDs
                 $categoryIds = $data['category_ids'] ?? null;
@@ -210,6 +221,14 @@ class MovieService
                 if (is_array($categoryIds)) {
                     $movie->categories()->sync($categoryIds);
                 }
+
+                // Invalidate caches
+                Cache::forget("movie:id:{$id}");
+                Cache::forget("movie:slug:{$oldSlug}");
+                if ($movie->slug !== $oldSlug) {
+                    Cache::forget("movie:slug:{$movie->slug}");
+                }
+                Cache::forget('movies:statistics');
 
                 return $movie->load('categories');
             });
@@ -240,8 +259,14 @@ class MovieService
         try {
             $movie = Movie::findOrFail($id);
             $title = $movie->title;
+            $slug = $movie->slug;
 
             $movie->delete();
+
+            // Invalidate caches
+            Cache::forget("movie:id:{$id}");
+            Cache::forget("movie:slug:{$slug}");
+            Cache::forget('movies:statistics');
 
             Log::info('Movie deleted successfully', [
                 'movie_id' => $id,
@@ -259,24 +284,26 @@ class MovieService
     }
 
     /**
-     * Get movie statistics
+     * Get movie statistics (cached for 5 minutes)
      *
      * @return array
      */
     public function getMovieStatistics(): array
     {
         try {
-            $stats = [
-                'total' => Movie::count(),
-                'active' => Movie::active()->count(),
-                'now_showing' => Movie::nowShowing()->count(),
-                'upcoming' => Movie::upcoming()->count(),
-                'hot' => Movie::where('is_hot', 1)->count(),
-            ];
+            return Cache::remember('movies:statistics', 300, function () {
+                $stats = [
+                    'total' => Movie::count(),
+                    'active' => Movie::active()->count(),
+                    'now_showing' => Movie::nowShowing()->count(),
+                    'upcoming' => Movie::upcoming()->count(),
+                    'hot' => Movie::where('is_hot', 1)->count(),
+                ];
 
-            Log::info('Movie statistics retrieved', $stats);
+                Log::info('Movie statistics retrieved (cached)', $stats);
 
-            return $stats;
+                return $stats;
+            });
         } catch (\Exception $e) {
             Log::error('Failed to retrieve movie statistics', [
                 'error' => $e->getMessage()

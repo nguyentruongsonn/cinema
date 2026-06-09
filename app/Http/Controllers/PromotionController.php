@@ -2,95 +2,67 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Promotion;
+use App\Services\PromotionService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PromotionController extends Controller
 {
-    /**
-     * Validate a promotion/voucher code for a given order total
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function validate(Request $request): JsonResponse
-    {
-        $request->validate([
-            'code' => 'required|string|max:50',
-            'order_total' => 'required|numeric|min:0',
-        ]);
+    use ApiResponse;
 
-        $promotion = Promotion::active()
-            ->valid()
-            ->byCode($request->input('code'))
-            ->first();
-
-        if (!$promotion) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Mã khuyến mãi không hợp lệ hoặc đã hết hạn.',
-            ], 422);
-        }
-
-        // Check min_order_value
-        $minOrder = (float) ($promotion->min_order_value ?? 0);
-        $orderTotal = (float) $request->input('order_total');
-
-        if ($orderTotal < $minOrder) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Đơn hàng tối thiểu ' . number_format($minOrder, 0, ',', '.') . 'đ để áp dụng mã này.',
-                'data' => [
-                    'min_order_value' => $minOrder,
-                    'current_total' => $orderTotal,
-                ],
-            ], 422);
-        }
-
-        // Calculate discount
-        $discountAmount = $this->calculateDiscount($promotion, $orderTotal);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Mã khuyến mãi hợp lệ!',
-            'data' => [
-                'code' => $promotion->code,
-                'type' => $promotion->type,
-                'value' => (float) $promotion->value,
-                'discount_amount' => $discountAmount,
-                'max_discount' => (float) ($promotion->max_discount ?? 0),
-                'min_order_value' => $minOrder,
-            ],
-        ]);
+    public function __construct(
+        private readonly PromotionService $promotionService
+    ) {
     }
 
     /**
-     * Calculate discount amount based on promotion type
+     * Validate a promotion/voucher code for a given order total
      *
-     * @param Promotion $promotion
-     * @param float $orderTotal
-     * @return float
+     * RESTful endpoint: GET /api/v1/promotions/{code}/validate?order_total=xxx
      */
-    private function calculateDiscount(Promotion $promotion, float $orderTotal): float
+    public function validate(Request $request, string $code): JsonResponse
     {
-        $discount = 0;
+        $request->validate([
+            'order_total' => ['required', 'numeric', 'min:0'],
+        ]);
 
-        if ($promotion->type === 'percentage') {
-            $discount = $orderTotal * ((float) $promotion->value / 100);
-            // Apply max_discount cap if set
-            $maxDiscount = (float) ($promotion->max_discount ?? 0);
-            if ($maxDiscount > 0 && $discount > $maxDiscount) {
-                $discount = $maxDiscount;
+        $orderTotal = (float) $request->input('order_total');
+
+        try {
+            $result = $this->promotionService->validatePromotion($code, $orderTotal);
+
+            if (!$result['valid']) {
+                $statusCode = $result['promotion'] ? 422 : 404;
+                $data = [];
+
+                if (isset($result['min_order_value'])) {
+                    $data = [
+                        'min_order_value' => $result['min_order_value'],
+                        'current_total' => $orderTotal,
+                    ];
+                }
+
+                return $this->errorResponse(
+                    $result['error'],
+                    $statusCode,
+                    $data
+                );
             }
-        } elseif (in_array($promotion->type, ['fixed', 'amount'])) {
-            $discount = (float) $promotion->value;
-            // Discount shouldn't exceed order total
-            if ($discount > $orderTotal) {
-                $discount = $orderTotal;
-            }
+
+            $promotion = $result['promotion'];
+
+            return $this->successResponse([
+                'valid' => true,
+                'code' => $promotion->code,
+                'discount_type' => $promotion->discount_type,
+                'discount_value' => (float) $promotion->discount_value,
+                'discount_amount' => $result['discount_amount'],
+                'max_discount_amount' => (float) ($promotion->max_discount_amount ?? 0),
+                'min_order_value' => (float) ($promotion->min_order_value ?? 0),
+            ], 'Mã khuyến mãi hợp lệ!');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to validate promotion: ' . $e->getMessage(), 500);
         }
-
-        return round($discount, 0);
     }
 }

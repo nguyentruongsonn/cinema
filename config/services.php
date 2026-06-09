@@ -39,11 +39,12 @@ return [
         'client_id' => env('PAYOS_CLIENT_ID'),
         'api_key' => env('PAYOS_API_KEY'),
         'checksum_key' => env('PAYOS_CHECKSUM_KEY'),
+        'webhook_secret' => env('PAYOS_WEBHOOK_SECRET'),
         'return_url' => env('PAYOS_RETURN_URL', env('APP_URL').'/payment/payos/callback'),
         'cancel_url' => env('PAYOS_CANCEL_URL', env('APP_URL').'/payment/payos/cancel'),
         'env' => env('PAYOS_ENV', 'sandbox'),
-        'api_url' => env('PAYOS_ENV', 'sandbox') === 'production' 
-            ? 'https://api-merchant.payos.vn' 
+        'api_url' => env('PAYOS_ENV', 'sandbox') === 'production'
+            ? 'https://api-merchant.payos.vn'
             : 'https://api-merchant.payos.vn',
     ],
 

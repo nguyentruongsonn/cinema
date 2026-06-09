@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Screen;
 use App\Models\Theater;
+use App\Services\ScreenService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -11,57 +12,18 @@ class ScreenController extends Controller
 {
     use ApiResponse;
 
+    public function __construct(
+        private readonly ScreenService $screenService
+    ) {
+    }
+
     /**
      * Display a listing of screens with filter, search, pagination
      */
     public function index(Request $request)
     {
         try {
-            $perPage = $request->query('per_page', 15);
-            $query = Screen::with(['theater', 'format', 'sound']);
-
-            // Filter by theater
-            if ($request->filled('theater_id')) {
-                $query->where('theater_id', $request->input('theater_id'));
-            }
-
-            // Filter by format
-            if ($request->filled('format_id')) {
-                $query->where('format_id', $request->input('format_id'));
-            }
-
-            // Filter by screen type
-            if ($request->filled('screen_type')) {
-                $query->where('screen_type', $request->input('screen_type'));
-            }
-
-            // Search by name or code
-            if ($request->filled('q')) {
-                $q = $request->input('q');
-                $query->where(function ($sub) use ($q) {
-                    $sub->where('name', 'like', "%{$q}%")
-                        ->orWhere('code', 'like', "%{$q}%");
-                });
-            }
-
-            // Status filter
-            $status = $request->input('status', 'active');
-            if ($status === 'active') {
-                $query->active();
-            } elseif ($status === 'inactive') {
-                $query->where('status', 0);
-            }
-
-            // Sort
-            $sortBy = $request->input('sort_by', 'name');
-            $sortDir = $request->input('sort_dir', 'asc');
-            $allowedSorts = ['name', 'capacity', 'created_at'];
-            if (in_array($sortBy, $allowedSorts)) {
-                $query->orderBy($sortBy, $sortDir === 'desc' ? 'desc' : 'asc');
-            }
-
-            $screens = $query->paginate($perPage);
-
+            $screens = $this->screenService->getAll($request);
             return $this->paginatedResponse($screens, 'Screens retrieved successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve screens: ' . $e->getMessage(), 500);
@@ -86,9 +48,13 @@ class ScreenController extends Controller
             'status' => 'required|in:active,inactive',
         ]);
 
+        // Transform status string to boolean for model
+        if (isset($validated['status'])) {
+            $validated['status'] = $validated['status'] === 'active' ? 1 : 0;
+        }
+
         try {
-            $screen = Screen::create($validated);
-            $screen->load(['theater', 'format', 'sound']);
+            $screen = $this->screenService->create($validated);
             return $this->successResponse($screen, 'Screen created successfully', 201);
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to create screen: ' . $e->getMessage(), 500);
@@ -101,7 +67,7 @@ class ScreenController extends Controller
     public function show($id)
     {
         try {
-            $screen = Screen::with(['theater', 'format', 'sound', 'seats'])->findOrFail($id);
+            $screen = $this->screenService->getById((int) $id);
             return $this->successResponse($screen, 'Screen retrieved successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Screen not found', 404);
@@ -126,10 +92,13 @@ class ScreenController extends Controller
             'status' => 'sometimes|in:active,inactive',
         ]);
 
+        // Transform status string to boolean for model
+        if (isset($validated['status'])) {
+            $validated['status'] = $validated['status'] === 'active' ? 1 : 0;
+        }
+
         try {
-            $screen = Screen::findOrFail($id);
-            $screen->update($validated);
-            $screen->load(['theater', 'format', 'sound']);
+            $screen = $this->screenService->update((int) $id, $validated);
             return $this->successResponse($screen, 'Screen updated successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to update screen: ' . $e->getMessage(), 500);
@@ -142,8 +111,7 @@ class ScreenController extends Controller
     public function destroy($id)
     {
         try {
-            $screen = Screen::findOrFail($id);
-            $screen->delete();
+            $this->screenService->delete((int) $id);
             return $this->successResponse(null, 'Screen deleted successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to delete screen: ' . $e->getMessage(), 500);

@@ -13,15 +13,17 @@ use Illuminate\Support\Facades\Log;
 
 class OrderFulfillmentService
 {
+    public function __construct(
+        private readonly OrderService $orderService
+    ) {}
+
     /**
      * Finalize the order after successful payment.
      */
     public function finalize(int $gatewayOrderCode): array
     {
         return DB::transaction(function () use ($gatewayOrderCode) {
-            $order = Order::where('gateway_order_code', $gatewayOrderCode)
-                ->lockForUpdate()
-                ->first();
+            $order = $this->orderService->findByGatewayCode($gatewayOrderCode, lock: true);
 
             if (!$order) {
                 Log::warning('Fulfillment failed: Order not found', ['gateway_order_code' => $gatewayOrderCode]);
@@ -64,7 +66,7 @@ class OrderFulfillmentService
             $products = $payload['products'] ?? [];
             foreach ($products as $productData) {
                 $quantity = (int)$productData['quantity'];
-                
+
                 OrderItem::create([
                     'order_id' => $order->id,
                     'item_type' => Product::class,

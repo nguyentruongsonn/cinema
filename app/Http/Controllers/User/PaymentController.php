@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatePaymentRequest;
 use App\Http\Resources\OrderSummaryResource;
 use App\Services\PaymentService;
+use App\Services\OrderService;
 use App\Traits\ApiResponse;
 use App\Models\User;
 use App\Models\Order;
@@ -22,9 +23,10 @@ use Throwable;
 class PaymentController extends Controller
 {
     use ApiResponse;
- 
+
     public function __construct(
-        private readonly PaymentService $paymentService
+        private readonly PaymentService $paymentService,
+        private readonly OrderService $orderService
     ) {}
 
     /**
@@ -49,13 +51,13 @@ class PaymentController extends Controller
                 $request->validated(),
                 url(''),
             );
- 
+
             return $this->ok([
                 'checkout_url'       => $result['checkout_url'],
                 'gateway_order_code' => $result['gateway_order_code'],
                 'order_number'       => $result['order_number'],
             ], 'Tạo đơn hàng thành công.');
- 
+
         } catch (PaymentGatewayException $e) {
             return $this->error('Lỗi cổng thanh toán: ' . $e->getMessage(), 502);
         } catch (Throwable $e) {
@@ -63,7 +65,7 @@ class PaymentController extends Controller
             return $this->error('Đã xảy ra lỗi khi xử lý thanh toán.', 500);
         }
     }
- 
+
     /**
      * Nhận callback webhook từ PayOS sau khi giao dịch xử lý.
      * POST /api/payos/webhook
@@ -72,7 +74,7 @@ class PaymentController extends Controller
     {
         try {
             $result = $this->paymentService->handleWebhook($request->all());
- 
+
             return $this->ok([], match (true) {
                 $result['already_processed'] ?? false => 'Đơn hàng đã được xử lý trước đó.',
                 $result['skipped']           ?? false => 'Bỏ qua webhook không phải thanh toán thành công.',
@@ -85,7 +87,7 @@ class PaymentController extends Controller
             return $this->error('Lỗi xử lý webhook.', 500);
         }
     }
- 
+
     /**
      * Trả về thông tin chi tiết đơn hàng (JSON cho frontend polling).
      * GET /api/payments/orders/{orderCode}
@@ -96,26 +98,24 @@ class PaymentController extends Controller
         if (! $user instanceof User) {
             return $this->unauthorized();
         }
- 
-        $order = Order::where('gateway_order_code', $orderCode)
-            ->where('user_id', $user->id)
-            ->first();
- 
-        if (! $order) {
+
+        $order = $this->orderService->findByGatewayCode($orderCode);
+
+        if (!$order || $order->user_id !== $user->id) {
             return $this->notFound('Không tìm thấy đơn hàng yêu cầu.');
         }
- 
+
         // Đồng bộ trạng thái từ PayOS nếu chưa paid
         if ($order->status !== Order::STATUS_PAID) {
             $this->paymentService->syncFromGateway($order);
         }
- 
+
         $order->refresh()->load([
             'showtime.movie',
             'showtime.screen',
             'orderItems',
         ]);
- 
+
         return $this->ok(new OrderSummaryResource($order));
     }
 }

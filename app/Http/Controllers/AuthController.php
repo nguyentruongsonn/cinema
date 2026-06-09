@@ -36,12 +36,12 @@ class AuthController extends Controller
             );
 
             $response = $this->successResponse(
-                ['user' => $result['user'], 'access_token' => $result['access_token'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
+                ['user' => $result['user'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
                 'User registered successfully',
                 201
             );
 
-            return $this->setRefreshTokenCookie($response, $result['refresh_token'], $result['refresh_expires_in']);
+            return $this->setAuthCookies($response, $result['access_token'], $result['expires_in'], $result['refresh_token'], $result['refresh_expires_in']);
         } catch (\Throwable $e) {
             return $this->errorResponse('Registration failed: ' . $e->getMessage(), 500);
         }
@@ -64,11 +64,11 @@ class AuthController extends Controller
             }
 
             $response = $this->successResponse(
-                ['user' => $result['user'], 'access_token' => $result['access_token'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
+                ['user' => $result['user'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
                 'Login successful'
             );
 
-            return $this->setRefreshTokenCookie($response, $result['refresh_token'], $result['refresh_expires_in']);
+            return $this->setAuthCookies($response, $result['access_token'], $result['expires_in'], $result['refresh_token'], $result['refresh_expires_in']);
         } catch (\Throwable $e) {
             return $this->errorResponse('Login failed: ' . $e->getMessage(), 500);
         }
@@ -91,11 +91,11 @@ class AuthController extends Controller
             );
 
             $response = $this->successResponse(
-                ['user' => $result['user'], 'access_token' => $result['access_token'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
+                ['user' => $result['user'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
                 'Google login successful'
             );
 
-            return $this->setRefreshTokenCookie($response, $result['refresh_token'], $result['refresh_expires_in']);
+            return $this->setAuthCookies($response, $result['access_token'], $result['expires_in'], $result['refresh_token'], $result['refresh_expires_in']);
         } catch (\Throwable $e) {
             return $this->errorResponse('Google login failed: ' . $e->getMessage(), 401);
         }
@@ -127,7 +127,9 @@ class AuthController extends Controller
 
             $response = $this->successResponse(null, 'Logout successful');
 
-            return $response->withCookie(cookie()->forget('refresh_token'));
+            return $response
+                ->withCookie(cookie()->forget('access_token'))
+                ->withCookie(cookie()->forget('refresh_token'));
         } catch (\Throwable $e) {
             return $this->errorResponse('Logout failed: ' . $e->getMessage(), 500);
         }
@@ -152,11 +154,11 @@ class AuthController extends Controller
             );
 
             $response = $this->successResponse(
-                ['user' => $result['user'], 'access_token' => $result['access_token'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
+                ['user' => $result['user'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
                 'Token refreshed successfully'
             );
 
-            return $this->setRefreshTokenCookie($response, $result['refresh_token'], $result['refresh_expires_in']);
+            return $this->setAuthCookies($response, $result['access_token'], $result['expires_in'], $result['refresh_token'], $result['refresh_expires_in']);
         } catch (\Throwable $e) {
             return $this->errorResponse('Token refresh failed: ' . $e->getMessage(), 401);
         }
@@ -289,20 +291,37 @@ class AuthController extends Controller
     }
 
     /**
-     * Set refresh token in HttpOnly Secure cookie.
+     * Set access and refresh tokens in HttpOnly Secure cookies.
      */
-    private function setRefreshTokenCookie(JsonResponse $response, string $refreshToken, int $expiresIn): JsonResponse
-    {
-        return $response->withCookie(cookie(
-            'refresh_token',
-            $refreshToken,
-            $expiresIn / 60, // Convert seconds to minutes
-            '/',
-            null,
-            config('session.secure', true), // Secure flag (HTTPS only)
-            true, // HttpOnly flag
-            false, // Raw (not encrypted by Laravel)
-            config('session.same_site', 'lax') // SameSite attribute
-        ));
+    private function setAuthCookies(
+        JsonResponse $response,
+        string $accessToken,
+        int $accessExpiresIn,
+        string $refreshToken,
+        int $refreshExpiresIn
+    ): JsonResponse {
+        return $response
+            ->withCookie(cookie(
+                'access_token',
+                $accessToken,
+                $accessExpiresIn / 60, // Convert seconds to minutes
+                '/',
+                null,
+                config('session.secure', true), // Secure flag (HTTPS only)
+                true, // HttpOnly flag
+                false, // Raw (not encrypted by Laravel)
+                config('session.same_site', 'lax') // SameSite attribute
+            ))
+            ->withCookie(cookie(
+                'refresh_token',
+                $refreshToken,
+                $refreshExpiresIn / 60, // Convert seconds to minutes
+                '/',
+                null,
+                config('session.secure', true), // Secure flag (HTTPS only)
+                true, // HttpOnly flag
+                false, // Raw (not encrypted by Laravel)
+                config('session.same_site', 'lax') // SameSite attribute
+            ));
     }
 }

@@ -146,6 +146,17 @@ class OrderService
         return $order->fresh();
     }
 
+    public function findByGatewayCode(int $gatewayOrderCode, bool $lock = false): ?Order
+    {
+        $query = Order::where('gateway_order_code', $gatewayOrderCode);
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->first();
+    }
+
     public function format(Order $order): array
     {
         $statusMap = [

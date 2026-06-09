@@ -91,6 +91,9 @@
         window.addEventListener('echo:reinit', () => initEcho());
     </script>
 
+    {{-- Shared Security Utilities --}}
+    <script src="{{ asset('js/utils/security-standalone.js') }}"></script>
+
     {{-- Auth Module --}}
     <script src="{{ asset('js/auth.js') }}"></script>
 

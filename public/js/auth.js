@@ -6,7 +6,6 @@
 class AuthManager {
     constructor() {
         this.apiUrl = window.APP_CONFIG?.apiUrl || '/api';
-        this.token = this.getToken();
         this.user = null;
         this.modal = null;
         this.init();
@@ -113,7 +112,7 @@ class AuthManager {
             });
 
             if (response.success) {
-                this.saveToken(response.data.access_token);
+                // Cookies are automatically set by server (HttpOnly)
                 this.user = response.data.user;
                 this.modal.hide();
                 this.updateUI();
@@ -179,7 +178,7 @@ class AuthManager {
             });
 
             if (response.success) {
-                this.saveToken(response.data.access_token);
+                // Cookies are automatically set by server (HttpOnly)
                 this.user = response.data.user;
                 this.modal.hide();
                 this.updateUI();
@@ -215,7 +214,7 @@ class AuthManager {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            this.clearToken();
+            // Cookies cleared automatically by server
             this.user = null;
             this.updateUI();
             this.showToast('Đã đăng xuất', 'info');
@@ -224,23 +223,19 @@ class AuthManager {
     }
 
     async checkAuthStatus() {
-        if (!this.token) {
-            this.updateUI();
-            return;
-        }
-
+        // Check authentication via cookies (no need to check localStorage)
         try {
             const response = await this.fetchAPI('/auth/me');
             if (response.success) {
                 this.user = response.data;
                 this.updateUI();
             } else {
-                this.clearToken();
+                this.user = null;
                 this.updateUI();
             }
         } catch (error) {
             console.error('Check auth status error:', error);
-            this.clearToken();
+            this.user = null;
             this.updateUI();
         }
     }
@@ -253,8 +248,10 @@ class AuthManager {
             'X-Requested-With': 'XMLHttpRequest'
         };
 
-        if (this.token) {
-            headers['Authorization'] = `Bearer ${this.token}`;
+        // Add CSRF token for state-changing requests
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (csrfToken && (options.method === 'POST' || options.method === 'PUT' || options.method === 'DELETE')) {
+            headers['X-CSRF-TOKEN'] = csrfToken;
         }
 
         const config = {
@@ -273,13 +270,12 @@ class AuthManager {
         if (response.status === 401 && !endpoint.includes('/auth/refresh')) {
             const refreshed = await this.refreshAccessToken();
             if (refreshed) {
-                // Retry original request with new token
-                headers['Authorization'] = `Bearer ${this.token}`;
+                // Retry original request (cookies automatically sent)
                 config.headers = { ...headers, ...options.headers };
                 response = await fetch(url, config);
                 data = await response.json();
             } else {
-                this.clearToken();
+                this.user = null;
                 this.updateUI();
                 throw new Error('Session expired. Please login again.');
             }
@@ -305,8 +301,8 @@ class AuthManager {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.success && data.data.access_token) {
-                    this.saveToken(data.data.access_token);
+                if (data.success && data.data.user) {
+                    // New access_token cookie set automatically by server
                     this.user = data.data.user;
                     return true;
                 }
@@ -462,22 +458,10 @@ class AuthManager {
         }, 3000);
     }
 
-    saveToken(token) {
-        localStorage.setItem('auth_token', token);
-        this.token = token;
-    }
-
-    getToken() {
-        return localStorage.getItem('auth_token');
-    }
-
-    clearToken() {
-        localStorage.removeItem('auth_token');
-        this.token = null;
-    }
+    // Tokens managed via HttpOnly cookies - no localStorage needed
 
     isAuthenticated() {
-        return !!this.token;
+        return !!this.user;
     }
 
     getUser() {

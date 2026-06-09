@@ -12,6 +12,32 @@ class ProfilePage {
         await this.loadProfile();
     }
 
+    // Helper methods for DOM manipulation
+    createLoadingSpinner() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'text-center py-5';
+
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner-border text-danger';
+
+        wrapper.appendChild(spinner);
+        return wrapper;
+    }
+
+    createErrorAlert(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger';
+        alert.textContent = message;
+        return alert;
+    }
+
+    clearContainer(container) {
+        if (!container) return;
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+    }
+
     cacheElements() {
         this.elements = {
             loading: document.getElementById('profileLoading'),
@@ -350,7 +376,8 @@ class ProfilePage {
 
         try {
             if (!append) {
-                ticketsList.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-danger"></div></div>';
+                this.clearContainer(ticketsList);
+                ticketsList.appendChild(this.createLoadingSpinner());
                 ticketsEmpty.classList.add('d-none');
                 if (loadMoreBtn) loadMoreBtn.style.display = 'none';
             } else {
@@ -409,7 +436,8 @@ class ProfilePage {
         } catch (error) {
             console.error('Load tickets error:', error);
             if (!append) {
-                ticketsList.innerHTML = '<div class="alert alert-danger">Không thể tải danh sách vé</div>';
+                this.clearContainer(ticketsList);
+                ticketsList.appendChild(this.createErrorAlert('Không thể tải danh sách vé'));
             }
             if (loadMoreBtn) {
                 loadMoreBtn.disabled = false;
@@ -434,7 +462,7 @@ class ProfilePage {
         // Formats (IMAX, 4DX, Dolby Atmos, etc.)
         const formatsContainer = card.querySelector('.ticket-formats');
         if (formatsContainer) {
-            formatsContainer.innerHTML = ''; // Clear first
+            this.clearContainer(formatsContainer);
             if (order.showtime?.format) {
                 const badge = document.createElement('span');
                 badge.className = 'badge bg-dark text-white me-1';
