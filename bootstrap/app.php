@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\CookieToBearerToken;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyPayOSWebhookSignature;
 use Illuminate\Foundation\Application;
@@ -18,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Apply security headers to all responses
         $middleware->append(SecurityHeaders::class);
+
+        // API frontend uses HttpOnly JWT cookies. Convert the access_token cookie
+        // into a Bearer token before Laravel's auth:api middleware runs.
+        $middleware->api(prepend: [
+            CookieToBearerToken::class,
+        ]);
 
         $middleware->alias([
             'admin' => AdminMiddleware::class,

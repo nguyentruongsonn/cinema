@@ -4,7 +4,7 @@
     /* ------------------------------------------------------------------ */
     /*  Configuration                                                      */
     /* ------------------------------------------------------------------ */
-    const API_BASE = '/api';
+    const API_BASE = window.APP_CONFIG?.apiUrl || '/api/v1';
     const SELECTORS = {
         heroSkeleton: '#heroSkeleton',
         heroContent: '#heroContent',

@@ -20,7 +20,7 @@
             .replace(/'/g, "\u0026#039;");
     }
 
-    const API_BASE = '/api';
+    const API_BASE = window.APP_CONFIG?.apiUrl || '/api/v1';
     let els = {};
     let currentFilters = {
         status: 'active',

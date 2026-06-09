@@ -19,9 +19,11 @@ class ShowtimeService
     {
         $query = Showtime::with([
             'movie:id,title,slug,duration,age_rating,poster_url',
-            'screen:id,name,code,screen_type,theater_id,capacity',
+            'screen:id,name,code,format_id,sound_id,theater_id,capacity',
             'screen.theater:id,name,address,city',
-            'format:id,name,code',
+            'screen.format:id,name',
+            'screen.sound:id,name',
+            'format:id,name,surcharge',
             'subtitle:id,name',
         ]);
 

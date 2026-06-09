@@ -6,7 +6,7 @@
 class BookingManager {
     constructor() {
         this.config = window.BOOKING_CONFIG || {};
-        this.apiUrl = window.APP_CONFIG?.apiUrl || '/api';
+        this.apiUrl = window.APP_CONFIG?.apiUrl || '/api/v1';
         this.auth = window.authManager; // From auth.js
 
         // State
@@ -76,16 +76,29 @@ class BookingManager {
      * - order.{code}    → private channel: payment confirmation for the buyer
      */
     subscribeToRealtimeChannels() {
-        if (typeof window.Echo === 'undefined') return;
+        if (typeof window.Echo === 'undefined' || !window.Echo || typeof window.Echo.channel !== 'function') {
+            return;
+        }
 
         const showtimeId = this.config.showtimeId;
         if (!showtimeId) return;
 
         // 1. Real-time seat status (public – no auth needed)
-        window.Echo.channel(`showtime.${showtimeId}`)
-            .listen('.seat.status.updated', (event) => {
+        try {
+            const showtimeChannel = window.Echo.channel(`showtime.${showtimeId}`);
+
+            if (!showtimeChannel || typeof showtimeChannel.listen !== 'function') {
+                console.warn('[Booking] Realtime showtime channel unavailable; continuing without realtime seat updates.');
+                return;
+            }
+
+            showtimeChannel.listen('.seat.status.updated', (event) => {
                 this.applyRealtimeSeatStatus(event.seat_id, event.status);
             });
+        } catch (error) {
+            console.warn('[Booking] Realtime subscription failed; continuing without realtime seat updates.', error);
+            return;
+        }
 
         // 2. Real-time payment result (private – requires auth)
         //    Subscribe only when user has initiated a payment (orderCode present).

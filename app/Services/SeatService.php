@@ -165,13 +165,18 @@ class SeatService
         });
 
         // Broadcast real-time seat status to all connected clients
-        foreach ($hold->seat_ids as $seatId) {
-            broadcast(new SeatStatusUpdated(
-                showtimeId: $hold->showtime_id,
-                seatId:     (int) $seatId,
-                status:     'locked',
-                userId:     $hold->user_id,
-            ));
+        // Wrap in try/catch: development environments may not have Reverb/Pusher running
+        try {
+            foreach ($hold->seat_ids as $seatId) {
+                broadcast(new SeatStatusUpdated(
+                    showtimeId: $hold->showtime_id,
+                    seatId:     (int) $seatId,
+                    status:     'locked',
+                    userId:     $hold->user_id,
+                ));
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Seat broadcast failed (non-critical): ' . $e->getMessage());
         }
 
         return [
@@ -201,12 +206,17 @@ class SeatService
         SeatHold::query()->whereKey($hold->getKey())->delete();
 
         // Broadcast real-time unlock to all connected clients
-        foreach ($seatIds as $seatId) {
-            broadcast(new SeatStatusUpdated(
-                showtimeId: $showtimeId,
-                seatId:     (int) $seatId,
-                status:     'available',
-            ));
+        // Wrap in try/catch: development environments may not have Reverb/Pusher running
+        try {
+            foreach ($seatIds as $seatId) {
+                broadcast(new SeatStatusUpdated(
+                    showtimeId: $showtimeId,
+                    seatId:     (int) $seatId,
+                    status:     'available',
+                ));
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Seat unlock broadcast failed (non-critical): ' . $e->getMessage());
         }
 
         return ['unlocked_count' => count($seatIds)];

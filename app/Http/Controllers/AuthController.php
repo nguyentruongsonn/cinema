@@ -229,7 +229,11 @@ class AuthController extends Controller
 
             return $this->errorResponse('Failed to send reset link', 400);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to send reset link: ' . $e->getMessage(), 500);
+            report($e);
+
+            // Do not expose password reset internals or infrastructure failures to clients.
+            // This also avoids user enumeration and reset-token leakage in API responses.
+            return $this->successResponse(null, 'If the email exists, a password reset link will be sent');
         }
     }
 
@@ -302,26 +306,26 @@ class AuthController extends Controller
     ): JsonResponse {
         return $response
             ->withCookie(cookie(
-                'access_token',
-                $accessToken,
-                $accessExpiresIn / 60, // Convert seconds to minutes
-                '/',
-                null,
-                config('session.secure', true), // Secure flag (HTTPS only)
-                true, // HttpOnly flag
-                false, // Raw (not encrypted by Laravel)
-                config('session.same_site', 'lax') // SameSite attribute
+                name: 'access_token',
+                value: $accessToken,
+                minutes: (int) ceil($accessExpiresIn / 60),
+                path: '/',
+                domain: null,
+                secure: config('session.secure', true),
+                httpOnly: true,
+                raw: false,
+                sameSite: config('session.same_site', 'lax')
             ))
             ->withCookie(cookie(
-                'refresh_token',
-                $refreshToken,
-                $refreshExpiresIn / 60, // Convert seconds to minutes
-                '/',
-                null,
-                config('session.secure', true), // Secure flag (HTTPS only)
-                true, // HttpOnly flag
-                false, // Raw (not encrypted by Laravel)
-                config('session.same_site', 'lax') // SameSite attribute
+                name: 'refresh_token',
+                value: $refreshToken,
+                minutes: (int) ceil($refreshExpiresIn / 60),
+                path: '/',
+                domain: null,
+                secure: config('session.secure', true),
+                httpOnly: true,
+                raw: false,
+                sameSite: config('session.same_site', 'lax')
             ));
     }
 }

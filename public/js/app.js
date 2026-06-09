@@ -1,5 +1,5 @@
  // API Configuration
-const API_URL = '/api';
+const API_URL = '/api/v1';
 
 // Security utilities (inline for Phase 1 - will be modularized in Phase 4)
 const Security = {

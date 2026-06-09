@@ -5,7 +5,7 @@
 
 class AuthManager {
     constructor() {
-        this.apiUrl = window.APP_CONFIG?.apiUrl || '/api';
+        this.apiUrl = window.APP_CONFIG?.apiUrl || '/api/v1';
         this.user = null;
         this.modal = null;
         this.init();
@@ -223,9 +223,14 @@ class AuthManager {
     }
 
     async checkAuthStatus() {
-        // Check authentication via cookies (no need to check localStorage)
+        // Check authentication via cookies (no need to check localStorage).
+        // A 401 here is a normal "guest user" state, not a frontend error.
         try {
-            const response = await this.fetchAPI('/auth/me');
+            const response = await this.fetchAPI('/auth/me', {
+                skipRefresh: true,
+                silentAuth: true,
+            });
+
             if (response.success) {
                 this.user = response.data;
                 this.updateUI();
@@ -234,7 +239,10 @@ class AuthManager {
                 this.updateUI();
             }
         } catch (error) {
-            console.error('Check auth status error:', error);
+            if (!error.isAuthExpected) {
+                console.error('Check auth status error:', error);
+            }
+
             this.user = null;
             this.updateUI();
         }
@@ -266,8 +274,17 @@ class AuthManager {
         let response = await fetch(url, config);
         let data = await response.json();
 
-        // Handle 401 - try to refresh access token
-        if (response.status === 401 && !endpoint.includes('/auth/refresh')) {
+        // Handle 401 - try to refresh access token when appropriate.
+        // Some endpoints (e.g. /auth/me on first page load) are allowed to fail
+        // silently because a guest user is a valid application state.
+        if (response.status === 401) {
+            if (options.silentAuth || options.skipRefresh || endpoint.includes('/auth/refresh')) {
+                const authError = new Error(data.message || 'Unauthenticated.');
+                authError.status = 401;
+                authError.isAuthExpected = true;
+                throw authError;
+            }
+
             const refreshed = await this.refreshAccessToken();
             if (refreshed) {
                 // Retry original request (cookies automatically sent)
@@ -282,7 +299,9 @@ class AuthManager {
         }
 
         if (!response.ok) {
-            throw new Error(data.message || 'Request failed');
+            const requestError = new Error(data.message || 'Request failed');
+            requestError.status = response.status;
+            throw requestError;
         }
 
         return data;
