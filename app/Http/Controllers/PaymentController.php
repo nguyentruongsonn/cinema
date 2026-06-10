@@ -40,8 +40,8 @@ class PaymentController extends Controller
         $orderCode = $request->query('orderCode');
         $status    = $request->query('status');
 
-        // Try to find the order's showtime_id for the redirect
-        $showtimeId = null;
+        // Try to find the order's showtime encrypted id for the redirect.
+        $encryptedShowtimeId = null;
         if (is_string($orderCode) && $orderCode !== '') {
             $order = $this->orderService->findByGatewayCode((int) $orderCode);
 
@@ -51,14 +51,14 @@ class PaymentController extends Controller
                 $order = null;
             }
 
-            $showtimeId = $order?->showtime_id;
+            $encryptedShowtimeId = $order?->showtime?->encrypted_id;
         }
 
-        if ($showtimeId && ($status === 'PAID' || $request->query('code') === '00')) {
+        if ($encryptedShowtimeId && ($status === 'PAID' || $request->query('code') === '00')) {
             return redirect()->route('booking.show', [
-                'showtimeId'    => $showtimeId,
-                'paymentStatus' => 'success',
-                'orderCode'     => $orderCode,
+                'encryptedShowtimeId' => $encryptedShowtimeId,
+                'paymentStatus'       => 'success',
+                'orderCode'           => $orderCode,
             ], 302, []);
         }
 
@@ -73,7 +73,7 @@ class PaymentController extends Controller
     {
         $orderCode = $request->query('orderCode');
 
-        $showtimeId = null;
+        $encryptedShowtimeId = null;
         if (is_string($orderCode) && $orderCode !== '') {
             $order = $this->orderService->findByGatewayCode((int) $orderCode);
 
@@ -83,14 +83,14 @@ class PaymentController extends Controller
                 $order = null;
             }
 
-            $showtimeId = $order?->showtime_id;
+            $encryptedShowtimeId = $order?->showtime?->encrypted_id;
         }
 
-        if ($showtimeId) {
+        if ($encryptedShowtimeId) {
             return redirect()->route('booking.show', [
-                'showtimeId'    => $showtimeId,
-                'paymentStatus' => 'cancelled',
-                'orderCode'     => $orderCode,
+                'encryptedShowtimeId' => $encryptedShowtimeId,
+                'paymentStatus'       => 'cancelled',
+                'orderCode'           => $orderCode,
             ], 302, []);
         }
 

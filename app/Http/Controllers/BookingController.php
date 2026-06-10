@@ -6,8 +6,10 @@ use App\Models\Order;
 use App\Models\Showtime;
 use App\Services\OrderService;
 use App\Services\PaymentService;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Throwable;
 
 class BookingController extends Controller
@@ -20,8 +22,13 @@ class BookingController extends Controller
     /**
      * Display the booking page for a specific showtime.
      */
-    public function show(Request $request, int $showtimeId)
+    public function show(Request $request, string $encryptedShowtimeId)
     {
+        try {
+            $showtimeId = (int) Crypt::decryptString($encryptedShowtimeId);
+        } catch (DecryptException) {
+            abort(404, 'Invalid showtime identifier.');
+        }
         $showtime = Showtime::with([
             'movie',
             'screen.theater',

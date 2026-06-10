@@ -1789,27 +1789,27 @@ body {
     .premium-ticket {
         flex-direction: column;
     }
-    
+
     .ticket-info {
         border-right: none;
         border-bottom: 2px dashed rgba(255,255,255,0.1);
     }
-    
+
     .ticket-barcode {
         width: 100%;
         padding: 32px 40px;
     }
-    
+
     .barcode-cutout {
         left: 50%;
         transform: translateX(-50%);
     }
-    
+
     .barcode-cutout.top {
         top: -15px;
         left: 50%;
     }
-    
+
     .barcode-cutout.bottom {
         display: none; /* Hide bottom cutout on mobile */
     }
@@ -1835,13 +1835,14 @@ body {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 24px;
-    padding: 60px 48px;
+    padding: 60px 56px;
     text-align: center;
-    max-width: 520px;
-    width: 100%;
+    max-width: 640px;
+    width: min(100%, 640px);
     backdrop-filter: blur(20px);
     box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
     animation: resultFadeIn 0.5s ease forwards;
+    overflow: hidden;
 }
 
 @keyframes resultFadeIn {
@@ -1936,38 +1937,113 @@ body {
 }
 
 .transaction-info {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr) 1px minmax(0, 1fr);
     align-items: stretch;
+    width: 100%;
+    margin: 0 auto;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
+    background: rgba(0, 0, 0, 0.12);
 }
 
 .info-block {
-    flex: 1;
-    padding: 16px 20px;
+    min-width: 0;
+    padding: 18px 16px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
 }
 
 .info-divider {
     width: 1px;
+    min-width: 1px;
     background: rgba(255, 255, 255, 0.08);
-    flex-shrink: 0;
 }
 
 .info-label {
+    max-width: 100%;
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1.2px;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.45);
     text-transform: uppercase;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .info-value {
+    max-width: 100%;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    line-height: 1.35;
     color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 576px) {
+    .payment-result-screen {
+        padding: 32px 14px;
+        min-height: calc(100vh - 74px);
+    }
+
+    .result-content {
+        padding: 40px 22px;
+        border-radius: 20px;
+    }
+
+    .brand-title {
+        font-size: 11px;
+        letter-spacing: 3px;
+        margin-bottom: 24px;
+    }
+
+    .status-icon {
+        width: 76px;
+        height: 76px;
+        font-size: 34px;
+        margin-bottom: 24px;
+    }
+
+    .status-title {
+        font-size: 24px;
+    }
+
+    .status-message {
+        font-size: 14px;
+        margin-bottom: 28px;
+    }
+
+    .btn-action-primary {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 24px;
+    }
+
+    .transaction-info {
+        grid-template-columns: 1fr;
+    }
+
+    .info-divider {
+        width: 100%;
+        height: 1px;
+        min-width: 0;
+    }
+
+    .info-block {
+        padding: 16px;
+    }
+
+    .info-value {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
 }
 

@@ -73,8 +73,8 @@ class PaymentService
                 'orderCode'   => $order->gateway_order_code,
                 'amount'      => (int) round($order->total_amount),
                 'description' => substr('DH ' . $order->code, 0, 25),
-                'cancelUrl'   => $baseUrl . '/booking/' . $order->showtime_id . '?paymentStatus=cancelled&orderCode=' . $order->gateway_order_code,
-                'returnUrl'   => $baseUrl . '/booking/' . $order->showtime_id . '?paymentStatus=success&orderCode=' . $order->gateway_order_code,
+                'cancelUrl'   => $baseUrl . '/booking/' . $showtime->encrypted_id . '?paymentStatus=cancelled&orderCode=' . $order->gateway_order_code,
+                'returnUrl'   => $baseUrl . '/booking/' . $showtime->encrypted_id . '?paymentStatus=success&orderCode=' . $order->gateway_order_code,
                 'items'       => [[
                     'name'     => 'Don hang ' . $order->code,
                     'quantity' => 1,

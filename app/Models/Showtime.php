@@ -26,7 +26,7 @@ class Showtime extends Model
         'status',
     ];
 
-    protected $appends = [];
+    protected $appends = ['encrypted_id'];
 
     protected $casts = [
         'scheduled_at' => 'datetime',
@@ -36,6 +36,11 @@ class Showtime extends Model
     ];
 
 
+
+    public function getEncryptedIdAttribute()
+    {
+        return Crypt::encryptString($this->id);
+    }
 
     public function getFormattedStartTimeAttribute()
     {

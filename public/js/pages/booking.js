@@ -109,7 +109,7 @@ class BookingManager {
     }
 
     subscribeToOrderChannel(orderCode) {
-        if (typeof window.Echo === 'undefined' || !orderCode) return;
+        if (!window.Echo || !orderCode) return;
 
         window.Echo.private(`order.${orderCode}`)
             .listen('.order.paid', () => {

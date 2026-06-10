@@ -8,7 +8,7 @@
 @endpush
 
 @section('content')
-<div class="booking-page" data-showtime-id="{{ $showtime->id }}">
+<div class="booking-page" data-showtime-id="{{ $showtime->id }}" data-showtime-encrypted-id="{{ $showtime->encrypted_id }}">
 
 @if(!$paymentHandled)
     {{-- Tab Navigation - Chỉ hiển thị khi không ở trang kết quả thanh toán --}}
@@ -324,17 +324,17 @@
             <div class="transaction-info">
                 <div class="info-block">
                     <span class="info-label">MÃ GIAO DỊCH</span>
-                    <span class="info-value">{{ $paymentData['orderCode'] ?? '' }}</span>
+                    <span class="info-value">{{ $paymentData['orderCode'] ?? '---' }}</span>
                 </div>
                 <div class="info-divider"></div>
                 <div class="info-block">
                     <span class="info-label">TỔNG TIỀN</span>
-                    <span class="info-value">{{ $paymentData['totalAmount'] ?? '' }}</span>
+                    <span class="info-value">{{ $paymentData['totalAmount'] ?? '---' }}</span>
                 </div>
                 <div class="info-divider"></div>
                 <div class="info-block">
                     <span class="info-label">NGÀY ĐẶT</span>
-                    <span class="info-value">{{ $paymentData['date'] ?? '' }}</span>
+                    <span class="info-value">{{ $paymentData['date'] ?? '---' }}</span>
                 </div>
             </div>
         </div>
@@ -363,12 +363,12 @@
             <div class="transaction-info">
                 <div class="info-block">
                     <span class="info-label">MÃ GIAO DỊCH</span>
-                    <span class="info-value">{{ $paymentData['orderCode'] ?? '' }}</span>
+                    <span class="info-value">{{ $paymentData['orderCode'] ?? '---' }}</span>
                 </div>
                 <div class="info-divider"></div>
                 <div class="info-block">
                     <span class="info-label">NGÀY HUỶ</span>
-                    <span class="info-value">{{ $paymentData['date'] ?? '' }}</span>
+                    <span class="info-value">{{ $paymentData['date'] ?? '---' }}</span>
                 </div>
             </div>
         </div>
@@ -402,6 +402,7 @@
 <script>
     window.BOOKING_CONFIG = {
         showtimeId: {{ $showtime->id }},
+        encryptedShowtimeId: @json($showtime->encrypted_id),
         basePrice: {{ $showtime->price ?? 0 }},
         screenId: {{ $showtime->screen_id }},
         movieTitle: @json($showtime->movie->title),

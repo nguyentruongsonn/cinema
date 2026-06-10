@@ -6,6 +6,7 @@ use App\Http\Requests\LockSeatRequest;
 use App\Services\SeatService;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 
 class SeatController extends Controller
 {
@@ -19,11 +20,12 @@ class SeatController extends Controller
     /**
      * Get seats by showtime with availability status.
      */
-    public function getByShowtime($showtimeId)
+    public function getByShowtime($encryptedShowtimeId)
     {
         try {
+            $showtimeId = (int) Crypt::decryptString($encryptedShowtimeId);
             $user = Auth::user();
-            $data = $this->seatService->getByShowtime((int) $showtimeId, $user);
+            $data = $this->seatService->getByShowtime($showtimeId, $user);
 
             return $this->successResponse($data, 'Seats retrieved successfully');
         } catch (\Exception $e) {

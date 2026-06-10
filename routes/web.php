@@ -11,7 +11,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/movies', 'users.movies.index')->name('movies.index');
 Route::view('/movies/{idOrSlug}', 'users.movies.show')->name('movies.show');
 
-Route::get('/booking/{showtimeId}', [BookingController::class, 'show'])->whereNumber('showtimeId')->name('booking.show');
+Route::get('/booking/{encryptedShowtimeId}', [BookingController::class, 'show'])->name('booking.show');
 Route::get('/payment/{order}', [PaymentController::class, 'index'])->name('payment.index');
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
 Route::get('/my-tickets', [ProfileController::class, 'tickets'])->name('tickets.index');

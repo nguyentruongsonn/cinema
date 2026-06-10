@@ -74,7 +74,7 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('seats')->group(function () {
-        Route::get('showtime/{showtimeId}', [SeatController::class, 'getByShowtime']);
+        Route::get('showtime/{encryptedShowtimeId}', [SeatController::class, 'getByShowtime']);
     });
 
     // Protected routes
