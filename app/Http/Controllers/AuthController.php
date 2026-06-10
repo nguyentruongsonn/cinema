@@ -128,8 +128,8 @@ class AuthController extends Controller
             $response = $this->successResponse(null, 'Logout successful');
 
             return $response
-                ->withCookie(cookie()->forget('access_token'))
-                ->withCookie(cookie()->forget('refresh_token'));
+                ->withCookie(cookie()->forget('access_token', '/', config('session.domain')))
+                ->withCookie(cookie()->forget('refresh_token', '/', config('session.domain')));
         } catch (\Throwable $e) {
             return $this->errorResponse('Logout failed: ' . $e->getMessage(), 500);
         }
@@ -310,8 +310,8 @@ class AuthController extends Controller
                 value: $accessToken,
                 minutes: (int) ceil($accessExpiresIn / 60),
                 path: '/',
-                domain: null,
-                secure: config('session.secure', true),
+                domain: config('session.domain'),
+                secure: config('session.secure'),
                 httpOnly: true,
                 raw: false,
                 sameSite: config('session.same_site', 'lax')
@@ -321,8 +321,8 @@ class AuthController extends Controller
                 value: $refreshToken,
                 minutes: (int) ceil($refreshExpiresIn / 60),
                 path: '/',
-                domain: null,
-                secure: config('session.secure', true),
+                domain: config('session.domain'),
+                secure: config('session.secure'),
                 httpOnly: true,
                 raw: false,
                 sameSite: config('session.same_site', 'lax')

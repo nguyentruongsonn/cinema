@@ -37,42 +37,45 @@
                         <i class="bi bi-bell"></i>
                     </a>
 
-                    {{-- Login button (shown when not authenticated) --}}
-                    <a href="#" class="btn btn-danger cinema-login-btn" data-auth-action="login">
-                        Đăng nhập
-                    </a>
-
-                    {{-- User dropdown (shown when authenticated) --}}
-                    <div class="dropdown d-none" id="userDropdown">
-                        <button class="btn btn-link text-white text-decoration-none dropdown-toggle d-flex align-items-center gap-2"
-                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle fs-5"></i>
-                            <span class="user-name d-none d-lg-inline"></span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                            <li>
-                                <a class="dropdown-item" href="{{ route('profile.index') }}">
-                                    <i class="bi bi-person me-2"></i>Tài khoản
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ route('tickets.index') }}">
-                                    <i class="bi bi-ticket-perforated me-2"></i>Vé của tôi
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#orders">
-                                    <i class="bi bi-bag me-2"></i>Đơn hàng
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-danger" href="#" data-auth-action="logout">
-                                    <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    {{-- Server-side rendered auth state --}}
+                    @if (!Auth::guard('web')->check())
+                        {{-- Login button (shown when not authenticated) --}}
+                        <a href="#" class="btn btn-danger cinema-login-btn" data-auth-action="login">
+                            Đăng nhập
+                        </a>
+                    @else
+                        {{-- User dropdown (shown when authenticated) --}}
+                        <div class="dropdown" id="userDropdown">
+                            <button class="btn btn-link text-white text-decoration-none dropdown-toggle d-flex align-items-center gap-2"
+                                type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle fs-5"></i>
+                                <span class="user-name d-none d-lg-inline">{{ Auth::guard('web')->user()->name }}</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('profile.index') }}">
+                                        <i class="bi bi-person me-2"></i>Tài khoản
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('tickets.index') }}">
+                                        <i class="bi bi-ticket-perforated me-2"></i>Vé của tôi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#orders">
+                                        <i class="bi bi-bag me-2"></i>Đơn hàng
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#" data-auth-action="logout">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

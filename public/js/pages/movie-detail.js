@@ -159,17 +159,24 @@
         const query = new URLSearchParams(params).toString();
         const fullUrl = query ? `${url}?${query}` : url;
 
+        console.log('🌐 apiGet fetch:', {fullUrl, method: 'GET'});
+        
         const res = await fetch(fullUrl, {
             headers: {
                 Accept: 'application/json',
             },
         });
 
+        console.log('📊 apiGet response:', {url: fullUrl, status: res.status, ok: res.ok});
+
         if (!res.ok) {
+            console.error('❌ apiGet error:', {status: res.status, statusText: res.statusText});
             await handleApiError(res);
         }
 
-        return res.json();
+        const json = await res.json();
+        console.log('✓ apiGet data:', {success: json.success, hasData: !!json.data});
+        return json;
     }
 
     async function handleApiError(res) {
@@ -199,27 +206,41 @@
     }
 
     async function loadShowtimes() {
-        const json = await apiGet(`${API_BASE}/movies/${encodeURIComponent(state.movieSlug)}/showtimes`);
+        const url = `${API_BASE}/movies/${encodeURIComponent(state.movieSlug)}/showtimes`;
+        console.log('📍 loadShowtimes:', {url, movieSlug: state.movieSlug, apiBase: API_BASE});
+        
+        try {
+            const json = await apiGet(url);
+            console.log('✓ Showtimes response:', json);
 
-        if (!json.success || !json.data) {
+            if (!json.success || !json.data) {
+                console.warn('⚠️ Invalid response:', {success: json.success, hasData: !!json.data});
+                state.showtimeGroups = [];
+                showNoShowtimes();
+                return;
+            }
+
+            state.showtimeGroups = json.data.showtimes_grouped || [];
+            console.log('✓ Groups loaded:', state.showtimeGroups.length);
+            
+            state.theaters = extractTheaters();
+
+            const dates = getUniqueDates();
+            state.selectedDate = dates[0] || null;
+
+            if (!state.selectedDate || state.showtimeGroups.length === 0) {
+                console.log('⚠️ No dates or groups', {dates: dates.length, groups: state.showtimeGroups.length});
+                showNoShowtimes();
+                return;
+            }
+
+            populateTheaterFilter();
+            renderShowtimes();
+        } catch (error) {
+            console.error('❌ Showtimes error:', error.message, error);
             state.showtimeGroups = [];
             showNoShowtimes();
-            return;
         }
-
-        state.showtimeGroups = json.data.showtimes_grouped || [];
-        state.theaters = extractTheaters();
-
-        const dates = getUniqueDates();
-        state.selectedDate = dates[0] || null;
-
-        if (!state.selectedDate || state.showtimeGroups.length === 0) {
-            showNoShowtimes();
-            return;
-        }
-
-        populateTheaterFilter();
-        renderShowtimes();
     }
 
     async function loadTrendingMovies() {

@@ -100,11 +100,31 @@ class ProfilePage {
         this.setLoading(true);
 
         try {
+            // CRITICAL FIX: Wait for authManager to complete initial auth check
+            // This prevents race condition where profile.js loads before auth check completes
+            if (window.authManager && !window.authManager.authChecked) {
+                console.log('[Profile] Waiting for auth check to complete...');
+                
+                // Wait up to 5 seconds for auth check
+                let attempts = 0;
+                const maxAttempts = 50; // 50 * 100ms = 5 seconds
+                
+                while (!window.authManager.authChecked && attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                console.log(`[Profile] Auth check completed after ${attempts * 100}ms`);
+            }
+
+            // Now safely check authentication
             if (!window.authManager?.isAuthenticated()) {
+                console.log('[Profile] User not authenticated');
                 this.showAuthRequired();
                 return;
             }
 
+            console.log('[Profile] User authenticated, loading profile data...');
             const response = await this.apiRequest('/auth/profile');
             this.user = response.data?.user || response.data || response.user || null;
 

@@ -80,7 +80,7 @@ class BookingManager {
             return;
         }
 
-        const showtimeId = this.config.showtimeId;
+        const showtimeId = this.config.showtimeId; // Use unencrypted ID for WebSocket channel
         if (!showtimeId) return;
 
         // 1. Real-time seat status (public – no auth needed)
@@ -581,7 +581,7 @@ class BookingManager {
             this.showLoading();
 
             const response = await this.fetchAPI(
-                `/seats/showtime/${this.config.showtimeId}`
+                `/seats/showtime/${this.config.encryptedShowtimeId}`
             );
 
             if (response.success) {

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Diagnostic Tool</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 20px; }
+        .header h1 { margin-bottom: 10px; }
+        .section { background: white; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section h2 { color: #333; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea; }
+        .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        .status.pass { background: #10b981; color: white; }
+        .status.fail { background: #ef4444; color: white; }
+        .status.warn { background: #f59e0b; color: white; }
+        .info { background: #e0e7ff; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #667eea; }
+        .code { background: #1e293b; color: #e2e8f0; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 13px; overflow-x: auto; margin: 10px 0; }
+        button { background: #667eea; color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin: 10px 10px 10px 0; }
+        button:hover { background: #5568d3; }
+        button:active { transform: scale(0.98); }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .test-result.pass { background: #d1fae5; border-left: 4px solid #10b981; }
+        .test-result.fail { background: #fee2e2; border-left: 4px solid #ef4444; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #f9fafb; font-weight: 600; }
+        .action-buttons { margin-top: 20px; }
+        #loading { display: none; text-align: center; padding: 20px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Cinema Auth Diagnostic Tool</h1>
+            <p>Comprehensive authentication system diagnosis</p>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Quick Actions</h2>
+            <div class="action-buttons">
+                <button onclick="runFullDiagnostic()">🔍 Run Full Diagnostic</button>
+                <button onclick="clearAllCookies()">🗑️ Clear All Cookies</button>
+                <button onclick="testLogin()">🔐 Test Login</button>
+                <button onclick="testRefresh()">🔄 Test Token Refresh</button>
+            </div>
+            <div id="loading">
+                <div class="spinner"></div>
+                <p>Running diagnostic...</p>
+            </div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_URL = '/api/v1';
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function addResult(html) {
+            document.getElementById('results').innerHTML += html;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function getCookies() {
+            const cookies = {};
+            document.cookie.split(';').forEach(cookie => {
+                const [name, value] = cookie.trim().split('=');
+                if (name) cookies[name] = value;
+            });
+            return cookies;
+        }
+
+        async function runFullDiagnostic() {
+            clearResults();
+            showLoading(true);
+            
+            await checkEnvironment();
+            await checkCookies();
+            await checkBackendConfig();
+            await checkAuthStatus();
+            
+            showLoading(false);
+        }
+
+        async function checkEnvironment() {
+            let html = '<div class="section"><h2>1️⃣ Environment Check</h2>';
+            
+            const checks = [
+                { name: 'Current URL', value: window.location.href, pass: true },
+                { name: 'Protocol', value: window.location.protocol, pass: window.location.protocol === 'http:' },
+                { name: 'Hostname', value: window.location.hostname, pass: true },
+                { name: 'Port', value: window.location.port || '80', pass: true },
+                { name: 'Cookies Enabled', value: navigator.cookieEnabled ? 'Yes' : 'No', pass: navigator.cookieEnabled }
+            ];
+
+            html += '<table><tr><th>Check</th><th>Value</th><th>Status</th></tr>';
+            checks.forEach(check => {
+                const status = check.pass ? '<span class="status pass">✓ PASS</span>' : '<span class="status fail">✗ FAIL</span>';
+                html += `<tr><td>${check.name}</td><td>${check.value}</td><td>${status}</td></tr>`;
+            });
+            html += '</table></div>';
+            
+            addResult(html);
+        }
+
+        async function checkCookies() {
+            let html = '<div class="section"><h2>2️⃣ Cookie Analysis</h2>';
+            
+            const cookies = getCookies();
+            const hasAccessToken = cookies.hasOwnProperty('access_token');
+            const hasRefreshToken = cookies.hasOwnProperty('refresh_token');
+            
+            if (hasAccessToken || hasRefreshToken) {
+                html += '<div class="info">📊 <strong>Cookies Found:</strong></div>';
+                html += '<table><tr><th>Cookie Name</th><th>Value (truncated)</th><th>Status</th></tr>';
+                
+                if (hasAccessToken) {
+                    const token = cookies.access_token;
+                    html += `<tr><td>access_token</td><td>${token.substring(0, 50)}...</td><td><span class="status pass">✓ EXISTS</span></td></tr>`;
+                }
+                
+                if (hasRefreshToken) {
+                    const token = cookies.refresh_token;
+                    html += `<tr><td>refresh_token</td><td>${token.substring(0, 50)}...</td><td><span class="status pass">✓ EXISTS</span></td></tr>`;
+                }
+                
+                html += '</table>';
+                
+                html += '<div class="test-result pass">✅ <strong>Result:</strong> Auth cookies are present and should be sent to server.</div>';
+            } else {
+                html += '<div class="test-result fail">❌ <strong>Result:</strong> NO auth cookies found! You need to login first.</div>';
+                html += '<div class="info">💡 <strong>Next Steps:</strong><br>1. Click "Test Login" button above<br>2. Or navigate to login page and login manually<br>3. Then run diagnostic again</div>';
+            }
+            
+            html += '</div>';
+            addResult(html);
+        }
+
+        async function checkBackendConfig() {
+            let html = '<div class="section"><h2>3️⃣ Backend Configuration Check</h2>';
+            
+            try {
+                const response = await fetch(window.location.origin + '/check_auth_config.php');
+                if (response.ok) {
+                    const data = await response.json();
+                    html += '<div class="code">' + JSON.stringify(data, null, 2) + '</div>';
+                } else {
+                    html += '<div class="test-result warn">⚠️ Could not load backend config check endpoint</div>';
+                }
+            } catch (error) {
+                html += `<div class="test-result fail">❌ Error checking backend: ${error.message}</div>`;
+            }
+            
+            html += '</div>';
+            addResult(html);
+        }
+
+        async function checkAuthStatus() {
+            let html = '<div class="section"><h2>4️⃣ Authentication Status Check</h2>';
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/profile`, {
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    html += '<div class="test-result pass">✅ <strong>Authentication: SUCCESS</strong></div>';
+                    html += '<div class="code">' + JSON.stringify(data, null, 2) + '</div>';
+                    html += '<div class="info">🎉 <strong>SSR Auth Working!</strong> Your cookies are being sent and validated correctly.</div>';
+                } else if (response.status === 401) {
+                    html += '<div class="test-result fail">❌ <strong>Authentication: FAILED (401 Unauthorized)</strong></div>';
+                    html += '<div class="info">This means either:<br>1. You are not logged in<br>2. Cookies are not being sent<br>3. Access token is expired</div>';
+                } else {
+                    html += `<div class="test-result fail">❌ <strong>Authentication: FAILED (${response.status})</strong></div>`;
+                }
+            } catch (error) {
+                html += `<div class="test-result fail">❌ <strong>Error:</strong> ${error.message}</div>`;
+            }
+            
+            html += '</div>';
+            addResult(html);
+        }
+
+        async function clearAllCookies() {
+            const cookies = getCookies();
+            let count = 0;
+            
+            Object.keys(cookies).forEach(name => {
+                document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                count++;
+            });
+            
+            alert(`✅ Cleared ${count} cookies. Please login again.`);
+            window.location.reload();
+        }
+
+        async function testLogin() {
+            const email = prompt('Enter email:', 'admin@example.com');
+            const password = prompt('Enter password:');
+            
+            if (!email || !password) {
+                alert('Login cancelled');
+                return;
+            }
+            
+            showLoading(true);
+            clearResults();
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                let html = '<div class="section"><h2>🔐 Login Test Result</h2>';
+                
+                if (response.ok && data.success) {
+                    html += '<div class="test-result pass">✅ <strong>Login: SUCCESS</strong></div>';
+                    html += '<div class="code">' + JSON.stringify(data, null, 2) + '</div>';
+                    html += '<div class="info">🎉 <strong>Cookies Set!</strong> Run "Full Diagnostic" to verify.</div>';
+                    
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    html += '<div class="test-result fail">❌ <strong>Login: FAILED</strong></div>';
+                    html += '<div class="code">' + JSON.stringify(data, null, 2) + '</div>';
+                }
+                
+                html += '</div>';
+                addResult(html);
+            } catch (error) {
+                let html = '<div class="section"><h2>🔐 Login Test Result</h2>';
+                html += `<div class="test-result fail">❌ <strong>Error:</strong> ${error.message}</div>`;
+                html += '</div>';
+                addResult(html);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function testRefresh() {
+            showLoading(true);
+            clearResults();
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/refresh`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                let html = '<div class="section"><h2>🔄 Token Refresh Test Result</h2>';
+                
+                if (response.ok && data.success) {
+                    html += '<div class="test-result pass">✅ <strong>Token Refresh: SUCCESS</strong></div>';
+                    html += '<div class="code">' + JSON.stringify(data, null, 2) + '</div>';
+                    html += '<div class="info">🎉 <strong>New Access Token Set!</strong> Token refresh mechanism is working.</div>';
+                } else {
+                    html += '<div class="test-result fail">❌ <strong>Token Refresh: FAILED</strong></div>';
+                    html += '<div class="code">' + JSON.stringify(data, null, 2) + '</div>';
+                }
+                
+                html += '</div>';
+                addResult(html);
+            } catch (error) {
+                let html = '<div class="section"><h2>🔄 Token Refresh Test Result</h2>';
+                html += `<div class="test-result fail">❌ <strong>Error:</strong> ${error.message}</div>`;
+                html += '</div>';
+                addResult(html);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Auto-run diagnostic on page load
+        window.addEventListener('load', () => {
+            setTimeout(runFullDiagnostic, 500);
+        });
+    </script>
+</body>
+</html>

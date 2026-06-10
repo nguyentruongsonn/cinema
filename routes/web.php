@@ -8,11 +8,19 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Login route - redirect to home (auth handled by frontend modal)
+Route::get('/login', function () {
+    return redirect('/')->with('message', 'Vui lòng đăng nhập để tiếp tục');
+})->name('login');
+
 Route::view('/movies', 'users.movies.index')->name('movies.index');
 Route::view('/movies/{idOrSlug}', 'users.movies.show')->name('movies.show');
 
 Route::get('/booking/{encryptedShowtimeId}', [BookingController::class, 'show'])->name('booking.show');
 Route::get('/payment/{order}', [PaymentController::class, 'index'])->name('payment.index');
+
+// Profile routes - auth handled by SSR (@guest/@auth directives in views)
+// AuthenticateFromCookie middleware auto-authenticates from JWT cookie
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
 Route::get('/my-tickets', [ProfileController::class, 'tickets'])->name('tickets.index');
 

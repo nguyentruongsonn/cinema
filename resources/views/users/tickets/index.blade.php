@@ -10,18 +10,21 @@
 @section('content')
     <main class="tickets-page" data-page="tickets">
         <div class="tickets-container">
-            {{-- Auth Required State --}}
-            <div id="ticketsAuthRequired" class="tickets-auth-required d-none">
-                <div class="tickets-auth-card">
-                    <i class="bi bi-ticket-detailed"></i>
-                    <h1>Vui lòng đăng nhập</h1>
-                    <p>Bạn cần đăng nhập để xem lịch sử đặt vé.</p>
-                    <button type="button" class="tickets-primary-btn" data-auth-action="login">Đăng nhập</button>
+            {{-- Guest users: Show login prompt (SSR) --}}
+            @if (!Auth::guard('web')->check())
+                <div class="tickets-auth-required">
+                    <div class="tickets-auth-card">
+                        <i class="bi bi-ticket-detailed"></i>
+                        <h1>Vui lòng đăng nhập</h1>
+                        <p>Bạn cần đăng nhập để xem lịch sử đặt vé.</p>
+                        <button type="button" class="tickets-primary-btn" data-auth-action="login">Đăng nhập</button>
+                    </div>
                 </div>
-            </div>
+            @else
 
-            {{-- Loading State --}}
-            <div id="ticketsLoading" class="tickets-layout">
+            {{-- Authenticated users: Show tickets (SSR) --}}
+                {{-- Loading State --}}
+                <div id="ticketsLoading" class="tickets-layout">
                 <aside class="tickets-sidebar">
                     <div class="tickets-sidebar-skeleton"></div>
                 </aside>
@@ -109,6 +112,7 @@
                     </div>
                 </section>
             </div>
+            @endif
         </div>
     </main>
 

@@ -17,6 +17,7 @@
 
     {{-- Local assets --}}
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/auth-no-flicker.css') }}">
 
     @stack('styles')
 </head>
@@ -39,6 +40,11 @@
             appName: @json(config('app.name', 'Cinema')),
             apiUrl: @json(url('/api/v1')),
             csrfToken: @json(csrf_token()),
+            auth: {
+                checked: true,
+                authenticated: @json(Auth::guard('web')->check()),
+                user: @json(Auth::guard('web')->user()),
+            },
         };
         window.REVERB_CONFIG = {
             enabled:   @json((bool) env('REVERB_ENABLED', false)),

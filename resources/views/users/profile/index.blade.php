@@ -10,16 +10,20 @@
 @section('content')
     <main class="profile-page" data-page="profile">
         <div class="profile-container">
-            <div id="profileAuthRequired" class="profile-auth-required d-none">
-                <div class="profile-auth-card">
-                    <i class="bi bi-person-lock"></i>
-                    <h1>Vui lòng đăng nhập</h1>
-                    <p>Bạn cần đăng nhập để xem hồ sơ cá nhân.</p>
-                    <button type="button" class="profile-primary-btn" data-auth-action="login">Đăng nhập</button>
+            {{-- Guest users: Show login prompt (SSR) --}}
+            @if (!Auth::guard('web')->check())
+                <div class="profile-auth-required">
+                    <div class="profile-auth-card">
+                        <i class="bi bi-person-lock"></i>
+                        <h1>Vui lòng đăng nhập</h1>
+                        <p>Bạn cần đăng nhập để xem hồ sơ cá nhân.</p>
+                        <button type="button" class="profile-primary-btn" data-auth-action="login">Đăng nhập</button>
+                    </div>
                 </div>
-            </div>
+            @else
 
-            <div id="profileLoading" class="profile-layout profile-loading">
+            {{-- Authenticated users: Show profile (SSR) --}}
+                <div id="profileLoading" class="profile-layout profile-loading">
                 <aside class="profile-sidebar profile-skeleton"></aside>
                 <section class="profile-main profile-skeleton"></section>
             </div>
@@ -221,6 +225,7 @@
                     </section>
                 </section>
             </div>
+            @endif
         </div>
 
         <button type="button" class="profile-scroll-top" aria-label="Lên đầu trang">

@@ -6,8 +6,13 @@
 class AuthManager {
     constructor() {
         this.apiUrl = window.APP_CONFIG?.apiUrl || '/api/v1';
-        this.user = null;
+        const ssrAuth = window.APP_CONFIG?.auth || {};
+        this.user = ssrAuth.authenticated ? ssrAuth.user : null;
         this.modal = null;
+        this.isCheckingAuth = false;
+        this.authChecked = !!ssrAuth.checked;
+        this.isRefreshing = false;
+        this.refreshPromise = null;
         this.init();
     }
 
@@ -15,7 +20,11 @@ class AuthManager {
         document.addEventListener('DOMContentLoaded', () => {
             this.modal = new bootstrap.Modal(document.getElementById('authModal'));
             this.setupEventListeners();
-            this.checkAuthStatus();
+            if (this.authChecked) {
+                this.updateUI();
+            } else {
+                this.checkAuthStatus();
+            }
         });
     }
 
@@ -115,11 +124,10 @@ class AuthManager {
                 // Cookies are automatically set by server (HttpOnly)
                 this.user = response.data.user;
                 this.modal.hide();
-                this.updateUI();
                 this.showToast('Đăng nhập thành công!', 'success');
 
-                // Reload if needed
-                setTimeout(() => window.location.reload(), 500);
+                // Reload page immediately to trigger SSR with new auth state
+                setTimeout(() => window.location.reload(), 300);
             } else {
                 this.showAlert('login', response.message || 'Đăng nhập thất bại');
             }
@@ -181,10 +189,10 @@ class AuthManager {
                 // Cookies are automatically set by server (HttpOnly)
                 this.user = response.data.user;
                 this.modal.hide();
-                this.updateUI();
                 this.showToast('Đăng ký thành công!', 'success');
 
-                setTimeout(() => window.location.reload(), 500);
+                // Reload page immediately to trigger SSR with new auth state
+                setTimeout(() => window.location.reload(), 300);
             } else {
                 this.showAlert('register', response.message || 'Đăng ký thất bại');
             }
@@ -223,27 +231,30 @@ class AuthManager {
     }
 
     async checkAuthStatus() {
-        // Check authentication via cookies (no need to check localStorage).
-        // A 401 here is a normal "guest user" state, not a frontend error.
+        // Prevent multiple simultaneous auth checks
+        if (this.isCheckingAuth) {
+            return;
+        }
+
+        this.isCheckingAuth = true;
+
         try {
-            const response = await this.fetchAPI('/auth/me', {
+            const response = await this.fetchAPI('/auth/profile', {
                 skipRefresh: true,
                 silentAuth: true,
             });
 
-            if (response.success) {
-                this.user = response.data;
-                this.updateUI();
+            if (response.success && response.data) {
+                this.user = response.data.user || response.data;
             } else {
                 this.user = null;
-                this.updateUI();
             }
         } catch (error) {
-            if (!error.isAuthExpected) {
-                console.error('Check auth status error:', error);
-            }
-
+            // Expected for guest users
             this.user = null;
+        } finally {
+            this.isCheckingAuth = false;
+            this.authChecked = true;
             this.updateUI();
         }
     }
@@ -308,29 +319,40 @@ class AuthManager {
     }
 
     async refreshAccessToken() {
-        try {
-            const response = await fetch(`${this.apiUrl}/auth/refresh`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include' // Send refresh token cookie
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.data.user) {
-                    // New access_token cookie set automatically by server
-                    this.user = data.data.user;
-                    return true;
-                }
-            }
-            return false;
-        } catch (error) {
-            console.error('Token refresh failed:', error);
-            return false;
+        if (this.isRefreshing && this.refreshPromise) {
+            return this.refreshPromise;
         }
+
+        this.isRefreshing = true;
+        this.refreshPromise = (async () => {
+            try {
+                const response = await fetch(`${this.apiUrl}/auth/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.user) {
+                        this.user = data.data.user;
+                        return true;
+                    }
+                }
+                return false;
+            } catch (error) {
+                console.error('Token refresh failed:', error);
+                return false;
+            } finally {
+                this.isRefreshing = false;
+                this.refreshPromise = null;
+            }
+        })();
+
+        return this.refreshPromise;
     }
 
     handleError(error, formType) {
@@ -446,6 +468,15 @@ class AuthManager {
     }
 
     updateUI() {
+        // Don't update UI until initial auth check is complete
+        // This prevents flickering between logged-out and logged-in states
+        if (!this.authChecked) {
+            return;
+        }
+
+        // Add class to body to trigger CSS fade-in (prevents FOUC)
+        document.body.classList.add('auth-checked');
+
         const loginBtn = document.querySelector('[data-auth-action="login"]');
         const userDropdown = document.getElementById('userDropdown');
 
@@ -480,6 +511,11 @@ class AuthManager {
     // Tokens managed via HttpOnly cookies - no localStorage needed
 
     isAuthenticated() {
+        // Don't return true until we've checked auth status
+        // This prevents race conditions where code checks auth before checkAuthStatus() completes
+        if (!this.authChecked) {
+            return false;
+        }
         return !!this.user;
     }
 
