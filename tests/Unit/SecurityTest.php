@@ -21,8 +21,9 @@ class SecurityTest extends TestCase
         // X-Frame-Options prevents clickjacking
         $response->assertHeader('X-Frame-Options', 'DENY');
 
-        // X-XSS-Protection provides XSS filtering
-        $response->assertHeader('X-XSS-Protection', '1; mode=block');
+        // X-XSS-Protection: Modern browsers deprecated this (Chrome/Edge/Safari removed it)
+        // Value '0' disables the deprecated XSS auditor - CSP is the modern alternative
+        $response->assertHeader('X-XSS-Protection', '0');
 
         // Referrer-Policy controls information leakage
         $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');

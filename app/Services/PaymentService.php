@@ -4,6 +4,10 @@ namespace App\Services;
 
 use App\Exceptions\PaymentGatewayException;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Payment;
+use App\Models\Seat;
+use App\Models\SeatHold;
 use App\Models\Showtime;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +27,7 @@ class PaymentService
 
     /**
      * Tạo đơn hàng và link thanh toán.
+     * Phase 1: Added SeatHold validation and full transaction wrapping
      */
     public function initiate(
         User      $user,
@@ -30,22 +35,33 @@ class PaymentService
         array     $validated,
         string    $baseUrl
     ): array {
-        $items = collect($validated['items'] ?? []);
+        return DB::transaction(function () use ($user, $showtime, $validated, $baseUrl) {
+            $items = collect($validated['items'] ?? []);
 
-        $seatRequests    = $items->where('type', 'seat')->all();
-        $productRequests = $items->where('type', 'product')->all();
+            $seatRequests    = $items->where('type', 'seat')->all();
+            $productRequests = $items->where('type', 'product')->all();
 
-        $pricing = $this->pricing->buildSnapshot(
-            $user,
-            $showtime,
-            $seatRequests,
-            $productRequests,
-            $validated['voucher_code'] ?? null,
-            (int) ($validated['points_used'] ?? 0),
-        );
+            // PHASE 1: Validate seat hold BEFORE creating order
+            $seatIds = collect($seatRequests)
+                ->map(fn($seat) => (int)($seat['id'] ?? $seat))
+                ->filter()
+                ->values()
+                ->all();
 
-        $order = DB::transaction(function () use ($user, $showtime, $pricing) {
-            return Order::create([
+            if (!empty($seatIds)) {
+                $this->validateSeatHold($user, $showtime, $seatIds);
+            }
+
+            $pricing = $this->pricing->buildSnapshot(
+                $user,
+                $showtime,
+                $seatRequests,
+                $productRequests,
+                $validated['voucher_code'] ?? null,
+                (int) ($validated['points_used'] ?? 0),
+            );
+
+            $order = Order::create([
                 'code'               => $this->generateOrderNumber(),
                 'gateway_order_code' => $this->generateOrderCode(),
                 'payment_provider'   => 'payos',
@@ -66,10 +82,24 @@ class PaymentService
                 'payment_status' => 'pending',
                 'expired_at'     => now()->addMinutes(15),
             ]);
-        });
 
-        try {
-            $response = $this->gateway->createPaymentLink([
+            // PHASE 2: Create payment record for audit trail
+            $payment = Payment::create([
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'method' => 'payos',
+                'gateway_order_code' => $order->gateway_order_code,
+                'amount' => $order->total_amount,
+                'status' => Payment::STATUS_PENDING,
+                'payload' => [
+                    'showtime_id' => $showtime->id,
+                    'seat_ids' => $seatIds,
+                    'created_at' => now()->toISOString(),
+                ],
+            ]);
+
+            try {
+                $response = $this->gateway->createPaymentLink([
                 'orderCode'   => $order->gateway_order_code,
                 'amount'      => (int) round($order->total_amount),
                 'description' => substr('DH ' . $order->code, 0, 25),
@@ -81,20 +111,81 @@ class PaymentService
                     'price'    => (int) round($order->total_amount),
                 ]],
             ]);
-        } catch (PaymentGatewayException $e) {
-            // Hủy đơn nếu tạo link thất bại
-            $order->update(['status' => Order::STATUS_CANCELLED, 'payment_status' => 'failed']);
-            throw $e;
+            } catch (PaymentGatewayException $e) {
+                // Hủy đơn nếu tạo link thất bại
+                $order->update(['status' => Order::STATUS_CANCELLED, 'payment_status' => 'failed']);
+                throw $e;
+            }
+
+            $checkoutUrl = $response['checkoutUrl'] ?? null;
+            $order->forceFill(['checkout_url' => $checkoutUrl])->save();
+
+            return [
+                'checkout_url'       => $checkoutUrl,
+                'gateway_order_code' => $order->gateway_order_code,
+                'order_number'       => $order->code,
+            ];
+        });
+    }
+
+    /**
+     * PHASE 1: Validate user has valid seat hold for payment
+     * Prevents bypass of seat locking mechanism
+     */
+    private function validateSeatHold(User $user, Showtime $showtime, array $seatIds): void
+    {
+        // 1. Normalize and validate seat IDs
+        $seatIds = array_values(array_unique(array_map('intval', $seatIds)));
+        sort($seatIds);
+
+        if (empty($seatIds)) {
+            throw new \RuntimeException('Danh sách ghế trống.');
         }
 
-        $checkoutUrl = $response['checkoutUrl'] ?? null;
-        $order->forceFill(['checkout_url' => $checkoutUrl])->save();
+        // 2. Validate seats belong to showtime's screen with lock
+        $seats = Seat::query()
+            ->whereIn('id', $seatIds)
+            ->where('screen_id', $showtime->screen_id)
+            ->lockForUpdate()
+            ->get();
 
-        return [
-            'checkout_url'       => $checkoutUrl,
-            'gateway_order_code' => $order->gateway_order_code,
-            'order_number'       => $order->code,
-        ];
+        if ($seats->count() !== count($seatIds)) {
+            throw new \RuntimeException('Một hoặc nhiều ghế không thuộc phòng chiếu này.');
+        }
+
+        // 3. Validate user has valid hold for these seats
+        $hold = SeatHold::query()
+            ->valid()
+            ->where('user_id', $user->id)
+            ->where('showtime_id', $showtime->id)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$hold) {
+            throw new \RuntimeException('Phiên giữ ghế đã hết hạn. Vui lòng chọn lại ghế.');
+        }
+
+        $heldSeatIds = array_values(array_unique(array_map('intval', (array) $hold->seat_ids)));
+        sort($heldSeatIds);
+
+        if ($seatIds !== $heldSeatIds) {
+            throw new \RuntimeException('Danh sách ghế không khớp với phiên giữ ghế.');
+        }
+
+        // 4. Check seats not already booked (double-booking protection)
+        $bookedSeatIds = OrderItem::query()
+            ->where('item_type', Seat::class)
+            ->whereIntegerInRaw('item_id', $seatIds)
+            ->whereHas('order', function ($query) use ($showtime) {
+                $query->where('showtime_id', $showtime->id)
+                    ->whereIn('status', [Order::STATUS_PENDING, Order::STATUS_CONFIRMED]);
+            })
+            ->pluck('item_id')
+            ->all();
+
+        if (!empty($bookedSeatIds)) {
+            throw new \RuntimeException('Một số ghế đã được đặt bởi người dùng khác.');
+        }
     }
 
     /**

@@ -1,0 +1,110 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Models\Ticket;
+use App\Models\User;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Throwable;
+
+class TicketController extends Controller
+{
+    use ApiResponse;
+
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user instanceof User) {
+                return $this->unauthorized('Người dùng không được xác thực.');
+            }
+
+            $perPage = min((int)$request->input('per_page', 15), 50);
+            $status = $request->input('status', 'all');
+
+            $query = Ticket::query()
+                ->where('user_id', $user->id)
+                ->with([
+                    'order:id,code,total_amount,created_at',
+                    'showtime:id,start_time,screen_id,movie_id',
+                    'showtime.movie:id,title,poster_url,duration,rating',
+                    'showtime.screen:id,name,theater_id',
+                    'showtime.screen.theater:id,name,address,city',
+                    'seat:id,row,number,label,seat_type_id',
+                    'seat.seatType:id,name,price_modifier',
+                ]);
+
+            if ($status !== 'all') {
+                $validStatuses = ['valid', 'used', 'cancelled', 'refunded'];
+
+                if (!in_array($status, $validStatuses)) {
+                    return $this->error(
+                        'Trạng thái không hợp lệ. Giá trị: ' . implode(', ', $validStatuses),
+                        422
+                    );
+                }
+
+                $query->where('status', $status);
+            }
+
+            $query->latest('created_at');
+
+            $tickets = $query->paginate($perPage);
+
+            return $this->ok([
+                'data' => $tickets->items(),
+                'meta' => [
+                    'current_page' => $tickets->currentPage(),
+                    'last_page' => $tickets->lastPage(),
+                    'per_page' => $tickets->perPage(),
+                    'total' => $tickets->total(),
+                    'from' => $tickets->firstItem(),
+                    'to' => $tickets->lastItem(),
+                ],
+            ], 'Tải danh sách vé thành công.');
+
+        } catch (Throwable $e) {
+            report($e);
+            return $this->error('Đã xảy ra lỗi khi tải danh sách vé.', 500);
+        }
+    }
+
+    public function show(Request $request, string $ticketCode): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user instanceof User) {
+                return $this->unauthorized('Người dùng không được xác thực.');
+            }
+
+            $ticket = Ticket::query()
+                ->where('ticket_code', $ticketCode)
+                ->where('user_id', $user->id)
+                ->with([
+                    'order:id,code,total_amount,created_at',
+                    'showtime:id,start_time,end_time,screen_id,movie_id',
+                    'showtime.movie:id,title,poster_url,duration,rating,director',
+                    'showtime.screen:id,name,theater_id',
+                    'showtime.screen.theater:id,name,address,city,phone',
+                    'seat:id,row,number,label,seat_type_id',
+                    'seat.seatType:id,name,price_modifier',
+                ])
+                ->first();
+
+            if (!$ticket) {
+                return $this->error('Vé không tìm thấy hoặc bạn không có quyền xem vé này.', 404);
+            }
+
+            return $this->ok($ticket, 'Tải thông tin vé thành công.');
+
+        } catch (Throwable $e) {
+            report($e);
+            return $this->error('Đã xảy ra lỗi khi tải thông tin vé.', 500);
+        }
+    }
+}

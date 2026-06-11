@@ -4,14 +4,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Adds missing foreign key constraints to enforce referential integrity.
- *
- * Constraint behaviors:
- * - CASCADE: Child records deleted when parent is deleted
- * - RESTRICT: Prevents parent deletion if children exist
- * - SET NULL: Sets FK to null when parent is deleted (for nullable columns)
- */
 return new class extends Migration
 {
     public function up(): void
@@ -100,12 +92,14 @@ return new class extends Migration
         });
 
         // Theaters - part of branch
-        Schema::table('theaters', function (Blueprint $table) {
-            $table->foreign('branch_id')
-                ->references('id')->on('branches')
-                ->onDelete('restrict')  // Cannot delete branch with existing theaters
-                ->onUpdate('cascade');
-        });
+        if (Schema::hasColumn('theaters', 'branch_id')) {
+            Schema::table('theaters', function (Blueprint $table) {
+                $table->foreign('branch_id')
+                    ->references('id')->on('branches')
+                    ->onDelete('restrict')  // Cannot delete branch with existing theaters
+                    ->onUpdate('cascade');
+            });
+        }
 
         // Payments - linked to orders
         if (Schema::hasColumn('payments', 'order_id')) {
@@ -211,9 +205,11 @@ return new class extends Migration
             });
         }
 
-        Schema::table('theaters', function (Blueprint $table) {
-            $table->dropForeign(['branch_id']);
-        });
+        if (Schema::hasColumn('theaters', 'branch_id')) {
+            Schema::table('theaters', function (Blueprint $table) {
+                $table->dropForeign(['branch_id']);
+            });
+        }
 
         Schema::table('screens', function (Blueprint $table) {
             $table->dropForeign(['theater_id']);

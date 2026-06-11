@@ -35,16 +35,15 @@ return new class extends Migration
         // Seat holds table indexes
         Schema::table('seat_holds', function (Blueprint $table) {
             $table->index('user_id', 'idx_seat_holds_user_id');
-            $table->index('expires_at', 'idx_seat_holds_expires_at');
+            $table->index('held_until', 'idx_seat_holds_held_until');
             $table->index(['showtime_id', 'user_id'], 'idx_seat_holds_showtime_user');
         });
 
         // Payments table indexes
         Schema::table('payments', function (Blueprint $table) {
             $table->index('order_id', 'idx_payments_order_id');
-            $table->index('transaction_id', 'idx_payments_transaction_id');
+            $table->index('transaction_code', 'idx_payments_transaction_code');
             $table->index('status', 'idx_payments_status');
-            $table->index(['gateway', 'gateway_order_code'], 'idx_payments_gateway_order');
         });
 
         // Showtimes table indexes
@@ -109,15 +108,14 @@ return new class extends Migration
 
         Schema::table('seat_holds', function (Blueprint $table) {
             $table->dropIndex('idx_seat_holds_user_id');
-            $table->dropIndex('idx_seat_holds_expires_at');
+            $table->dropIndex('idx_seat_holds_held_until');
             $table->dropIndex('idx_seat_holds_showtime_user');
         });
 
         Schema::table('payments', function (Blueprint $table) {
             $table->dropIndex('idx_payments_order_id');
-            $table->dropIndex('idx_payments_transaction_id');
+            $table->dropIndex('idx_payments_transaction_code');
             $table->dropIndex('idx_payments_status');
-            $table->dropIndex('idx_payments_gateway_order');
         });
 
         // Schema::table('showtimes', function (Blueprint $table) {

@@ -12,7 +12,7 @@
         <div class="tickets-container">
             {{-- Guest users: Show login prompt (SSR) --}}
             @if (!Auth::guard('web')->check())
-                <div class="tickets-auth-required">
+                <div id="ticketsAuthRequired" class="tickets-auth-required">
                     <div class="tickets-auth-card">
                         <i class="bi bi-ticket-detailed"></i>
                         <h1>Vui lòng đăng nhập</h1>
@@ -80,8 +80,10 @@
                             <p>Xem lại các bộ phim bạn đã thưởng thức tại Cinema Premium.</p>
                         </div>
                         <div class="tickets-tabs">
-                            <button class="tickets-tab active" data-filter="all">Tất cả</button>
-                            <button class="tickets-tab" data-filter="current-year">Năm nay</button>
+                            <button class="tickets-tab active" data-filter-status="all">Tất cả</button>
+                            <button class="tickets-tab" data-filter-status="valid">Còn hạn</button>
+                            <button class="tickets-tab" data-filter-status="used">Đã dùng</button>
+                            <button class="tickets-tab" data-filter-status="cancelled">Đã hủy</button>
                         </div>
                     </header>
 
@@ -93,23 +95,14 @@
                         <a href="{{ route('movies.index') }}" class="tickets-primary-btn">Xem phim</a>
                     </div>
 
-                    {{-- Tickets List --}}
-                    <div id="ticketsList" class="tickets-list"></div>
+                    {{-- Error Alert --}}
+                    <div id="ticketsError" class="alert alert-danger d-none" role="alert"></div>
 
-                    {{-- Load More Button --}}
-                    <div id="ticketsLoadMore" class="tickets-load-more d-none">
-                        <button type="button" class="tickets-load-more-btn" id="ticketsLoadMoreBtn">
-                            <span class="btn-text">Xem thêm lịch sử</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </button>
-                    </div>
+                    {{-- Tickets Grid (matches tickets.js expectations) --}}
+                    <div id="ticketsGrid" class="row"></div>
 
-                    {{-- Loading More Indicator --}}
-                    <div id="ticketsLoadingMore" class="tickets-loading-more d-none">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Đang tải...</span>
-                        </div>
-                    </div>
+                    {{-- Pagination --}}
+                    <div id="ticketsPagination" class="mt-4"></div>
                 </section>
             </div>
             @endif

@@ -4,6 +4,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/booking.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/booking-toast.css') }}?v={{ time() }}">
 <link rel="stylesheet" href="{{ asset('css/skeleton.css') }}">
 @endpush
 

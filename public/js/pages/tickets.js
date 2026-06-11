@@ -1,433 +1,441 @@
 /**
- * My Tickets Page - Order History
- * Handles user ticket history display and interactions
+ * Tickets Page JavaScript
+ * Handles user's ticket list display with pagination and filtering
+ * Follows API-first architecture pattern
  */
 
-(function () {
-    'use strict';
-
-    // DOM Elements
-    const elements = {
-        authRequired: document.getElementById('ticketsAuthRequired'),
-        loading: document.getElementById('ticketsLoading'),
-        content: document.getElementById('ticketsContent'),
-        empty: document.getElementById('ticketsEmpty'),
-        list: document.getElementById('ticketsList'),
-        loadMore: document.getElementById('ticketsLoadMore'),
-        loadMoreBtn: document.getElementById('ticketsLoadMoreBtn'),
-        loadingMore: document.getElementById('ticketsLoadingMore'),
-        avatar: document.getElementById('ticketsAvatar'),
-        avatarFallback: document.getElementById('ticketsAvatarFallback'),
-        userName: document.getElementById('ticketsUserName'),
-        userRank: document.getElementById('ticketsUserRank'),
-        tabs: document.querySelectorAll('.tickets-tab'),
-        ticketCardTemplate: document.getElementById('ticketCardTemplate'),
-        formatBadgeTemplate: document.getElementById('formatBadgeTemplate'),
-    };
-
-    // State
-    const state = {
-        user: null,
-        orders: [],
-        currentPage: 1,
-        lastPage: 1,
-        perPage: 10,
-        loading: false,
-        currentFilter: 'all', // 'all' or 'current-year'
-    };
+class TicketsPage {
+    constructor() {
+        this.apiUrl = window.APP_CONFIG?.apiUrl || '/api/v1';
+        this.auth = window.authManager; // From auth.js
+        
+        // State
+        this.tickets = [];
+        this.currentPage = 1;
+        this.lastPage = 1;
+        this.perPage = 15;
+        this.totalTickets = 0;
+        this.currentFilter = 'all';
+        
+        // DOM Elements
+        this.loadingContainer = document.getElementById('ticketsLoading');
+        this.contentContainer = document.getElementById('ticketsContent');
+        this.authRequiredContainer = document.getElementById('ticketsAuthRequired');
+        this.ticketsGrid = document.getElementById('ticketsGrid');
+        this.paginationContainer = document.getElementById('ticketsPagination');
+        this.statusFilters = document.querySelectorAll('[data-filter-status]');
+        this.errorAlert = document.getElementById('ticketsError');
+        this.emptyStateContainer = document.getElementById('ticketsEmpty');
+        
+        this.init();
+    }
 
     /**
-     * Initialize page
+     * Initialize the page
+     * - Setup event listeners
+     * - Load tickets if authenticated
      */
-    async function init() {
+    async init() {
+        try {
+            this.setupEventListeners();
+            await this.checkAuthAndLoad();
+        } catch (error) {
+            console.error('[TicketsPage] Init failed:', error);
+            this.showError('Lỗi khởi tạo trang. Vui lòng tải lại.');
+        }
+    }
+
+    /**
+     * Setup event listeners for filters and pagination
+     */
+    setupEventListeners() {
+        // Filter buttons
+        this.statusFilters.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const status = button.dataset.filterStatus;
+                this.handleFilterChange(status);
+            });
+        });
+
+        // Pagination would be handled dynamically
+    }
+
+    /**
+     * Check authentication and load tickets
+     */
+    async checkAuthAndLoad() {
+        // Wait for auth check to complete
+        if (window.authManager && !window.authManager.authChecked) {
+            console.log('[TicketsPage] Waiting for auth check...');
+            
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds
+            
+            while (!window.authManager.authChecked && attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+        }
+
+        // Check if authenticated
         if (!window.authManager?.isAuthenticated()) {
-            showAuthRequired();
-            setupAuthButtons();
+            console.log('[TicketsPage] User not authenticated');
+            this.showAuthRequired();
             return;
         }
 
-        const user = window.authManager.getUser();
-
-        state.user = user;
-        showContent();
-
-        if (user) {
-            renderUserInfo(user);
-        }
-
-        await loadOrders();
-        setupEventListeners();
+        console.log('[TicketsPage] User authenticated, loading tickets...');
+        await this.loadTickets();
     }
 
     /**
-     * Setup event listeners
+     * Load tickets from API with current filter and page
      */
-    function setupEventListeners() {
-        // Tab filtering
-        elements.tabs.forEach(tab => {
-            tab.addEventListener('click', () => handleTabChange(tab));
-        });
-
-        // Load more button
-        if (elements.loadMoreBtn) {
-            elements.loadMoreBtn.addEventListener('click', loadMoreOrders);
-        }
-
-        // Rebook buttons (delegated)
-        if (elements.list) {
-            elements.list.addEventListener('click', (e) => {
-                const rebookBtn = e.target.closest('.ticket-rebook-btn');
-                if (rebookBtn) {
-                    const orderId = rebookBtn.dataset.orderId;
-                    const movieSlug = rebookBtn.dataset.movieSlug;
-                    handleRebook(orderId, movieSlug);
-                }
-            });
-        }
-    }
-
-    /**
-     * Setup auth buttons
-     */
-    function setupAuthButtons() {
-        const loginBtn = elements.authRequired?.querySelector('[data-auth-action="login"]');
-        if (loginBtn && window.authManager) {
-            loginBtn.addEventListener('click', () => {
-                window.authManager.showModal('login');
-            });
-        }
-    }
-
-    /**
-     * Show auth required state
-     */
-    function showAuthRequired() {
-        elements.loading?.classList.add('d-none');
-        elements.content?.classList.add('d-none');
-        elements.authRequired?.classList.remove('d-none');
-    }
-
-    /**
-     * Show content
-     */
-    function showContent() {
-        elements.authRequired?.classList.add('d-none');
-        elements.loading?.classList.add('d-none');
-        elements.content?.classList.remove('d-none');
-    }
-
-    /**
-     * Render user info
-     */
-    function renderUserInfo(user) {
-        if (!user) return;
-
-        // Set user name
-        if (elements.userName) {
-            elements.userName.textContent = user.name || 'Người dùng';
-        }
-
-        // Set user rank/role
-        if (elements.userRank) {
-            const role = user.role || user.roles?.[0];
-            let rankText = 'Thành viên';
-
-            if (role) {
-                if (role === 'premium' || role.slug === 'premium') {
-                    rankText = 'Thành viên Premium';
-                } else if (role === 'vip' || role.slug === 'vip') {
-                    rankText = 'Thành viên VIP';
-                }
-            }
-
-            elements.userRank.textContent = rankText;
-        }
-
-        // Set avatar
-        if (user.avatar) {
-            if (elements.avatar) {
-                elements.avatar.src = user.avatar;
-                elements.avatar.classList.remove('d-none');
-            }
-            if (elements.avatarFallback) {
-                elements.avatarFallback.classList.add('d-none');
-            }
-        } else {
-            const initial = (user.name || 'U').charAt(0).toUpperCase();
-            if (elements.avatarFallback) {
-                elements.avatarFallback.textContent = initial;
-            }
-        }
-    }
-
-    /**
-     * Load orders from API
-     */
-    async function loadOrders(page = 1) {
-        if (state.loading) return;
-
-        state.loading = true;
-
+    async loadTickets(page = 1) {
         try {
+            this.showLoading();
+            this.currentPage = page;
+
+            // Build query parameters
+            const params = new URLSearchParams({
+                page,
+                per_page: this.perPage,
+            });
+
+            if (this.currentFilter !== 'all') {
+                params.append('status', this.currentFilter);
+            }
+
+            // Make API request
             const response = await fetch(
-                `${window.APP_CONFIG.apiUrl}/orders/user/me?page=${page}&per_page=${state.perPage}`,
+                `${this.apiUrl}/tickets?${params}`,
                 {
-                    credentials: 'include',
+                    method: 'GET',
                     headers: {
-                        'Accept': 'application/json'
-                    }
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
                 }
             );
 
             if (!response.ok) {
-                throw new Error('Failed to load orders');
+                if (response.status === 401) {
+                    throw new Error('Session expired. Please login again.');
+                }
+                throw new Error(`HTTP ${response.status}: Failed to load tickets`);
             }
 
             const result = await response.json();
 
-            if (result.success && result.data) {
-                const { data, current_page, last_page } = result.data;
-
-                if (page === 1) {
-                    state.orders = data;
-                } else {
-                    state.orders = [...state.orders, ...data];
-                }
-
-                state.currentPage = current_page;
-                state.lastPage = last_page;
-
-                renderOrders();
-                updateLoadMoreButton();
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to load tickets');
             }
+
+            // Update state
+            this.tickets = result.data.data || [];
+            this.currentPage = result.data.meta.current_page;
+            this.lastPage = result.data.meta.last_page;
+            this.perPage = result.data.meta.per_page;
+            this.totalTickets = result.data.meta.total;
+
+            console.log('[TicketsPage] Loaded', this.tickets.length, 'tickets');
+
+            // Render
+            this.renderTickets();
+            this.renderPagination();
+            this.showContent();
+
         } catch (error) {
-            console.error('Error loading orders:', error);
-            showError('Không thể tải lịch sử đặt vé. Vui lòng thử lại.');
-        } finally {
-            state.loading = false;
+            console.error('[TicketsPage] Load tickets error:', error);
+            this.showError(error.message || 'Không thể tải danh sách vé.');
         }
     }
 
     /**
-     * Load more orders
+     * Render tickets grid
      */
-    async function loadMoreOrders() {
-        if (state.currentPage >= state.lastPage) return;
-
-        elements.loadMore?.classList.add('d-none');
-        elements.loadingMore?.classList.remove('d-none');
-
-        await loadOrders(state.currentPage + 1);
-
-        elements.loadingMore?.classList.add('d-none');
-    }
-
-    /**
-     * Render orders
-     */
-    function renderOrders() {
-        if (!elements.list) return;
-
-        const filteredOrders = filterOrders(state.orders);
-
-        if (filteredOrders.length === 0) {
-            elements.list.innerHTML = '';
-            elements.empty?.classList.remove('d-none');
-            elements.loadMore?.classList.add('d-none');
+    renderTickets() {
+        if (!this.ticketsGrid) {
+            console.warn('[TicketsPage] Tickets grid container not found');
             return;
         }
 
-        elements.empty?.classList.add('d-none');
-        elements.list.innerHTML = '';
+        if (this.tickets.length === 0) {
+            this.ticketsGrid.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-info text-center py-5">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <span>${this.getEmptyMessage()}</span>
+                    </div>
+                </div>
+            `;
+            return;
+        }
 
-        filteredOrders.forEach(order => {
-            const card = createTicketCard(order);
-            elements.list.appendChild(card);
+        this.ticketsGrid.innerHTML = this.tickets.map(ticket => this.renderTicketCard(ticket)).join('');
+    }
+
+    /**
+     * Render single ticket card
+     */
+    renderTicketCard(ticket) {
+        const statusBadgeClass = this.getStatusBadgeClass(ticket.status);
+        const statusLabel = this.getStatusLabel(ticket.status);
+        const movieTitle = ticket.showtime?.movie?.title || 'Unknown';
+        const cinemaName = ticket.showtime?.screen?.cinema?.name || 'Unknown';
+        const screenName = ticket.showtime?.screen?.name || 'Screen';
+        const seatLabel = ticket.seat?.label || 'Unknown';
+        const startTime = this.formatDateTime(ticket.showtime?.start_time);
+
+        return `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card ticket-card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">${this.escapeHtml(movieTitle)}</h5>
+                            <span class="badge ${statusBadgeClass}">${statusLabel}</span>
+                        </div>
+
+                        <div class="ticket-info mb-3">
+                            <div class="info-row mb-2">
+                                <small class="text-muted">Rạp:</small>
+                                <small>${this.escapeHtml(cinemaName)}</small>
+                            </div>
+                            <div class="info-row mb-2">
+                                <small class="text-muted">Phòng:</small>
+                                <small>${this.escapeHtml(screenName)}</small>
+                            </div>
+                            <div class="info-row mb-2">
+                                <small class="text-muted">Ghế:</small>
+                                <small><strong>${seatLabel}</strong></small>
+                            </div>
+                            <div class="info-row mb-2">
+                                <small class="text-muted">Suất chiếu:</small>
+                                <small>${startTime}</small>
+                            </div>
+                            <div class="info-row">
+                                <small class="text-muted">Mã vé:</small>
+                                <small><code>${ticket.ticket_code}</code></small>
+                            </div>
+                        </div>
+
+                        ${ticket.qr_code ? `
+                            <div class="text-center mb-3">
+                                <img src="${ticket.qr_code}" alt="QR Code" class="ticket-qr" style="max-width: 100px;">
+                            </div>
+                        ` : ''}
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="window.ticketsPage.showTicketDetail('${ticket.ticket_code}')">
+                                Xem chi tiết
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Render pagination controls
+     */
+    renderPagination() {
+        if (!this.paginationContainer) {
+            return;
+        }
+
+        if (this.lastPage <= 1) {
+            this.paginationContainer.innerHTML = '';
+            return;
+        }
+
+        let html = '<nav aria-label="Pagination"><ul class="pagination justify-content-center">';
+
+        // Previous button
+        if (this.currentPage > 1) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="window.ticketsPage.loadTickets(${this.currentPage - 1}); return false;">
+                        &laquo; Trước
+                    </a>
+                </li>
+            `;
+        } else {
+            html += '<li class="page-item disabled"><span class="page-link">&laquo; Trước</span></li>';
+        }
+
+        // Page numbers
+        const startPage = Math.max(1, this.currentPage - 2);
+        const endPage = Math.min(this.lastPage, this.currentPage + 2);
+
+        if (startPage > 1) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="window.ticketsPage.loadTickets(1); return false;">1</a>
+                </li>
+            `;
+            if (startPage > 2) {
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === this.currentPage ? 'active' : '';
+            html += `
+                <li class="page-item ${isActive}">
+                    <a class="page-link" href="#" onclick="window.ticketsPage.loadTickets(${i}); return false;">${i}</a>
+                </li>
+            `;
+        }
+
+        if (endPage < this.lastPage) {
+            if (endPage < this.lastPage - 1) {
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+            html += `
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="window.ticketsPage.loadTickets(${this.lastPage}); return false;">${this.lastPage}</a>
+                </li>
+            `;
+        }
+
+        // Next button
+        if (this.currentPage < this.lastPage) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="window.ticketsPage.loadTickets(${this.currentPage + 1}); return false;">
+                        Tiếp &raquo;
+                    </a>
+                </li>
+            `;
+        } else {
+            html += '<li class="page-item disabled"><span class="page-link">Tiếp &raquo;</span></li>';
+        }
+
+        html += '</ul></nav>';
+        this.paginationContainer.innerHTML = html;
+    }
+
+    /**
+     * Handle filter status change
+     */
+    handleFilterChange(status) {
+        this.currentFilter = status;
+        this.currentPage = 1;
+
+        // Update active button
+        this.statusFilters.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filterStatus === status);
         });
+
+        // Reload tickets
+        this.loadTickets(1);
     }
 
     /**
-     * Filter orders based on current filter
+     * Show ticket detail (placeholder for future modal/detail view)
      */
-    function filterOrders(orders) {
-        if (state.currentFilter === 'current-year') {
-            const currentYear = new Date().getFullYear();
-            return orders.filter(order => {
-                const orderYear = new Date(order.created_at).getFullYear();
-                return orderYear === currentYear;
-            });
-        }
-
-        return orders;
+    showTicketDetail(ticketCode) {
+        console.log('[TicketsPage] Show detail for:', ticketCode);
+        alert('Chi tiết vé: ' + ticketCode);
+        // TODO: Implement modal or detail page
     }
 
-    /**
-     * Create ticket card element
-     */
-    function createTicketCard(order) {
-        const template = elements.ticketCardTemplate.content.cloneNode(true);
-        const card = template.querySelector('.ticket-card');
+    // UI State Methods
 
-        // Poster
-        const poster = card.querySelector('.ticket-poster-img');
-        const posterUrl = order.poster_url || order.showtime?.movie?.poster_url;
-        const movieTitle = order.movie_title || order.showtime?.movie?.title;
-        if (posterUrl) {
-            poster.src = posterUrl;
-            poster.alt = movieTitle || 'Movie poster';
-        }
-
-        // Format badges
-        const formatsContainer = card.querySelector('.ticket-formats');
-        if (order.showtime?.format) {
-            const badge = createFormatBadge(order.showtime.format.name);
-            formatsContainer.appendChild(badge);
-        }
-        if (order.showtime?.sound) {
-            const badge = createFormatBadge(order.showtime.sound.name);
-            formatsContainer.appendChild(badge);
-        }
-
-        // Order ID
-        const ticketId = card.querySelector('.ticket-id');
-        ticketId.textContent = `ID: #CP-${order.id.toString().padStart(5, '0')}`;
-
-        // Movie title
-        const title = card.querySelector('.ticket-title');
-        title.textContent = order.showtime?.movie?.title || 'N/A';
-
-        // Showtime
-        const showtime = card.querySelector('.ticket-showtime');
-        const showDate = order.show_date || order.showtime?.scheduled_at;
-        if (showDate) {
-            const date = new Date(showDate);
-            const formattedDate = `${date.getDate()} Tháng ${date.getMonth() + 1}, ${date.getFullYear()}`;
-            showtime.textContent = formattedDate;
-        }
-
-        // Theater
-        const theater = card.querySelector('.ticket-theater');
-        if (order.showtime?.screen?.theater) {
-            const theaterData = order.showtime.screen.theater;
-            theater.textContent = `${theaterData.name}${theaterData.branch ? ` - ${theaterData.branch.name}` : ''}`;
-        }
-
-        // Seats
-        const seats = card.querySelector('.ticket-seats');
-        let seatNamesStr = 'N/A';
-
-        if (order.items && order.items.length > 0) {
-            const seatNames = order.items
-                .filter(item => item.item_type === 'App\\Models\\Seat' || item.type === 'Seat' || item.type === 'seat')
-                .map(item => {
-                    if (item.metadata && item.metadata.seat_label) return item.metadata.seat_label;
-                    const seat = item.item || item.seat || item;
-                    if (!seat) return null;
-                    return seat.label || (seat.row && seat.number ? seat.row + seat.number : null) || seat.seat_number || seat.name;
-                })
-                .filter(Boolean)
-                .join(', ');
-            if (seatNames) seatNamesStr = seatNames;
-        } else if (order.payload && order.payload.seats && order.payload.seats.length > 0) {
-            seatNamesStr = order.payload.seats.map(s => s.name || (s.row + s.number)).join(', ');
-        }
-
-        seats.textContent = seatNamesStr;
-
-        // Status
-        const status = card.querySelector('.ticket-status');
-        status.textContent = getOrderStatusText(order.status);
-        if (order.status !== 'completed' && order.status !== 'confirmed') {
-            status.style.setProperty('--tickets-green', '#f59e0b');
-        }
-
-        // Rebook button
-        const rebookBtn = card.querySelector('.ticket-rebook-btn');
-        rebookBtn.dataset.orderId = order.id;
-        if (order.showtime?.movie?.slug) {
-            rebookBtn.dataset.movieSlug = order.showtime.movie.slug;
-        }
-
-        return card;
+    showLoading() {
+        if (this.loadingContainer) this.loadingContainer.style.display = 'block';
+        if (this.contentContainer) this.contentContainer.style.display = 'none';
+        if (this.authRequiredContainer) this.authRequiredContainer.style.display = 'none';
+        if (this.errorAlert) this.errorAlert.style.display = 'none';
     }
 
-    /**
-     * Create format badge
-     */
-    function createFormatBadge(text) {
-        const template = elements.formatBadgeTemplate.content.cloneNode(true);
-        const badge = template.querySelector('.ticket-format-badge');
-        badge.textContent = text.toUpperCase();
-        return badge;
+    showContent() {
+        if (this.loadingContainer) this.loadingContainer.style.display = 'none';
+        if (this.contentContainer) this.contentContainer.style.display = 'block';
+        if (this.authRequiredContainer) this.authRequiredContainer.style.display = 'none';
+        if (this.errorAlert) this.errorAlert.style.display = 'none';
     }
 
-    /**
-     * Get order status text in Vietnamese
-     */
-    function getOrderStatusText(status) {
-        const statusMap = {
-            'pending': 'Đang chờ',
-            'confirmed': 'Đã xác nhận',
-            'completed': 'Đã hoàn thành',
+    showAuthRequired() {
+        if (this.loadingContainer) this.loadingContainer.style.display = 'none';
+        if (this.contentContainer) this.contentContainer.style.display = 'none';
+        if (this.authRequiredContainer) this.authRequiredContainer.style.display = 'block';
+        if (this.errorAlert) this.errorAlert.style.display = 'none';
+    }
+
+    showError(message) {
+        console.error('[TicketsPage] Error:', message);
+        if (this.errorAlert) {
+            this.errorAlert.textContent = message;
+            this.errorAlert.style.display = 'block';
+        }
+        if (this.loadingContainer) this.loadingContainer.style.display = 'none';
+        if (this.contentContainer && this.tickets.length === 0) {
+            this.contentContainer.style.display = 'none';
+        }
+    }
+
+    // Helper Methods
+
+    getStatusLabel(status) {
+        const labels = {
+            'valid': 'Còn hạn',
+            'used': 'Đã sử dụng',
             'cancelled': 'Đã hủy',
-            'expired': 'Hết hạn',
+            'refunded': 'Đã hoàn tiền',
         };
-
-        return statusMap[status] || status;
+        return labels[status] || status;
     }
 
-    /**
-     * Handle tab change
-     */
-    function handleTabChange(tab) {
-        const filter = tab.dataset.filter;
-        if (filter === state.currentFilter) return;
-
-        // Update active tab
-        elements.tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-
-        // Update filter and re-render
-        state.currentFilter = filter;
-        renderOrders();
+    getStatusBadgeClass(status) {
+        const classes = {
+            'valid': 'bg-success',
+            'used': 'bg-secondary',
+            'cancelled': 'bg-danger',
+            'refunded': 'bg-warning text-dark',
+        };
+        return classes[status] || 'bg-secondary';
     }
 
-    /**
-     * Handle rebook action
-     */
-    function handleRebook(orderId, movieSlug) {
-        if (movieSlug) {
-            window.location.href = `/movies/${movieSlug}`;
-        } else {
-            window.location.href = '/movies';
+    getEmptyMessage() {
+        if (this.currentFilter === 'all') {
+            return 'Bạn chưa có vé nào. Hãy đặt vé để xem phim!';
+        }
+        return `Bạn không có vé nào với trạng thái "${this.getStatusLabel(this.currentFilter)}"`;
+    }
+
+    formatDateTime(datetime) {
+        if (!datetime) return 'N/A';
+        try {
+            return new Date(datetime).toLocaleString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return 'N/A';
         }
     }
 
-    /**
-     * Update load more button visibility
-     */
-    function updateLoadMoreButton() {
-        if (!elements.loadMore) return;
-
-        if (state.currentPage < state.lastPage) {
-            elements.loadMore.classList.remove('d-none');
-        } else {
-            elements.loadMore.classList.add('d-none');
-        }
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
+}
 
-    /**
-     * Show error message
-     */
-    function showError(message) {
-        console.error(message);
-        // Could implement toast notification here
-    }
-
-    // Initialize on page load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
+// Auto-initialize when page loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.ticketsPage = new TicketsPage();
+    });
+} else {
+    window.ticketsPage = new TicketsPage();
+}

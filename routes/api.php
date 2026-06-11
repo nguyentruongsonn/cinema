@@ -14,6 +14,7 @@ use App\Http\Controllers\User\PaymentController as UserPaymentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\Api\V1\TicketController;
 
 /*
 |--------------------------------------------------------------------------
@@ -107,6 +108,12 @@ Route::prefix('v1')->group(function () {
         Route::prefix('payments')->middleware('throttle:payments')->group(function () {
             Route::post('/', [UserPaymentController::class, 'createPayment']);
             Route::get('orders/{orderCode}', [UserPaymentController::class, 'showOrderSummary']);
+        });
+
+        // Ticket routes
+        Route::prefix('tickets')->middleware('throttle:tickets')->group(function () {
+            Route::get('/', [TicketController::class, 'index']);
+            Route::get('{ticketCode}', [TicketController::class, 'show']);
         });
     });
 

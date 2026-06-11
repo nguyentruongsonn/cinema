@@ -40,6 +40,11 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Ticket viewing endpoints - generous limit for read-only operations
+        RateLimiter::for('tickets', function (Request $request) {
+            return Limit::perMinute(40)->by($request->user()?->id ?: $request->ip());
+        });
+
         // Payment endpoints - strict limit for financial operations
         RateLimiter::for('payments', function (Request $request) {
             return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
