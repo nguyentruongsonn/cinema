@@ -240,7 +240,7 @@ class AuthManager {
 
         try {
             const response = await this.fetchAPI('/auth/profile', {
-                skipRefresh: true,
+                skipRefresh: false,
                 silentAuth: true,
             });
 
@@ -289,7 +289,7 @@ class AuthManager {
         // Some endpoints (e.g. /auth/me on first page load) are allowed to fail
         // silently because a guest user is a valid application state.
         if (response.status === 401) {
-            if (options.silentAuth || options.skipRefresh || endpoint.includes('/auth/refresh')) {
+            if (options.skipRefresh || endpoint.includes('/auth/refresh')) {
                 const authError = new Error(data.message || 'Unauthenticated.');
                 authError.status = 401;
                 authError.isAuthExpected = true;

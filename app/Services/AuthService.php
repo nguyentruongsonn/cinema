@@ -18,7 +18,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthService
 {
-    private const MAX_LOGIN_ATTEMPTS = 5;
+    private const MAX_LOGIN_ATTEMPTS = 10;
     private const LOCKOUT_SECONDS = 900;
 
     public function register(array $data, string $ipAddress, ?string $userAgent = null): array

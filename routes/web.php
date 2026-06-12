@@ -28,3 +28,8 @@ Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index
 Route::get('/payment/payos/callback', [PaymentController::class, 'payosCallback'])->name('payment.payos.callback');
 Route::get('/payment/payos/cancel', [PaymentController::class, 'payosCancel'])->name('payment.payos.cancel');
 Route::post('/payment/payos/webhook', [PaymentController::class, 'payosWebhook'])->name('payment.payos.webhook');
+// Admin Panel Routes
+Route::prefix('admin')->middleware(['admin'])->group(function () {
+    Route::view('/dashboard', 'admin.dashboard')->name('admin.dashboard');
+    Route::view('/movies', 'admin.movies.index')->name('admin.movies.index');
+});

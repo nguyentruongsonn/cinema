@@ -196,11 +196,8 @@ class BookingManager {
 
     async showSuccessScreen(orderCode) {
         // Hide normal booking elements safely
-        const tabsEl = document.querySelector('.booking-tabs');
-        if (tabsEl) tabsEl.style.display = 'none';
-
-        const containerEl = document.querySelector('.booking-container');
-        if (containerEl) containerEl.style.display = 'none';
+        const bookingPageEl = document.querySelector('.booking-page');
+        if (bookingPageEl) bookingPageEl.style.display = 'none';
 
         const successScreen = document.getElementById('successScreen');
         if (!successScreen) return;
@@ -288,11 +285,8 @@ class BookingManager {
 
     showFailureScreen(orderCode) {
         // Hide normal booking elements
-        const tabsEl = document.querySelector('.booking-tabs');
-        if (tabsEl) tabsEl.style.display = 'none';
-
-        const containerEl = document.querySelector('.booking-container');
-        if (containerEl) containerEl.style.display = 'none';
+        const bookingPageEl = document.querySelector('.booking-page');
+        if (bookingPageEl) bookingPageEl.style.display = 'none';
 
         const failureScreen = document.getElementById('failureScreen');
         if (!failureScreen) return;

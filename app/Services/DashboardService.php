@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -13,152 +14,197 @@ class DashboardService
     private const STATUS_CANCELLED = 0;
 
     /**
-     * Get all dashboard statistics.
-     *
-     * Dashboard data is expensive to compute because it aggregates multiple
-     * high-cardinality tables. Cache the complete payload briefly to reduce
-     * repeated admin-page query bursts while keeping data fresh enough for
-     * operational monitoring.
+     * Get all dashboard statistics with time range filter.
      */
-    public function getStats(): array
+    public function getStats(string $range = 'month'): array
     {
-        return Cache::remember('admin:dashboard:stats', now()->addMinute(), fn () => [
+        $cacheKey = "admin:dashboard:stats:{$range}";
+        // Short cache for near real-time, but prevents DB overload from spam clicks
+        return Cache::remember($cacheKey, now()->addSeconds(30), fn () => [
             'cards' => $this->getCardStats(),
+            'revenue_by_day' => $this->getRevenueByDay($range),
+            'top_movies' => $this->getTopMovies($range),
+            'traffic_heatmap' => $this->getTrafficHeatmap(),
             'recent_orders' => $this->getRecentOrders(),
-            'revenue_by_day' => $this->getRevenueByDay(),
-            'top_movies' => $this->getTopMovies(),
         ]);
     }
 
-    /**
-     * Explicitly clear dashboard statistics cache after critical mutations.
-     */
     public function clearStatsCache(): void
     {
+        Cache::forget('admin:dashboard:stats:week');
+        Cache::forget('admin:dashboard:stats:month');
+        Cache::forget('admin:dashboard:stats:year');
+        // Legacy key cleanup
         Cache::forget('admin:dashboard:stats');
     }
 
     /**
-     * Get card statistics (counts and revenue).
+     * Get card statistics with comparisons and retention rate.
      */
     private function getCardStats(): array
     {
+        $now = now();
+        $thisMonthStart = $now->copy()->startOfMonth();
+        $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
+        $lastMonthEnd = $now->copy()->subMonth()->endOfMonth();
+
+        // 1. Revenue
+        $currentRevenue = DB::table('orders')
+            ->where('status', self::STATUS_CONFIRMED)
+            ->where('paid_at', '>=', $thisMonthStart)
+            ->sum('total_amount');
+            
+        $lastRevenue = DB::table('orders')
+            ->where('status', self::STATUS_CONFIRMED)
+            ->whereBetween('paid_at', [$lastMonthStart, $lastMonthEnd])
+            ->sum('total_amount');
+            
+        $revenueTrend = $this->calculateTrend($currentRevenue, $lastRevenue);
+
+        // 2. Tickets (Orders count for simplicity as 'tickets sold')
+        $currentTickets = DB::table('orders')
+            ->where('status', self::STATUS_CONFIRMED)
+            ->where('paid_at', '>=', $thisMonthStart)
+            ->count();
+            
+        $lastTickets = DB::table('orders')
+            ->where('status', self::STATUS_CONFIRMED)
+            ->whereBetween('paid_at', [$lastMonthStart, $lastMonthEnd])
+            ->count();
+            
+        $ticketsTrend = $this->calculateTrend($currentTickets, $lastTickets);
+
+        // 3. New Users
+        $currentUsers = DB::table('users')
+            ->where('created_at', '>=', $thisMonthStart)
+            ->count();
+            
+        $lastUsers = DB::table('users')
+            ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
+            ->count();
+            
+        $usersTrend = $this->calculateTrend($currentUsers, $lastUsers);
+
+        // 4. Retention Rate (Users with > 1 confirmed order / Total users with any confirmed order)
+        $userOrderCounts = DB::table('orders')
+            ->select('user_id', DB::raw('count(*) as order_count'))
+            ->where('status', self::STATUS_CONFIRMED)
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->get();
+            
+        $totalBuyingUsers = $userOrderCounts->count();
+        $returningUsers = $userOrderCounts->where('order_count', '>=', 2)->count();
+        $retentionRate = $totalBuyingUsers > 0 ? round(($returningUsers / $totalBuyingUsers) * 100, 1) : 0;
+
         return [
-            'movies' => DB::table('movies')->count(),
-            'theaters' => DB::table('theaters')->count(),
-            'showtimes' => DB::table('showtimes')->count(),
-            'users' => DB::table('users')->count(),
-            'orders' => DB::table('orders')->count(),
-            'payments' => DB::table('payments')->count(),
-            'pending_orders' => DB::table('orders')
-                ->where('status', self::STATUS_PENDING)
-                ->count(),
-            'confirmed_orders' => DB::table('orders')
-                ->where('status', self::STATUS_CONFIRMED)
-                ->count(),
-            'today_revenue' => $this->getTodayRevenue(),
-            'monthly_revenue' => $this->getMonthlyRevenue(),
-            'total_revenue' => $this->getTotalRevenue(),
+            'revenue' => [
+                'value' => (float)$currentRevenue,
+                'trend' => $revenueTrend
+            ],
+            'tickets' => [
+                'value' => $currentTickets,
+                'trend' => $ticketsTrend
+            ],
+            'new_users' => [
+                'value' => $currentUsers,
+                'trend' => $usersTrend
+            ],
+            'retention_rate' => [
+                'value' => $retentionRate,
+                'trend' => 0 // Retention is an overall metric
+            ]
         ];
     }
 
     /**
-     * Get today's revenue from confirmed orders.
+     * Helper to calculate percentage trend.
      */
-    private function getTodayRevenue(): float
+    private function calculateTrend(float $current, float $previous): float
     {
-        return (float) DB::table('orders')
-            ->where('status', self::STATUS_CONFIRMED)
-            ->whereDate('paid_at', today())
-            ->sum('total_amount');
+        if ($previous == 0) return $current > 0 ? 100 : 0;
+        return round((($current - $previous) / $previous) * 100, 1);
     }
 
     /**
-     * Get current month's revenue from confirmed orders.
+     * Get revenue line chart data based on filter range.
      */
-    private function getMonthlyRevenue(): float
+    private function getRevenueByDay(string $range)
     {
-        return (float) DB::table('orders')
-            ->where('status', self::STATUS_CONFIRMED)
-            ->whereYear('paid_at', now()->year)
-            ->whereMonth('paid_at', now()->month)
-            ->sum('total_amount');
-    }
+        $startDate = match ($range) {
+            'week' => now()->startOfWeek(),
+            'year' => now()->startOfYear(),
+            default => now()->startOfMonth(), // 'month'
+        };
 
-    /**
-     * Get total revenue from all confirmed orders.
-     */
-    private function getTotalRevenue(): float
-    {
-        return (float) DB::table('orders')
-            ->where('status', self::STATUS_CONFIRMED)
-            ->sum('total_amount');
-    }
-
-    /**
-     * Get recent orders with relationships.
-     */
-    private function getRecentOrders()
-    {
-        return Order::query()
-            ->with(['user', 'showtime.movie', 'showtime.screen.theater', 'payment'])
-            ->latest()
-            ->limit(8)
-            ->get()
-            ->map(fn ($order) => [
-                'id' => $order->id,
-                'code' => $order->code,
-                'customer' => $order->user?->name ?? $order->user?->full_name ?? 'N/A',
-                'movie' => $order->showtime?->movie?->title ?? 'N/A',
-                'theater' => $order->showtime?->screen?->theater?->name ?? 'N/A',
-                'total_amount' => (float) $order->total_amount,
-                'status' => $this->orderStatusLabel((int) $order->status),
-                'payment_status' => $order->payment_status,
-                'created_at' => $order->created_at,
-            ]);
-    }
-
-    /**
-     * Get revenue by day for the last 14 days.
-     */
-    private function getRevenueByDay()
-    {
         return DB::table('orders')
-            ->selectRaw('DATE(paid_at) as date, SUM(total_amount) as revenue, COUNT(*) as orders_count')
+            ->selectRaw('DATE(paid_at) as date, SUM(total_amount) as revenue')
             ->where('status', self::STATUS_CONFIRMED)
             ->whereNotNull('paid_at')
-            ->where('paid_at', '>=', now()->subDays(13)->startOfDay())
+            ->where('paid_at', '>=', $startDate)
             ->groupBy(DB::raw('DATE(paid_at)'))
             ->orderBy('date')
             ->get();
     }
 
     /**
-     * Get top 5 movies by revenue.
+     * Get heatmap data for traffic by day of week and hour.
+     * Uses Showtime start_time to reflect actual physical presence at the theater.
      */
-    private function getTopMovies()
+    private function getTrafficHeatmap()
     {
-        return DB::table('orders')
-            ->selectRaw('showtimes.movie_id, movies.title, COUNT(orders.id) as orders_count, SUM(orders.total_amount) as revenue')
-            ->join('showtimes', 'showtimes.id', '=', 'orders.showtime_id')
-            ->join('movies', 'movies.id', '=', 'showtimes.movie_id')
+        // MySQL: DAYOFWEEK() returns 1=Sunday, 2=Monday, ..., 7=Saturday
+        // We will adjust it in Frontend or map it here.
+        // Cột thực tế trong bảng showtimes là scheduled_at (không phải start_time)
+        $traffic = DB::table('orders')
+            ->join('showtimes', 'orders.showtime_id', '=', 'showtimes.id')
             ->where('orders.status', self::STATUS_CONFIRMED)
-            ->groupBy('showtimes.movie_id', 'movies.title')
-            ->orderByDesc('revenue')
-            ->limit(5)
+            ->selectRaw('DAYOFWEEK(showtimes.scheduled_at) as day_of_week, HOUR(showtimes.scheduled_at) as hour, COUNT(orders.id) as customer_count')
+            ->whereNotNull('showtimes.scheduled_at')
+            ->groupBy(DB::raw('DAYOFWEEK(showtimes.scheduled_at)'), DB::raw('HOUR(showtimes.scheduled_at)'))
             ->get();
+            
+        return $traffic;
     }
 
     /**
-     * Convert order status code to label.
+     * Get top movies by revenue.
      */
-    private function orderStatusLabel(int $status): string
+    private function getTopMovies(string $range)
     {
-        return match ($status) {
-            self::STATUS_CANCELLED => 'cancelled',
-            self::STATUS_PENDING => 'pending',
-            self::STATUS_CONFIRMED => 'confirmed',
-            default => 'unknown',
+        $startDate = match ($range) {
+            'week' => now()->subDays(7)->startOfDay(),
+            'year' => now()->startOfYear(),
+            default => now()->startOfMonth(), // 'month'
         };
+
+        return DB::table('orders')
+            ->selectRaw('movies.id, movies.title, movies.poster_url, COUNT(orders.id) as tickets_sold, SUM(orders.total_amount) as revenue')
+            ->join('showtimes', 'showtimes.id', '=', 'orders.showtime_id')
+            ->join('movies', 'movies.id', '=', 'showtimes.movie_id')
+            ->where('orders.status', self::STATUS_CONFIRMED)
+            ->where('orders.paid_at', '>=', $startDate)
+            ->groupBy('movies.id', 'movies.title', 'movies.poster_url')
+            ->orderByDesc('revenue')
+            ->limit(6)
+            ->get();
+    }
+
+    private function getRecentOrders()
+    {
+        return Order::query()
+            ->with(['user', 'showtime.movie', 'showtime.screen.theater', 'payment'])
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(fn ($order) => [
+                'id' => $order->id,
+                'code' => $order->code,
+                'customer' => $order->user?->name ?? $order->user?->full_name ?? 'N/A',
+                'movie' => $order->showtime?->movie?->title ?? 'N/A',
+                'total_amount' => (float) $order->total_amount,
+                'status' => $order->status,
+                'created_at' => $order->created_at,
+            ]);
     }
 }

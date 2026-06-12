@@ -17,10 +17,11 @@ class DashboardController extends Controller
     /**
      * Return summary statistics for the admin dashboard.
      */
-    public function stats()
+    public function stats(\Illuminate\Http\Request $request)
     {
         try {
-            $stats = $this->dashboardService->getStats();
+            $range = $request->input('range', 'month');
+            $stats = $this->dashboardService->getStats($range);
 
             return $this->successResponse(
                 $stats,

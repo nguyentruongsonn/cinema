@@ -38,7 +38,7 @@ img {
 }
 
 .cinema-shell {
-    max-width: 1120px;
+    max-width: 1320px;
 }
 
 /* Header */
@@ -502,7 +502,7 @@ img {
     margin-bottom: 1.1rem;
 }
 
-.cinema-footer-links li + li {
+.cinema-footer-links li+li {
     margin-top: 0.72rem;
 }
 
@@ -638,7 +638,7 @@ img {
 
 @media (max-width: 767.98px) {
     .cinema-shell {
-        width: min(100% - 2rem, 1120px);
+        width: min(100% - 2rem, 1320px);
     }
 
     .cinema-hero {

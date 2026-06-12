@@ -41,7 +41,7 @@
             apiUrl: @json(url('/api/v1')),
             csrfToken: @json(csrf_token()),
             auth: {
-                checked: true,
+                checked: @json(Auth::guard('web')->check() || !request()->hasCookie('refresh_token')),
                 authenticated: @json(Auth::guard('web')->check()),
                 user: @json(Auth::guard('web')->user()),
             },
