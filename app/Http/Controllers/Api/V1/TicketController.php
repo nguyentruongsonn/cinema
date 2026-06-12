@@ -30,12 +30,12 @@ class TicketController extends Controller
                 ->where('user_id', $user->id)
                 ->with([
                     'order:id,code,total_amount,created_at',
-                    'showtime:id,start_time,screen_id,movie_id',
-                    'showtime.movie:id,title,poster_url,duration,rating',
+                    'showtime:id,scheduled_at,screen_id,movie_id',
+                    'showtime.movie:id,title,poster_url,duration,age_rating',
                     'showtime.screen:id,name,theater_id',
                     'showtime.screen.theater:id,name,address,city',
                     'seat:id,row,number,label,seat_type_id',
-                    'seat.seatType:id,name,price_modifier',
+                    'seat.seatType:id,name,surcharge',
                 ]);
 
             if ($status !== 'all') {
@@ -69,7 +69,7 @@ class TicketController extends Controller
 
         } catch (Throwable $e) {
             report($e);
-            return $this->error('Đã xảy ra lỗi khi tải danh sách vé.', 500);
+            return $this->error('Đã xảy ra lỗi khi tải danh sách vé. Chi tiết: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(), 500);
         }
     }
 
@@ -87,12 +87,12 @@ class TicketController extends Controller
                 ->where('user_id', $user->id)
                 ->with([
                     'order:id,code,total_amount,created_at',
-                    'showtime:id,start_time,end_time,screen_id,movie_id',
-                    'showtime.movie:id,title,poster_url,duration,rating,director',
+                    'showtime:id,scheduled_at,screen_id,movie_id',
+                    'showtime.movie:id,title,poster_url,duration,age_rating',
                     'showtime.screen:id,name,theater_id',
                     'showtime.screen.theater:id,name,address,city,phone',
                     'seat:id,row,number,label,seat_type_id',
-                    'seat.seatType:id,name,price_modifier',
+                    'seat.seatType:id,name,surcharge',
                 ])
                 ->first();
 

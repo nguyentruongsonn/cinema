@@ -25,7 +25,7 @@
                         <a class="nav-link" href="#food">Food</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">My Tickets</a>
+                        <a class="nav-link" href="{{ route('profile.index') }}#tickets">My Tickets</a>
                     </li>
                 </ul>
 
@@ -58,7 +58,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('tickets.index') }}">
+                                    <a class="dropdown-item" href="{{ route('profile.index') }}#tickets">
                                         <i class="bi bi-ticket-perforated me-2"></i>Vé của tôi
                                     </a>
                                 </li>

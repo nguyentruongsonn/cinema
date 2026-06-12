@@ -14,13 +14,15 @@
         {{-- Skeleton Loading --}}
         <div id="heroSkeleton" class="skeleton-hero">
             <div class="skeleton-hero-content">
-                <div class="skeleton skeleton-badge"></div>
-                <div class="skeleton skeleton-title"></div>
-                <div class="skeleton skeleton-text"></div>
-                <div class="skeleton skeleton-text-short"></div>
-                <div class="d-flex gap-3 mt-4">
-                    <div class="skeleton skeleton-button"></div>
-                    <div class="skeleton skeleton-button"></div>
+                <div class="skeleton-hero-copy">
+                    <div class="skeleton skeleton-badge"></div>
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text-short"></div>
+                    <div class="d-flex gap-3 mt-4">
+                        <div class="skeleton skeleton-button"></div>
+                        <div class="skeleton skeleton-button"></div>
+                    </div>
                 </div>
             </div>
         </div>

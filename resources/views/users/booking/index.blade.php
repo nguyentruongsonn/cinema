@@ -11,8 +11,7 @@
 @section('content')
 <div class="booking-page" data-showtime-id="{{ $showtime->id }}" data-showtime-encrypted-id="{{ $showtime->encrypted_id }}">
 
-@if(!$paymentHandled)
-    {{-- Tab Navigation - Chỉ hiển thị khi không ở trang kết quả thanh toán --}}
+    {{-- Tab Navigation --}}
     <div class="booking-tabs">
         <button class="tab-btn active" data-tab="seats">
             <span class="tab-number">1</span>
@@ -299,12 +298,10 @@
             </div>
         </div>
     </div>
-@endif {{-- end !paymentHandled --}}
+    </div>
 
-    <!-- Payment Result Screens -->
-    @if($isPaymentSuccess)
-    <!-- Success Screen (server-rendered visible) -->
-    <div id="successScreen" class="payment-result-screen">
+    <!-- Payment Result Screens (Hidden by default, populated via JS) -->
+    <div id="successScreen" class="payment-result-screen d-none">
         <div class="result-content">
             <h1 class="brand-title">CINEMA PREMIUM</h1>
 
@@ -325,25 +322,24 @@
             <div class="transaction-info">
                 <div class="info-block">
                     <span class="info-label">MÃ GIAO DỊCH</span>
-                    <span class="info-value">{{ $paymentData['orderCode'] ?? '---' }}</span>
+                    <span class="info-value" id="successOrderCode">---</span>
                 </div>
                 <div class="info-divider"></div>
                 <div class="info-block">
                     <span class="info-label">TỔNG TIỀN</span>
-                    <span class="info-value">{{ $paymentData['totalAmount'] ?? '---' }}</span>
+                    <span class="info-value" id="successTotalAmount">---</span>
                 </div>
                 <div class="info-divider"></div>
                 <div class="info-block">
                     <span class="info-label">NGÀY ĐẶT</span>
-                    <span class="info-value">{{ $paymentData['date'] ?? '---' }}</span>
+                    <span class="info-value" id="successDate">---</span>
                 </div>
             </div>
         </div>
-
     </div>
-    @elseif($isPaymentCancelled)
-    <!-- Failure Screen (server-rendered visible) -->
-    <div id="failureScreen" class="payment-result-screen">
+
+    <!-- Failure Screen -->
+    <div id="failureScreen" class="payment-result-screen d-none">
         <div class="result-content">
             <h1 class="brand-title">CINEMA PREMIUM</h1>
 
@@ -364,17 +360,16 @@
             <div class="transaction-info">
                 <div class="info-block">
                     <span class="info-label">MÃ GIAO DỊCH</span>
-                    <span class="info-value">{{ $paymentData['orderCode'] ?? '---' }}</span>
+                    <span class="info-value" id="failureOrderCode">---</span>
                 </div>
                 <div class="info-divider"></div>
                 <div class="info-block">
                     <span class="info-label">NGÀY HUỶ</span>
-                    <span class="info-value">{{ $paymentData['date'] ?? '---' }}</span>
+                    <span class="info-value" id="failureDate">---</span>
                 </div>
             </div>
         </div>
     </div>
-    @endif
 
 <!-- Loading Overlay -->
 <div id="loadingOverlay" class="loading-overlay d-none">
@@ -408,7 +403,6 @@
         screenId: {{ $showtime->screen_id }},
         movieTitle: @json($showtime->movie->title),
         startTime: @json($showtime->start_time ?? $showtime->scheduled_at),
-        paymentHandled: {{ $paymentHandled ? 'true' : 'false' }},
     };
 </script>
 <script src="{{ asset('js/pages/booking.js') }}?v={{ time() }}"></script>

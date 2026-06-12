@@ -840,11 +840,11 @@ class BookingManager {
 
         // Auto-lock seats after selection
         if (this.selectedSeats.size > 0) {
-            await this.lockSeats();
+            this.lockPromise = this.lockSeats();
         } else {
             // If no seats selected, unlock current hold
             if (this.currentHold) {
-                await this.unlockSeats();
+                this.lockPromise = this.unlockSeats();
             }
         }
     }
@@ -1040,6 +1040,14 @@ class BookingManager {
     }
 
     async proceedToPayment() {
+        if (this.lockPromise) {
+            this.showLoading('Đang kiểm tra ghế...');
+            try {
+                await this.lockPromise;
+            } catch (e) {}
+            this.hideLoading();
+        }
+
         if (this.selectedSeats.size === 0) {
             this.showToast('Vui lòng chọn ghế trước', 'warning');
             return;
@@ -1236,52 +1244,15 @@ class BookingManager {
 
     // Utility Methods
     async fetchAPI(endpoint, options = {}) {
-        // Get CSRF token for POST/PUT/DELETE requests
-        const getCsrfToken = () => {
-            return document.querySelector('meta[name="csrf-token"]')?.content || '';
-        };
-
-        const defaultOptions = {
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        };
-
-        // Add CSRF token for state-changing requests
-        const method = (options.method || 'GET').toUpperCase();
-        if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-            const csrfToken = getCsrfToken();
-            if (csrfToken) {
-                defaultOptions.headers['X-CSRF-TOKEN'] = csrfToken;
-            }
+        if (window.authManager && window.authManager.apiRequest) {
+            return window.authManager.apiRequest(endpoint, options);
+        }
+        
+        if (window.authManager && window.authManager.fetchAPI) {
+            return window.authManager.fetchAPI(endpoint, options);
         }
 
-        const response = await fetch(`${this.apiUrl}${endpoint}`, {
-            ...defaultOptions,
-            ...options,
-            credentials: 'include',
-            headers: {
-                ...defaultOptions.headers,
-                ...options.headers
-            }
-        });
-
-        if (!response.ok) {
-            if (response.status === 401) {
-                this.showToast('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.', 'warning');
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 2000);
-                throw new Error('Unauthorized');
-            }
-
-            const error = await response.json();
-            throw new Error(error.message || 'Request failed');
-        }
-
-        return response.json();
+        throw new Error('Authentication manager is not initialized.');
     }
 
     showLoading(message = 'Đang xử lý...') {
@@ -1304,6 +1275,9 @@ class BookingManager {
 
         const toastBody = toastEl.querySelector('.toast-body');
         const toastHeader = toastEl.querySelector('.toast-header');
+
+        // Set data-type attribute so CSS can apply type-specific styling
+        toastEl.setAttribute('data-type', type);
 
         if (toastBody) {
             toastBody.textContent = message;

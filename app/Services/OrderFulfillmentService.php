@@ -140,11 +140,15 @@ class OrderFulfillmentService
             }
 
             // 7. Broadcast real-time payment success to the buyer's browser
-            broadcast(new OrderPaid(
-                orderCode:   (int) $order->gateway_order_code,
-                orderNumber: $order->code,
-                userId:      (int) $order->user_id,
-            ));
+            try {
+                broadcast(new OrderPaid(
+                    orderCode:   (int) $order->gateway_order_code,
+                    orderNumber: $order->code,
+                    userId:      (int) $order->user_id,
+                ));
+            } catch (\Throwable $e) {
+                Log::warning('Order broadcast failed (non-critical): ' . $e->getMessage());
+            }
 
             return ['already_processed' => false, 'skipped' => false];
         });

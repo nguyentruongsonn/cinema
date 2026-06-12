@@ -2047,3 +2047,131 @@ body {
     }
 }
 
+/* ========================================
+   TOAST NOTIFICATION - BOOKING THEME
+   ======================================== */
+
+.toast-container {
+    position: fixed;
+    top: 84px;
+    right: 16px;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.toast-container > * {
+    pointer-events: auto;
+}
+
+#bookingToast.toast {
+    background-color: var(--bg-tertiary, #252525);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    min-width: 320px;
+    max-width: 420px;
+    backdrop-filter: blur(12px);
+}
+
+#bookingToast .toast-header {
+    background: transparent;
+    border-bottom: 1px solid var(--border-color, #333);
+    padding: 12px 16px;
+    color: var(--text-primary, #fff);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#bookingToast .toast-header strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #fff);
+    letter-spacing: 0.3px;
+}
+
+#bookingToast .toast-header .btn-close {
+    filter: invert(1) brightness(200%);
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+    font-size: 12px;
+}
+
+#bookingToast .toast-header .btn-close:hover {
+    opacity: 1;
+}
+
+#bookingToast .toast-body {
+    padding: 14px 16px;
+    color: var(--text-secondary, #b3b3b3);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Type-specific header backgrounds and icon colors */
+#bookingToast.toast[data-type="success"] .toast-header {
+    border-left: 4px solid var(--success-color, #46d369);
+}
+
+#bookingToast.toast[data-type="success"] .toast-header i {
+    color: var(--success-color, #46d369);
+}
+
+#bookingToast.toast[data-type="danger"] .toast-header,
+#bookingToast.toast[data-type="error"] .toast-header {
+    border-left: 4px solid var(--accent-primary, #e50914);
+}
+
+#bookingToast.toast[data-type="danger"] .toast-header i,
+#bookingToast.toast[data-type="error"] .toast-header i {
+    color: var(--accent-primary, #e50914);
+}
+
+#bookingToast.toast[data-type="warning"] .toast-header {
+    border-left: 4px solid var(--warning-color, #fbbf24);
+}
+
+#bookingToast.toast[data-type="warning"] .toast-header i {
+    color: var(--warning-color, #fbbf24);
+}
+
+#bookingToast.toast[data-type="info"] .toast-header {
+    border-left: 4px solid #3b82f6;
+}
+
+#bookingToast.toast[data-type="info"] .toast-header i {
+    color: #3b82f6;
+}
+
+/* Animation */
+#bookingToast.toast.showing,
+#bookingToast.toast.show {
+    animation: bookingToastSlideIn 0.3s ease forwards;
+}
+
+#bookingToast.toast.hiding {
+    animation: bookingToastSlideOut 0.25s ease forwards;
+}
+
+@keyframes bookingToastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+    }
+}
+
+@keyframes bookingToastSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%) translateY(-10px);
+    }
+}
+

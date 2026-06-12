@@ -22,7 +22,7 @@ Route::get('/payment/{order}', [PaymentController::class, 'index'])->name('payme
 // Profile routes - auth handled by SSR (@guest/@auth directives in views)
 // AuthenticateFromCookie middleware auto-authenticates from JWT cookie
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
-Route::get('/my-tickets', [ProfileController::class, 'tickets'])->name('tickets.index');
+
 
 // PayOS Payment Gateway Callbacks
 Route::get('/payment/payos/callback', [PaymentController::class, 'payosCallback'])->name('payment.payos.callback');
