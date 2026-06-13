@@ -49,11 +49,23 @@
                         <i class="bi bi-bar-chart"></i> Thống kê
                         <i class="bi bi-chevron-down ms-auto" style="font-size: 0.8rem;"></i>
                     </a>
-                    <div class="collapse" id="menuThongKe">
+                    <div class="collapse {{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.*') ? 'show' : '' }}" id="menuThongKe">
                         <ul class="nav flex-column ps-4 pb-2">
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Thống kê doanh thu</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Thống kê vé</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Thống kê combo</a></li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.revenue.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.revenue.index') ? 'text-white fw-semibold' : '' }}">
+                                    Thống kê doanh thu
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.tickets.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.tickets.index') ? 'text-white fw-semibold' : '' }}">
+                                    Thống kê vé
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.combos.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.combos.index') ? 'text-white fw-semibold' : '' }}">
+                                    Thống kê combo
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>

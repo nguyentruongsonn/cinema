@@ -91,18 +91,24 @@
         const options = {
             series: [{ name: 'Doanh thu', data: [] }],
             chart: {
-                type: 'bar',
+                type: 'area',
                 height: 300,
                 toolbar: { show: false },
                 fontFamily: 'Inter, sans-serif',
                 background: 'transparent'
             },
             colors: ['#e50914'],
-            plotOptions: {
-                bar: {
-                    borderRadius: 6,
-                    columnWidth: '55%',
-                    dataLabels: { position: 'top' }
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.4,
+                    opacityTo: 0.05,
+                    stops: [0, 100]
                 }
             },
             dataLabels: {
@@ -121,6 +127,8 @@
                 }
             },
             yaxis: {
+                min: 0,
+                max: (max) => { return max < 500000 ? 500000 : max; },
                 title: {
                     text: 'Doanh thu (₫)',
                     style: { color: '#a1a1aa', fontSize: '12px' }
@@ -128,10 +136,11 @@
                 labels: {
                     style: { colors: '#a1a1aa' },
                     formatter: (value) => {
+                        if (value === 0) return '0₫';
                         if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'B';
                         if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
                         if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
-                        return value;
+                        return value + '₫';
                     }
                 }
             },

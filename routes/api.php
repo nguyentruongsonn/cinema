@@ -12,6 +12,7 @@ use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\User\PaymentController as UserPaymentController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\RevenueController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\Api\V1\TicketController;
@@ -127,6 +128,10 @@ Route::prefix('v1')->group(function () {
     // Admin routes
     Route::middleware(['auth:api', 'role:admin,super-admin'])->group(function () {
         Route::get('admin/dashboard/stats', [DashboardController::class, 'stats']);
+        Route::get('admin/revenue/stats', [RevenueController::class, 'stats']);
+        Route::get('admin/tickets/stats', [\App\Http\Controllers\Admin\TicketStatController::class, 'stats']);
+        Route::get('admin/combos/stats', [\App\Http\Controllers\Admin\ComboStatController::class, 'stats']);
+        Route::get('admin/food/stats', [\App\Http\Controllers\Admin\FoodStatController::class, 'stats']);
 
         // Movie management
         Route::prefix('admin/movies')->group(function () {

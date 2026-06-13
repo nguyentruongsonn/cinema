@@ -20,11 +20,17 @@ class AdminMiddleware
         $user = Auth::user();
 
         if (!$user) {
-            return $this->errorResponse('Unauthenticated', 401);
+            if ($request->expectsJson()) {
+                return $this->errorResponse('Unauthenticated', 401);
+            }
+            return redirect()->route('login');
         }
 
         if (!$user->hasAnyRole(['admin', 'super-admin'])) {
-            return $this->errorResponse('Forbidden: admin role required', 403);
+            if ($request->expectsJson()) {
+                return $this->errorResponse('Forbidden: admin role required', 403);
+            }
+            return redirect()->route('home')->with('error', 'Bạn không có quyền truy cập trang này.');
         }
 
         return $next($request);

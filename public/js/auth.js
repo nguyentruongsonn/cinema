@@ -18,7 +18,10 @@ class AuthManager {
 
     init() {
         document.addEventListener('DOMContentLoaded', () => {
-            this.modal = new bootstrap.Modal(document.getElementById('authModal'));
+            const modalEl = document.getElementById('authModal');
+            if (modalEl) {
+                this.modal = new bootstrap.Modal(modalEl);
+            }
             this.setupEventListeners();
             if (this.authChecked) {
                 this.updateUI();

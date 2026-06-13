@@ -32,4 +32,7 @@ Route::post('/payment/payos/webhook', [PaymentController::class, 'payosWebhook']
 Route::prefix('admin')->middleware(['admin'])->group(function () {
     Route::view('/dashboard', 'admin.dashboard')->name('admin.dashboard');
     Route::view('/movies', 'admin.movies.index')->name('admin.movies.index');
+    Route::view('/revenue', 'admin.revenue.index')->name('admin.revenue.index');
+    Route::view('/tickets', 'admin.tickets.index')->name('admin.tickets.index');
+    Route::view('/combos', 'admin.combos.index')->name('admin.combos.index');
 });

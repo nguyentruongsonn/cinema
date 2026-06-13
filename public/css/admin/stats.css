@@ -1,0 +1,176 @@
+/* ── Admin Revenue Statistics Page ─────────────────────────────────────────── */
+
+/* Filter Bar */
+.filter-bar {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+}
+
+.filter-bar-inner {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.filter-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.filter-input {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 0.5rem 0.85rem;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.filter-input:focus {
+    border-color: #e50914;
+}
+
+.filter-shortcuts {
+    align-items: flex-end;
+}
+
+.btn-shortcut {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.45rem 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-shortcut:hover,
+.btn-shortcut.active {
+    background: rgba(229, 9, 20, 0.15);
+    border-color: #e50914;
+    color: #e50914;
+}
+
+/* Loading Overlay */
+.revenue-loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 9999;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.revenue-loading-overlay.d-none {
+    display: none !important;
+}
+
+/* Payment Method Legend */
+.pay-legend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.82rem;
+}
+
+.pay-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .filter-bar-inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-shortcuts {
+        flex-wrap: wrap;
+    }
+
+    .btn-primary-custom.ms-auto {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite ease-in-out;
+    border-radius: 4px;
+    color: transparent !important;
+    pointer-events: none;
+}
+.skeleton * {
+    visibility: hidden !important;
+}
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+    min-height: 1.2em;
+    min-width: 40px;
+    display: inline-block;
+}
+.skeleton-chart {
+    min-height: 280px;
+    width: 100%;
+    border-radius: 8px;
+}
+
+/* Combo Stats Tabs */
+.combo-tabs {
+    border-bottom: 1px solid var(--border-color);
+    gap: 0.25rem;
+}
+
+.combo-tabs .nav-link {
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.65rem 1.25rem;
+    transition: all 0.2s;
+}
+
+.combo-tabs .nav-link:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border-color);
+}
+
+.combo-tabs .nav-link.active {
+    color: #e50914;
+    background: var(--bg-card);
+    border-color: var(--border-color) var(--border-color) var(--bg-card);
+    border-bottom-color: var(--bg-card);
+}

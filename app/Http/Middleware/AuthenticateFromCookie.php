@@ -8,36 +8,62 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\AuthService;
 
 class AuthenticateFromCookie
 {
+    public function __construct(private readonly AuthService $authService) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         $token = $request->cookie('access_token');
+        $refreshToken = $request->cookie('refresh_token');
+        $newTokenResult = null;
 
         if ($token) {
             try {
                 $user = JWTAuth::setToken($token)->authenticate();
-                
-                if ($user) {
-                    // Set user for both guards to ensure SSR and API consistency
-                    // Web guard: for Blade @auth, Auth::check() in views
-                    // API guard: for API routes that use auth:api middleware
-                    Auth::guard('web')->setUser($user);
-                    Auth::guard('api')->setUser($user);
-                }
+                $this->setUser($user);
             } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
-                // Token expired - frontend will handle refresh
-            } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
-                // Invalid token - continue as guest
-            } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
-                // JWT error - continue as guest
+                if ($refreshToken) {
+                    try {
+                        $newTokenResult = $this->authService->refreshAccessToken($refreshToken, $request->ip(), $request->userAgent());
+                        $this->setUser($newTokenResult['user']);
+                    } catch (\Exception $refreshEx) {
+                        Log::debug('SSR Auth - Refresh failed: ' . $refreshEx->getMessage());
+                    }
+                }
             } catch (\Exception $e) {
-                // Unexpected error - log but continue as guest
                 Log::debug('SSR auth error: ' . $e->getMessage());
+            }
+        } elseif (!$token && $refreshToken) {
+             try {
+                $newTokenResult = $this->authService->refreshAccessToken($refreshToken, $request->ip(), $request->userAgent());
+                $this->setUser($newTokenResult['user']);
+            } catch (\Exception $e) {
+                Log::debug('SSR Auth - Refresh fallback failed: ' . $e->getMessage());
             }
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        if ($newTokenResult && $response instanceof Response) {
+            $response->headers->setCookie(cookie(
+                'access_token', $newTokenResult['access_token'], (int)ceil($newTokenResult['expires_in']/60), '/', config('session.domain'), config('session.secure'), true, false, config('session.same_site', 'lax')
+            ));
+            $response->headers->setCookie(cookie(
+                'refresh_token', $newTokenResult['refresh_token'], (int)ceil($newTokenResult['refresh_expires_in']/60), '/', config('session.domain'), config('session.secure'), true, false, config('session.same_site', 'lax')
+            ));
+        }
+
+        return $response;
+    }
+
+    private function setUser($user): void
+    {
+        if ($user) {
+            Auth::guard('web')->setUser($user);
+            Auth::guard('api')->setUser($user);
+        }
     }
 }
