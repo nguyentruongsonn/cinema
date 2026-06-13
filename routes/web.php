@@ -35,4 +35,8 @@ Route::prefix('admin')->middleware(['admin'])->group(function () {
     Route::view('/revenue', 'admin.revenue.index')->name('admin.revenue.index');
     Route::view('/tickets', 'admin.tickets.index')->name('admin.tickets.index');
     Route::view('/combos', 'admin.combos.index')->name('admin.combos.index');
+    
+    // Branches
+    Route::resource('branches', \App\Http\Controllers\Admin\BranchController::class)->names('admin.branches');
+    Route::post('branches/{branch}/toggle-active', [\App\Http\Controllers\Admin\BranchController::class, 'toggleActive'])->name('admin.branches.toggleActive');
 });

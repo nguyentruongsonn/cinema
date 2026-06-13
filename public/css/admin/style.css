@@ -485,3 +485,31 @@ body {
     color: var(--text-primary);
     background-color: transparent;
 }
+
+/* Common Admin Pagination & Table */
+.table-dark {
+    --bs-table-bg: transparent;
+}
+.pagination {
+    margin-bottom: 0;
+}
+.page-link {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+.page-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+.page-item.active .page-link {
+    background-color: #e50914;
+    border-color: #e50914;
+    color: #fff;
+}
+.page-item.disabled .page-link {
+    background-color: transparent;
+    border-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.2);
+}

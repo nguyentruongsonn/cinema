@@ -72,13 +72,13 @@
 
                 <!-- Hệ thống rạp -->
                 <li class="nav-item">
-                    <a href="#menuRap" class="nav-link" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="menuRap">
+                    <a href="#menuRap" class="nav-link {{ request()->routeIs('admin.branches.*') ? 'active' : '' }}" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('admin.branches.*') ? 'true' : 'false' }}" aria-controls="menuRap">
                         <i class="bi bi-buildings"></i> Hệ thống rạp
                         <i class="bi bi-chevron-down ms-auto" style="font-size: 0.8rem;"></i>
                     </a>
-                    <div class="collapse" id="menuRap">
+                    <div class="collapse {{ request()->routeIs('admin.branches.*') ? 'show' : '' }}" id="menuRap">
                         <ul class="nav flex-column ps-4 pb-2">
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý chi nhánh</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.branches.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.branches.*') ? 'text-white fw-semibold' : '' }}">Quản lý chi nhánh</a></li>
                             <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý rạp chiếu</a></li>
                             <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý phòng chiếu</a></li>
                             <li class="nav-item"><a href="#" class="nav-link py-1">Sơ đồ ghế</a></li>
