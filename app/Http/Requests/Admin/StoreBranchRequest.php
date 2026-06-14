@@ -15,8 +15,6 @@ class StoreBranchRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:50', 'unique:branches,code'],
-            'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }
@@ -25,8 +23,6 @@ class StoreBranchRequest extends FormRequest
     {
         return [
             'name.required' => 'Tên chi nhánh không được để trống',
-            'code.required' => 'Mã chi nhánh không được để trống',
-            'code.unique' => 'Mã chi nhánh đã tồn tại trong hệ thống',
         ];
     }
 }

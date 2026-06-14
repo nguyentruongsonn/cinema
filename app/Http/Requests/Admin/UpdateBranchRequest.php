@@ -16,13 +16,6 @@ class UpdateBranchRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'code' => [
-                'required', 
-                'string', 
-                'max:50', 
-                Rule::unique('branches')->ignore($this->route('branch'))
-            ],
-            'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }
@@ -31,8 +24,6 @@ class UpdateBranchRequest extends FormRequest
     {
         return [
             'name.required' => 'Tên chi nhánh không được để trống',
-            'code.required' => 'Mã chi nhánh không được để trống',
-            'code.unique' => 'Mã chi nhánh đã tồn tại trong hệ thống',
         ];
     }
 }

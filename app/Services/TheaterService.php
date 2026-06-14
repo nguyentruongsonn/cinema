@@ -25,21 +25,27 @@ class TheaterService
         try {
             $perPage = $filters['per_page'] ?? 12;
 
-            $query = Theater::query()->with('screens');
+            $query = Theater::query()->with(['screens', 'branch']);
 
-            // Search by name, address or city
+            // Search by name, address or branch name
             if (!empty($filters['q'])) {
                 $keyword = $filters['q'];
                 $query->where(function ($sub) use ($keyword) {
                     $sub->where('name', 'like', "%{$keyword}%")
                         ->orWhere('address', 'like', "%{$keyword}%")
-                        ->orWhere('city', 'like', "%{$keyword}%");
+                        ->orWhereHas('branch', function ($q) use ($keyword) {
+                            $q->where('name', 'like', "%{$keyword}%");
+                        });
                 });
             }
 
-            // Filter by city
-            if (!empty($filters['city'])) {
-                $query->where('city', $filters['city']);
+            // Filter by branch_id or city (legacy)
+            if (!empty($filters['branch_id'])) {
+                $query->where('branch_id', $filters['branch_id']);
+            } elseif (!empty($filters['city'])) {
+                $query->whereHas('branch', function ($q) use ($filters) {
+                    $q->where('name', $filters['city']);
+                });
             }
 
             // Status filter
@@ -53,7 +59,7 @@ class TheaterService
             // Sort
             $sortBy = $filters['sort_by'] ?? 'name';
             $sortDir = $filters['sort_dir'] ?? 'asc';
-            $allowedSorts = ['name', 'city', 'created_at'];
+            $allowedSorts = ['name', 'branch_id', 'created_at'];
 
             if (in_array($sortBy, $allowedSorts)) {
                 $query->orderBy($sortBy, $sortDir === 'desc' ? 'desc' : 'asc');
@@ -78,7 +84,7 @@ class TheaterService
     }
 
     /**
-     * Get all unique cities from active theaters
+     * Get all unique cities (branches) from active theaters
      *
      * @return \Illuminate\Support\Collection
      */
@@ -86,12 +92,12 @@ class TheaterService
     {
         try {
             $cities = Theater::active()
-                ->select('city')
-                ->distinct()
-                ->whereNotNull('city')
-                ->where('city', '!=', '')
-                ->orderBy('city')
-                ->pluck('city');
+                ->whereHas('branch')
+                ->with('branch:id,name')
+                ->get()
+                ->pluck('branch.name')
+                ->unique()
+                ->values();
 
             Log::info('Cities retrieved', ['count' => $cities->count()]);
 

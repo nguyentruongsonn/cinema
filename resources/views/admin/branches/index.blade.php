@@ -22,7 +22,7 @@
             <div class="filter-group flex-grow-1" style="max-width: 400px;">
                 <label for="search" class="filter-label" style="display:none;">Tìm kiếm</label>
                 <div class="input-group">
-                    <input type="text" name="search" class="filter-input" placeholder="Tên hoặc mã chi nhánh..." value="{{ request('search') }}" style="border-radius: 6px 0 0 6px;">
+                    <input type="text" name="search" class="filter-input" placeholder="Tìm chi nhánh..." value="{{ request('search') }}" style="border-radius: 6px 0 0 6px;">
                     <button class="btn btn-outline-secondary border-0" style="background: rgba(255,255,255,0.05); border-radius: 0 6px 6px 0;" type="submit">
                         <i class="bi bi-search"></i>
                     </button>
@@ -30,9 +30,9 @@
             </div>
         </form>
 
-        <a href="{{ route('admin.branches.create') }}" class="btn-primary-custom ms-auto" style="text-decoration:none;">
+        <button type="button" class="btn-primary-custom ms-auto border-0" id="btnCreateBranch">
             <i class="bi bi-plus-lg"></i> Tạo chi nhánh
-        </a>
+        </button>
     </div>
 </div>
 
@@ -44,7 +44,6 @@
                 <tr>
                     <th class="text-center text-secondary fw-semibold border-0" style="width: 60px;">STT</th>
                     <th class="text-secondary fw-semibold border-0">Tên chi nhánh</th>
-                    <th class="text-secondary fw-semibold border-0">Mã chi nhánh</th>
                     <th class="text-center text-secondary fw-semibold border-0">Hoạt động</th>
                     <th class="text-secondary fw-semibold border-0">Ngày tạo</th>
                     <th class="text-secondary fw-semibold border-0">Ngày cập nhật</th>
@@ -56,7 +55,6 @@
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                     <td class="text-center text-white-50">{{ $branches->firstItem() + $index }}</td>
                     <td class="fw-medium text-white">{{ $branch->name }}</td>
-                    <td><span class="badge" style="background: rgba(255,255,255,0.1); color: #fff;">{{ $branch->code }}</span></td>
                     <td class="text-center">
                         <div class="form-check form-switch d-inline-block">
                             <input class="form-check-input toggle-active-btn" type="checkbox" role="switch" 
@@ -69,9 +67,14 @@
                     <td class="text-light small">{{ $branch->updated_at->format('d/m/Y H:i') }}</td>
                     <td class="text-center">
                         <div class="btn-group" role="group">
-                            <a href="{{ route('admin.branches.edit', $branch) }}" class="btn btn-sm" style="color: var(--text-secondary); background: rgba(255,255,255,0.05);" title="Sửa">
+                            <button type="button" class="btn btn-sm btn-edit-branch" 
+                                style="color: var(--text-secondary); background: rgba(255,255,255,0.05);" 
+                                data-id="{{ $branch->id }}"
+                                data-name="{{ $branch->name }}"
+                                data-is-active="{{ $branch->is_active ? '1' : '0' }}"
+                                title="Sửa">
                                 <i class="bi bi-pencil"></i>
-                            </a>
+                            </button>
                             <form action="{{ route('admin.branches.destroy', $branch) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Bạn có chắc chắn muốn xóa chi nhánh này?');">
                                 @csrf
                                 @method('DELETE')
@@ -84,7 +87,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center py-5 text-muted">
+                    <td colspan="6" class="text-center py-5 text-muted">
                         <i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>
                         Không tìm thấy chi nhánh nào.
                     </td>
@@ -102,11 +105,48 @@
     @endif
 </div>
 
+{{-- ── Modal: Thêm / Sửa Chi Nhánh ──────────────────────────────────── --}}
+<div class="modal fade" id="branchModal" tabindex="-1" aria-labelledby="branchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="branchModalLabel">Tạo chi nhánh mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="branchForm" action="{{ route('admin.branches.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="_method" id="formMethod" value="{{ old('_method', 'POST') }}">
+                <input type="hidden" name="branch_id" id="branchIdInput" value="{{ old('branch_id') }}">
+                
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="branchName" class="form-label text-secondary">Tên chi nhánh <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control bg-dark text-white border-secondary @error('name') is-invalid @enderror" id="branchName" name="name" value="{{ old('name') }}" required>
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="branchIsActive" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} style="cursor: pointer;">
+                            <label class="form-check-label text-white" for="branchIsActive" style="cursor: pointer;">Cho phép hoạt động</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn text-white" style="background: rgba(255,255,255,0.1);" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-primary-custom border-0">Lưu chi nhánh</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
-
 @endpush
 
 @push('scripts')

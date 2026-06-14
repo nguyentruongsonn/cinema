@@ -58,9 +58,19 @@ class HomeController extends Controller
 
         $cinemaOptions = Theater::query()
             ->active()
-            ->orderBy('city')
-            ->orderBy('name')
-            ->get(['id', 'name', 'city']);
+            ->with('branch:id,name')
+            ->get(['id', 'name', 'branch_id'])
+            ->sortBy(function($theater) {
+                return ($theater->branch?->name ?? '') . '_' . $theater->name;
+            })
+            ->values()
+            ->map(function($theater) {
+                return [
+                    'id' => $theater->id,
+                    'name' => $theater->name,
+                    'city' => $theater->branch?->name ?? '',
+                ];
+            });
 
         $availableDates = Showtime::query()
             ->available()

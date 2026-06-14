@@ -16,19 +16,13 @@ class BranchController extends Controller
 
         $branches = Branch::query()
             ->when($search, function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%");
+                $query->where('name', 'like', "%{$search}%");
             })
             ->latest()
             ->paginate(10)
             ->withQueryString();
 
         return view('admin.branches.index', compact('branches', 'search'));
-    }
-
-    public function create()
-    {
-        return view('admin.branches.create');
     }
 
     public function store(StoreBranchRequest $request)
@@ -39,11 +33,6 @@ class BranchController extends Controller
         Branch::create($validated);
 
         return redirect()->route('admin.branches.index')->with('success', 'Tạo chi nhánh thành công.');
-    }
-
-    public function edit(Branch $branch)
-    {
-        return view('admin.branches.edit', compact('branch'));
     }
 
     public function update(UpdateBranchRequest $request, Branch $branch)

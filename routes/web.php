@@ -37,6 +37,10 @@ Route::prefix('admin')->middleware(['admin'])->group(function () {
     Route::view('/combos', 'admin.combos.index')->name('admin.combos.index');
     
     // Branches
-    Route::resource('branches', \App\Http\Controllers\Admin\BranchController::class)->names('admin.branches');
+    Route::resource('branches', \App\Http\Controllers\Admin\BranchController::class)->names('admin.branches')->except(['create', 'edit']);
     Route::post('branches/{branch}/toggle-active', [\App\Http\Controllers\Admin\BranchController::class, 'toggleActive'])->name('admin.branches.toggleActive');
+
+    // Theaters
+    Route::resource('theaters', \App\Http\Controllers\Admin\TheaterController::class)->names('admin.theaters')->except(['create', 'edit']);
+    Route::post('theaters/{theater}/toggle-active', [\App\Http\Controllers\Admin\TheaterController::class, 'toggleActive'])->name('admin.theaters.toggleActive');
 });

@@ -15,7 +15,6 @@ class Theater extends Model
         'branch_id',
         'name',
         'address',
-        'city',
         'phone',
         'email',
         'status',
@@ -42,8 +41,8 @@ class Theater extends Model
         return $query->where('status', 1);
     }
 
-    public function scopeInCity($query, $city)
+    public function scopeInBranch($query, $branchId)
     {
-        return $query->where('city', $city);
+        return $query->where('branch_id', $branchId);
     }
 }
