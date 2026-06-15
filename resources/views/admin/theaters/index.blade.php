@@ -44,9 +44,8 @@
                 <tr>
                     <th class="text-center text-secondary fw-semibold border-0" style="width: 60px;">STT</th>
                     <th class="text-secondary fw-semibold border-0">Tên rạp</th>
-                    <th class="text-secondary fw-semibold border-0">Tên chi nhánh</th>
+                    <th class="text-secondary fw-semibold border-0">Chi nhánh</th>
                     <th class="text-secondary fw-semibold border-0">Địa chỉ</th>
-                    <th class="text-secondary fw-semibold border-0">Email</th>
                     <th class="text-center text-secondary fw-semibold border-0">Hoạt động</th>
                     <th class="text-center text-secondary fw-semibold border-0" style="width: 120px;">Hành động</th>
                 </tr>
@@ -64,7 +63,6 @@
                         @endif
                     </td>
                     <td class="text-light small">{{ $theater->address }}</td>
-                    <td class="text-light small">{{ $theater->email ?? '-' }}</td>
                     <td class="text-center">
                         <div class="form-check form-switch d-inline-block">
                             <input class="form-check-input toggle-active-btn" type="checkbox" role="switch" 
@@ -83,6 +81,7 @@
                                 data-address="{{ $theater->address }}"
                                 data-phone="{{ $theater->phone }}"
                                 data-email="{{ $theater->email }}"
+                                data-description="{{ e($theater->description ?? '') }}"
                                 data-status="{{ $theater->status ? '1' : '0' }}"
                                 title="Sửa">
                                 <i class="bi bi-pencil"></i>
@@ -131,24 +130,26 @@
                 <input type="hidden" name="theater_id" id="theaterIdInput" value="{{ old('theater_id') }}">
                 
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="theaterName" class="form-label text-secondary">Tên rạp chiếu <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control bg-dark text-white border-secondary @error('name') is-invalid @enderror" id="theaterName" name="name" value="{{ old('name') }}" required>
-                        @error('name')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="mb-3">
-                        <label for="theaterBranch" class="form-label text-secondary">Chi nhánh <span class="text-danger">*</span></label>
-                        <select class="form-select bg-dark text-white border-secondary @error('branch_id') is-invalid @enderror" id="theaterBranch" name="branch_id" required>
-                            <option value="">-- Chọn chi nhánh --</option>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('branch_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="theaterName" class="form-label text-secondary">Tên rạp <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary @error('name') is-invalid @enderror" id="theaterName" name="name" value="{{ old('name') }}" required>
+                            @error('name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label for="theaterBranch" class="form-label text-secondary">Chi nhánh <span class="text-danger">*</span></label>
+                            <select class="form-select bg-dark text-white border-secondary @error('branch_id') is-invalid @enderror" id="theaterBranch" name="branch_id" required>
+                                <option value="">-- Chọn chi nhánh --</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('branch_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="theaterAddress" class="form-label text-secondary">Địa chỉ <span class="text-danger">*</span></label>
@@ -158,16 +159,9 @@
                         @enderror
                     </div>
                     <div class="mb-3">
-                        <label for="theaterPhone" class="form-label text-secondary">Số điện thoại</label>
-                        <input type="text" class="form-control bg-dark text-white border-secondary @error('phone') is-invalid @enderror" id="theaterPhone" name="phone" value="{{ old('phone') }}">
-                        @error('phone')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="mb-3">
-                        <label for="theaterEmail" class="form-label text-secondary">Email</label>
-                        <input type="email" class="form-control bg-dark text-white border-secondary @error('email') is-invalid @enderror" id="theaterEmail" name="email" value="{{ old('email') }}">
-                        @error('email')
+                        <label for="theaterDescription" class="form-label text-secondary">Mô tả</label>
+                        <textarea class="form-control bg-dark text-white border-secondary @error('description') is-invalid @enderror" id="theaterDescription" name="description" rows="3">{{ old('description') }}</textarea>
+                        @error('description')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -175,6 +169,22 @@
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="theaterStatus" name="status" value="1" {{ old('status', true) ? 'checked' : '' }} style="cursor: pointer;">
                             <label class="form-check-label text-white" for="theaterStatus" style="cursor: pointer;">Cho phép hoạt động</label>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="theaterPhone" class="form-label text-secondary">Số điện thoại</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary @error('phone') is-invalid @enderror" id="theaterPhone" name="phone" value="{{ old('phone') }}">
+                            @error('phone')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label for="theaterEmail" class="form-label text-secondary">Email</label>
+                            <input type="email" class="form-control bg-dark text-white border-secondary @error('email') is-invalid @enderror" id="theaterEmail" name="email" value="{{ old('email') }}">
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>

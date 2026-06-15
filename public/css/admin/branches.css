@@ -1,0 +1,63 @@
+#branchModal.branch-admin-modal {
+    --bs-modal-bg: #ffffff;
+    --bs-modal-color: #111827;
+}
+
+#branchModal.branch-admin-modal .modal-dialog,
+#branchModal.branch-admin-modal .modal-content {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+#branchModal.branch-admin-modal .modal-content {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55) !important;
+}
+
+#branchModal.branch-admin-modal .branch-modal-header,
+#branchModal.branch-admin-modal .branch-modal-footer {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #d1d5db !important;
+}
+
+#branchModal.branch-admin-modal .modal-title,
+#branchModal.branch-admin-modal .branch-modal-label {
+    color: #111827 !important;
+    font-weight: 700;
+}
+
+#branchModal.branch-admin-modal .branch-modal-subtitle {
+    color: #475569 !important;
+    font-weight: 500;
+}
+
+#branchModal.branch-admin-modal .branch-modal-body {
+    background: #ffffff !important;
+    color: #111827 !important;
+}
+
+#branchModal.branch-admin-modal .branch-modal-input {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 2px solid #94a3b8 !important;
+    box-shadow: none !important;
+}
+
+#branchModal.branch-admin-modal .branch-modal-input:focus {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.18) !important;
+}
+
+#branchModal.branch-admin-modal .branch-modal-cancel {
+    background: #e5e7eb !important;
+    color: #111827 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 700;
+}
+
+.modal-backdrop.show {
+    opacity: 0.72 !important;
+}

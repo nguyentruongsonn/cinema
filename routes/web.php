@@ -43,4 +43,8 @@ Route::prefix('admin')->middleware(['admin'])->group(function () {
     // Theaters
     Route::resource('theaters', \App\Http\Controllers\Admin\TheaterController::class)->names('admin.theaters')->except(['create', 'edit']);
     Route::post('theaters/{theater}/toggle-active', [\App\Http\Controllers\Admin\TheaterController::class, 'toggleActive'])->name('admin.theaters.toggleActive');
+
+    // Seat layout templates
+    Route::resource('seat-layout-templates', \App\Http\Controllers\Admin\SeatLayoutTemplateController::class)->names('admin.seat-layout-templates')->except(['create', 'edit']);
+    Route::post('seat-layout-templates/{seatLayoutTemplate}/toggle-active', [\App\Http\Controllers\Admin\SeatLayoutTemplateController::class, 'toggleActive'])->name('admin.seat-layout-templates.toggleActive');
 });

@@ -13,7 +13,6 @@ class TheaterSeeder extends Seeder
             [
                 'name' => 'CGV Vincom Center',
                 'address' => '72 Le Thanh Ton Street, Ben Nghe Ward, District 1',
-                'city' => 'Ho Chi Minh City',
                 'phone' => '1900 6017',
                 'email' => 'vincom@cgv.vn',
                 'status' => 1,
@@ -21,7 +20,6 @@ class TheaterSeeder extends Seeder
             [
                 'name' => 'CGV Aeon Mall',
                 'address' => '30 Bo Bao Tan Thang, Son Ky Ward, Tan Phu District',
-                'city' => 'Ho Chi Minh City',
                 'phone' => '1900 6017',
                 'email' => 'aeon@cgv.vn',
                 'status' => 1,
@@ -29,7 +27,6 @@ class TheaterSeeder extends Seeder
             [
                 'name' => 'CGV Landmark 81',
                 'address' => '720A Dien Bien Phu, Ward 22, Binh Thanh District',
-                'city' => 'Ho Chi Minh City',
                 'phone' => '1900 6017',
                 'email' => 'landmark81@cgv.vn',
                 'status' => 1,
@@ -37,6 +34,10 @@ class TheaterSeeder extends Seeder
         ];
 
         foreach ($theaters as $theater) {
+            $branch = \App\Models\Branch::where('name', $theater['name'])->first();
+            if ($branch) {
+                $theater['branch_id'] = $branch->id;
+            }
             Theater::updateOrCreate(
                 ['name' => $theater['name']],
                 $theater

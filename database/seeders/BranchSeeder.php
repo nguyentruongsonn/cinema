@@ -12,24 +12,18 @@ class BranchSeeder extends Seeder
         $branches = [
             [
                 'name' => 'CGV Vincom Center',
-                'code' => 'VINCOM',
-                'description' => '72 Le Thanh Ton Street, Ben Nghe Ward, District 1, Ho Chi Minh City',
             ],
             [
                 'name' => 'CGV Aeon Mall',
-                'code' => 'AEON',
-                'description' => '30 Bo Bao Tan Thang, Son Ky Ward, Tan Phu District, Ho Chi Minh City',
             ],
             [
                 'name' => 'CGV Landmark 81',
-                'code' => 'LANDMARK81',
-                'description' => '720A Dien Bien Phu, Ward 22, Binh Thanh District, Ho Chi Minh City',
             ],
         ];
 
         foreach ($branches as $branch) {
             Branch::updateOrCreate(
-                ['code' => $branch['code']],
+                ['name' => $branch['name']],
                 $branch
             );
         }

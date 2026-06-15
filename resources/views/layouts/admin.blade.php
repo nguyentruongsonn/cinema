@@ -79,9 +79,9 @@
                     <div class="collapse {{ request()->routeIs('admin.branches.*') ? 'show' : '' }}" id="menuRap">
                         <ul class="nav flex-column ps-4 pb-2">
                             <li class="nav-item"><a href="{{ route('admin.branches.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.branches.*') ? 'text-white fw-semibold' : '' }}">Quản lý chi nhánh</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý rạp chiếu</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.theaters.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.theaters.*') ? 'text-white fw-semibold' : '' }}">Quản lý rạp chiếu</a></li>
                             <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý phòng chiếu</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Sơ đồ ghế</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.seat-layout-templates.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.seat-layout-templates.*') ? 'text-white fw-semibold' : '' }}">Mẫu sơ đồ ghế</a></li>
                         </ul>
                     </div>
                 </li>

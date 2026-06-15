@@ -23,6 +23,7 @@
         els.theaterPhone = document.getElementById('theaterPhone');
         els.theaterEmail = document.getElementById('theaterEmail');
         els.theaterStatus = document.getElementById('theaterStatus');
+        els.theaterDescription = document.getElementById('theaterDescription');
     }
 
     /* ── Helpers ────────────────────────────────────────────────────── */
@@ -93,6 +94,7 @@
                 els.theaterAddress.value = '';
                 els.theaterPhone.value = '';
                 els.theaterEmail.value = '';
+                if(els.theaterDescription) els.theaterDescription.value = '';
                 els.theaterStatus.checked = true;
 
                 getModalInstance()?.show();
@@ -110,6 +112,7 @@
                 const address = this.getAttribute('data-address');
                 const phone = this.getAttribute('data-phone');
                 const email = this.getAttribute('data-email');
+                const description = this.getAttribute('data-description');
                 const status = this.getAttribute('data-status') === '1';
 
                 els.modalLabel.textContent = 'Cập nhật rạp chiếu';
@@ -122,6 +125,7 @@
                 els.theaterAddress.value = address || '';
                 els.theaterPhone.value = phone || '';
                 els.theaterEmail.value = email || '';
+                if(els.theaterDescription) els.theaterDescription.value = description || '';
                 els.theaterStatus.checked = status;
 
                 getModalInstance()?.show();

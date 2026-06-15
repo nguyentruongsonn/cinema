@@ -1,0 +1,37 @@
+/* ── Seat Layout Templates Page ─────────────────────────────────────────── */
+
+/* Search button */
+.slt-search-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0 6px 6px 0;
+}
+
+/* Cancel button in modal */
+.slt-btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.slt-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+/* Form switch cursor */
+#seatLayoutTemplateModal .form-check-input,
+#seatLayoutTemplateModal .form-check-label {
+    cursor: pointer;
+}
+
+/* form-control dark theme focus */
+#seatLayoutTemplateModal .form-control:focus,
+#seatLayoutTemplateModal .form-select:focus {
+    border-color: #e50914;
+    box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.18);
+}
+
+/* form-switch accent */
+#seatLayoutTemplateModal .form-check-input:checked {
+    background-color: #e50914;
+    border-color: #e50914;
+}
