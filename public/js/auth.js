@@ -120,7 +120,7 @@ class AuthManager {
 
             const response = await this.fetchAPI('/auth/login', {
                 method: 'POST',
-                body: JSON.stringify(data)
+                body: data
             });
 
             if (response.success) {
@@ -185,7 +185,7 @@ class AuthManager {
 
             const response = await this.fetchAPI('/auth/register', {
                 method: 'POST',
-                body: JSON.stringify(data)
+                body: data
             });
 
             if (response.success) {
@@ -242,7 +242,7 @@ class AuthManager {
         this.isCheckingAuth = true;
 
         try {
-            const response = await this.fetchAPI('/auth/profile', {
+            const response = await this.fetchAPI('/auth/me', {
                 skipRefresh: false,
                 silentAuth: true,
             });
@@ -263,62 +263,31 @@ class AuthManager {
     }
 
     async fetchAPI(endpoint, options = {}) {
-        const url = `${this.apiUrl}${endpoint}`;
-        const headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        };
+        const requestOptions = { ...options };
+        delete requestOptions.skipRefresh;
+        delete requestOptions.silentAuth;
 
-        // Add CSRF token for state-changing requests
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        if (csrfToken && (options.method === 'POST' || options.method === 'PUT' || options.method === 'DELETE')) {
-            headers['X-CSRF-TOKEN'] = csrfToken;
-        }
+        try {
+            return await window.apiClient.request(endpoint, requestOptions);
+        } catch (error) {
+            if (error.status === 401) {
+                if (options.skipRefresh || endpoint.includes('/auth/refresh')) {
+                    error.isAuthExpected = true;
+                    throw error;
+                }
 
-        const config = {
-            ...options,
-            headers: {
-                ...headers,
-                ...options.headers
-            },
-            credentials: 'include' // Send cookies (refresh token)
-        };
+                const refreshed = await this.refreshAccessToken();
+                if (refreshed) {
+                    return window.apiClient.request(endpoint, requestOptions);
+                }
 
-        let response = await fetch(url, config);
-        let data = await response.json();
-
-        // Handle 401 - try to refresh access token when appropriate.
-        // Some endpoints (e.g. /auth/me on first page load) are allowed to fail
-        // silently because a guest user is a valid application state.
-        if (response.status === 401) {
-            if (options.skipRefresh || endpoint.includes('/auth/refresh')) {
-                const authError = new Error(data.message || 'Unauthenticated.');
-                authError.status = 401;
-                authError.isAuthExpected = true;
-                throw authError;
-            }
-
-            const refreshed = await this.refreshAccessToken();
-            if (refreshed) {
-                // Retry original request (cookies automatically sent)
-                config.headers = { ...headers, ...options.headers };
-                response = await fetch(url, config);
-                data = await response.json();
-            } else {
                 this.user = null;
                 this.updateUI();
                 throw new Error('Session expired. Please login again.');
             }
-        }
 
-        if (!response.ok) {
-            const requestError = new Error(data.message || 'Request failed');
-            requestError.status = response.status;
-            throw requestError;
+            throw error;
         }
-
-        return data;
     }
 
     async refreshAccessToken() {
@@ -329,22 +298,13 @@ class AuthManager {
         this.isRefreshing = true;
         this.refreshPromise = (async () => {
             try {
-                const response = await fetch(`${this.apiUrl}/auth/refresh`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    credentials: 'include'
-                });
+                const data = await window.apiClient.post('/auth/refresh');
 
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.data.user) {
-                        this.user = data.data.user;
-                        return true;
-                    }
+                if (data.success && data.data.user) {
+                    this.user = data.data.user;
+                    return true;
                 }
+
                 return false;
             } catch (error) {
                 console.error('Token refresh failed:', error);

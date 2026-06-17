@@ -28,6 +28,23 @@ use App\Http\Controllers\Api\V1\TicketController;
 |
 */
 
+/*
+|--------------------------------------------------------------------------
+| Legacy API compatibility routes
+|--------------------------------------------------------------------------
+|
+| Frontend pages should use /api/v1 via window.APP_CONFIG.apiUrl. These aliases
+| keep older cached assets/config from failing with 404 while browsers refresh.
+|
+*/
+Route::get('home', [HomeController::class, 'data']);
+Route::prefix('auth')->group(function () {
+    Route::middleware(['auth:api'])->group(function () {
+        Route::get('me', [AuthController::class, 'me']);
+        Route::get('profile', [AuthController::class, 'profile']);
+    });
+});
+
 // PayOS Webhook - OUTSIDE versioning (external service, URL already configured)
 Route::post('payos/webhook', [UserPaymentController::class, 'handleWebhook'])
     ->middleware(['verify.payos', 'throttle:webhook']);

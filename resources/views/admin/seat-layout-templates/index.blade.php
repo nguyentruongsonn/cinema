@@ -86,7 +86,7 @@
 
 {{-- ── Modal: Thêm / Sửa Mẫu Sơ Đồ Ghế ─────────────────────────────── --}}
 <div class="modal fade" id="seatLayoutTemplateModal" tabindex="-1" aria-labelledby="seatLayoutTemplateModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="seatLayoutTemplateModalLabel">
@@ -102,48 +102,106 @@
                 <div class="modal-body">
                     <div id="seatLayoutTemplateFormAlert" class="alert alert-danger d-none" role="alert"></div>
 
+                    {{-- Tên mẫu --}}
                     <div class="mb-3">
                         <label for="templateName" class="form-label text-secondary">Tên mẫu sơ đồ ghế <span class="text-danger">*</span></label>
                         <input type="text" class="form-control bg-dark text-white border-secondary" id="templateName" name="template_name" required>
                         <div class="invalid-feedback" data-error-for="template_name"></div>
                     </div>
 
+                    {{-- Ma trận ghế (dropdown preset) --}}
                     <div class="mb-3">
-                        <label for="seatMatrix" class="form-label text-secondary">Ma trận ghế</label>
-                        <textarea class="form-control bg-dark text-white border-secondary" id="seatMatrix" name="seat_matrix" rows="3" placeholder="Ví dụ: A=11111, B=11111"></textarea>
+                        <label for="seatMatrix" class="form-label text-secondary">
+                            Ma trận ghế <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select bg-dark text-white border-secondary" id="seatMatrix" name="seat_matrix" required>
+                            <option value="">-- Chọn ma trận ghế --</option>
+                            <option value="12x12" data-rows="12" data-cols="12" data-capacity="144">12×12 — Sức chứa tối đa 144 chỗ ngồi</option>
+                            <option value="13x13" data-rows="13" data-cols="13" data-capacity="169">13×13 — Sức chứa tối đa 169 chỗ ngồi</option>
+                            <option value="14x14" data-rows="14" data-cols="14" data-capacity="196">14×14 — Sức chứa tối đa 196 chỗ ngồi</option>
+                            <option value="15x15" data-rows="15" data-cols="15" data-capacity="225">15×15 — Sức chứa tối đa 225 chỗ ngồi</option>
+                        </select>
                         <div class="invalid-feedback" data-error-for="seat_matrix"></div>
+
+                        {{-- Info badge hiển thị khi chọn --}}
+                        <div id="matrixInfo" class="mt-2 d-none">
+                            <div class="d-flex gap-3 flex-wrap">
+                                <span class="badge d-flex align-items-center gap-1" style="background: rgba(229,9,20,0.15); color:#e50914; padding: 6px 12px; font-size:0.8rem;">
+                                    <i class="bi bi-grid-3x3"></i>
+                                    <span id="matrixSize">—</span>
+                                </span>
+                                <span class="badge d-flex align-items-center gap-1" style="background: rgba(59,130,246,0.15); color:#60a5fa; padding: 6px 12px; font-size:0.8rem;">
+                                    <i class="bi bi-person-fill"></i>
+                                    Tối đa <span id="matrixCapacity" class="ms-1 fw-bold">—</span> chỗ
+                                </span>
+                                <span class="badge d-flex align-items-center gap-1" style="background: rgba(16,185,129,0.15); color:#34d399; padding: 6px 12px; font-size:0.8rem;">
+                                    <i class="bi bi-list-ol"></i>
+                                    Tối đa <span id="matrixRows" class="ms-1 fw-bold">—</span> hàng
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="row mb-3">
+                    {{-- Phân bổ loại ghế --}}
+                    <div class="mb-1">
+                        <label class="form-label text-secondary mb-2">
+                            Phân bổ hàng ghế
+                            <span class="text-white-50 small fw-normal ms-1">(Tổng không vượt quá số hàng của ma trận)</span>
+                        </label>
+                    </div>
+
+                    {{-- Row sum progress bar --}}
+                    <div class="mb-3 p-3 rounded" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small text-secondary">Tổng hàng đã dùng</span>
+                            <span id="rowSumDisplay" class="small fw-bold text-white">
+                                <span id="rowSumUsed">0</span> / <span id="rowSumMax">—</span> hàng
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                            <div id="rowSumBar" class="progress-bar" role="progressbar" style="width: 0%; border-radius: 3px; background: linear-gradient(90deg, #22c55e, #16a34a); transition: width 0.3s ease;"></div>
+                        </div>
+                        <div id="rowSumWarning" class="small text-danger mt-2 d-none">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <span id="rowSumWarningText"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 g-3">
                         <div class="col-md-4">
-                            <label for="regularSeatRows" class="form-label text-secondary">Hàng ghế thường</label>
-                            <input type="number" class="form-control bg-dark text-white border-secondary" id="regularSeatRows" name="regular_seat_rows" min="0" value="0">
+                            <label for="regularSeatRows" class="form-label text-secondary d-flex align-items-center gap-1">
+                                <span class="d-inline-block" style="width:10px;height:10px;border-radius:2px;background:#60a5fa;"></span>
+                                Ghế thường
+                            </label>
+                            <input type="number" class="form-control bg-dark text-white border-secondary seat-row-input" id="regularSeatRows" name="regular_seat_rows" min="0" value="0">
                             <div class="invalid-feedback" data-error-for="regular_seat_rows"></div>
                         </div>
                         <div class="col-md-4">
-                            <label for="vipSeatRows" class="form-label text-secondary">Hàng ghế VIP</label>
-                            <input type="number" class="form-control bg-dark text-white border-secondary" id="vipSeatRows" name="vip_seat_rows" min="0" value="0">
+                            <label for="vipSeatRows" class="form-label text-secondary d-flex align-items-center gap-1">
+                                <span class="d-inline-block" style="width:10px;height:10px;border-radius:2px;background:#f59e0b;"></span>
+                                Ghế VIP
+                            </label>
+                            <input type="number" class="form-control bg-dark text-white border-secondary seat-row-input" id="vipSeatRows" name="vip_seat_rows" min="0" value="0">
                             <div class="invalid-feedback" data-error-for="vip_seat_rows"></div>
                         </div>
                         <div class="col-md-4">
-                            <label for="coupleSeatRows" class="form-label text-secondary">Hàng ghế đôi</label>
-                            <input type="number" class="form-control bg-dark text-white border-secondary" id="coupleSeatRows" name="couple_seat_rows" min="0" value="0">
+                            <label for="coupleSeatRows" class="form-label text-secondary d-flex align-items-center gap-1">
+                                <span class="d-inline-block" style="width:10px;height:10px;border-radius:2px;background:#ec4899;"></span>
+                                Ghế đôi
+                            </label>
+                            <input type="number" class="form-control bg-dark text-white border-secondary seat-row-input" id="coupleSeatRows" name="couple_seat_rows" min="0" value="0">
                             <div class="invalid-feedback" data-error-for="couple_seat_rows"></div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="customMatrix" class="form-label text-secondary">Ma trận tùy chỉnh</label>
-                        <textarea class="form-control bg-dark text-white border-secondary" id="customMatrix" name="custom_matrix" rows="3" placeholder="JSON hoặc cấu trúc tùy chỉnh"></textarea>
-                        <div class="invalid-feedback" data-error-for="custom_matrix"></div>
-                    </div>
-
+                    {{-- Mô tả --}}
                     <div class="mb-3">
                         <label for="description" class="form-label text-secondary">Mô tả</label>
-                        <textarea class="form-control bg-dark text-white border-secondary" id="description" name="description" rows="3"></textarea>
+                        <textarea class="form-control bg-dark text-white border-secondary" id="description" name="description" rows="2" placeholder="Mô tả ngắn về mẫu sơ đồ..."></textarea>
                         <div class="invalid-feedback" data-error-for="description"></div>
                     </div>
 
+                    {{-- Trạng thái --}}
                     <div class="mb-0">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="templateStatus" name="status" value="1" checked>
@@ -154,12 +212,13 @@
 
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn text-white slt-btn-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
-                    <button type="submit" class="btn-primary-custom border-0">Lưu mẫu sơ đồ ghế</button>
+                    <button type="submit" class="btn-primary-custom border-0" id="sltSubmitBtn">Lưu mẫu sơ đồ ghế</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
 
 @endsection
 

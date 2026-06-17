@@ -14,10 +14,10 @@
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    
+
     <!-- Admin Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/admin/style.css') }}?v={{ time() }}">
-    
+
     <!-- ApexCharts -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
@@ -34,7 +34,7 @@
                     <span class="brand-subtitle">ADMIN DASHBOARD</span>
                 </div>
             </div>
-            
+
             <ul class="nav flex-column sidebar-nav flex-grow-1 mt-3">
                 <!-- Tổng quan -->
                 <li class="nav-item">
@@ -42,7 +42,7 @@
                         <i class="bi bi-grid"></i> Tổng quan
                     </a>
                 </li>
-                
+
                 <!-- Thống kê -->
                 <li class="nav-item">
                     <a href="#menuThongKe" class="nav-link" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="menuThongKe">
@@ -166,7 +166,7 @@
                         <span class="page-subtitle">@yield('header_subtitle', "Welcome back. Here's what's happening today.")</span>
                     </div>
                 </div>
-                
+
                 <div class="topbar-actions">
                     <button class="btn-icon">
                         <i class="bi bi-bell"></i>
@@ -187,7 +187,7 @@
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Admin Core JS -->
     <script>
         window.APP_CONFIG = {
@@ -195,6 +195,7 @@
             csrfToken: @json(csrf_token()),
         };
     </script>
+    <script src="{{ asset('js/core/api-client.js') }}"></script>
     <script src="{{ asset('js/auth.js') }}"></script>
     <script src="{{ asset('js/admin/app.js') }}?v={{ time() }}"></script>
     @stack('scripts')

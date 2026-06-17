@@ -24,7 +24,6 @@
             .replace(/'/g, "\u0026#039;");
     }
 
-    const API_HOME = `${window.APP_CONFIG?.apiUrl || '/api/v1'}/home`;
     const PLACEHOLDER_POSTER = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 300 450%22%3E%3Crect fill=%22%23161618%22 width=%22300%22 height=%22450%22/%3E%3Ctext x=%22150%22 y=%22225%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2220%22%3ENo Poster%3C/text%3E%3C/svg%3E';
     const FALLBACK_BACKDROP = 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1920&auto=format&fit=crop';
 
@@ -217,8 +216,7 @@
 
     async function loadHome() {
         try {
-            const res = await fetch(API_HOME, { headers: { Accept: 'application/json' } });
-            const json = await res.json();
+            const json = await window.apiClient.get('/home');
 
             if (!json.success) throw new Error(json.message || 'Failed to load home data');
 

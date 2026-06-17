@@ -20,7 +20,6 @@
             .replace(/'/g, "\u0026#039;");
     }
 
-    const API_BASE = window.APP_CONFIG?.apiUrl || '/api/v1';
     let els = {};
     let currentFilters = {
         status: 'active',
@@ -129,8 +128,7 @@
             params.set('page', currentFilters.page);
             params.set('per_page', currentFilters.per_page);
 
-            const res = await fetch(`${API_BASE}/movies?${params.toString()}`);
-            const json = await res.json();
+            const json = await window.apiClient.get(`/movies?${params.toString()}`);
 
             if (!json.success) throw new Error(json.message || 'Failed to load movies');
 
