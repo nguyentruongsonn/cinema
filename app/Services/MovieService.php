@@ -33,6 +33,8 @@ class MovieService
                         'now_showing' => $query->nowShowing(),
                         'upcoming' => $query->upcoming(),
                         'hidden' => $query->where('is_hidden', 1),
+                        'published' => $query->where('status', 1),
+                        'draft' => $query->where('status', 0),
                         default => $query->active(),
                     };
                 })

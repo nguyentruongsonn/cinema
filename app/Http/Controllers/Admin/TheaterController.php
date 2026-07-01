@@ -23,12 +23,9 @@ class TheaterController extends Controller
                       ->orWhere('email', 'like', "%{$search}%");
             })
             ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->paginate(10);
 
-        $branches = Branch::where('is_active', true)->get();
-
-        return view('admin.theaters.index', compact('theaters', 'branches', 'search'));
+        return response()->json($theaters);
     }
 
     public function store(StoreTheaterRequest $request)
@@ -36,9 +33,13 @@ class TheaterController extends Controller
         $validated = $request->validated();
         $validated['status'] = $request->has('status') ? 1 : 0;
 
-        Theater::create($validated);
+        $theater = Theater::create($validated);
 
-        return redirect()->route('admin.theaters.index')->with('success', 'Tạo rạp chiếu thành công.');
+        return response()->json([
+            'success' => true, 
+            'message' => 'Tạo rạp chiếu thành công.',
+            'data' => $theater
+        ], 201);
     }
 
     public function update(UpdateTheaterRequest $request, Theater $theater)
@@ -48,7 +49,11 @@ class TheaterController extends Controller
 
         $theater->update($validated);
 
-        return redirect()->route('admin.theaters.index')->with('success', 'Cập nhật rạp chiếu thành công.');
+        return response()->json([
+            'success' => true, 
+            'message' => 'Cập nhật rạp chiếu thành công.',
+            'data' => $theater
+        ]);
     }
 
     public function toggleActive(Theater $theater)
@@ -60,6 +65,6 @@ class TheaterController extends Controller
     public function destroy(Theater $theater)
     {
         $theater->delete();
-        return redirect()->route('admin.theaters.index')->with('success', 'Xóa rạp chiếu thành công.');
+        return response()->json(['success' => true, 'message' => 'Xóa rạp chiếu thành công.']);
     }
 }

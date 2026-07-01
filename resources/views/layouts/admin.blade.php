@@ -72,15 +72,15 @@
 
                 <!-- Hệ thống rạp -->
                 <li class="nav-item">
-                    <a href="#menuRap" class="nav-link {{ request()->routeIs('admin.branches.*') ? 'active' : '' }}" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('admin.branches.*') ? 'true' : 'false' }}" aria-controls="menuRap">
+                    <a href="#menuRap" class="nav-link {{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*') ? 'active' : '' }}" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*') ? 'true' : 'false' }}" aria-controls="menuRap">
                         <i class="bi bi-buildings"></i> Hệ thống rạp
                         <i class="bi bi-chevron-down ms-auto" style="font-size: 0.8rem;"></i>
                     </a>
-                    <div class="collapse {{ request()->routeIs('admin.branches.*') ? 'show' : '' }}" id="menuRap">
+                    <div class="collapse {{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*') ? 'show' : '' }}" id="menuRap">
                         <ul class="nav flex-column ps-4 pb-2">
                             <li class="nav-item"><a href="{{ route('admin.branches.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.branches.*') ? 'text-white fw-semibold' : '' }}">Quản lý chi nhánh</a></li>
                             <li class="nav-item"><a href="{{ route('admin.theaters.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.theaters.*') ? 'text-white fw-semibold' : '' }}">Quản lý rạp chiếu</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý phòng chiếu</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.screens.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.screens.*') ? 'text-white fw-semibold' : '' }}">Quản lý phòng chiếu</a></li>
                             <li class="nav-item"><a href="{{ route('admin.seat-layout-templates.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.seat-layout-templates.*') ? 'text-white fw-semibold' : '' }}">Mẫu sơ đồ ghế</a></li>
                         </ul>
                     </div>
@@ -88,14 +88,14 @@
 
                 <!-- Phim & Suất chiếu -->
                 <li class="nav-item">
-                    <a href="#menuPhim" class="nav-link {{ request()->routeIs('admin.movies.*') ? 'active' : '' }}" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('admin.movies.*') ? 'true' : 'false' }}" aria-controls="menuPhim">
+                    <a href="#menuPhim" class="nav-link {{ request()->routeIs('admin.movies.*', 'admin.showtimes.*') ? 'active' : '' }}" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('admin.movies.*', 'admin.showtimes.*') ? 'true' : 'false' }}" aria-controls="menuPhim">
                         <i class="bi bi-film"></i> Phim & Suất chiếu
                         <i class="bi bi-chevron-down ms-auto" style="font-size: 0.8rem;"></i>
                     </a>
-                    <div class="collapse {{ request()->routeIs('admin.movies.*') ? 'show' : '' }}" id="menuPhim">
+                    <div class="collapse {{ request()->routeIs('admin.movies.*', 'admin.showtimes.*') ? 'show' : '' }}" id="menuPhim">
                         <ul class="nav flex-column ps-4 pb-2">
                             <li class="nav-item"><a href="{{ route('admin.movies.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.movies.index') ? 'text-white' : '' }}">Quản lý phim</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý suất chiếu</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.showtimes.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.showtimes.index') ? 'text-white' : '' }}">Quản lý suất chiếu</a></li>
                             <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý hóa đơn</a></li>
                         </ul>
                     </div>
@@ -103,14 +103,13 @@
 
                 <!-- Dịch vụ và ưu đãi -->
                 <li class="nav-item">
-                    <a href="#menuDichVu" class="nav-link" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="menuDichVu">
+                    <a href="#menuDichVu" class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('admin.products.*') ? 'true' : 'false' }}" aria-controls="menuDichVu">
                         <i class="bi bi-box-seam"></i> Dịch vụ & Ưu đãi
                         <i class="bi bi-chevron-down ms-auto" style="font-size: 0.8rem;"></i>
                     </a>
-                    <div class="collapse" id="menuDichVu">
+                    <div class="collapse {{ request()->routeIs('admin.products.*') ? 'show' : '' }}" id="menuDichVu">
                         <ul class="nav flex-column ps-4 pb-2">
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý đồ ăn</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link py-1">Quản lý combo</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.products.index') }}" class="nav-link py-1 {{ request()->routeIs('admin.products.index') ? 'text-white' : '' }}">Quản lý sản phẩm / Combo</a></li>
                             <li class="nav-item"><a href="#" class="nav-link py-1">Mã giảm giá</a></li>
                         </ul>
                     </div>
@@ -187,12 +186,19 @@
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('js/admin-core.js') }}?v={{ time() }}"></script>
 
     <!-- Admin Core JS -->
     <script>
         window.APP_CONFIG = {
-            apiUrl: '/api/v1',
+            appName: @json(config('app.name', 'Cinema')),
+            apiUrl: @json(url('/api/v1')),
             csrfToken: @json(csrf_token()),
+            auth: {
+                checked: @json(Auth::guard('web')->check() || !request()->hasCookie('refresh_token')),
+                authenticated: @json(Auth::guard('web')->check()),
+                user: @json(Auth::guard('web')->user()),
+            },
         };
     </script>
     <script src="{{ asset('js/core/api-client.js') }}"></script>

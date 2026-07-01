@@ -50,6 +50,8 @@ class Movie extends Model
         'original_title',
         'description',
         'poster_url',
+        'poster_path',
+        'banner_path',
         'trailer_url',
         'duration',
         'release_date',
@@ -64,6 +66,28 @@ class Movie extends Model
         'manual_override_status',
         'is_hot',
     ];
+
+    /**
+     * URL hiển thị poster: ưu tiên file upload, fallback sang poster_url cũ.
+     */
+    public function getPosterDisplayUrlAttribute(): ?string
+    {
+        if ($this->poster_path) {
+            return asset('storage/' . $this->poster_path);
+        }
+        return $this->poster_url ?: null;
+    }
+
+    /**
+     * URL hiển thị banner: ưu tiên file upload.
+     */
+    public function getBannerDisplayUrlAttribute(): ?string
+    {
+        if ($this->banner_path) {
+            return asset('storage/' . $this->banner_path);
+        }
+        return null;
+    }
 
     protected $casts = [
         'duration' => 'integer',

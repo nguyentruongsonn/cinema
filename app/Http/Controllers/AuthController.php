@@ -12,6 +12,7 @@ use App\Http\Requests\VerifyEmailRequest;
 use App\Services\AuthService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
@@ -125,11 +126,19 @@ class AuthController extends Controller
             $refreshToken = $request->cookie('refresh_token');
             $this->authService->logout($refreshToken);
 
+            Auth::guard('web')->logout();
+
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
             $response = $this->successResponse(null, 'Logout successful');
 
             return $response
                 ->withCookie(cookie()->forget('access_token', '/', config('session.domain')))
-                ->withCookie(cookie()->forget('refresh_token', '/', config('session.domain')));
+                ->withCookie(cookie()->forget('refresh_token', '/', config('session.domain')))
+                ->withCookie(cookie()->forget(config('session.cookie'), '/', config('session.domain')));
         } catch (\Throwable $e) {
             return $this->errorResponse('Logout failed: ' . $e->getMessage(), 500);
         }

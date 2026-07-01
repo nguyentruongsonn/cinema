@@ -217,4 +217,53 @@ class ApiSecurityTest extends TestCase
         $this->assertStringContainsString('access_token', $methodSource);
         $this->assertStringContainsString('refresh_token', $methodSource);
     }
+
+    public function test_frontend_api_routes_are_available_only_under_v1_prefix(): void
+    {
+        $routes = collect(Route::getRoutes())->map(fn ($route) => $route->uri());
+
+        $expectedV1Routes = [
+            'api/v1/home',
+            'api/v1/auth/me',
+            'api/v1/movies',
+            'api/v1/products',
+            'api/v1/seats/showtime/{encryptedShowtimeId}',
+            'api/v1/payments',
+            'api/v1/promotions/{code}/validate',
+        ];
+
+        foreach ($expectedV1Routes as $uri) {
+            $this->assertContains($uri, $routes, "Frontend route {$uri} must exist.");
+        }
+
+        $legacyRoutes = [
+            'api/home',
+            'api/auth/me',
+            'api/auth/profile',
+        ];
+
+        foreach ($legacyRoutes as $uri) {
+            $this->assertNotContains($uri, $routes, "Legacy unversioned route {$uri} must not exist.");
+        }
+    }
+
+    public function test_admin_toggle_routes_are_protected_by_api_auth_and_admin_role(): void
+    {
+        $adminToggleUris = [
+            'api/v1/admin/branches/{branch}/toggle-active',
+            'api/v1/admin/theaters/{theater}/toggle-active',
+            'api/v1/admin/seat-layout-templates/{seatLayoutTemplate}/toggle-active',
+        ];
+
+        foreach ($adminToggleUris as $uri) {
+            $route = collect(Route::getRoutes())->first(fn ($route) => $route->uri() === $uri && in_array('POST', $route->methods(), true));
+
+            $this->assertNotNull($route, "Admin toggle route {$uri} must exist.");
+
+            $middleware = $route->gatherMiddleware();
+
+            $this->assertContains('auth:api', $middleware, "Admin toggle route {$uri} must require API authentication.");
+            $this->assertContains('role:admin,super-admin', $middleware, "Admin toggle route {$uri} must require admin role.");
+        }
+    }
 }

@@ -21,7 +21,7 @@ class PricingService
         // Seat pricing
         $seatIds = array_map(fn($item) => (int) ($item['id'] ?? $item), $seatRequests); // handle if item is array or scalar
         $seats = Seat::with('seatType')->whereIn('id', $seatIds)->get();
-        
+
         $seatItems = [];
         $seatTotal = 0;
         $basePrice = (float) $showtime->price;
@@ -43,7 +43,7 @@ class PricingService
         // Product pricing
         $productItems = [];
         $productTotal = 0;
-        
+
         if (!empty($productRequests)) {
             $requestedProducts = collect($productRequests)
                 ->mapWithKeys(fn (array $product) => [(int) $product['id'] => (int) $product['quantity']])
@@ -74,8 +74,9 @@ class PricingService
 
         $subtotal = $seatTotal + $productTotal;
 
-        // Promotion
-        [$voucherDiscount, $voucherPayload] = $this->applyPromotion($voucherCode, $subtotal);
+        // Promotion: chỉ tính giảm giá khi frontend gửi voucher_code đã được người dùng bấm "Áp dụng".
+        // Voucher cũng phải tồn tại trong Kho Voucher của chính user để tránh nhập mã trực tiếp khi chưa đăng ký.
+        [$voucherDiscount, $voucherPayload] = $this->applyPromotion($voucherCode, $subtotal, $user);
 
         // Points (Assuming 1 point = 1 VND if supported, else ignore)
         $pointDiscount = 0;
@@ -103,7 +104,7 @@ class PricingService
         ];
     }
 
-    private function applyPromotion(?string $promotionCode, float $subtotal): array
+    private function applyPromotion(?string $promotionCode, float $subtotal, User $user): array
     {
         $promotionCode = trim((string) $promotionCode);
 
@@ -115,10 +116,19 @@ class PricingService
             ->active()
             ->valid()
             ->byCode($promotionCode)
+            ->whereHas('users', function ($query) use ($user) {
+                $query->where('users.id', $user->id)
+                    ->where('user_promotion.status', 1)
+                    ->whereNull('user_promotion.used_at')
+                    ->where(function ($pivotQuery) {
+                        $pivotQuery->whereNull('user_promotion.usage_count')
+                            ->orWhere('user_promotion.usage_count', 0);
+                    });
+            })
             ->first();
 
         if (!$promotion) {
-            throw new \RuntimeException('Mã khuyến mãi không hợp lệ hoặc đã hết hạn.');
+            throw new \RuntimeException('Mã khuyến mãi chưa được đăng ký trong Kho Voucher, không hợp lệ hoặc đã hết hạn.');
         }
 
         $minOrderValue = (float) ($promotion->min_order_value ?? 0);
@@ -134,8 +144,8 @@ class PricingService
             [
                 'id' => $promotion->id,
                 'code' => $promotion->code,
-                'type' => $promotion->type,
-                'value' => (float) $promotion->value,
+                'type' => $promotion->discount_type,
+                'value' => (float) $promotion->discount_value,
                 'discount_amount' => $discountAmount,
             ],
         ];
@@ -143,9 +153,9 @@ class PricingService
 
     private function calculatePromotionDiscount(Promotion $promotion, float $subtotal): float
     {
-        if ($promotion->type === 'percentage') {
-            $discount = $subtotal * ((float) $promotion->value / 100);
-            $maxDiscount = (float) ($promotion->max_discount ?? 0);
+        if ($promotion->discount_type === 'percentage') {
+            $discount = $subtotal * ((float) $promotion->discount_value / 100);
+            $maxDiscount = (float) ($promotion->max_discount_amount ?? 0);
 
             if ($maxDiscount > 0) {
                 $discount = min($discount, $maxDiscount);
@@ -154,8 +164,8 @@ class PricingService
             return round(min($discount, $subtotal), 0);
         }
 
-        if (in_array($promotion->type, ['fixed', 'amount'], true)) {
-            return round(min((float) $promotion->value, $subtotal), 0);
+        if (in_array($promotion->discount_type, ['fixed_amount', 'fixed', 'amount'], true)) {
+            return round(min((float) $promotion->discount_value, $subtotal), 0);
         }
 
         return 0;

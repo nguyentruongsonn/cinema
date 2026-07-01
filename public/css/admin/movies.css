@@ -1,0 +1,202 @@
+/* ── Movie Admin Modal - Premium Dark Theme ───────────────────────────── */
+
+#movieModal .modal-content {
+    background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        0 32px 96px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+    color: #f1f1f3 !important;
+}
+
+/* Header */
+#movieModal .modal-header {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+#movieModal .modal-title {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    letter-spacing: 0.02em;
+}
+
+#movieModal .modal-title i {
+    color: #a1a1aa;
+}
+
+/* Body */
+#movieModal .modal-body {
+    background: transparent !important;
+    padding: 1.5rem !important;
+}
+
+/* Scrollbar inside modal body */
+#movieModal .modal-body::-webkit-scrollbar {
+    width: 5px;
+}
+#movieModal .modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+#movieModal .modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+/* Form labels */
+#movieModal .form-label {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.07em !important;
+    text-transform: uppercase !important;
+    color: #71717a !important;
+    margin-bottom: 0.4rem !important;
+}
+
+/* Form controls */
+#movieModal .form-control,
+#movieModal .form-select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #f1f1f3 !important;
+    border-radius: 8px !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.9rem !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+#movieModal .form-control:focus,
+#movieModal .form-select:focus {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
+    color: #fff !important;
+    outline: none !important;
+}
+
+#movieModal .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.2) !important;
+}
+
+#movieModal textarea.form-control {
+    resize: vertical;
+    min-height: 90px;
+}
+
+/* Dropdown options */
+#movieModal .form-select option {
+    background: #1e1e24 !important;
+    color: #f1f1f3 !important;
+}
+
+/* HR divider */
+#movieModal hr {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    margin: 1rem 0 !important;
+}
+
+/* Category checkboxes */
+#movieModal .category-cb {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    cursor: pointer;
+}
+
+#movieModal .category-cb:checked {
+    background-color: #6366f1 !important;
+    border-color: #6366f1 !important;
+}
+
+#movieModal .form-check-label.small {
+    color: #71717a !important;
+    cursor: pointer;
+    font-size: 0.82rem !important;
+    transition: color 0.15s;
+}
+
+#movieModal .form-check-input:checked + .form-check-label {
+    color: #e4e4e7 !important;
+}
+
+/* Toggle switches */
+#movieModal .form-check-input[type="checkbox"][role="switch"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    width: 2.4em !important;
+    height: 1.3em !important;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+#movieModal .form-check-input[type="checkbox"][role="switch"]:checked {
+    background-color: #6366f1 !important;
+    border-color: #6366f1 !important;
+}
+
+#movieModal .form-check-input[type="checkbox"][role="switch"]:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18) !important;
+}
+
+/* Toggle labels */
+#movieModal .form-check-label {
+    color: #a1a1aa !important;
+    font-size: 0.85rem !important;
+}
+
+/* Poster preview box */
+#movieModal #posterPreview {
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+/* Footer */
+#movieModal .modal-footer {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 0 0 16px 16px !important;
+    padding: 1rem 1.5rem !important;
+}
+
+/* Cancel button */
+#movieModal .modal-footer .btn {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #d4d4d8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.25rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    transition: background 0.2s !important;
+}
+
+#movieModal .modal-footer .btn:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Submit button */
+#movieModal .btn-primary-custom {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.5rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3) !important;
+    transition: all 0.2s !important;
+}
+
+#movieModal .btn-primary-custom:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45) !important;
+}
+
+/* Backdrop */
+.modal-backdrop.show {
+    opacity: 0.72 !important;
+}

@@ -1,271 +1,335 @@
 /**
  * Seat Layout Templates Management - seat-layout-templates.js
- * Pattern: IIFE, no global scope pollution
+ * SPA Architecture
  */
 (function () {
     'use strict';
 
-    /* ── Preset matrix config ────────────────────────────────────────── */
     const MATRIX_PRESETS = {
-        '12x12': { rows: 12, cols: 12, capacity: 144 },
-        '13x13': { rows: 13, cols: 13, capacity: 169 },
-        '14x14': { rows: 14, cols: 14, capacity: 196 },
-        '15x15': { rows: 15, cols: 15, capacity: 225 },
+        '12x12': { rows: 12, cols: 12, capacity: 144, defaults: { regular: 6, vip: 4, couple: 2 } },
+        '13x13': { rows: 13, cols: 13, capacity: 169, defaults: { regular: 7, vip: 4, couple: 2 } },
+        '14x14': { rows: 14, cols: 14, capacity: 196, defaults: { regular: 8, vip: 4, couple: 2 } },
+        '15x15': { rows: 15, cols: 15, capacity: 225, defaults: { regular: 8, vip: 5, couple: 2 } },
     };
 
-    /* ── DOM cache ──────────────────────────────────────────────────── */
-    const els = {};
+    const els = {
+        tableBody: document.getElementById('templatesTableBody'),
+        pagination: document.getElementById('paginationContainer'),
+        searchForm: document.getElementById('searchForm'),
+        searchInput: document.getElementById('search'),
 
-    function cacheDoms() {
-        els.toggleBtns      = document.querySelectorAll('.toggle-active-btn');
-        els.btnCreate       = document.getElementById('btnOpenCreateSeatLayoutTemplate');
-        els.btnEdits        = document.querySelectorAll('.btn-edit-seat-layout-template');
-        els.modalEl         = document.getElementById('seatLayoutTemplateModal');
-        els.form            = document.getElementById('seatLayoutTemplateForm');
-        els.modalLabel      = document.getElementById('seatLayoutTemplateModalLabel');
-        els.formMethod      = document.getElementById('seatLayoutTemplateFormMethod');
-        els.idInput         = document.getElementById('seatLayoutTemplateIdInput');
-        els.templateName    = document.getElementById('templateName');
-        els.seatMatrix      = document.getElementById('seatMatrix');
-        els.regularSeatRows = document.getElementById('regularSeatRows');
-        els.vipSeatRows     = document.getElementById('vipSeatRows');
-        els.coupleSeatRows  = document.getElementById('coupleSeatRows');
-        els.description     = document.getElementById('description');
-        els.status          = document.getElementById('templateStatus');
-        els.submitBtn       = document.getElementById('sltSubmitBtn');
-        // Matrix info elements
-        els.matrixInfo      = document.getElementById('matrixInfo');
-        els.matrixSize      = document.getElementById('matrixSize');
-        els.matrixCapacity  = document.getElementById('matrixCapacity');
-        els.matrixRows      = document.getElementById('matrixRows');
-        // Row sum elements
-        els.rowSumUsed      = document.getElementById('rowSumUsed');
-        els.rowSumMax       = document.getElementById('rowSumMax');
-        els.rowSumBar       = document.getElementById('rowSumBar');
-        els.rowSumWarning   = document.getElementById('rowSumWarning');
-        els.rowSumWarningText = document.getElementById('rowSumWarningText');
-        els.seatRowInputs   = document.querySelectorAll('.seat-row-input');
-    }
+        btnCreate: document.getElementById('btnOpenCreateSeatLayoutTemplate'),
+        modalEl: document.getElementById('seatLayoutTemplateModal'),
+        form: document.getElementById('seatLayoutTemplateForm'),
+        modalLabel: document.getElementById('seatLayoutTemplateModalLabel'),
+        
+        formMethod: document.getElementById('seatLayoutTemplateFormMethod'),
+        idInput: document.getElementById('seatLayoutTemplateIdInput'),
+        templateName: document.getElementById('templateName'),
+        seatMatrix: document.getElementById('seatMatrix'),
+        regularSeatRows: document.getElementById('regularSeatRows'),
+        vipSeatRows: document.getElementById('vipSeatRows'),
+        coupleSeatRows: document.getElementById('coupleSeatRows'),
+        description: document.getElementById('description'),
+        status: document.getElementById('templateStatus'),
 
-    /* ── Helpers ────────────────────────────────────────────────────── */
-    let modalInstance = null;
+        countAll: document.getElementById('count-all'),
+        countPublished: document.getElementById('count-published'),
+        countDraft: document.getElementById('count-draft'),
+    };
+
+    let currentPage = 1;
+    let currentSearch = '';
+    let currentStatus = 'all';
 
     function getModalInstance() {
-        if (!modalInstance && els.modalEl) {
-            modalInstance = new bootstrap.Modal(els.modalEl);
+        if (!els.modalEl) return null;
+        return bootstrap.Modal.getOrCreateInstance(els.modalEl);
+    }
+
+    /* ── Fetch & Render ────────────────────────────────────────────── */
+    async function loadData(page = 1, search = '', status = 'all') {
+        try {
+            els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+            
+            const url = new URL(window.location.origin + '/api/v1/admin/seat-layout-templates');
+            url.searchParams.append('page', page);
+            if (search) url.searchParams.append('search', search);
+            if (status !== 'all') url.searchParams.append('status', status);
+
+            const res = await window.AdminCore.apiFetch(url.toString());
+            if (res && res.ok) {
+                const data = await res.json();
+                renderTable(data.data, data.from);
+                renderPagination(data);
+                
+                // Cập nhật số lượng của tab hiện tại
+                if (status === 'all') els.countAll.textContent = data.total;
+                else if (status === 'published') els.countPublished.textContent = data.total;
+                else if (status === 'draft') els.countDraft.textContent = data.total;
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+            els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
-        return modalInstance;
     }
 
-    function clearValidationErrors() {
-        if (!els.form) return;
-        els.form.querySelectorAll('.is-invalid').forEach(el => {
-            el.classList.remove('is-invalid');
-        });
-        els.form.querySelectorAll('[data-error-for]').forEach(el => {
-            el.textContent = '';
+    function renderTable(templates, startIndex) {
+        if (!templates || templates.length === 0) {
+            els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>Không tìm thấy dữ liệu.</td></tr>`;
+            return;
+        }
+
+        els.tableBody.innerHTML = '';
+        templates.forEach((tpl, index) => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+            
+            const escapedDesc = (tpl.description || '').replace(/"/g, '&quot;');
+            const statusHtml = tpl.status 
+                ? '<span class="badge bg-success">Đã xuất bản</span>' 
+                : '<span class="badge bg-secondary">Bản nháp</span>';
+            
+            tr.innerHTML = `
+                <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
+                <td>
+                    <div class="fw-medium text-white">${tpl.template_name}</div>
+                    ${tpl.description ? `<div class="small text-white-50 mt-1">${tpl.description}</div>` : ''}
+                </td>
+                <td><span class="badge" style="background: rgba(255,255,255,0.1); font-family: monospace; font-size: 0.85rem;">${tpl.seat_matrix}</span></td>
+                <td>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span class="badge" style="background:rgba(96,165,250,0.12);color:#60a5fa;">Thường: ${tpl.regular_seat_rows}</span>
+                        <span class="badge" style="background:rgba(245,158,11,0.12);color:#f59e0b;">VIP: ${tpl.vip_seat_rows}</span>
+                        <span class="badge" style="background:rgba(236,72,153,0.12);color:#ec4899;">Đôi: ${tpl.couple_seat_rows}</span>
+                    </div>
+                </td>
+                <td class="text-center">${statusHtml}</td>
+                <td class="text-center">
+                    <div class="d-flex justify-content-center align-items-center gap-2">
+                        <div class="form-check form-switch mb-0" style="min-height: auto;">
+                            <input class="form-check-input toggle-active-btn m-0" type="checkbox" role="switch"
+                                data-id="${tpl.id}" ${tpl.status ? 'checked' : ''} style="cursor:pointer;" title="Bật/Tắt hoạt động">
+                        </div>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-edit-template"
+                                style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
+                                data-id="${tpl.id}"
+                                data-name="${tpl.template_name}"
+                                data-matrix="${tpl.seat_matrix}"
+                                data-regular="${tpl.regular_seat_rows}"
+                                data-vip="${tpl.vip_seat_rows}"
+                                data-couple="${tpl.couple_seat_rows}"
+                                data-desc="${escapedDesc}"
+                                data-status="${tpl.status ? '1' : '0'}"
+                                title="Sửa">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm ms-1 btn-delete-template"
+                                style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${tpl.id}" title="Xóa">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            `;
+            els.tableBody.appendChild(tr);
         });
     }
 
+    function renderPagination(meta) {
+        if (!meta || meta.last_page <= 1) {
+            els.pagination.innerHTML = '';
+            return;
+        }
+        
+        let html = '<ul class="pagination pagination-sm m-0">';
+        if (meta.current_page > 1) {
+            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>`;
+        } else {
+            html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
+        }
+
+        for (let i = 1; i <= meta.last_page; i++) {
+            if (i === meta.current_page) {
+                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+            } else {
+                html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            }
+        }
+
+        if (meta.current_page < meta.last_page) {
+            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>`;
+        } else {
+            html += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
+        }
+        html += '</ul>';
+        
+        els.pagination.innerHTML = html;
+        els.pagination.querySelectorAll('a.page-link').forEach(a => {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage = parseInt(a.getAttribute('data-page'));
+                loadData(currentPage, currentSearch, currentStatus);
+            });
+        });
+    }
+
+    /* ── Forms & Interactions ──────────────────────────────────────── */
     function resetForm() {
         if (!els.form) return;
         els.form.reset();
-        if (els.status) els.status.checked = true;
+        els.status.checked = true;
         els.formMethod.value = 'POST';
         els.idInput.value = '';
-        // Reset matrix UI
-        updateMatrixInfo('');
-        updateRowSum();
     }
 
-    /* ── Matrix Info & Row Sum Logic ─────────────────────────────────── */
-    function updateMatrixInfo(matrixValue) {
-        if (!els.matrixInfo) return;
-
+    function applyDefaultSeatRows(matrixValue) {
         const preset = MATRIX_PRESETS[matrixValue];
-
-        if (preset) {
-            els.matrixInfo.classList.remove('d-none');
-            els.matrixSize.textContent     = matrixValue;
-            els.matrixCapacity.textContent = preset.capacity;
-            els.matrixRows.textContent     = preset.rows;
-        } else {
-            els.matrixInfo.classList.add('d-none');
-        }
-
-        updateRowSum();
+        if (!preset?.defaults || els.formMethod.value === 'PUT') return;
+        els.regularSeatRows.value = preset.defaults.regular;
+        els.vipSeatRows.value = preset.defaults.vip;
+        els.coupleSeatRows.value = preset.defaults.couple;
     }
 
-    function updateRowSum() {
-        if (!els.rowSumUsed) return;
-
-        const matrixValue = els.seatMatrix?.value || '';
-        const preset      = MATRIX_PRESETS[matrixValue];
-        const maxRows     = preset ? preset.rows : null;
-
-        const regular = parseInt(els.regularSeatRows?.value || '0', 10) || 0;
-        const vip     = parseInt(els.vipSeatRows?.value     || '0', 10) || 0;
-        const couple  = parseInt(els.coupleSeatRows?.value  || '0', 10) || 0;
-        const total   = regular + vip + couple;
-
-        els.rowSumUsed.textContent = total;
-
-        if (maxRows !== null) {
-            els.rowSumMax.textContent = maxRows;
-            const pct = Math.min((total / maxRows) * 100, 100);
-
-            // Progress bar color
-            let barColor;
-            if (total > maxRows) {
-                barColor = 'linear-gradient(90deg, #ef4444, #dc2626)';
-            } else if (pct >= 85) {
-                barColor = 'linear-gradient(90deg, #f59e0b, #d97706)';
-            } else {
-                barColor = 'linear-gradient(90deg, #22c55e, #16a34a)';
-            }
-            els.rowSumBar.style.width      = pct + '%';
-            els.rowSumBar.style.background = barColor;
-
-            // Warning
-            if (total > maxRows) {
-                els.rowSumWarning.classList.remove('d-none');
-                els.rowSumWarningText.textContent =
-                    `Tổng ${total} hàng vượt quá giới hạn ${maxRows} hàng của ma trận ${matrixValue}. Vui lòng giảm bớt.`;
-                if (els.submitBtn) els.submitBtn.disabled = true;
-            } else {
-                els.rowSumWarning.classList.add('d-none');
-                if (els.submitBtn) els.submitBtn.disabled = false;
-            }
-        } else {
-            els.rowSumMax.textContent = '—';
-            els.rowSumBar.style.width = '0%';
-            els.rowSumWarning.classList.add('d-none');
-            if (els.submitBtn) els.submitBtn.disabled = false;
-        }
-    }
-
-    /* ── Events ─────────────────────────────────────────────────────── */
-    function bindEvents() {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-        // Toggle Active status via AJAX
-        els.toggleBtns.forEach(button => {
-            button.addEventListener('change', async function () {
-                const id = this.getAttribute('data-id');
-                const isActive = this.checked;
-
-                try {
-                    const response = await fetch(`/admin/seat-layout-templates/${id}/toggle-active`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json'
-                        }
-                    });
-                    const result = await response.json();
-                    if (!result.success) throw new Error('Cập nhật thất bại');
-                } catch (error) {
-                    console.error(error);
-                    alert('Có lỗi xảy ra khi cập nhật trạng thái hoạt động.');
-                    this.checked = !isActive;
-                }
-            });
-        });
-
-        // Matrix dropdown change → update info + row sum
-        if (els.seatMatrix) {
-            els.seatMatrix.addEventListener('change', function () {
-                updateMatrixInfo(this.value);
-            });
-        }
-
-        // Row input changes → update row sum
-        els.seatRowInputs.forEach(input => {
-            input.addEventListener('input', updateRowSum);
-        });
-
-        // Open Create Modal
-        if (els.btnCreate) {
-            els.btnCreate.addEventListener('click', () => {
-                clearValidationErrors();
-                resetForm();
-                els.modalLabel.innerHTML = '<i class="bi bi-grid-3x3-gap me-2"></i>Tạo mẫu sơ đồ ghế mới';
-                els.form.action = '/admin/seat-layout-templates';
-                getModalInstance()?.show();
-            });
-        }
-
-        // Open Edit Modal
-        els.btnEdits.forEach(btn => {
-            btn.addEventListener('click', function () {
-                clearValidationErrors();
-
-                const id          = this.getAttribute('data-id');
-                const name        = this.getAttribute('data-template-name');
-                const matrix      = this.getAttribute('data-seat-matrix');
-                const regular     = this.getAttribute('data-regular-seats');
-                const vip         = this.getAttribute('data-vip-seats');
-                const couple      = this.getAttribute('data-couple-seats');
-                const description = this.getAttribute('data-description');
-                const status      = this.getAttribute('data-status') === '1';
-
-                els.modalLabel.innerHTML    = '<i class="bi bi-grid-3x3-gap me-2"></i>Cập nhật mẫu sơ đồ ghế';
-                els.form.action             = `/admin/seat-layout-templates/${id}`;
-                els.formMethod.value        = 'PUT';
-                els.idInput.value           = id;
-                els.templateName.value      = name || '';
-                els.regularSeatRows.value   = regular || '0';
-                els.vipSeatRows.value       = vip     || '0';
-                els.coupleSeatRows.value    = couple  || '0';
-                els.description.value       = description || '';
-                els.status.checked          = status;
-
-                // Set matrix dropdown value and update info
-                if (els.seatMatrix) {
-                    els.seatMatrix.value = matrix || '';
-                    updateMatrixInfo(matrix || '');
-                }
-
-                getModalInstance()?.show();
-            });
+    if (els.seatMatrix) {
+        els.seatMatrix.addEventListener('change', function () {
+            applyDefaultSeatRows(this.value);
         });
     }
 
-    /* ── Validation Error Handling (Server-side redirect recovery) ── */
-    function checkValidationErrors() {
-        if (!els.form) return;
-        const hasErrors = els.form.querySelector('.is-invalid') !== null;
-        if (hasErrors) {
-            const isEdit = els.formMethod.value === 'PUT';
-            const id = els.idInput.value;
+    if (els.btnCreate) {
+        els.btnCreate.addEventListener('click', () => {
+            resetForm();
+            els.modalLabel.innerHTML = '<i class="bi bi-grid-3x3-gap me-2"></i>Tạo mẫu sơ đồ ghế mới';
+            getModalInstance()?.show();
+        });
+    }
 
-            if (isEdit && id) {
-                els.modalLabel.innerHTML = '<i class="bi bi-grid-3x3-gap me-2"></i>Cập nhật mẫu sơ đồ ghế';
-                els.form.action = `/admin/seat-layout-templates/${id}`;
-            } else {
-                els.modalLabel.innerHTML = '<i class="bi bi-grid-3x3-gap me-2"></i>Tạo mẫu sơ đồ ghế mới';
-                els.form.action = '/admin/seat-layout-templates';
-            }
-
-            // Re-trigger matrix info on error reload
-            if (els.seatMatrix?.value) {
-                updateMatrixInfo(els.seatMatrix.value);
-            }
+    els.tableBody.addEventListener('click', async (e) => {
+        // Edit
+        const btnEdit = e.target.closest('.btn-edit-template');
+        if (btnEdit) {
+            resetForm();
+            els.formMethod.value = 'PUT';
+            els.idInput.value = btnEdit.dataset.id;
+            els.modalLabel.innerHTML = '<i class="bi bi-grid-3x3-gap me-2"></i>Cập nhật mẫu sơ đồ ghế';
+            
+            els.templateName.value = btnEdit.dataset.name || '';
+            els.seatMatrix.value = btnEdit.dataset.matrix || '';
+            els.regularSeatRows.value = btnEdit.dataset.regular || '0';
+            els.vipSeatRows.value = btnEdit.dataset.vip || '0';
+            els.coupleSeatRows.value = btnEdit.dataset.couple || '0';
+            els.description.value = btnEdit.dataset.desc || '';
+            els.status.checked = btnEdit.dataset.status === '1';
 
             getModalInstance()?.show();
+            return;
         }
+
+        // Delete
+        const btnDel = e.target.closest('.btn-delete-template');
+        if (btnDel) {
+            if(!confirm('Bạn có chắc muốn xóa mẫu sơ đồ ghế này?')) return;
+            try {
+                const res = await window.AdminCore.apiFetch(`/api/v1/admin/seat-layout-templates/${btnDel.dataset.id}`, { method: 'DELETE' });
+                if (res && res.ok) {
+                    window.showAdminToast?.('Xóa thành công', 'success');
+                    loadData(currentPage, currentSearch, currentStatus);
+                } else {
+                    const err = await res.json();
+                    window.showAdminToast?.(err.message || 'Xóa thất bại', 'error');
+                }
+            } catch (err) {}
+            return;
+        }
+    });
+
+    els.tableBody.addEventListener('change', async (e) => {
+        const toggle = e.target.closest('.toggle-active-btn');
+        if (toggle) {
+            const id = toggle.getAttribute('data-id');
+            const isActive = toggle.checked;
+            try {
+                const res = await window.AdminCore.apiFetch(`/api/v1/admin/seat-layout-templates/${id}/toggle-active`, { method: 'POST' });
+                if (!res || !res.ok) throw new Error();
+                
+                // If we are in 'published' or 'draft' tab, we might need to reload or visually move it
+                if (currentStatus !== 'all') {
+                    loadData(currentPage, currentSearch, currentStatus);
+                } else {
+                    // Update label inline
+                    const td = toggle.closest('tr').children[4];
+                    td.innerHTML = isActive ? '<span class="badge bg-success">Đã xuất bản</span>' : '<span class="badge bg-secondary">Bản nháp</span>';
+                }
+            } catch (error) {
+                window.showAdminToast?.('Cập nhật trạng thái thất bại', 'error');
+                toggle.checked = !isActive;
+            }
+        }
+    });
+
+    if (els.form) {
+        els.form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const isEdit = els.formMethod.value === 'PUT';
+            const id = els.idInput.value;
+            const url = isEdit ? `/api/v1/admin/seat-layout-templates/${id}` : `/api/v1/admin/seat-layout-templates`;
+            
+            const formData = new FormData(els.form);
+            const data = Object.fromEntries(formData.entries());
+            data.status = els.status.checked ? 1 : 0;
+
+            try {
+                const res = await window.AdminCore.apiFetch(url, {
+                    method: isEdit ? 'PUT' : 'POST',
+                    body: JSON.stringify(data)
+                });
+                
+                if (res && res.ok) {
+                    getModalInstance()?.hide();
+                    window.showAdminToast?.(isEdit ? 'Cập nhật thành công!' : 'Thêm mới thành công!', 'success');
+                    
+                    // Reload all counters to keep them fresh
+                    loadData(1, '', 'all');
+                    loadData(1, '', 'published');
+                    loadData(1, '', 'draft');
+                    // Switch back to 'all' or keep current? Let's keep current
+                    setTimeout(() => loadData(currentPage, currentSearch, currentStatus), 500);
+                } else {
+                    const errData = await res.json();
+                    alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message));
+                }
+            } catch (error) {
+                console.error('Submit form error', error);
+            }
+        });
     }
 
-    /* ── Init ───────────────────────────────────────────────────────── */
-    function init() {
-        bindEvents();
-        checkValidationErrors();
+    if (els.searchForm) {
+        els.searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            currentSearch = els.searchInput.value.trim();
+            currentPage = 1;
+            loadData(currentPage, currentSearch, currentStatus);
+        });
     }
 
+    // Tabs handling
+    document.querySelectorAll('#sltTabs .nav-link').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', (e) => {
+            currentStatus = e.target.getAttribute('data-status');
+            currentPage = 1;
+            loadData(currentPage, currentSearch, currentStatus);
+        });
+    });
+
+    /* ── Init ──────────────────────────────────────────────────────── */
     document.addEventListener('DOMContentLoaded', () => {
-        cacheDoms();
-        init();
+        // Pre-load counters by triggering loads in background
+        loadData(1, '', 'published');
+        loadData(1, '', 'draft');
+        loadData(1, '', 'all'); // Leave this last so it renders 'all' first
     });
 
 })();

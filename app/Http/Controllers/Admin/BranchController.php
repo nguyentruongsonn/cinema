@@ -16,33 +16,41 @@ class BranchController extends Controller
 
         $branches = Branch::query()
             ->when($search, function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%");
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('address', 'like', "%{$search}%");
             })
             ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->paginate(10);
 
-        return view('admin.branches.index', compact('branches', 'search'));
+        return response()->json($branches);
     }
 
     public function store(StoreBranchRequest $request)
     {
         $validated = $request->validated();
-        $validated['is_active'] = $request->has('is_active');
+        $validated['is_active'] = $request->has('is_active') ? 1 : 0;
 
-        Branch::create($validated);
+        $branch = Branch::create($validated);
 
-        return redirect()->route('admin.branches.index')->with('success', 'Tạo chi nhánh thành công.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Tạo chi nhánh thành công.',
+            'data' => $branch
+        ], 201);
     }
 
     public function update(UpdateBranchRequest $request, Branch $branch)
     {
         $validated = $request->validated();
-        $validated['is_active'] = $request->has('is_active');
+        $validated['is_active'] = $request->has('is_active') ? 1 : 0;
 
         $branch->update($validated);
 
-        return redirect()->route('admin.branches.index')->with('success', 'Cập nhật chi nhánh thành công.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật chi nhánh thành công.',
+            'data' => $branch
+        ]);
     }
 
     public function toggleActive(Branch $branch)
@@ -54,6 +62,6 @@ class BranchController extends Controller
     public function destroy(Branch $branch)
     {
         $branch->delete();
-        return redirect()->route('admin.branches.index')->with('success', 'Xóa chi nhánh thành công.');
+        return response()->json(['success' => true, 'message' => 'Xóa chi nhánh thành công.']);
     }
 }

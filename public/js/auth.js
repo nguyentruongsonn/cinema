@@ -221,15 +221,19 @@ class AuthManager {
 
     async handleLogout() {
         try {
-            await this.fetchAPI('/auth/logout', { method: 'POST' });
+            await this.fetchAPI('/auth/logout', {
+                method: 'POST',
+                skipRefresh: true,
+            });
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            // Cookies cleared automatically by server
+            // Cookies are cleared by server; never try to refresh after logout.
             this.user = null;
+            this.authChecked = true;
             this.updateUI();
             this.showToast('Đã đăng xuất', 'info');
-            setTimeout(() => window.location.href = '/', 500);
+            setTimeout(() => window.location.replace('/'), 500);
         }
     }
 

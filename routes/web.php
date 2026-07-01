@@ -34,17 +34,22 @@ Route::prefix('admin')->middleware(['admin'])->group(function () {
     Route::view('/movies', 'admin.movies.index')->name('admin.movies.index');
     Route::view('/revenue', 'admin.revenue.index')->name('admin.revenue.index');
     Route::view('/tickets', 'admin.tickets.index')->name('admin.tickets.index');
+    Route::view('/products', 'admin.products.index')->name('admin.products.index');
     Route::view('/combos', 'admin.combos.index')->name('admin.combos.index');
+    Route::view('/showtimes', 'admin.showtimes.index')->name('admin.showtimes.index');
     
     // Branches
-    Route::resource('branches', \App\Http\Controllers\Admin\BranchController::class)->names('admin.branches')->except(['create', 'edit']);
-    Route::post('branches/{branch}/toggle-active', [\App\Http\Controllers\Admin\BranchController::class, 'toggleActive'])->name('admin.branches.toggleActive');
+    Route::view('branches', 'admin.branches.index')->name('admin.branches.index');
 
     // Theaters
-    Route::resource('theaters', \App\Http\Controllers\Admin\TheaterController::class)->names('admin.theaters')->except(['create', 'edit']);
-    Route::post('theaters/{theater}/toggle-active', [\App\Http\Controllers\Admin\TheaterController::class, 'toggleActive'])->name('admin.theaters.toggleActive');
+    Route::view('theaters', 'admin.theaters.index')->name('admin.theaters.index');
 
     // Seat layout templates
-    Route::resource('seat-layout-templates', \App\Http\Controllers\Admin\SeatLayoutTemplateController::class)->names('admin.seat-layout-templates')->except(['create', 'edit']);
-    Route::post('seat-layout-templates/{seatLayoutTemplate}/toggle-active', [\App\Http\Controllers\Admin\SeatLayoutTemplateController::class, 'toggleActive'])->name('admin.seat-layout-templates.toggleActive');
+    Route::view('seat-layout-templates', 'admin.seat-layout-templates.index')->name('admin.seat-layout-templates.index');
+
+    // Screens (Phòng chiếu)
+    Route::view('screens', 'admin.screens.index')->name('admin.screens.index');
+    Route::get('screens/{screen}/seats', function($screen) {
+        return view('admin.screens.seats', ['screenId' => $screen]);
+    })->name('admin.screens.seats');
 });

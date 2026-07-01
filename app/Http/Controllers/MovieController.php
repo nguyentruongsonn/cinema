@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateMovieRequest;
 use App\Services\MovieService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class MovieController extends Controller
@@ -82,12 +83,29 @@ class MovieController extends Controller
     /**
      * Store a newly created movie.
      */
-    public function store(StoreMovieRequest $request)
+    public function store(Request $request)
     {
         try {
-            $movie = $this->movieService->createMovie($request->validated());
+            $data = $request->except(['poster_file', 'banner_file']);
 
-            return $this->successResponse($movie, 'Movie created successfully', 201);
+            // Xử lý upload poster
+            if ($request->hasFile('poster_file') && $request->file('poster_file')->isValid()) {
+                $data['poster_path'] = $request->file('poster_file')->store('movies/posters', 'public');
+                unset($data['poster_url']); // xóa url cũ nếu có
+            }
+
+            // Xử lý upload banner
+            if ($request->hasFile('banner_file') && $request->file('banner_file')->isValid()) {
+                $data['banner_path'] = $request->file('banner_file')->store('movies/banners', 'public');
+            }
+
+            $movie = $this->movieService->createMovie($data);
+
+            return $this->successResponse(
+                $movie->append(['poster_display_url', 'banner_display_url']),
+                'Movie created successfully',
+                201
+            );
         } catch (\Throwable $e) {
             return $this->errorResponse('Failed to create movie: ' . $e->getMessage(), 500);
         }
@@ -110,12 +128,35 @@ class MovieController extends Controller
     /**
      * Update the specified movie.
      */
-    public function update(UpdateMovieRequest $request, $id)
+    public function update(Request $request, $id)
     {
         try {
-            $movie = $this->movieService->updateMovie($id, $request->validated());
+            $movie = \App\Models\Movie::findOrFail($id);
+            $data = $request->except(['poster_file', 'banner_file']);
 
-            return $this->successResponse($movie, 'Movie updated successfully');
+            // Xử lý upload poster mới
+            if ($request->hasFile('poster_file') && $request->file('poster_file')->isValid()) {
+                // Xóa file cũ nếu có
+                if ($movie->poster_path) {
+                    Storage::disk('public')->delete($movie->poster_path);
+                }
+                $data['poster_path'] = $request->file('poster_file')->store('movies/posters', 'public');
+            }
+
+            // Xử lý upload banner mới
+            if ($request->hasFile('banner_file') && $request->file('banner_file')->isValid()) {
+                if ($movie->banner_path) {
+                    Storage::disk('public')->delete($movie->banner_path);
+                }
+                $data['banner_path'] = $request->file('banner_file')->store('movies/banners', 'public');
+            }
+
+            $movie = $this->movieService->updateMovie($id, $data);
+
+            return $this->successResponse(
+                $movie->append(['poster_display_url', 'banner_display_url']),
+                'Movie updated successfully'
+            );
         } catch (\Throwable $e) {
             return $this->errorResponse('Failed to update movie: ' . $e->getMessage(), 500);
         }
@@ -132,6 +173,34 @@ class MovieController extends Controller
             return $this->successResponse(null, 'Movie deleted successfully');
         } catch (\Throwable $e) {
             return $this->errorResponse('Failed to delete movie: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Toggle active status.
+     */
+    public function toggleActive($id)
+    {
+        try {
+            $movie = \App\Models\Movie::findOrFail($id);
+            $movie->update(['status' => !$movie->status]);
+            return $this->successResponse($movie, 'Movie status toggled successfully');
+        } catch (\Throwable $e) {
+            return $this->errorResponse('Failed to toggle movie status: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Toggle hot status.
+     */
+    public function toggleHot($id)
+    {
+        try {
+            $movie = \App\Models\Movie::findOrFail($id);
+            $movie->update(['is_hot' => !$movie->is_hot]);
+            return $this->successResponse($movie, 'Movie hot status toggled successfully');
+        } catch (\Throwable $e) {
+            return $this->errorResponse('Failed to toggle movie hot status: ' . $e->getMessage(), 500);
         }
     }
 }

@@ -129,24 +129,21 @@
                                        id="promotionCodeInput"
                                        class="promo-input"
                                        placeholder="Nhập mã khuyến mãi">
-                                <button id="applyPromotionBtn" class="promo-btn">Áp dụng</button>
+                                <button id="applyPromotionBtn" class="promo-btn">Đăng ký</button>
                             </div>
                             <div id="promotionMessage" class="promotion-message"></div>
                         </div>
 
                         <!-- Available Vouchers -->
                         <div class="voucher-section mt-4">
-                            <h5 class="voucher-title">Kho Voucher của bạn</h5>
-                            <div class="voucher-tabs">
-                                <button class="voucher-tab active" data-voucher-tab="all">MÃ VOUCHER</button>
-                                <button class="voucher-tab" data-voucher-tab="available">NỘI DUNG</button>
-                                <button class="voucher-tab" data-voucher-tab="expired">HẾT HẠN</button>
-                                <button class="voucher-tab" data-voucher-tab="history">TRAO ĐỔI</button>
+                            <div class="voucher-heading">
+                                <div>
+                                    <h5 class="voucher-title">Voucher của tôi</h5>
+                                </div>
                             </div>
                             <div class="voucher-content">
                                 <div class="empty-voucher">
-                                    <i class="bi bi-ticket-perforated fs-1 text-muted"></i>
-                                    <p class="text-muted mt-2">Bạn chưa có mã nào đã đăng ký.</p>
+                                    <p class="text-muted mt-2">Voucher đã đăng ký sẽ hiển thị tại đây.</p>
                                 </div>
                             </div>
                         </div>

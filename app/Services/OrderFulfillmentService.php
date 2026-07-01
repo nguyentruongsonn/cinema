@@ -34,21 +34,44 @@ class OrderFulfillmentService
             }
 
             if ((int)$order->status === Order::STATUS_CONFIRMED || $order->payment_status === 'paid') {
+                $paidAt = $order->paid_at ?? now();
+
+                $order->forceFill([
+                    'status' => Order::STATUS_CONFIRMED,
+                    'payment_status' => 'paid',
+                    'paid_at' => $paidAt,
+                ])->save();
+
+                Payment::where('order_id', $order->id)
+                    ->update([
+                        'status' => Payment::STATUS_SUCCESS,
+                        'paid_at' => $paidAt,
+                        'failed_at' => null,
+                    ]);
+
+                SeatHold::where('user_id', $order->user_id)
+                    ->where('showtime_id', $order->showtime_id)
+                    ->delete();
+
                 return ['already_processed' => true, 'skipped' => false];
             }
+
+            $paidAt = now();
 
             // Update order status
             $order->update([
                 'status' => Order::STATUS_CONFIRMED,
                 'payment_status' => 'paid',
-                'paid_at' => now(),
+                'paid_at' => $paidAt,
+                'cancelled_at' => null,
             ]);
 
             // PHASE 2: Update payment record to success
             Payment::where('order_id', $order->id)
                 ->update([
                     'status' => Payment::STATUS_SUCCESS,
-                    'paid_at' => now(),
+                    'paid_at' => $paidAt,
+                    'failed_at' => null,
                 ]);
 
             $payload = $order->payload ?? [];
@@ -124,10 +147,23 @@ class OrderFulfillmentService
                 ->where('showtime_id', $order->showtime_id)
                 ->delete();
 
-            // 5. Increment promotion used_count if any
+            // 5. Increment promotion usage_count if any and mark user's voucher as used
             $voucher = $payload['voucher'] ?? null;
             if ($voucher && isset($voucher['id'])) {
-                Promotion::where('id', $voucher['id'])->increment('used_count');
+                Promotion::where('id', $voucher['id'])->increment('usage_count');
+
+                if ($order->user_id) {
+                    DB::table('user_promotion')
+                        ->where('user_id', $order->user_id)
+                        ->where('promotion_id', $voucher['id'])
+                        ->update([
+                            'status' => 0,
+                            'used_at' => $paidAt,
+                            'order_id' => $order->id,
+                            'usage_count' => DB::raw('COALESCE(usage_count, 0) + 1'),
+                            'updated_at' => now(),
+                        ]);
+                }
             }
 
             // 6. Deduct points if any

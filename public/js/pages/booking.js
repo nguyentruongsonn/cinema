@@ -13,12 +13,14 @@ class BookingManager {
         this.seats = [];
         this.selectedSeats = new Set();
         this.currentHold = null;
+        this.isLockingSeats = false;
         this.timer = null;
         this.timerSeconds = 600; // 10 minutes
         this.basePrice = parseFloat(this.config.basePrice) || 0;
         this.products = [];
         this.selectedProducts = new Map();
         this.appliedPromotion = null;
+        this.registeredPromotions = [];
         this.currentStep = 1; // Track current step (1-4)
         this.steps = ['seats', 'food', 'promotion', 'confirm'];
 
@@ -39,6 +41,7 @@ class BookingManager {
         this.promotionCodeInput = document.getElementById('promotionCodeInput');
         this.applyPromotionBtn = document.getElementById('applyPromotionBtn');
         this.promotionMessage = document.getElementById('promotionMessage');
+        this.voucherContent = document.querySelector('.voucher-content');
         this.discountAmount = document.getElementById('discountAmount');
         this.proceedBtn = document.getElementById('proceedToPaymentBtn');
         this.cancelBtn = document.getElementById('cancelSelectionBtn');
@@ -57,13 +60,16 @@ class BookingManager {
         const shouldContinue = this.checkUrlParams();
         if (!shouldContinue) return;
 
+        this.renderRegisteredPromotions();
+
         // Setup event listeners
         this.setupEventListeners();
 
         // Load page data (seats should always load, auth check happens on seat click)
         await Promise.all([
             this.loadSeats(),
-            this.loadProducts()
+            this.loadProducts(),
+            this.loadRegisteredPromotions()
         ]);
 
         // Subscribe to real-time WebSocket channels
@@ -93,7 +99,7 @@ class BookingManager {
             }
 
             showtimeChannel.listen('.seat.status.updated', (event) => {
-                this.applyRealtimeSeatStatus(event.seat_id, event.status);
+                this.applyRealtimeSeatStatus(event.seat_id, event.status, event.user_id);
             });
         } catch (error) {
             console.warn('[Booking] Realtime subscription failed; continuing without realtime seat updates.', error);
@@ -122,9 +128,34 @@ class BookingManager {
      * Update a single seat element in the DOM based on a real-time event.
      * This avoids re-rendering the whole seat map.
      */
-    applyRealtimeSeatStatus(seatId, status) {
+    applyRealtimeSeatStatus(seatId, status, eventUserId = null) {
+        const numericSeatId = parseInt(seatId, 10);
+        const numericEventUserId = eventUserId === null || eventUserId === undefined ? null : parseInt(eventUserId, 10);
+        const currentUserId = this.auth?.getUser?.()?.id ? parseInt(this.auth.getUser().id, 10) : null;
+        const isOwnEvent = numericEventUserId !== null && currentUserId !== null && numericEventUserId === currentUserId;
+
+        // A lock event for a seat currently selected in this browser must not remove
+        // the user's selection. Some broadcasts may not include user_id, so selectedSeats
+        // is the most reliable client-side ownership signal.
+        if (status === 'locked' && (isOwnEvent || this.selectedSeats.has(numericSeatId))) {
+            const ownSeat = this.seats.find(s => s.id === numericSeatId);
+            if (ownSeat) {
+                ownSeat.status = 'holding';
+                ownSeat.is_locked = true;
+                ownSeat.is_available = false;
+            }
+
+            const ownSeatEl = this.seatMapContainer?.querySelector(`[data-seat-id="${numericSeatId}"]`);
+            if (ownSeatEl) {
+                ownSeatEl.classList.remove('seat-available', 'seat-locked', 'seat-booked', 'seat-holding');
+                ownSeatEl.classList.add('seat-selected');
+            }
+
+            return;
+        }
+
         // Update in-memory seat data
-        const seat = this.seats.find(s => s.id === seatId);
+        const seat = this.seats.find(s => s.id === numericSeatId);
         if (seat) {
             seat.status      = status;
             seat.is_locked    = status === 'locked';
@@ -132,7 +163,7 @@ class BookingManager {
         }
 
         // Update DOM element directly
-        const seatEl = this.seatMapContainer?.querySelector(`[data-seat-id="${seatId}"]`);
+        const seatEl = this.seatMapContainer?.querySelector(`[data-seat-id="${numericSeatId}"]`);
         if (!seatEl) return;
 
         // Remove all status classes
@@ -140,21 +171,21 @@ class BookingManager {
 
         if (status === 'available') {
             // Only restore to available if this seat is not selected by current user
-            if (!this.selectedSeats.has(seatId)) {
+            if (!this.selectedSeats.has(numericSeatId)) {
                 seatEl.classList.add('seat-available');
                 seatEl.setAttribute('role', 'button');
                 seatEl.setAttribute('tabindex', '0');
                 seatEl.removeAttribute('aria-disabled');
                 // Re-attach click handler by re-rendering (safe since seat data updated)
-                const freshSeat = this.seats.find(s => s.id === seatId);
+                const freshSeat = this.seats.find(s => s.id === numericSeatId);
                 if (freshSeat) {
                     seatEl.onclick = () => this.handleSeatClick(freshSeat);
                 }
             }
         } else {
             // Locked by someone else – remove from selection if user had it
-            if (this.selectedSeats.has(seatId)) {
-                this.selectedSeats.delete(seatId);
+            if (this.selectedSeats.has(numericSeatId)) {
+                this.selectedSeats.delete(numericSeatId);
                 this.updateSummary();
                 this.showToast('Ghế bạn chọn vừa bị người khác đặt. Vui lòng chọn ghế khác.', 'warning');
             }
@@ -328,28 +359,50 @@ class BookingManager {
         // Cancel selection
         this.cancelBtn?.addEventListener('click', () => this.cancelSelection());
 
-        // Promotion
-        this.applyPromotionBtn?.addEventListener('click', () => this.validatePromotion());
+        // Voucher: input button only registers/saves voucher; discount is applied only
+        // when the user explicitly clicks "Áp dụng" on a voucher in voucher-content.
+        this.applyPromotionBtn?.addEventListener('click', () => this.registerPromotionFromInput());
         this.promotionCodeInput?.addEventListener('input', () => {
             this.appliedPromotion = null;
-            this.setPromotionMessage('', '');
+            this.setPromotionMessage('Nhập mã để đăng ký voucher. Mã chỉ giảm giá sau khi bạn bấm Áp dụng trong danh sách voucher.', 'text-muted');
             this.updateSummary();
+            this.renderRegisteredPromotions();
+        });
+
+        this.voucherContent?.addEventListener('click', (event) => {
+            const applyBtn = event.target.closest('[data-voucher-action="apply"]');
+            const cancelBtn = event.target.closest('[data-voucher-action="cancel"]');
+
+            if (applyBtn) {
+                this.validatePromotion(applyBtn.dataset.code, {
+                    syncInput: true,
+                    showMessage: true,
+                    registerBeforeValidate: false
+                });
+            }
+
+            if (cancelBtn) {
+                this.cancelPromotion();
+            }
         });
         this.promotionCodeInput?.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                this.validatePromotion();
+                this.registerPromotionFromInput();
             }
         });
 
         // Handle page unload (unlock seats)
-        window.addEventListener('beforeunload', (e) => {
-            if (this.currentHold) {
-                navigator.sendBeacon(
-                    `${this.apiUrl}/seats/unlock/${this.currentHold.hold_id}`,
-                    JSON.stringify({ _method: 'DELETE' })
-                );
-            }
+        window.addEventListener('beforeunload', () => {
+            const holdId = this.getCurrentHoldId();
+            if (!holdId) return;
+
+            // sendBeacon only sends POST reliably, so use the legacy _method override
+            // route if middleware supports it. Normal user cancellation still uses DELETE.
+            navigator.sendBeacon(
+                `${this.apiUrl}/seats/unlock/${holdId}`,
+                JSON.stringify({ _method: 'DELETE' })
+            );
         });
     }
 
@@ -384,9 +437,16 @@ class BookingManager {
         }
     }
 
-    goToNextStep() {
+    async goToNextStep() {
         if (!this.validateCurrentStep()) {
             return;
+        }
+
+        if (this.currentStep === 1) {
+            const locked = await this.ensureSeatsHeldBeforeContinue();
+            if (!locked) {
+                return;
+            }
         }
 
         if (this.currentStep < 4) {
@@ -428,15 +488,23 @@ class BookingManager {
     updateStepButtons() {
         // Update "Tiếp tục" button
         const canProceed = this.validateCurrentStep();
+        const isLockingFirstStep = this.currentStep === 1 && this.isLockingSeats;
+        const nextLabel = isLockingFirstStep ? 'Đang giữ ghế...' : 'Tiếp tục';
+        const sidebarLabel = isLockingFirstStep
+            ? 'Đang giữ ghế...'
+            : (this.currentStep < 4 ? 'Tiếp tục' : 'Thanh toán');
 
         if (this.nextStepBtn) {
-            this.nextStepBtn.disabled = !canProceed;
+            this.nextStepBtn.disabled = !canProceed || isLockingFirstStep;
             this.nextStepBtn.style.display = this.currentStep < 4 ? 'block' : 'none';
+            this.nextStepBtn.textContent = nextLabel;
+            this.nextStepBtn.classList.toggle('is-loading', isLockingFirstStep);
         }
 
         if (this.sidebarContinueBtn) {
-            this.sidebarContinueBtn.disabled = !canProceed;
-            this.sidebarContinueBtn.textContent = this.currentStep < 4 ? 'Tiếp tục' : 'Thanh toán';
+            this.sidebarContinueBtn.disabled = !canProceed || isLockingFirstStep;
+            this.sidebarContinueBtn.textContent = sidebarLabel;
+            this.sidebarContinueBtn.classList.toggle('is-loading', isLockingFirstStep);
         }
 
         // Update "Quay lại" button
@@ -580,12 +648,12 @@ class BookingManager {
 
             if (response.success) {
                 this.seats = response.data.seats || [];
-                this.currentHold = response.data.current_user_holds?.[0] || null;
+                this.currentHold = this.normalizeHold(response.data.current_user_holds?.[0] || null);
 
                 // If user has existing hold, restore selection
                 if (this.currentHold && this.currentHold.seat_ids) {
                     this.currentHold.seat_ids.forEach(id => {
-                        this.selectedSeats.add(parseInt(id));
+                        this.selectedSeats.add(parseInt(id, 10));
                     });
                     this.startTimer(this.currentHold.expires_in_seconds || 600);
                 }
@@ -754,8 +822,13 @@ class BookingManager {
             seatDiv.classList.add('seat-couple');
         }
 
+        if (this.isLockingSeats && this.selectedSeats.has(seat.id)) {
+            seatDiv.classList.add('seat-pending-hold');
+            seatDiv.setAttribute('aria-busy', 'true');
+        }
+
         // Click handler
-        if (status === 'available' || status === 'selected' || status === 'holding') {
+        if (!this.isLockingSeats && (status === 'available' || status === 'selected' || status === 'holding')) {
             seatDiv.addEventListener('click', () => this.handleSeatClick(seat));
             seatDiv.setAttribute('role', 'button');
             seatDiv.setAttribute('tabindex', '0');
@@ -831,20 +904,54 @@ class BookingManager {
 
         // Update summary
         this.updateSummary();
+    }
 
-        // Auto-lock seats after selection
-        if (this.selectedSeats.size > 0) {
-            this.lockPromise = this.lockSeats();
-        } else {
-            // If no seats selected, unlock current hold
-            if (this.currentHold) {
-                this.lockPromise = this.unlockSeats();
-            }
+    async ensureSeatsHeldBeforeContinue() {
+        if (this.selectedSeats.size === 0) {
+            this.showToast('Vui lòng chọn ghế trước', 'warning');
+            return false;
+        }
+
+        if (this.isCurrentHoldForSelectedSeats()) {
+            return true;
+        }
+
+        if (this.lockPromise) {
+            return false;
+        }
+
+        this.isLockingSeats = true;
+        this.updateStepButtons();
+        this.renderSeatMap();
+        this.lockPromise = this.lockSeats();
+
+        try {
+            await this.lockPromise;
+            return !!this.currentHold;
+        } catch (error) {
+            return false;
+        } finally {
+            this.lockPromise = null;
+            this.isLockingSeats = false;
+            this.updateStepButtons();
+            this.renderSeatMap();
         }
     }
 
+    isCurrentHoldForSelectedSeats() {
+        if (!this.currentHold?.seat_ids || this.selectedSeats.size === 0) {
+            return false;
+        }
+
+        const heldSeatIds = this.currentHold.seat_ids.map(id => parseInt(id, 10)).sort((a, b) => a - b);
+        const selectedSeatIds = Array.from(this.selectedSeats).map(id => parseInt(id, 10)).sort((a, b) => a - b);
+
+        return heldSeatIds.length === selectedSeatIds.length
+            && heldSeatIds.every((id, index) => id === selectedSeatIds[index]);
+    }
+
     async lockSeats() {
-        if (this.selectedSeats.size === 0) return;
+        if (this.selectedSeats.size === 0) return false;
 
         try {
             const response = await this.fetchAPI('/seats/lock', {
@@ -856,30 +963,85 @@ class BookingManager {
             });
 
             if (response.success) {
-                this.currentHold = response.data;
+                this.currentHold = this.normalizeHold(response.data, Array.from(this.selectedSeats));
+
+                this.currentHold.seat_ids.forEach(id => this.selectedSeats.add(id));
                 this.startTimer(response.data.expires_in_seconds || 600);
+                this.renderSeatMap();
+                this.updateSummary();
                 this.showToast('Đã giữ ghế cho bạn trong 10 phút', 'success');
+                return true;
             } else {
                 throw new Error(response.message || 'Không thể giữ ghế');
             }
         } catch (error) {
             console.error('Lock seats error:', error);
+
+            if (this.handleSeatLockConflict(error)) {
+                return false;
+            }
+
             this.showToast(error.message || 'Lỗi khi giữ ghế', 'danger');
 
-            // Reset selection on error
+            // Reset selection on non-conflict errors because hold state is no longer reliable.
             this.selectedSeats.clear();
             this.currentHold = null;
             this.renderSeatMap();
             this.updateSummary();
+
+            return false;
         }
     }
 
+    handleSeatLockConflict(error) {
+        const conflictedSeats = error?.data?.data?.conflicted_seats || error?.data?.conflicted_seats || [];
+
+        if (!Array.isArray(conflictedSeats) || conflictedSeats.length === 0) {
+            return false;
+        }
+
+        const conflictedIds = conflictedSeats
+            .map(seat => parseInt(seat.id, 10))
+            .filter(Number.isFinite);
+
+        conflictedIds.forEach(seatId => {
+            this.selectedSeats.delete(seatId);
+
+            const localSeat = this.seats.find(seat => parseInt(seat.id, 10) === seatId);
+            if (localSeat) {
+                localSeat.status = 'locked';
+                localSeat.is_locked = true;
+                localSeat.is_available = false;
+                localSeat.is_holding = false;
+            }
+        });
+
+        this.currentHold = null;
+        this.renderSeatMap();
+        this.updateSummary();
+
+        const labels = conflictedSeats
+            .map(seat => seat.label)
+            .filter(Boolean)
+            .join(', ');
+
+        this.showToast(
+            labels
+                ? `Ghế ${labels} vừa được người khác giữ. Vui lòng chọn ghế khác.`
+                : (error.message || 'Một số ghế vừa được người khác giữ. Vui lòng chọn ghế khác.'),
+            'warning'
+        );
+
+        return true;
+    }
+
     async unlockSeats() {
-        if (!this.currentHold) return;
+        const holdId = this.getCurrentHoldId();
+        if (!holdId) return;
 
         try {
             const response = await this.fetchAPI(
-                `/seats/unlock/${this.currentHold.hold_id}`,
+                `/seats/unlock/${holdId}`,
                 { method: 'DELETE' }
             );
 
@@ -1121,19 +1283,313 @@ class BookingManager {
         }
     }
 
-    async validatePromotion() {
+    fillPromotionCode(code) {
+        if (!code || !this.promotionCodeInput) return;
+
+        this.promotionCodeInput.value = code;
+        this.appliedPromotion = null;
+        this.setPromotionMessage('Đã chọn mã. Bấm Áp dụng trong danh sách voucher để giảm giá.', 'text-muted');
+        this.updateSummary();
+        this.renderRegisteredPromotions();
+    }
+
+    cancelPromotion() {
+        const cancelledCode = this.appliedPromotion?.code || this.promotionCodeInput?.value || '';
+
+        this.appliedPromotion = null;
+
+        if (this.promotionCodeInput) {
+            this.promotionCodeInput.value = '';
+        }
+
+        this.setPromotionMessage(
+            cancelledCode ? `Đã hủy áp dụng mã ${String(cancelledCode).toUpperCase()}.` : 'Đã hủy mã giảm giá.',
+            'text-muted'
+        );
+        this.updateSummary();
+        this.renderRegisteredPromotions();
+    }
+
+    async loadRegisteredPromotions() {
+        if (!this.auth?.isAuthenticated?.()) {
+            this.registeredPromotions = [];
+            this.renderRegisteredPromotions();
+            return;
+        }
+
+        try {
+            const response = await this.fetchAPI('/promotions/registered', {
+                method: 'GET'
+            });
+
+            if (!response.success) {
+                throw new Error(response.message || 'Không thể tải Kho Voucher.');
+            }
+
+            this.registeredPromotions = this.normalizeRegisteredPromotions(response.data);
+            this.renderRegisteredPromotions();
+        } catch (error) {
+            console.warn('[Booking] Cannot load registered vouchers from user_promotion.', error);
+            this.registeredPromotions = [];
+            this.renderRegisteredPromotions();
+        }
+    }
+
+    normalizeRegisteredPromotions(promotions) {
+        if (!Array.isArray(promotions)) {
+            return [];
+        }
+
+        const uniquePromotions = new Map();
+
+        promotions
+            .filter(item => item?.code && this.isVoucherUsable(item))
+            .forEach(item => {
+                const normalizedCode = String(item.code).trim().toUpperCase();
+                if (!normalizedCode) return;
+
+                uniquePromotions.set(normalizedCode, {
+                    ...item,
+                    code: normalizedCode
+                });
+            });
+
+        return Array.from(uniquePromotions.values());
+    }
+
+    isVoucherUsable(promotion) {
+        if (!promotion) return false;
+
+        const status = promotion.status ?? promotion.pivot?.status;
+        if (status !== undefined && status !== null && Number(status) !== 1) {
+            return false;
+        }
+
+        const usedAt = promotion.used_at ?? promotion.pivot?.used_at;
+        if (usedAt) {
+            return false;
+        }
+
+        const userUsageCount = Number(promotion.usage_count ?? promotion.pivot?.usage_count ?? 0);
+        if (userUsageCount > 0) {
+            return false;
+        }
+
+        const endDate = promotion.end_date ? new Date(promotion.end_date) : null;
+        if (endDate && !Number.isNaN(endDate.getTime()) && endDate < new Date()) {
+            return false;
+        }
+
+        const usageLimit = promotion.usage_limit ?? null;
+        const totalUsageCount = Number(promotion.total_usage_count ?? promotion.promotion_usage_count ?? 0);
+        if (usageLimit !== null && usageLimit !== undefined && Number(usageLimit) > 0 && totalUsageCount >= Number(usageLimit)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    async registerPromotion(code) {
+        if (!code) return null;
+
+        if (!this.auth?.isAuthenticated?.()) {
+            this.showToast('Vui lòng đăng nhập để đăng ký voucher.', 'warning');
+            return null;
+        }
+
+        const response = await this.fetchAPI('/promotions/register', {
+            method: 'POST',
+            body: JSON.stringify({
+                code
+            })
+        });
+
+        if (!response.success) {
+            throw new Error(response.message || 'Không thể đăng ký voucher.');
+        }
+
+        const promotion = response.data;
+        if (promotion?.code) {
+            const normalizedCode = String(promotion.code).trim().toUpperCase();
+            this.registeredPromotions = [
+                {
+                    ...promotion,
+                    code: normalizedCode
+                },
+                ...this.registeredPromotions.filter(item => String(item.code).toUpperCase() !== normalizedCode)
+            ];
+            this.renderRegisteredPromotions();
+        }
+
+        return promotion;
+    }
+
+    renderRegisteredPromotions() {
+        if (!this.voucherContent) return;
+
+        const selectedCode = (this.promotionCodeInput?.value || '').trim().toUpperCase();
+        const appliedCode = this.appliedPromotion?.code ? String(this.appliedPromotion.code).toUpperCase() : '';
+        const promotions = this.registeredPromotions.filter(item => this.isVoucherUsable(item));
+
+        if (promotions.length === 0) {
+            this.voucherContent.innerHTML = `
+                <div class="empty-voucher">
+                    <p class="text-muted mt-2">Chưa có voucher đã lưu. Nhập mã ở trên để đăng ký voucher.</p>
+                    <small class="voucher-hint">Gợi ý: Sau khi đăng ký, voucher sẽ xuất hiện tại đây. Chỉ voucher được bấm “Áp dụng” mới làm giảm tổng tiền.</small>
+                </div>
+            `;
+            return;
+        }
+
+        const suggestion = this.renderVoucherSuggestion(promotions, appliedCode);
+        this.voucherContent.innerHTML = `${suggestion}${this.renderVoucherItems(promotions, selectedCode, appliedCode)}`;
+    }
+
+    renderVoucherSuggestion(promotions, appliedCode) {
+        if (appliedCode) {
+            return '<div class="voucher-suggestion">Voucher đang áp dụng sẽ được trừ ở phần tổng tiền. Bạn có thể bấm Hủy để chọn mã khác.</div>';
+        }
+
+        const subtotal = this.calculateSubtotal();
+        const bestPromotion = promotions
+            .map(promotion => ({
+                promotion,
+                discount: this.estimatePromotionDiscount(promotion, subtotal)
+            }))
+            .filter(item => item.discount > 0)
+            .sort((a, b) => b.discount - a.discount)[0];
+
+        if (bestPromotion) {
+            return `<div class="voucher-suggestion">Gợi ý: Mã <strong>${this.escapeHtml(bestPromotion.promotion.code)}</strong> có thể giảm khoảng ${this.formatCurrency(bestPromotion.discount)} cho đơn hiện tại. Bấm Áp dụng để dùng mã.</div>`;
+        }
+
+        return '<div class="voucher-suggestion">Chọn “Áp dụng” trên voucher phù hợp để hệ thống kiểm tra điều kiện và giảm giá.</div>';
+    }
+
+    estimatePromotionDiscount(promotion, subtotal) {
+        const minOrderValue = Number(promotion.min_order_value || 0);
+        if (minOrderValue > 0 && subtotal < minOrderValue) {
+            return 0;
+        }
+
+        const discountType = String(promotion.discount_type || '').toLowerCase();
+        let discount = 0;
+
+        if (['percent', 'percentage'].includes(discountType)) {
+            discount = subtotal * (Number(promotion.discount_value || 0) / 100);
+            const maxDiscount = Number(promotion.max_discount_amount || 0);
+            if (maxDiscount > 0) {
+                discount = Math.min(discount, maxDiscount);
+            }
+        } else {
+            discount = Number(promotion.discount_value || promotion.discount_amount || 0);
+        }
+
+        return Math.max(0, Math.min(discount, subtotal));
+    }
+
+    renderVoucherItems(promotions, selectedCode, appliedCode) {
+        return promotions.map(promotion => {
+            const code = String(promotion.code || '').toUpperCase();
+            const isSelected = selectedCode === code;
+            const isApplied = appliedCode === code;
+            const isPercentDiscount = ['percent', 'percentage'].includes(String(promotion.discount_type || '').toLowerCase());
+            const discountText = isPercentDiscount
+                ? `Giảm ${promotion.discount_value}%${promotion.max_discount_amount ? `, tối đa ${this.formatCurrency(promotion.max_discount_amount)}` : ''}`
+                : `Giảm ${this.formatCurrency(promotion.discount_value || promotion.discount_amount || 0)}`;
+            const minOrderText = promotion.min_order_value > 0
+                ? `Đơn tối thiểu ${this.formatCurrency(promotion.min_order_value)}`
+                : 'Không yêu cầu giá trị tối thiểu';
+            const descriptionText = promotion.description || promotion.name || 'Voucher đã đăng ký trong Kho Voucher của bạn.';
+
+            return `
+                <div class="voucher-item ${isApplied ? 'is-applied' : ''}">
+                    <div class="voucher-item-main">
+                        <div class="voucher-code-wrap">
+                            <span class="voucher-code">${this.escapeHtml(code)}</span>
+                            ${isApplied ? '<span class="voucher-status">Đang áp dụng</span>' : (isSelected ? '<span class="voucher-status is-pending">Đã chọn, chưa giảm</span>' : '<span class="voucher-status is-pending">Đã đăng ký</span>')}
+                        </div>
+                        <div class="voucher-discount">${this.escapeHtml(discountText)}</div>
+                        <div class="voucher-condition">${this.escapeHtml(minOrderText)}</div>
+                        <small class="voucher-description">${this.escapeHtml(descriptionText)}</small>
+                    </div>
+                    <button type="button"
+                            class="voucher-action-btn ${isApplied ? 'is-cancel' : ''}"
+                            data-voucher-action="${isApplied ? 'cancel' : 'apply'}"
+                            data-code="${this.escapeHtml(code)}">
+                        ${isApplied ? 'Hủy' : 'Áp dụng'}
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async registerPromotionFromInput() {
         const code = (this.promotionCodeInput?.value || '').trim();
 
         if (!code) {
+            this.setPromotionMessage('Vui lòng nhập mã giảm giá để đăng ký voucher.', 'text-warning');
+            return;
+        }
+
+        try {
+            if (this.applyPromotionBtn) {
+                this.applyPromotionBtn.disabled = true;
+                this.applyPromotionBtn.textContent = 'Đang đăng ký...';
+            }
+
+            const promotion = await this.registerPromotion(code);
+
+            if (!promotion) {
+                throw new Error('Không thể đăng ký voucher.');
+            }
+
             this.appliedPromotion = null;
-            this.setPromotionMessage('Vui lòng nhập mã khuyến mãi.', 'text-warning');
+            this.setPromotionMessage('Đã đăng ký voucher thành công. Bấm Áp dụng trong danh sách voucher để giảm giá.', 'text-success');
+            this.updateSummary();
+            this.renderRegisteredPromotions();
+        } catch (error) {
+            this.appliedPromotion = null;
+            this.setPromotionMessage(error.message || 'Không thể đăng ký voucher.', 'text-danger');
+            this.updateSummary();
+            this.renderRegisteredPromotions();
+        } finally {
+            if (this.applyPromotionBtn) {
+                this.applyPromotionBtn.disabled = false;
+                this.applyPromotionBtn.textContent = 'Đăng ký';
+            }
+        }
+    }
+
+    async validatePromotion(codeOverride = null, options = {}) {
+        const {
+            syncInput = true,
+            showMessage = true,
+            registerBeforeValidate = true
+        } = options;
+        const code = (codeOverride || this.promotionCodeInput?.value || '').trim();
+
+        if (!code) {
+            this.appliedPromotion = null;
+            if (showMessage) {
+                this.setPromotionMessage('Vui lòng chọn voucher để áp dụng.', 'text-warning');
+            }
             this.updateSummary();
             return;
         }
 
         try {
-            this.applyPromotionBtn.disabled = true;
-            this.applyPromotionBtn.textContent = 'Đang kiểm tra...';
+            if (syncInput && this.applyPromotionBtn) {
+                this.applyPromotionBtn.disabled = true;
+                this.applyPromotionBtn.textContent = 'Đang kiểm tra...';
+            }
+
+            if (registerBeforeValidate) {
+                const registeredPromotion = await this.registerPromotion(code);
+                if (!registeredPromotion) {
+                    throw new Error('Không thể đăng ký voucher.');
+                }
+            }
 
             const subtotal = this.calculateSubtotal();
             const response = await this.fetchAPI(`/promotions/${encodeURIComponent(code)}/validate?order_total=${subtotal}`, {
@@ -1141,19 +1597,33 @@ class BookingManager {
             });
 
             if (!response.success) {
-                throw new Error(response.message || 'Mã khuyến mãi không hợp lệ.');
+                throw new Error(response.message || 'Mã giảm giá không hợp lệ.');
             }
 
             this.appliedPromotion = response.data;
-            this.setPromotionMessage(response.message || 'Áp dụng mã khuyến mãi thành công.', 'text-success');
+
+            if (syncInput && this.promotionCodeInput) {
+                this.promotionCodeInput.value = code;
+            }
+
+            if (showMessage) {
+                this.setPromotionMessage(response.message || 'Áp dụng mã giảm giá thành công.', 'text-success');
+            }
+
             this.updateSummary();
+            this.renderRegisteredPromotions();
         } catch (error) {
             this.appliedPromotion = null;
-            this.setPromotionMessage(error.message || 'Mã khuyến mãi không hợp lệ.', 'text-danger');
+            if (showMessage) {
+                this.setPromotionMessage(error.message || 'Mã giảm giá không hợp lệ.', 'text-danger');
+            }
             this.updateSummary();
+            await this.loadRegisteredPromotions();
         } finally {
-            this.applyPromotionBtn.disabled = false;
-            this.applyPromotionBtn.textContent = 'Áp dụng';
+            if (syncInput && this.applyPromotionBtn) {
+                this.applyPromotionBtn.disabled = false;
+                this.applyPromotionBtn.textContent = 'Đăng ký';
+            }
         }
     }
 
@@ -1236,17 +1706,70 @@ class BookingManager {
             .replace(/'/g, "\u0026#039;");
     }
 
+    normalizeHold(hold, fallbackSeatIds = []) {
+        if (!hold) return null;
+
+        const normalized = {
+            ...hold,
+            hold_id: hold.hold_id ?? hold.id ?? null,
+            id: hold.id ?? hold.hold_id ?? null,
+            seat_ids: Array.isArray(hold.seat_ids)
+                ? hold.seat_ids.map(id => parseInt(id, 10)).filter(Number.isFinite)
+                : fallbackSeatIds.map(id => parseInt(id, 10)).filter(Number.isFinite)
+        };
+
+        return normalized.hold_id ? normalized : null;
+    }
+
+    getCurrentHoldId() {
+        return this.currentHold?.hold_id || this.currentHold?.id || null;
+    }
+
     // Utility Methods
     async fetchAPI(endpoint, options = {}) {
-        if (window.authManager && window.authManager.apiRequest) {
-            return window.authManager.apiRequest(endpoint, options);
-        }
-        
-        if (window.authManager && window.authManager.fetchAPI) {
-            return window.authManager.fetchAPI(endpoint, options);
+        if (!window.apiClient) {
+            throw new Error('API client is not initialized.');
         }
 
-        throw new Error('Authentication manager is not initialized.');
+        const method = String(options.method || 'GET').toUpperCase();
+        const body = options.body ? JSON.parse(options.body) : null;
+        const requestOptions = { ...options };
+
+        delete requestOptions.body;
+
+        const client = window.authManager && typeof window.authManager.fetchAPI === 'function'
+            ? window.authManager
+            : window.apiClient;
+
+        if (client === window.authManager) {
+            return client.fetchAPI(endpoint, {
+                ...requestOptions,
+                method,
+                ...(body !== null ? { body } : {})
+            });
+        }
+
+        if (method === 'GET') {
+            return window.apiClient.get(endpoint, requestOptions);
+        }
+
+        if (method === 'POST') {
+            return window.apiClient.post(endpoint, body, requestOptions);
+        }
+
+        if (method === 'PUT') {
+            return window.apiClient.put(endpoint, body, requestOptions);
+        }
+
+        if (method === 'PATCH') {
+            return window.apiClient.patch(endpoint, body, requestOptions);
+        }
+
+        if (method === 'DELETE') {
+            return window.apiClient.delete(endpoint, requestOptions);
+        }
+
+        return window.apiClient.request(endpoint, options);
     }
 
     showLoading(message = 'Đang xử lý...') {

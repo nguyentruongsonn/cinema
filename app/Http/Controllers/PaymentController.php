@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessPayOSWebhook;
 use App\Models\Order;
 use App\Services\OrderService;
 use App\Services\PaymentService;
@@ -40,6 +39,10 @@ class PaymentController extends Controller
         $orderCode = $request->query('orderCode');
         $status    = $request->query('status');
 
+        if (!is_string($orderCode) || $orderCode === '') {
+            $orderCode = $request->query('orderCode') ?? $request->query('order_code');
+        }
+
         // Try to find the order's showtime encrypted id for the redirect.
         $encryptedShowtimeId = null;
         if (is_string($orderCode) && $orderCode !== '') {
@@ -51,10 +54,34 @@ class PaymentController extends Controller
                 $order = null;
             }
 
+            if ($order) {
+                // PayOS return URL có thể về trước webhook/queue worker.
+                // Nếu return params báo thành công thì finalize ngay để cập nhật đủ:
+                // orders, payments, order_items, tickets, promotion used_count,
+                // điểm người dùng, seat_holds.
+                $isSuccessfulReturn = $status === 'PAID'
+                    || $status === 'success'
+                    || $request->query('code') === '00';
+
+                if ($isSuccessfulReturn) {
+                    $this->paymentService->markPaidFromReturn($order);
+                } else {
+                    // Fallback: đồng bộ trực tiếp từ PayOS để tránh đơn kẹt pending.
+                    $this->paymentService->syncFromGateway($order);
+                }
+
+                $order->refresh();
+            }
+
             $encryptedShowtimeId = $order?->showtime?->encrypted_id;
         }
 
-        if ($encryptedShowtimeId && ($status === 'PAID' || $request->query('code') === '00')) {
+        if ($encryptedShowtimeId && (
+            $status === 'PAID'
+            || $status === 'success'
+            || $request->query('code') === '00'
+            || (isset($order) && $order?->payment_status === 'paid')
+        )) {
             return redirect()->route('booking.show', [
                 'encryptedShowtimeId' => $encryptedShowtimeId,
                 'paymentStatus'       => 'success',
@@ -83,6 +110,11 @@ class PaymentController extends Controller
                 $order = null;
             }
 
+            if ($order) {
+                $this->paymentService->markCancelledFromReturn($order);
+                $order->refresh();
+            }
+
             $encryptedShowtimeId = $order?->showtime?->encrypted_id;
         }
 
@@ -99,22 +131,28 @@ class PaymentController extends Controller
 
     /**
      * PayOS webhook — called by PayOS server to confirm payment.
-     * Dispatches async job for processing to return immediately.
+     * Xử lý đồng bộ để đơn hàng không bị kẹt pending khi queue worker chưa chạy.
      */
     public function payosWebhook(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            // Dispatch webhook processing to queue (async)
-            ProcessPayOSWebhook::dispatch($request->all());
+            $result = $this->paymentService->handleWebhook($request->all());
 
-            // Return 200 OK immediately to acknowledge webhook receipt
             return response()->json([
                 'success' => true,
-                'message' => 'Webhook received and queued for processing',
+                'message' => match (true) {
+                    $result['already_processed'] ?? false => 'Order already processed',
+                    $result['skipped'] ?? false => 'Webhook processed without successful payment',
+                    default => 'Payment processed successfully',
+                },
             ]);
         } catch (Throwable $e) {
             report($e);
-            return response()->json(['success' => false, 'message' => 'Failed to queue webhook'], 500);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process webhook',
+            ], 500);
         }
     }
 }

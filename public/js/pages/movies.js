@@ -132,8 +132,8 @@
 
             if (!json.success) throw new Error(json.message || 'Failed to load movies');
 
-            renderMovies(json.data.data);
-            renderPagination(json.data);
+            renderMovies(json.data);
+            renderPagination(json.pagination);
 
             setTimeout(showLoaded, 350);
         } catch (err) {

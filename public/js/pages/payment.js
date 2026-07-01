@@ -161,31 +161,11 @@ class PaymentManager {
         this.showLoading(true);
 
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-            const headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            };
-            if (csrfToken) {
-                headers['X-CSRF-TOKEN'] = csrfToken;
-            }
-
-            const response = await fetch(`${window.APP_CONFIG.apiUrl}/payments`, {
-                method: 'POST',
-                headers: headers,
-                credentials: 'include',
-                body: JSON.stringify({
-                    order_id: this.orderData.id,
-                    payment_method: this.selectedMethod,
-                    return_url: `${window.location.origin}/payment/callback`
-                })
+            const data = await window.apiClient.post('/payments', {
+                order_id: this.orderData.id,
+                payment_method: this.selectedMethod,
+                return_url: `${window.location.origin}/payment/callback`
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Không thể tạo thanh toán');
-            }
 
             // Success - redirect to payment gateway
             if (data.data && data.data.checkout_url) {
@@ -228,25 +208,7 @@ class PaymentManager {
         this.showLoading(true);
 
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-            const headers = {
-                'Accept': 'application/json'
-            };
-            if (csrfToken) {
-                headers['X-CSRF-TOKEN'] = csrfToken;
-            }
-
-            const response = await fetch(`${window.APP_CONFIG.apiUrl}/orders/${this.orderData.id}`, {
-                method: 'DELETE',
-                headers: headers,
-                credentials: 'include'
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Không thể hủy đơn hàng');
-            }
+            await window.apiClient.delete(`/orders/${this.orderData.id}`);
 
             this.showToast('Đã hủy đơn hàng thành công', 'success');
 

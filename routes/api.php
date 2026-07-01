@@ -28,23 +28,6 @@ use App\Http\Controllers\Api\V1\TicketController;
 |
 */
 
-/*
-|--------------------------------------------------------------------------
-| Legacy API compatibility routes
-|--------------------------------------------------------------------------
-|
-| Frontend pages should use /api/v1 via window.APP_CONFIG.apiUrl. These aliases
-| keep older cached assets/config from failing with 404 while browsers refresh.
-|
-*/
-Route::get('home', [HomeController::class, 'data']);
-Route::prefix('auth')->group(function () {
-    Route::middleware(['auth:api'])->group(function () {
-        Route::get('me', [AuthController::class, 'me']);
-        Route::get('profile', [AuthController::class, 'profile']);
-    });
-});
-
 // PayOS Webhook - OUTSIDE versioning (external service, URL already configured)
 Route::post('payos/webhook', [UserPaymentController::class, 'handleWebhook'])
     ->middleware(['verify.payos', 'throttle:webhook']);
@@ -133,6 +116,13 @@ Route::prefix('v1')->group(function () {
             Route::get('/', [TicketController::class, 'index']);
             Route::get('{ticketCode}', [TicketController::class, 'show']);
         });
+
+        // User promotion/voucher routes
+        Route::prefix('promotions')->group(function () {
+            Route::get('registered', [PromotionController::class, 'registered']);
+            Route::post('register', [PromotionController::class, 'register']);
+            Route::get('{code}/validate', [PromotionController::class, 'validate']);
+        });
     });
 
     // Public auth routes (forgot/reset password) - rate limited to prevent abuse
@@ -154,38 +144,87 @@ Route::prefix('v1')->group(function () {
         Route::prefix('admin/movies')->group(function () {
             Route::post('/', [MovieController::class, 'store']);
             Route::put('{id}', [MovieController::class, 'update']);
+            Route::post('{id}/update', [MovieController::class, 'update']); // FormData upload (POST + _method=PUT)
             Route::delete('{id}', [MovieController::class, 'destroy']);
+            Route::post('{id}/toggle-active', [MovieController::class, 'toggleActive']);
+            Route::post('{id}/toggle-hot', [MovieController::class, 'toggleHot']);
+        });
+
+        // Branch management
+        Route::prefix('admin/branches')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BranchController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Admin\BranchController::class, 'store']);
+            Route::put('{branch}', [\App\Http\Controllers\Admin\BranchController::class, 'update']);
+            Route::delete('{branch}', [\App\Http\Controllers\Admin\BranchController::class, 'destroy']);
+            Route::post('{branch}/toggle-active', [\App\Http\Controllers\Admin\BranchController::class, 'toggleActive']);
         });
 
         // Theater management
         Route::prefix('admin/theaters')->group(function () {
-            Route::post('/', [TheaterController::class, 'store']);
-            Route::put('{id}', [TheaterController::class, 'update']);
-            Route::delete('{id}', [TheaterController::class, 'destroy']);
+            Route::get('/', [\App\Http\Controllers\Admin\TheaterController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Admin\TheaterController::class, 'store']);
+            Route::put('{theater}', [\App\Http\Controllers\Admin\TheaterController::class, 'update']);
+            Route::delete('{theater}', [\App\Http\Controllers\Admin\TheaterController::class, 'destroy']);
+            Route::post('{theater}/toggle-active', [\App\Http\Controllers\Admin\TheaterController::class, 'toggleActive']);
+        });
+
+
+        // Seat layout templates
+        Route::prefix('admin/seat-layout-templates')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\SeatLayoutTemplateController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Admin\SeatLayoutTemplateController::class, 'store']);
+            Route::put('{seatLayoutTemplate}', [\App\Http\Controllers\Admin\SeatLayoutTemplateController::class, 'update']);
+            Route::delete('{seatLayoutTemplate}', [\App\Http\Controllers\Admin\SeatLayoutTemplateController::class, 'destroy']);
+            Route::post('{seatLayoutTemplate}/toggle-active', [\App\Http\Controllers\Admin\SeatLayoutTemplateController::class, 'toggleActive']);
         });
 
         // Screen management
         Route::prefix('admin/screens')->group(function () {
-            Route::post('/', [ScreenController::class, 'store']);
-            Route::put('{id}', [ScreenController::class, 'update']);
-            Route::delete('{id}', [ScreenController::class, 'destroy']);
+            Route::get('/', [\App\Http\Controllers\Admin\ScreenController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Admin\ScreenController::class, 'store']);
+            Route::put('{screen}', [\App\Http\Controllers\Admin\ScreenController::class, 'update']);
+            Route::delete('{screen}', [\App\Http\Controllers\Admin\ScreenController::class, 'destroy']);
+            Route::post('{screen}/toggle-active', [\App\Http\Controllers\Admin\ScreenController::class, 'toggleActive']);
+            Route::get('{screen}/seats', [\App\Http\Controllers\Admin\ScreenController::class, 'showSeats']);
+            Route::post('{screen}/seats/update', [\App\Http\Controllers\Admin\ScreenController::class, 'updateSeats']);
+        });
+
+        // Formats (Loại phòng)
+        Route::prefix('admin/formats')->group(function () {
+            Route::post('/', [\App\Http\Controllers\Admin\ScreenController::class, 'storeFormat']);
+            Route::put('{format}', [\App\Http\Controllers\Admin\ScreenController::class, 'updateFormat']);
+            Route::delete('{format}', [\App\Http\Controllers\Admin\ScreenController::class, 'destroyFormat']);
+        });
+
+        // Sounds (Âm thanh)
+        Route::prefix('admin/sounds')->group(function () {
+            Route::post('/', [\App\Http\Controllers\Admin\ScreenController::class, 'storeSound']);
+            Route::put('{sound}', [\App\Http\Controllers\Admin\ScreenController::class, 'updateSound']);
+            Route::delete('{sound}', [\App\Http\Controllers\Admin\ScreenController::class, 'destroySound']);
         });
 
         // Showtime management
         Route::prefix('admin/showtimes')->group(function () {
-            Route::post('/', [ShowtimeController::class, 'store']);
-            Route::put('{id}', [ShowtimeController::class, 'update']);
-            Route::delete('{id}', [ShowtimeController::class, 'destroy']);
+            Route::get('/', [\App\Http\Controllers\ShowtimeController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\ShowtimeController::class, 'store']);
+            Route::post('bulk', [\App\Http\Controllers\ShowtimeController::class, 'bulkCreate']);
+            Route::post('bulk-single', [\App\Http\Controllers\ShowtimeController::class, 'bulkSingleDay']);
+            Route::put('{id}', [\App\Http\Controllers\ShowtimeController::class, 'update']);
+            Route::delete('{id}', [\App\Http\Controllers\ShowtimeController::class, 'destroy']);
+        });
+
+        // Product management
+        Route::prefix('admin/products')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ProductController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Admin\ProductController::class, 'store']);
+            Route::put('{product}', [\App\Http\Controllers\Admin\ProductController::class, 'update']);
+            Route::delete('{product}', [\App\Http\Controllers\Admin\ProductController::class, 'destroy']);
+            Route::post('{product}/toggle-active', [\App\Http\Controllers\Admin\ProductController::class, 'toggleActive']);
         });
     });
 
     // Public product routes
     Route::get('products', [ProductController::class, 'index']);
-
-    // Public promotion routes
-    Route::prefix('promotions')->group(function () {
-        Route::get('{code}/validate', [PromotionController::class, 'validate']);
-    });
 
     // Broadcasting channel auth – uses JWT instead of web session
     Route::middleware('auth:api')->post('broadcasting/auth', function (\Illuminate\Http\Request $request) {

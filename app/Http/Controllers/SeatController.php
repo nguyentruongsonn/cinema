@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\SeatConflictException;
 use App\Http\Requests\LockSeatRequest;
 use App\Services\SeatService;
 use App\Traits\ApiResponse;
@@ -43,8 +44,16 @@ class SeatController extends Controller
             $data = $this->seatService->lock($request->validated(), $user);
 
             return $this->successResponse($data, 'Seats locked successfully', 200);
+        } catch (SeatConflictException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => [
+                    'conflicted_seats' => $e->conflictedSeats(),
+                ],
+            ], 409);
         } catch (\RuntimeException $e) {
-            $statusCode = in_array($e->getCode(), [403, 404, 422], true) ? $e->getCode() : 422;
+            $statusCode = in_array($e->getCode(), [403, 404, 409, 422], true) ? $e->getCode() : 422;
             return $this->errorResponse($e->getMessage(), $statusCode);
         } catch (\Throwable $e) {
             return $this->errorResponse('Failed to lock seats: ' . $e->getMessage(), 422);

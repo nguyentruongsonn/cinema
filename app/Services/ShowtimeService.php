@@ -20,7 +20,8 @@ class ShowtimeService
         $query = Showtime::with([
             'movie:id,title,slug,duration,age_rating,poster_url',
             'screen:id,name,code,format_id,sound_id,theater_id,capacity',
-            'screen.theater:id,name,address,city',
+            'screen.theater:id,name,address,branch_id',
+            'screen.theater.branch:id,name',
             'screen.format:id,name',
             'screen.sound:id,name',
             'format:id,name,surcharge',
@@ -120,7 +121,8 @@ class ShowtimeService
         $endDate = $now->copy()->addDays(5)->endOfDay();
 
         return Showtime::with([
-                'screen.theater:id,name,address,city',
+                'screen.theater:id,name,address,branch_id',
+                'screen.theater.branch:id,name',
                 'screen:id,name,code,theater_id',
                 'format:id,name,surcharge',
                 'sound:id,name',
@@ -151,7 +153,7 @@ class ShowtimeService
                         'id' => $showtime->screen->theater->id,
                         'name' => $showtime->screen->theater->name,
                         'address' => $showtime->screen->theater->address,
-                        'city' => $showtime->screen->theater->city,
+                        'city' => $showtime->screen->theater->branch?->name ?? '',
                     ],
                     'formats' => [],
                 ];

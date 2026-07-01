@@ -1,0 +1,288 @@
+/* ── Admin Seat Layout Page ─────────────────────────────────────────── */
+
+/* Screen bar — gradient phía trên sơ đồ */
+.screen-bar {
+    background: linear-gradient(to bottom, rgba(229, 9, 20, 0.2), transparent);
+    border-top: 5px solid var(--accent-color);
+    color: var(--accent-color);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 0.75rem 0 2rem 0;
+    max-width: 80%;
+    margin: 0 auto 1.5rem auto;
+    border-radius: 50% 50% 0 0 / 15px 15px 0 0;
+    box-shadow: 0 -5px 20px rgba(229, 9, 20, 0.3);
+    text-shadow: 0 0 10px rgba(229, 9, 20, 0.4);
+}
+
+/* ── Seat Grid ─────────────────────────────────────────────────────── */
+.seat-grid {
+    display: grid;
+    /* col 0 = nhãn hàng, còn lại = ghế */
+    grid-template-columns: 28px repeat(var(--cols), minmax(36px, 40px));
+    gap: 5px;
+    width: fit-content;
+}
+
+.seat-grid-col-labels {
+    display: grid;
+    grid-template-columns: 28px repeat(var(--cols), minmax(36px, 40px));
+    gap: 5px;
+    width: fit-content;
+}
+
+.seat-row-label,
+.seat-col-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+}
+
+/* ── Base seat ─────────────────────────────────────────────────────── */
+.admin-seat {
+    position: relative;
+    height: 40px;
+    /* Hình dạng ghế: đầu tròn dưới, vuông trên */
+    border-radius: 5px 5px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    border-bottom-width: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    overflow: hidden;
+}
+
+/* Icon ghế (dùng bi-stop-fill rotate) */
+.admin-seat .seat-icon-shape {
+    font-size: 1.05rem;
+    line-height: 1;
+    display: block;
+}
+
+.admin-seat i {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.admin-seat .seat-label {
+    font-size: 0.55rem;
+    line-height: 1;
+    opacity: 0.85;
+    letter-spacing: 0.02em;
+}
+
+.admin-seat:hover:not(.seat-disabled):not(.seat-empty) {
+    transform: translateY(-3px);
+    filter: brightness(1.3);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Seat types ─────────────────────────────────────────────────────── */
+
+/* Standard — xanh dương */
+.seat-standard {
+    background: rgba(96, 165, 250, 0.13);
+    color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.4);
+    border-bottom-color: #3b82f6;
+}
+
+/* VIP — vàng amber */
+.seat-vip {
+    background: rgba(245, 158, 11, 0.13);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.4);
+    border-bottom-color: #d97706;
+}
+
+/* Couple — hồng, spans 2 cols */
+.seat-couple {
+    background: rgba(236, 72, 153, 0.13);
+    color: #ec4899;
+    border-color: rgba(236, 72, 153, 0.4);
+    border-bottom-color: #be185d;
+}
+
+.seat-couple-span {
+    grid-column: span 2;
+    border-radius: 5px 5px 14px 14px;
+}
+
+.seat-couple-span i {
+    font-size: 1rem;
+}
+
+/* ── Disabled / broken ─────────────────────────────────────────────── */
+.admin-seat.seat-disabled {
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.07) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.07) !important;
+    cursor: pointer;
+    opacity: 0.55;
+}
+
+.admin-seat.seat-disabled i {
+    font-size: 0.85rem;
+    color: rgba(239, 68, 68, 0.45);
+}
+
+.admin-seat.seat-disabled:hover {
+    opacity: 0.85;
+    background: rgba(239, 68, 68, 0.07);
+    border-color: rgba(239, 68, 68, 0.2) !important;
+    transform: none;
+    filter: none;
+}
+
+/* ── Empty placeholder ─────────────────────────────────────────────── */
+.seat-empty {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.04);
+    cursor: default;
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+/* ── Toggle flash animation ────────────────────────────────────────── */
+@keyframes seatFlash {
+    0%   { transform: scale(1);    opacity: 1; }
+    35%  { transform: scale(0.82); opacity: 0.45; }
+    100% { transform: scale(1);    opacity: 1; }
+}
+
+.admin-seat.toggling {
+    animation: seatFlash 0.28s ease;
+}
+
+/* ── Legend boxes (panel phải) ─────────────────────────────────────── */
+.seat-legend-box {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 5px 5px 10px 10px;
+    border: 1px solid transparent;
+    border-bottom-width: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+/* Inherit seat type colors */
+.seat-legend-box.seat-standard {
+    background: rgba(96, 165, 250, 0.13);
+    color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.4);
+    border-bottom-color: #3b82f6;
+}
+
+.seat-legend-box.seat-vip {
+    background: rgba(245, 158, 11, 0.13);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.4);
+    border-bottom-color: #d97706;
+}
+
+.seat-legend-box.seat-couple {
+    background: rgba(236, 72, 153, 0.13);
+    color: #ec4899;
+    border-color: rgba(236, 72, 153, 0.4);
+    border-bottom-color: #be185d;
+    width: 54px;
+    border-radius: 5px 5px 12px 12px;
+}
+
+.seat-legend-box.seat-disabled-legend {
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(239, 68, 68, 0.45);
+    border-color: rgba(255, 255, 255, 0.07);
+    border-bottom-color: rgba(255, 255, 255, 0.07);
+    opacity: 0.7;
+}
+
+/* ── Utilities specifically for Seat Layout ── */
+.btn-header-back {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.btn-header-back:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.2);
+    color: #ffffff;
+}
+
+.card-heading-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+}
+
+.badge-soft-primary {
+    background: rgba(96,165,250,0.12);
+    color: #60a5fa;
+    font-size: 0.75rem;
+}
+
+.badge-soft-purple {
+    background: rgba(167,139,250,0.12);
+    color: #a78bfa;
+    font-size: 0.75rem;
+}
+
+.btn-update-layout {
+    font-size: 0.95rem;
+    border-radius: 8px;
+}
+
+.toggle-switch-lg {
+    cursor: pointer;
+    width: 2.5rem;
+    height: 1.25rem;
+}
+
+.svg-icon-lg {
+    font-size: 1.1rem;
+}
+
+.overflow-x-auto {
+    overflow-x: auto;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 992px) {
+    .seat-grid {
+        grid-template-columns: 22px repeat(var(--cols), minmax(30px, 34px));
+        gap: 4px;
+    }
+    .seat-grid-col-labels {
+        grid-template-columns: 22px repeat(var(--cols), minmax(30px, 34px));
+        gap: 4px;
+    }
+    .admin-seat {
+        height: 34px;
+    }
+    .admin-seat i,
+    .admin-seat .seat-icon-shape {
+        font-size: 0.8rem;
+    }
+    .admin-seat .seat-label {
+        font-size: 0.5rem;
+    }
+}

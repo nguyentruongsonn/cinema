@@ -33,7 +33,8 @@ class TicketController extends Controller
                     'showtime:id,scheduled_at,screen_id,movie_id',
                     'showtime.movie:id,title,poster_url,duration,age_rating',
                     'showtime.screen:id,name,theater_id',
-                    'showtime.screen.theater:id,name,address,city',
+                    'showtime.screen.theater:id,name,address,branch_id',
+                    'showtime.screen.theater.branch:id,name',
                     'seat:id,row,number,label,seat_type_id',
                     'seat.seatType:id,name,surcharge',
                 ]);
@@ -90,7 +91,8 @@ class TicketController extends Controller
                     'showtime:id,scheduled_at,screen_id,movie_id',
                     'showtime.movie:id,title,poster_url,duration,age_rating',
                     'showtime.screen:id,name,theater_id',
-                    'showtime.screen.theater:id,name,address,city,phone',
+                    'showtime.screen.theater:id,name,address,branch_id,phone',
+                    'showtime.screen.theater.branch:id,name',
                     'seat:id,row,number,label,seat_type_id',
                     'seat.seatType:id,name,surcharge',
                 ])

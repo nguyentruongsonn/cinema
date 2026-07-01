@@ -4,7 +4,6 @@
     /* ------------------------------------------------------------------ */
     /*  Configuration                                                      */
     /* ------------------------------------------------------------------ */
-    const API_BASE = window.APP_CONFIG?.apiUrl || '/api/v1';
     const SELECTORS = {
         heroSkeleton: '#heroSkeleton',
         heroContent: '#heroContent',
@@ -155,47 +154,27 @@
     /* ------------------------------------------------------------------ */
     /*  API                                                                */
     /* ------------------------------------------------------------------ */
-    async function apiGet(url, params = {}) {
+    async function apiGet(path, params = {}) {
         const query = new URLSearchParams(params).toString();
-        const fullUrl = query ? `${url}?${query}` : url;
+        const endpoint = query ? `${path}?${query}` : path;
 
-        console.log('🌐 apiGet fetch:', {fullUrl, method: 'GET'});
-        
-        const res = await fetch(fullUrl, {
-            headers: {
-                Accept: 'application/json',
-            },
-        });
+        try {
+            return await window.apiClient.get(endpoint);
+        } catch (error) {
+            if (error.status === 404) {
+                throw new Error('Movie not found');
+            }
 
-        console.log('📊 apiGet response:', {url: fullUrl, status: res.status, ok: res.ok});
+            if (error.status >= 500) {
+                throw new Error('Hệ thống đang bảo trì');
+            }
 
-        if (!res.ok) {
-            console.error('❌ apiGet error:', {status: res.status, statusText: res.statusText});
-            await handleApiError(res);
+            throw error;
         }
-
-        const json = await res.json();
-        console.log('✓ apiGet data:', {success: json.success, hasData: !!json.data});
-        return json;
-    }
-
-    async function handleApiError(res) {
-        const json = await res.json().catch(() => ({}));
-        const message = json.message || 'Đã xảy ra lỗi, vui lòng thử lại';
-
-        if (res.status === 404) {
-            throw new Error('Movie not found');
-        }
-
-        if (res.status >= 500) {
-            throw new Error('Hệ thống đang bảo trì');
-        }
-
-        throw new Error(message);
     }
 
     async function loadMovie() {
-        const json = await apiGet(`${API_BASE}/movies/${encodeURIComponent(state.movieSlug)}`);
+        const json = await apiGet(`/movies/${encodeURIComponent(state.movieSlug)}`);
 
         if (!json.success) {
             throw new Error(json.message || 'Movie not found');
@@ -206,30 +185,24 @@
     }
 
     async function loadShowtimes() {
-        const url = `${API_BASE}/movies/${encodeURIComponent(state.movieSlug)}/showtimes`;
-        console.log('📍 loadShowtimes:', {url, movieSlug: state.movieSlug, apiBase: API_BASE});
-        
+        const url = `/movies/${encodeURIComponent(state.movieSlug)}/showtimes`;
+
         try {
             const json = await apiGet(url);
-            console.log('✓ Showtimes response:', json);
 
             if (!json.success || !json.data) {
-                console.warn('⚠️ Invalid response:', {success: json.success, hasData: !!json.data});
                 state.showtimeGroups = [];
                 showNoShowtimes();
                 return;
             }
 
             state.showtimeGroups = json.data.showtimes_grouped || [];
-            console.log('✓ Groups loaded:', state.showtimeGroups.length);
-            
             state.theaters = extractTheaters();
 
             const dates = getUniqueDates();
             state.selectedDate = dates[0] || null;
 
             if (!state.selectedDate || state.showtimeGroups.length === 0) {
-                console.log('⚠️ No dates or groups', {dates: dates.length, groups: state.showtimeGroups.length});
                 showNoShowtimes();
                 return;
             }
@@ -237,7 +210,7 @@
             populateTheaterFilter();
             renderShowtimes();
         } catch (error) {
-            console.error('❌ Showtimes error:', error.message, error);
+            console.error('[MovieDetail] Showtimes error:', error);
             state.showtimeGroups = [];
             showNoShowtimes();
         }
@@ -245,7 +218,7 @@
 
     async function loadTrendingMovies() {
         try {
-            const json = await apiGet(`${API_BASE}/movies/now-showing`);
+            const json = await apiGet('/movies/now-showing');
 
             if (!json.success || !Array.isArray(json.data)) {
                 showEmptyTrending();

@@ -13,22 +13,26 @@ class SeatLayoutTemplateController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $status = $request->input('status'); // 'all', 'published', 'draft'
 
-        $baseQuery = SeatLayoutTemplate::query()
-            ->when($search, function ($query, $search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('template_name', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%")
-                        ->orWhere('seat_matrix', 'like', "%{$search}%");
+        $query = SeatLayoutTemplate::query()
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sq) use ($search) {
+                    $sq->where('template_name', 'like', "%{$search}%")
+                       ->orWhere('description', 'like', "%{$search}%")
+                       ->orWhere('seat_matrix', 'like', "%{$search}%");
                 });
-            })
-            ->latest();
+            });
 
-        $allTemplates       = (clone $baseQuery)->paginate(10)->appends($request->only('search'));
-        $publishedTemplates = (clone $baseQuery)->where('status', true)->paginate(10)->appends($request->only('search'));
-        $draftTemplates     = (clone $baseQuery)->where('status', false)->paginate(10)->appends($request->only('search'));
+        if ($status === 'published') {
+            $query->where('status', true);
+        } elseif ($status === 'draft') {
+            $query->where('status', false);
+        }
 
-        return view('admin.seat-layout-templates.index', compact('allTemplates', 'publishedTemplates', 'draftTemplates', 'search'));
+        $templates = $query->latest()->paginate(10);
+
+        return response()->json($templates);
     }
 
     public function store(StoreSeatLayoutTemplateRequest $request)
@@ -36,9 +40,9 @@ class SeatLayoutTemplateController extends Controller
         $validated = $request->validated();
         $validated['status'] = $request->has('status') ? 1 : 0;
 
-        SeatLayoutTemplate::create($validated);
+        $template = SeatLayoutTemplate::create($validated);
 
-        return redirect()->route('admin.seat-layout-templates.index')->with('success', 'Tạo mẫu sơ đồ ghế thành công.');
+        return response()->json(['success' => true, 'message' => 'Tạo mẫu sơ đồ ghế thành công.', 'data' => $template]);
     }
 
     public function update(UpdateSeatLayoutTemplateRequest $request, SeatLayoutTemplate $seatLayoutTemplate)
@@ -48,7 +52,7 @@ class SeatLayoutTemplateController extends Controller
 
         $seatLayoutTemplate->update($validated);
 
-        return redirect()->route('admin.seat-layout-templates.index')->with('success', 'Cập nhật mẫu sơ đồ ghế thành công.');
+        return response()->json(['success' => true, 'message' => 'Cập nhật mẫu sơ đồ ghế thành công.']);
     }
 
     public function toggleActive(SeatLayoutTemplate $seatLayoutTemplate)
@@ -62,6 +66,6 @@ class SeatLayoutTemplateController extends Controller
     {
         $seatLayoutTemplate->delete();
 
-        return redirect()->route('admin.seat-layout-templates.index')->with('success', 'Xóa mẫu sơ đồ ghế thành công.');
+        return response()->json(['success' => true, 'message' => 'Xóa mẫu sơ đồ ghế thành công.']);
     }
 }

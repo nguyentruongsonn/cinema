@@ -89,8 +89,6 @@
                         <div class="btn-group" role="group">
                             <button type="button" class="btn btn-sm btn-edit-seat-layout-template"
                                 style="color: var(--text-secondary); background: rgba(255,255,255,0.05);"
-                                data-bs-toggle="modal"
-                                data-bs-target="#seatLayoutTemplateModal"
                                 data-id="{{ $template->id }}"
                                 data-template-name="{{ $template->template_name }}"
                                 data-seat-matrix="{{ $template->seat_matrix }}"

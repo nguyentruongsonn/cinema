@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use App\Events\SeatStatusUpdated;
+use App\Exceptions\SeatConflictException;
 use App\Models\OrderItem;
 use App\Models\Seat;
 use App\Models\SeatHold;
 use App\Models\Showtime;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SeatService
 {
@@ -107,14 +108,14 @@ class SeatService
                 'id' => $hold->id,
                 'seat_ids' => $hold->seat_ids,
                 'held_until' => $hold->held_until->toISOString(),
-                'expires_in_seconds' => now()->diffInSeconds($hold->held_until, false),
+                'expires_in_seconds' => $this->getEvenExpiresInSeconds($hold),
             ])->values()->all(),
         ];
     }
 
     public function lock(array $data, $user): array
     {
-        $hold = DB::transaction(function () use ($data, $user) {
+        $lockResult = DB::transaction(function () use ($data, $user) {
             $this->cleanupExpiredReservations((int) $data['showtime_id']);
 
             $showtime = Showtime::query()
@@ -138,35 +139,78 @@ class SeatService
                 throw new \RuntimeException('Một số ghế đã được đặt hoặc đang chờ thanh toán: ' . implode(', ', $bookedSeatIds));
             }
 
-            $conflictingHold = SeatHold::query()
-                ->valid()
-                ->where('showtime_id', $showtime->id)
-                ->where('user_id', '!=', $user->id)
-                ->get()
-                ->first(function (SeatHold $hold) use ($seatIds) {
-                    return !empty(array_intersect(array_map('intval', (array) $hold->seat_ids), $seatIds));
-                });
+            $conflictingSeatIds = $this->getConflictingHeldSeatIds(
+                showtimeId: $showtime->id,
+                seatIds: $seatIds,
+                excludeUserId: $user->id
+            );
 
-            if ($conflictingHold) {
-                throw new \RuntimeException('Một số ghế đang được người dùng khác giữ tạm thời.');
+            if (!empty($conflictingSeatIds)) {
+                $conflictedSeats = $seats
+                    ->whereIn('id', $conflictingSeatIds)
+                    ->map(fn (Seat $seat) => [
+                        'id' => $seat->id,
+                        'label' => $seat->label ?: ($seat->row . $seat->number),
+                        'status' => 'locked',
+                    ])
+                    ->values()
+                    ->all();
+
+                throw new SeatConflictException(
+                    'Một số ghế vừa được người khác giữ.',
+                    $conflictedSeats
+                );
             }
 
-            SeatHold::query()
+            $previousHolds = SeatHold::query()
                 ->where('showtime_id', $showtime->id)
                 ->where('user_id', $user->id)
-                ->delete();
+                ->lockForUpdate()
+                ->get(['id', 'seat_ids']);
 
-            return SeatHold::create([
+            $releasedSeatIds = $previousHolds
+                ->flatMap(fn (SeatHold $hold) => (array) $hold->seat_ids)
+                ->map(fn ($id) => (int) $id)
+                ->diff($seatIds)
+                ->unique()
+                ->values()
+                ->all();
+
+            if ($previousHolds->isNotEmpty()) {
+                SeatHold::query()
+                    ->whereIn('id', $previousHolds->pluck('id')->all())
+                    ->delete();
+            }
+
+            $hold = SeatHold::create([
                 'showtime_id' => $showtime->id,
                 'user_id' => $user->id,
                 'seat_ids' => $seatIds,
                 'held_until' => now()->addMinutes(self::HOLD_MINUTES),
             ]);
+
+            return [
+                'hold' => $hold,
+                'released_seat_ids' => $releasedSeatIds,
+            ];
         });
+
+        /** @var SeatHold $hold */
+        $hold = $lockResult['hold'];
+        $releasedSeatIds = $lockResult['released_seat_ids'];
 
         // Broadcast real-time seat status to all connected clients
         // Wrap in try/catch: development environments may not have Reverb/Pusher running
         try {
+            foreach ($releasedSeatIds as $seatId) {
+                broadcast(new SeatStatusUpdated(
+                    showtimeId: $hold->showtime_id,
+                    seatId:     (int) $seatId,
+                    status:     'available',
+                    userId:     $hold->user_id,
+                ));
+            }
+
             foreach ($hold->seat_ids as $seatId) {
                 broadcast(new SeatStatusUpdated(
                     showtimeId: $hold->showtime_id,
@@ -176,7 +220,7 @@ class SeatService
                 ));
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('Seat broadcast failed (non-critical): ' . $e->getMessage());
+            Log::warning('Seat broadcast failed (non-critical): ' . $e->getMessage());
         }
 
         return [
@@ -184,7 +228,7 @@ class SeatService
             'showtime_id'      => $hold->showtime_id,
             'seat_ids'         => $hold->seat_ids,
             'held_until'       => $hold->held_until->toISOString(),
-            'expires_in_seconds' => now()->diffInSeconds($hold->held_until, false),
+            'expires_in_seconds' => $this->getEvenExpiresInSeconds($hold),
         ];
     }
 
@@ -216,16 +260,85 @@ class SeatService
                 ));
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('Seat unlock broadcast failed (non-critical): ' . $e->getMessage());
+            Log::warning('Seat unlock broadcast failed (non-critical): ' . $e->getMessage());
         }
 
         return ['unlocked_count' => count($seatIds)];
     }
 
+    public function cleanupExpiredSeatHolds(?int $showtimeId = null, bool $broadcast = true): int
+    {
+        $expiredHolds = SeatHold::query()
+            ->expired()
+            ->when($showtimeId, fn ($query) => $query->where('showtime_id', $showtimeId))
+            ->get(['id', 'showtime_id', 'seat_ids']);
+
+        if ($expiredHolds->isEmpty()) {
+            return 0;
+        }
+
+        $expiredHoldIds = $expiredHolds->pluck('id')->all();
+
+        SeatHold::query()
+            ->whereIn('id', $expiredHoldIds)
+            ->delete();
+
+        if ($broadcast) {
+            $this->broadcastExpiredSeatHoldsAsAvailable($expiredHolds);
+        }
+
+        return count($expiredHoldIds);
+    }
+
     private function cleanupExpiredReservations(?int $showtimeId = null): void
     {
-        SeatHold::query()->expired()->delete();
+        $this->cleanupExpiredSeatHolds($showtimeId);
         $this->orderExpirationService->expirePendingOrders($showtimeId);
+    }
+
+    private function getEvenExpiresInSeconds(SeatHold $hold): int
+    {
+        $seconds = max(0, (int) now()->diffInSeconds($hold->held_until, false));
+
+        return $seconds - ($seconds % 2);
+    }
+
+    private function broadcastExpiredSeatHoldsAsAvailable($expiredHolds): void
+    {
+        try {
+            foreach ($expiredHolds as $hold) {
+                foreach ((array) $hold->seat_ids as $seatId) {
+                    broadcast(new SeatStatusUpdated(
+                        (int) $hold->showtime_id,
+                        (int) $seatId,
+                        'available',
+                        null
+                    ));
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Expired seat hold broadcast failed (non-critical): ' . $e->getMessage());
+        }
+    }
+
+    private function getConflictingHeldSeatIds(int $showtimeId, array $seatIds, int $excludeUserId): array
+    {
+        return SeatHold::query()
+            ->valid()
+            ->where('showtime_id', $showtimeId)
+            ->where('user_id', '!=', $excludeUserId)
+            ->where(function ($query) use ($seatIds) {
+                foreach ($seatIds as $seatId) {
+                    $query->orWhereJsonContains('seat_ids', $seatId);
+                }
+            })
+            ->get(['seat_ids'])
+            ->flatMap(function (SeatHold $hold) use ($seatIds) {
+                return array_intersect(array_map('intval', (array) $hold->seat_ids), $seatIds);
+            })
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function getBookedSeatIds(int $showtimeId, ?array $seatIds = null): array

@@ -12,6 +12,7 @@ use App\Models\Showtime;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Arr;
 use Throwable;
 
 /**
@@ -103,8 +104,8 @@ class PaymentService
                 'orderCode'   => $order->gateway_order_code,
                 'amount'      => (int) round($order->total_amount),
                 'description' => substr('DH ' . $order->code, 0, 25),
-                'cancelUrl'   => $baseUrl . '/booking/' . $showtime->encrypted_id . '?paymentStatus=cancelled&orderCode=' . $order->gateway_order_code,
-                'returnUrl'   => $baseUrl . '/booking/' . $showtime->encrypted_id . '?paymentStatus=success&orderCode=' . $order->gateway_order_code,
+                'cancelUrl'   => $baseUrl . '/payment/payos/cancel?orderCode=' . $order->gateway_order_code,
+                'returnUrl'   => $baseUrl . '/payment/payos/callback?orderCode=' . $order->gateway_order_code,
                 'items'       => [[
                     'name'     => 'Don hang ' . $order->code,
                     'quantity' => 1,
@@ -195,22 +196,30 @@ class PaymentService
     {
         $webhookData = $this->gateway->verifyWebhook($rawData);
 
-        $orderCode = $webhookData['orderCode'] ?? $webhookData['order_code'] ?? null;
-        $status    = strtoupper((string) ($webhookData['status'] ?? ''));
+        $orderCode = $webhookData['orderCode']
+            ?? $webhookData['order_code']
+            ?? Arr::get($rawData, 'data.orderCode')
+            ?? Arr::get($rawData, 'data.order_code');
+
+        $status = $this->normalizeGatewayStatus(
+            $webhookData['status']
+                ?? $webhookData['code']
+                ?? Arr::get($rawData, 'data.status')
+                ?? Arr::get($rawData, 'code')
+                ?? null
+        );
 
         if (! $orderCode) {
             throw new \InvalidArgumentException('Thiếu orderCode trong webhook.');
         }
 
-        if ($status !== 'PAID' && $status !== 'COMPLETED') {
-            Order::where('gateway_order_code', (int) $orderCode)
-                ->where('status', Order::STATUS_PENDING)
-                ->update(['payment_status' => strtolower($status ?: 'failed')]);
-
-            return ['already_processed' => false, 'skipped' => true];
+        if ($this->isSuccessfulGatewayStatus($status)) {
+            return $this->fulfillment->finalize((int) $orderCode);
         }
 
-        return $this->fulfillment->finalize((int) $orderCode);
+        $this->markAsUnsuccessful((int) $orderCode, $status ?: 'failed');
+
+        return ['already_processed' => false, 'skipped' => true];
     }
 
     /**
@@ -220,21 +229,94 @@ class PaymentService
     {
         try {
             $info   = $this->gateway->getPaymentInfo($order->gateway_order_code);
-            $status = strtoupper((string) ($info['status'] ?? ''));
+            $status = $this->extractGatewayStatus($info);
 
-            if ($status === 'PAID') {
+            if ($this->isSuccessfulGatewayStatus($status)) {
                 $this->fulfillment->finalize((int) $order->gateway_order_code);
-            } elseif (in_array($status, ['CANCELLED', 'EXPIRED'], true)) {
-                $lower = strtolower($status);
-                $order->forceFill([
-                    'status'         => $lower === 'cancelled' ? Order::STATUS_CANCELLED : Order::STATUS_PENDING, // Nếu expired vẫn để pending nhưng hết hạn check at finalize
-                    'payment_status' => $lower,
-                    'cancelled_at'   => $lower === 'cancelled' ? now() : $order->cancelled_at,
-                ])->save();
+            } elseif ($this->isUnsuccessfulGatewayStatus($status)) {
+                $this->markAsUnsuccessful((int) $order->gateway_order_code, $status);
             }
         } catch (Throwable $e) {
             report($e);
         }
+    }
+
+    public function markPaidFromReturn(Order $order): array
+    {
+        return $this->fulfillment->finalize((int) $order->gateway_order_code);
+    }
+
+    public function markCancelledFromReturn(Order $order): void
+    {
+        $this->markAsUnsuccessful((int) $order->gateway_order_code, 'CANCELLED');
+    }
+
+    private function extractGatewayStatus(array $info): string
+    {
+        return $this->normalizeGatewayStatus(
+            $info['status']
+                ?? Arr::get($info, 'data.status')
+                ?? Arr::get($info, 'paymentLinkInfo.status')
+                ?? Arr::get($info, 'result.status')
+                ?? null
+        );
+    }
+
+    private function normalizeGatewayStatus(mixed $status): string
+    {
+        return strtoupper(trim((string) $status));
+    }
+
+    private function isSuccessfulGatewayStatus(string $status): bool
+    {
+        return in_array($status, ['PAID', 'COMPLETED', 'SUCCESS', 'SUCCEEDED', '00'], true);
+    }
+
+    private function isUnsuccessfulGatewayStatus(string $status): bool
+    {
+        return in_array($status, ['CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED', 'FAILURE', 'ERROR'], true);
+    }
+
+    private function markAsUnsuccessful(int $gatewayOrderCode, string $gatewayStatus): void
+    {
+        DB::transaction(function () use ($gatewayOrderCode, $gatewayStatus) {
+            $order = Order::where('gateway_order_code', $gatewayOrderCode)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$order || (int) $order->status === Order::STATUS_CONFIRMED || $order->payment_status === 'paid') {
+                return;
+            }
+
+            $normalizedStatus = $this->normalizeGatewayStatus($gatewayStatus);
+            $paymentStatus = match ($normalizedStatus) {
+                'CANCELLED', 'CANCELED' => 'cancelled',
+                'EXPIRED' => 'expired',
+                default => 'failed',
+            };
+
+            $order->forceFill([
+                'status' => in_array($paymentStatus, ['cancelled', 'failed'], true)
+                    ? Order::STATUS_CANCELLED
+                    : Order::STATUS_PENDING,
+                'payment_status' => $paymentStatus,
+                'cancelled_at' => in_array($paymentStatus, ['cancelled', 'failed'], true)
+                    ? now()
+                    : $order->cancelled_at,
+            ])->save();
+
+            Payment::where('order_id', $order->id)
+                ->update([
+                    'status' => $paymentStatus === 'cancelled'
+                        ? Payment::STATUS_CANCELLED
+                        : Payment::STATUS_FAILED,
+                    'failed_at' => now(),
+                ]);
+
+            SeatHold::where('user_id', $order->user_id)
+                ->where('showtime_id', $order->showtime_id)
+                ->delete();
+        });
     }
 
     private function generateOrderNumber(): string

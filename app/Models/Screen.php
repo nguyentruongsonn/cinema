@@ -18,6 +18,7 @@ class Screen extends Model
         'code',
         'format_id',
         'sound_id',
+        'seat_layout_template_id',
         'capacity',
         'status',
     ];
@@ -40,6 +41,11 @@ class Screen extends Model
     public function sound(): BelongsTo
     {
         return $this->belongsTo(Sound::class);
+    }
+
+    public function seatLayoutTemplate(): BelongsTo
+    {
+        return $this->belongsTo(SeatLayoutTemplate::class);
     }
 
     public function seats(): HasMany
