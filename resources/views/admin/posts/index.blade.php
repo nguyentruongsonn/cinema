@@ -5,7 +5,8 @@
 @section('header_subtitle', 'Quản lý nội dung tin tức, blog và thông báo.')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/posts.css') }}">
+<link href="{{ asset('vendor/summernote/summernote-lite.min.css') }}" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset('css/admin/posts.css') }}?v={{ time() }}">
 @endpush
 
 @section('content')
@@ -83,67 +84,80 @@
 {{-- Modal ─────────────────────────────────────────────────────────── --}}
 <div class="modal fade" id="postModal" tabindex="-1" aria-labelledby="postModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content bg-dark text-white border-0">
+        <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="postModalLabel">
                     <i class="bi bi-file-text me-2"></i>Tạo bài viết mới
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <form id="postForm" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <input type="hidden" id="formMethod" value="POST">
-                    <input type="hidden" id="postIdInput">
+                <input type="hidden" id="formMethod" value="POST">
+                <input type="hidden" id="postIdInput">
 
+                <div class="modal-body">
                     <div class="row g-3">
+                        {{-- Tiêu đề & Slug --}}
                         <div class="col-md-8">
-                            <label class="form-label">Tiêu đề <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control bg-dark border-secondary text-white" 
-                                   id="postTitle" required>
+                            <label class="form-label" for="postTitle">Tiêu đề <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control bg-dark border-secondary text-white"
+                                   id="postTitle" required placeholder="Nhập tiêu đề bài viết...">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Slug</label>
-                            <input type="text" class="form-control bg-dark border-secondary text-white" 
+                            <label class="form-label" for="postSlug">Slug</label>
+                            <input type="text" class="form-control bg-dark border-secondary text-white"
                                    id="postSlug" placeholder="auto-generated">
                         </div>
+
+                        {{-- Danh mục & Ảnh --}}
                         <div class="col-md-6">
-                            <label class="form-label">Danh mục <span class="text-danger">*</span></label>
+                            <label class="form-label" for="postCategory">Danh mục <span class="text-danger">*</span></label>
                             <select class="form-select bg-dark border-secondary text-white" id="postCategory" required>
-                                <!-- Populated by JS -->
+                                {{-- Populated by JS --}}
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Ảnh đại diện</label>
-                            <input type="file" class="form-control bg-dark border-secondary text-white" 
+                            <label class="form-label" for="postImage">Ảnh đại diện</label>
+                            <input type="file" class="form-control bg-dark border-secondary text-white"
                                    id="postImage" accept="image/*">
-                            <small class="text-white-50">Max 5MB. Khuyến nghị 1200x630px</small>
+                            <small class="text-white-50">Max 5MB. Khuyến nghị 1200×630px</small>
                         </div>
+
+                        {{-- Tóm tắt --}}
                         <div class="col-12">
-                            <label class="form-label">Tóm tắt</label>
-                            <textarea class="form-control bg-dark border-secondary text-white" 
+                            <label class="form-label" for="postExcerpt">Tóm tắt</label>
+                            <textarea class="form-control bg-dark border-secondary text-white"
                                       id="postExcerpt" rows="2" placeholder="Mô tả ngắn về bài viết..."></textarea>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">Nội dung <span class="text-danger">*</span></label>
-                            <textarea class="form-control bg-dark border-secondary text-white" 
-                                      id="postContent" rows="6" required></textarea>
+
+                        {{-- Nội dung (Rich Text Editor) --}}
+                        <div class="col-12 mb-4">
+                            <label class="form-label" for="summernoteEditor">Nội dung <span class="text-danger">*</span></label>
+                            <textarea id="summernoteEditor" name="content" class="form-control bg-dark border-secondary text-white" rows="6" placeholder="Viết nội dung bài viết..."></textarea>
+                            <input type="hidden" id="postContent" required>
                         </div>
+
+                        {{-- Ngày xuất bản & Trạng thái --}}
                         <div class="col-md-6">
-                            <label class="form-label">Ngày xuất bản</label>
-                            <input type="datetime-local" class="form-control bg-dark border-secondary text-white" 
+                            <label class="form-label" for="postPublishedAt">Ngày xuất bản</label>
+                            <input type="datetime-local" class="form-control bg-dark border-secondary text-white"
                                    id="postPublishedAt">
                         </div>
                         <div class="col-md-6 d-flex align-items-end">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="postIsPublished">
-                                <label class="form-check-label" id="postStatusLabel">Xuất bản ngay</label>
+                            <div class="d-flex justify-content-between align-items-center w-100">
+                                <label class="form-label mb-0">Trạng thái xuất bản</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="postIsPublished">
+                                    <label class="form-check-label" for="postIsPublished" id="postStatusLabel">Xuất bản ngay</label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="admin-action-btn">Lưu bài viết</button>
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-primary-custom border-0">Lưu bài viết</button>
                 </div>
             </form>
         </div>
@@ -153,5 +167,7 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/pages/admin/posts.js') }}"></script>
+<script src="{{ asset('vendor/summernote/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ asset('vendor/summernote/summernote-lite.min.js') }}"></script>
+<script src="{{ asset('js/pages/admin/posts.js') }}?v={{ time() }}"></script>
 @endpush

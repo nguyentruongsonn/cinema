@@ -115,6 +115,10 @@
         els.idInput.value = '';
         els.isPublished.checked = false;
         els.statusLabel.textContent = 'Xuất bản ngay';
+        if (window.jQuery && window.jQuery.fn.summernote && window.jQuery('#summernoteEditor').length) {
+            window.jQuery('#summernoteEditor').summernote('code', '');
+        }
+        els.content.value = '';
     }
 
     function formatDateTimeLocal(dateString) {
@@ -140,6 +144,9 @@
             els.category.value = post.category || '';
             els.excerpt.value = post.excerpt || '';
             els.content.value = post.content || '';
+            if (window.jQuery && window.jQuery.fn.summernote && window.jQuery('#summernoteEditor').length) {
+                window.jQuery('#summernoteEditor').summernote('code', post.content || '');
+            }
             els.publishedAt.value = formatDateTimeLocal(post.published_at);
             els.isPublished.checked = post.is_published === 1 || post.is_published === true;
             els.statusLabel.textContent = els.isPublished.checked ? 'Xuất bản ngay' : 'Lưu nháp';
@@ -218,5 +225,31 @@
         } catch (error) { console.error('Error loading categories:', error); }
     }
 
-    document.addEventListener('DOMContentLoaded', () => { loadCategories(); loadData(1); });
+    document.addEventListener('DOMContentLoaded', () => { 
+        loadCategories(); 
+        loadData(1); 
+        
+        // Initialize Summernote
+        if (window.jQuery && window.jQuery.fn.summernote && window.jQuery('#summernoteEditor').length) {
+            window.jQuery('#summernoteEditor').summernote({
+                placeholder: 'Viết nội dung bài viết...',
+                tabsize: 2,
+                height: 250,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'italic', 'underline', 'strikethrough', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'video']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ],
+                callbacks: {
+                    onChange: function(contents, $editable) {
+                        els.content.value = contents === '<p><br></p>' ? '' : contents;
+                    }
+                }
+            });
+        }
+    });
 })();

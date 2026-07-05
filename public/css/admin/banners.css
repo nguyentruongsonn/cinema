@@ -1,252 +1,205 @@
-/**
- * Banners Management - banners.css
- * Styling specific to banners management page
- */
+/* ── Banners Admin Modal - Premium Dark Theme ─────────────────────────── */
 
-/* Position badges */
-.badge-position {
-    padding: 0.375rem 0.75rem;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.75rem;
-    display: inline-block;
+#bannerModal .modal-content {
+    background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        0 32px 96px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+    color: #f1f1f3 !important;
 }
 
-.badge-position-home_slider {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+/* Header */
+#bannerModal .modal-header {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.25rem 1.5rem !important;
 }
 
-.badge-position-sidebar {
-    background: rgba(168, 85, 247, 0.15);
-    color: #c084fc;
-    border: 1px solid rgba(168, 85, 247, 0.3);
+#bannerModal .modal-title {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    letter-spacing: 0.02em;
 }
 
-.badge-position-popup {
-    background: rgba(234, 179, 8, 0.15);
-    color: #fbbf24;
-    border: 1px solid rgba(234, 179, 8, 0.3);
+#bannerModal .modal-title i {
+    color: #a1a1aa;
 }
 
-.badge-position-top_bar {
-    background: rgba(34, 197, 94, 0.15);
-    color: #4ade80;
-    border: 1px solid rgba(34, 197, 94, 0.3);
+/* Body */
+#bannerModal .modal-body {
+    background: transparent !important;
+    padding: 1.5rem !important;
+    max-height: 75vh;
+    overflow-y: auto;
 }
 
-.badge-position-footer {
-    background: rgba(107, 114, 128, 0.15);
-    color: #9ca3af;
-    border: 1px solid rgba(107, 114, 128, 0.3);
-}
+/* Scrollbar */
+#bannerModal .modal-body::-webkit-scrollbar { width: 5px; }
+#bannerModal .modal-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
+#bannerModal .modal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 
-/* Banner image preview in table */
-.banner-image-preview {
-    width: 100px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: transform 0.2s ease;
-    cursor: pointer;
-}
-
-.banner-image-preview:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* Table styling */
-.table-dark thead th {
-    font-weight: 600;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: rgba(255, 255, 255, 0.7);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-.table-dark tbody tr {
-    transition: background-color 0.2s ease;
-}
-
-.table-dark tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-/* Banner title in table */
-.banner-title {
-    font-weight: 500;
-    color: #fff;
-}
-
-.banner-description {
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.5);
-    display: block;
-    margin-top: 0.25rem;
-}
-
-/* Display order badge */
-.order-badge {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Status toggle */
-.form-check-input:checked {
-    background-color: #22c55e;
-    border-color: #22c55e;
-}
-
-/* Action buttons */
-.btn-edit-banner {
-    transition: all 0.2s ease;
-}
-
-.btn-edit-banner:hover {
-    background: rgba(59, 130, 246, 0.2) !important;
-    color: #60a5fa !important;
-}
-
-.btn-delete-banner {
-    transition: all 0.2s ease;
-}
-
-.btn-delete-banner:hover {
-    background: rgba(239, 68, 68, 0.2) !important;
-    color: #f87171 !important;
-}
-
-/* Modal styling */
-.modal-content {
-    background: #1a1d20 !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+/* Form labels */
+#bannerModal .form-label {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.07em !important;
+    text-transform: uppercase !important;
+    color: #71717a !important;
+    margin-bottom: 0.4rem !important;
 }
 
 /* Form controls */
-.form-control:focus,
-.form-select:focus {
-    background-color: #212529;
-    border-color: #e50914;
-    color: white;
-    box-shadow: 0 0 0 0.25rem rgba(229, 9, 20, 0.25);
+#bannerModal .form-control,
+#bannerModal .form-select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #f1f1f3 !important;
+    border-radius: 8px !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.9rem !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
 }
 
-/* Image upload preview in modal */
-.image-upload-preview {
-    margin-top: 1rem;
-    max-width: 100%;
-    max-height: 200px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+#bannerModal .form-control:focus,
+#bannerModal .form-select:focus {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
+    color: #fff !important;
+    outline: none !important;
 }
 
-/* Date range display */
-.date-range {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
+#bannerModal .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.2) !important;
 }
 
-.date-range.active {
-    color: #4ade80;
+#bannerModal textarea.form-control {
+    resize: vertical;
+    min-height: 72px;
 }
 
-.date-range.expired {
-    color: #f87171;
+#bannerModal input[type="file"].form-control {
+    padding: 0.4rem 0.85rem !important;
+    cursor: pointer;
 }
 
-/* Pagination */
-.pagination .page-link {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
+/* Dropdown options */
+#bannerModal .form-select option {
+    background: #1e1e24 !important;
+    color: #f1f1f3 !important;
 }
 
-.pagination .page-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: white;
+/* Image preview box */
+#bannerModal #imagePreviewContainer {
+    border-radius: 10px;
+    overflow: hidden;
 }
 
-.pagination .page-item.active .page-link {
-    background-color: #e50914;
-    border-color: #e50914;
-    color: white;
-}
-
-.pagination .page-item.disabled .page-link {
-    background-color: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.3);
-}
-
-/* Search form */
-.input-group-text {
-    background-color: #212529;
-    border-color: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.5);
-}
-
-/* Card styling */
-.card {
-    background: #1a1d20;
-    border: none;
-}
-
-.card-body {
-    background: #1a1d20;
-}
-
-.card-footer {
-    background: #151719;
-}
-
-/* Click count badge */
-.click-count {
-    display: inline-flex;
+#bannerModal #imagePreviewContainer .preview-wrap {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    display: flex;
     align-items: center;
-    gap: 0.25rem;
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.6);
+    justify-content: center;
+    min-height: 140px;
+    overflow: hidden;
 }
 
-.click-count i {
-    color: #60a5fa;
+#bannerModal #imagePreview {
+    max-width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    border-radius: 6px;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .table-responsive {
-        font-size: 0.875rem;
-    }
-    
-    .badge-position {
-        font-size: 0.7rem;
-        padding: 0.25rem 0.5rem;
-    }
-    
-    .banner-image-preview {
-        width: 80px;
-        height: 48px;
-    }
-    
-    .btn-group .btn {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
+/* Toggle switch */
+#bannerModal .form-check-input[type="checkbox"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+#bannerModal .form-check-input[type="checkbox"]:checked {
+    background-color: #f97316 !important;
+    border-color: #f97316 !important;
+}
+
+#bannerModal .form-check-input[type="checkbox"][role="switch"] {
+    width: 2.4em !important;
+    height: 1.3em !important;
+}
+
+#bannerModal .form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18) !important;
+}
+
+#bannerModal .form-check-label {
+    color: #a1a1aa !important;
+    font-size: 0.85rem !important;
+    cursor: pointer;
+}
+
+/* Small hint text */
+#bannerModal small {
+    color: #52525b !important;
+    font-size: 0.75rem !important;
+}
+
+/* HR divider */
+#bannerModal hr {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    margin: 1rem 0 !important;
+}
+
+/* Footer */
+#bannerModal .modal-footer {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 0 0 16px 16px !important;
+    padding: 1rem 1.5rem !important;
+}
+
+/* Cancel button */
+#bannerModal .modal-footer .btn-cancel {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #d4d4d8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.25rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    transition: background 0.2s !important;
+}
+
+#bannerModal .modal-footer .btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Submit button */
+#bannerModal .btn-primary-custom {
+    background: linear-gradient(135deg, #f97316 0%, #ea6c00 100%) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.5rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.3) !important;
+    transition: all 0.2s !important;
+}
+
+#bannerModal .btn-primary-custom:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.45) !important;
+}
+
+/* Backdrop */
+.modal-backdrop.show {
+    opacity: 0.72 !important;
 }

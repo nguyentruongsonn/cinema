@@ -23,14 +23,17 @@
         image: document.getElementById('bannerImage'),
         position: document.getElementById('bannerPosition'),
         link: document.getElementById('bannerLink'),
-        order: document.getElementById('bannerOrder'),
+        order: document.getElementById('bannerDisplayOrder'),
         startDate: document.getElementById('bannerStartDate'),
         endDate: document.getElementById('bannerEndDate'),
         isActive: document.getElementById('bannerIsActive'),
         statusLabel: document.getElementById('bannerStatusLabel'),
+        previewContainer: document.getElementById('imagePreviewContainer'),
+        previewWrap: document.querySelector('.preview-wrap'),
     };
 
     let currentPage = 1, currentSearch = '', currentStatus = 'all', currentPosition = 'all';
+    let selectedFiles = [];
 
     function getModalInstance() {
         return bootstrap.Modal.getOrCreateInstance(els.modalEl);
@@ -127,7 +130,7 @@
         els.formMethod.value = 'POST';
         els.idInput.value = '';
         els.isActive.checked = true;
-        els.statusLabel.textContent = 'Hiển thị banner';
+        els.statusLabel.textContent = 'Đang hoạt động';
         els.image.required = true;
     }
 
@@ -137,9 +140,79 @@
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
 
-    if (els.btnCreate) els.btnCreate.addEventListener('click', () => { resetForm(); els.modalLabel.innerHTML = '<i class="bi bi-image me-2"></i>Tạo banner mới'; getModalInstance()?.show(); });
+    if (els.btnCreate) els.btnCreate.addEventListener('click', () => { 
+        resetForm(); 
+        selectedFiles = [];
+        els.modalLabel.innerHTML = '<i class="bi bi-image me-2"></i>Tạo banner mới'; 
+        getModalInstance()?.show(); 
+    });
 
-    if (els.isActive && els.statusLabel) els.isActive.addEventListener('change', () => { els.statusLabel.textContent = els.isActive.checked ? 'Hiển thị banner' : 'Ẩn banner'; });
+    if (els.isActive && els.statusLabel) els.isActive.addEventListener('change', () => { els.statusLabel.textContent = els.isActive.checked ? 'Đang hoạt động' : 'Tạm dừng'; });
+
+    function renderPreviews() {
+        els.previewContainer.style.display = 'none';
+        els.previewWrap.innerHTML = '';
+        
+        if (selectedFiles.length > 0) {
+            els.previewContainer.style.display = 'block';
+            els.previewWrap.style.display = 'flex';
+            els.previewWrap.style.flexWrap = 'wrap';
+            els.previewWrap.style.gap = '10px';
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const wrap = document.createElement('div');
+                    wrap.style.position = 'relative';
+                    wrap.style.display = 'inline-block';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.height = '80px';
+                    img.style.width = '120px';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '6px';
+                    img.style.border = '1px solid rgba(255,255,255,0.1)';
+                    
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.innerHTML = '<i class="bi bi-x"></i>';
+                    btn.style.position = 'absolute';
+                    btn.style.top = '-6px';
+                    btn.style.right = '-6px';
+                    btn.style.background = '#ef4444';
+                    btn.style.color = 'white';
+                    btn.style.border = 'none';
+                    btn.style.borderRadius = '50%';
+                    btn.style.width = '20px';
+                    btn.style.height = '20px';
+                    btn.style.lineHeight = '1';
+                    btn.style.padding = '0';
+                    btn.style.fontSize = '14px';
+                    btn.style.cursor = 'pointer';
+                    btn.onclick = function() {
+                        selectedFiles.splice(index, 1);
+                        renderPreviews();
+                        // Reset file input if empty
+                        if(selectedFiles.length === 0) els.image.value = '';
+                    };
+                    
+                    wrap.appendChild(img);
+                    wrap.appendChild(btn);
+                    els.previewWrap.appendChild(wrap);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    els.image.addEventListener('change', function () {
+        if (this.files && this.files.length > 0) {
+            // Append new files to existing selection
+            Array.from(this.files).forEach(f => selectedFiles.push(f));
+            renderPreviews();
+        }
+    });
 
     els.tableBody.addEventListener('click', async (e) => {
         const btnEdit = e.target.closest('.btn-edit-banner');
@@ -151,13 +224,19 @@
             els.modalLabel.innerHTML = '<i class="bi bi-image me-2"></i>Cập nhật banner';
             els.title.value = banner.title || '';
             els.description.value = banner.description || '';
+            
+            // Show single image for edit
+            els.previewWrap.innerHTML = `<img src="/storage/${banner.image_path}" style="height:80px; width:120px; object-fit:cover; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">`;
+            els.previewContainer.style.display = 'block';
+            selectedFiles = [];
+            
             els.position.value = banner.position || '';
             els.link.value = banner.link_url || '';
             els.order.value = banner.display_order || 0;
             els.startDate.value = formatDateTimeLocal(banner.start_date);
             els.endDate.value = formatDateTimeLocal(banner.end_date);
             els.isActive.checked = banner.is_active === 1 || banner.is_active === true;
-            els.statusLabel.textContent = els.isActive.checked ? 'Hiển thị banner' : 'Ẩn banner';
+            els.statusLabel.textContent = els.isActive.checked ? 'Đang hoạt động' : 'Tạm dừng';
             els.image.required = false;
             getModalInstance()?.show();
             return;
@@ -194,7 +273,16 @@
             const formData = new FormData();
             formData.append('title', els.title.value.trim());
             if (els.description.value.trim()) formData.append('description', els.description.value.trim());
-            if (els.image.files[0]) formData.append('image_path', els.image.files[0]);
+            
+            if (isEdit) {
+                if (els.image.files[0]) formData.append('image_path', els.image.files[0]);
+                else if (selectedFiles.length > 0) formData.append('image_path', selectedFiles[selectedFiles.length - 1]);
+            } else {
+                selectedFiles.forEach(file => {
+                    formData.append('image_paths[]', file);
+                });
+            }
+            
             formData.append('position', els.position.value);
             if (els.link.value.trim()) formData.append('link_url', els.link.value.trim());
             formData.append('display_order', els.order.value || 0);

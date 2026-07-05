@@ -70,7 +70,8 @@ class BannerController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image_path' => 'required|image|max:5120',
+            'image_paths' => 'required|array|min:1',
+            'image_paths.*' => 'image|max:5120',
             'link_url' => 'nullable|url',
             'position' => 'required|in:home_slider,sidebar,popup,top_bar,footer',
             'display_order' => 'nullable|integer|min:0',
@@ -79,19 +80,23 @@ class BannerController extends Controller
             'end_date' => 'nullable|date|after:start_date',
         ]);
 
-        // Handle image upload
-        if ($request->hasFile('image_path')) {
-            $path = $request->file('image_path')->store('banners', 'public');
-            $validated['image_path'] = $path;
-        }
-
+        $banners = [];
         $validated['display_order'] = $validated['display_order'] ?? 0;
 
-        $banner = Banner::create($validated);
+        // Loop through each uploaded image and create a banner
+        foreach ($request->file('image_paths') as $file) {
+            $path = $file->store('banners', 'public');
+            
+            $data = $validated;
+            $data['image_path'] = $path;
+            unset($data['image_paths']);
+            
+            $banners[] = Banner::create($data);
+        }
 
         return response()->json([
-            'message' => 'Tạo banner thành công',
-            'data' => $banner
+            'message' => 'Tạo ' . count($banners) . ' banner thành công',
+            'data' => $banners
         ], 201);
     }
 
