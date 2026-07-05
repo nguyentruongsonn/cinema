@@ -45,4 +45,12 @@ class Product extends Model
     {
         return $query->where('stock', '>', 0);
     }
+
+    /**
+     * Các combo có chứa món này (product được dùng trong combo nào)
+     */
+    public function usedInCombos()
+    {
+        return $this->hasMany(ComboItem::class, 'product_id');
+    }
 }

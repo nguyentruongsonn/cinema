@@ -1,6 +1,6 @@
-/* ── Movie Admin Modal - Premium Dark Theme ───────────────────────────── */
+/* ── Product Admin Modal - Premium Dark Theme ─────────────────────────── */
 
-#movieModal .modal-content {
+#productModal .modal-content {
     background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 16px !important;
@@ -11,45 +11,45 @@
 }
 
 /* Header */
-#movieModal .modal-header {
+#productModal .modal-header {
     background: rgba(255, 255, 255, 0.03) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 16px 16px 0 0 !important;
     padding: 1.25rem 1.5rem !important;
 }
 
-#movieModal .modal-title {
+#productModal .modal-title {
     font-size: 1.05rem !important;
     font-weight: 700 !important;
     color: #ffffff !important;
     letter-spacing: 0.02em;
 }
 
-#movieModal .modal-title i {
+#productModal .modal-title i {
     color: #a1a1aa;
 }
 
 /* Body */
-#movieModal .modal-body {
+#productModal .modal-body {
     background: transparent !important;
     padding: 1.5rem !important;
 }
 
 /* Scrollbar inside modal body */
-#movieModal .modal-body::-webkit-scrollbar {
+#productModal .modal-body::-webkit-scrollbar {
     width: 5px;
 }
-#movieModal .modal-body::-webkit-scrollbar-track {
+#productModal .modal-body::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.03);
     border-radius: 4px;
 }
-#movieModal .modal-body::-webkit-scrollbar-thumb {
+#productModal .modal-body::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 4px;
 }
 
 /* Form labels */
-#movieModal .form-label {
+#productModal .form-label {
     font-size: 0.75rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.07em !important;
@@ -59,8 +59,8 @@
 }
 
 /* Form controls */
-#movieModal .form-control,
-#movieModal .form-select {
+#productModal .form-control,
+#productModal .form-select {
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     color: #f1f1f3 !important;
@@ -70,8 +70,8 @@
     transition: border-color 0.2s, box-shadow 0.2s !important;
 }
 
-#movieModal .form-control:focus,
-#movieModal .form-select:focus {
+#productModal .form-control:focus,
+#productModal .form-select:focus {
     background: rgba(255, 255, 255, 0.07) !important;
     border-color: rgba(255, 255, 255, 0.3) !important;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
@@ -79,52 +79,29 @@
     outline: none !important;
 }
 
-#movieModal .form-control::placeholder {
+#productModal .form-control::placeholder {
     color: rgba(255, 255, 255, 0.2) !important;
 }
 
-#movieModal textarea.form-control {
+#productModal textarea.form-control {
     resize: vertical;
     min-height: 90px;
 }
 
 /* Dropdown options */
-#movieModal .form-select option {
+#productModal .form-select option {
     background: #1e1e24 !important;
     color: #f1f1f3 !important;
 }
 
 /* HR divider */
-#movieModal hr {
+#productModal hr {
     border-color: rgba(255, 255, 255, 0.08) !important;
     margin: 1rem 0 !important;
 }
 
-/* Category checkboxes */
-#movieModal .category-cb {
-    background-color: rgba(255, 255, 255, 0.06) !important;
-    border-color: rgba(255, 255, 255, 0.18) !important;
-    cursor: pointer;
-}
-
-#movieModal .category-cb:checked {
-    background-color: #f97316 !important;
-    border-color: #f97316 !important;
-}
-
-#movieModal .form-check-label.small {
-    color: #71717a !important;
-    cursor: pointer;
-    font-size: 0.82rem !important;
-    transition: color 0.15s;
-}
-
-#movieModal .form-check-input:checked + .form-check-label {
-    color: #e4e4e7 !important;
-}
-
 /* Toggle switches */
-#movieModal .form-check-input[type="checkbox"][role="switch"] {
+#productModal .form-check-input[type="checkbox"][role="switch"] {
     background-color: rgba(255, 255, 255, 0.1) !important;
     border-color: rgba(255, 255, 255, 0.18) !important;
     width: 2.4em !important;
@@ -133,29 +110,29 @@
     transition: background-color 0.2s, border-color 0.2s;
 }
 
-#movieModal .form-check-input[type="checkbox"][role="switch"]:checked {
+#productModal .form-check-input[type="checkbox"][role="switch"]:checked {
     background-color: #f97316 !important;
     border-color: #f97316 !important;
 }
 
-#movieModal .form-check-input[type="checkbox"][role="switch"]:focus {
+#productModal .form-check-input[type="checkbox"][role="switch"]:focus {
     box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18) !important;
 }
 
 /* Toggle labels */
-#movieModal .form-check-label {
+#productModal .form-check-label {
     color: #a1a1aa !important;
     font-size: 0.85rem !important;
 }
 
-/* Poster preview box */
-#movieModal #posterPreview {
+/* Image preview box */
+#productModal #imagePreview {
     border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
 /* Footer */
-#movieModal .modal-footer {
+#productModal .modal-footer {
     background: rgba(255, 255, 255, 0.02) !important;
     border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
     border-radius: 0 0 16px 16px !important;
@@ -163,7 +140,7 @@
 }
 
 /* Cancel button */
-#movieModal .modal-footer .btn {
+#productModal .modal-footer .btn {
     background: rgba(255, 255, 255, 0.07) !important;
     color: #d4d4d8 !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -174,12 +151,12 @@
     transition: background 0.2s !important;
 }
 
-#movieModal .modal-footer .btn:hover {
+#productModal .modal-footer .btn:hover {
     background: rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Submit button */
-#movieModal .btn-primary-custom {
+#productModal .btn-primary-custom {
     background: linear-gradient(135deg, #e50914 0%, #b8070f 100%) !important;
     color: #fff !important;
     border-radius: 8px !important;
@@ -191,12 +168,7 @@
     transition: all 0.2s !important;
 }
 
-#movieModal .btn-primary-custom:hover {
+#productModal .btn-primary-custom:hover {
     transform: translateY(-1px) !important;
     box-shadow: 0 6px 20px rgba(249, 115, 22, 0.45) !important;
-}
-
-/* Backdrop */
-.modal-backdrop.show {
-    opacity: 0.72 !important;
 }

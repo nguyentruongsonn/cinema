@@ -67,9 +67,9 @@
 .admin-filter-input:focus,
 .admin-filter-select:focus {
     outline: none;
-    border-color: rgba(255,17,29,0.4);
+    border-color: rgba(229,9,20,0.4);
     background: rgba(30,30,35,0.8);
-    box-shadow: 0 0 0 3px rgba(255,17,29,0.08);
+    box-shadow: 0 0 0 3px rgba(229,9,20,0.08);
 }
 
 .admin-filter-select option {
@@ -80,7 +80,7 @@
 .admin-filter-btn,
 .admin-action-btn {
     padding: 0.65rem 1.5rem;
-    background: linear-gradient(135deg, #FF111D 0%, #c70d17 100%);
+    background: linear-gradient(135deg, #e50914 0%, #b8070f 100%);
     border: none;
     border-radius: 8px;
     color: #fff;
@@ -97,12 +97,62 @@
 .admin-filter-btn:hover,
 .admin-action-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(255,17,29,0.3);
+    box-shadow: 0 8px 20px rgba(229,9,20,0.3);
 }
 
 .admin-filter-btn:active,
 .admin-action-btn:active {
     transform: translateY(0);
+}
+
+/* ─── Admin Primary Buttons ──────────────────────────────────────────────── */
+
+.btn-primary-custom,
+.admin-primary-btn,
+.admin-action-btn,
+.admin-filter-btn,
+.admin-page .btn-primary,
+.admin-main .btn-primary,
+.admin-content .btn-primary {
+    background: linear-gradient(135deg, #e50914 0%, #b8070f 100%) !important;
+    border-color: #e50914 !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(229,9,20,0.22);
+}
+
+.btn-primary-custom:hover,
+.admin-primary-btn:hover,
+.admin-action-btn:hover,
+.admin-filter-btn:hover,
+.admin-page .btn-primary:hover,
+.admin-main .btn-primary:hover,
+.admin-content .btn-primary:hover {
+    background: linear-gradient(135deg, #ff1f2a 0%, #e50914 100%) !important;
+    border-color: #e50914 !important;
+    color: #fff !important;
+    box-shadow: 0 8px 24px rgba(229,9,20,0.35);
+}
+
+.btn-primary-custom:focus,
+.admin-primary-btn:focus,
+.admin-action-btn:focus,
+.admin-filter-btn:focus,
+.admin-page .btn-primary:focus,
+.admin-main .btn-primary:focus,
+.admin-content .btn-primary:focus {
+    border-color: #e50914 !important;
+    box-shadow: 0 0 0 0.2rem rgba(229,9,20,0.25) !important;
+}
+
+.btn-primary-custom:active,
+.admin-primary-btn:active,
+.admin-action-btn:active,
+.admin-filter-btn:active,
+.admin-page .btn-primary:active,
+.admin-main .btn-primary:active,
+.admin-content .btn-primary:active {
+    background: #b8070f !important;
+    border-color: #b8070f !important;
 }
 
 /* ─── Table Styles ──────────────────────────────────────────────────────── */
@@ -177,15 +227,15 @@
 }
 
 .admin-btn-icon:hover {
-    background: rgba(255,17,29,0.15);
-    border-color: rgba(255,17,29,0.3);
+    background: rgba(229,9,20,0.15);
+    border-color: rgba(229,9,20,0.3);
     color: #ff5865;
 }
 
 .admin-btn-icon.admin-btn-edit:hover {
-    background: rgba(59,130,246,0.15);
-    border-color: rgba(59,130,246,0.3);
-    color: #60a5fa;
+    background: rgba(229,9,20,0.15);
+    border-color: rgba(229,9,20,0.3);
+    color: #ff5865;
 }
 
 .admin-btn-icon.admin-btn-delete:hover {
@@ -273,7 +323,7 @@
 }
 
 .admin-stat-icon.stat-primary {
-    background: rgba(255,17,29,0.15);
+    background: rgba(229,9,20,0.15);
     color: #ff5865;
 }
 

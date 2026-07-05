@@ -94,6 +94,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')

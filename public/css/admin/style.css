@@ -21,12 +21,11 @@ body {
     min-height: 100vh;
 }
 
-/* Sidebar - Collapsible */
 .admin-sidebar {
     width: 280px;
     min-width: 280px;
-    background-color: var(--bg-sidebar);
-    border-right: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
     transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
     position: relative;
@@ -413,8 +412,8 @@ body {
 
 /* Stats Cards */
 .stat-card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
     padding: 1.5rem;
     height: 100%;
@@ -491,8 +490,8 @@ body {
 
 /* Chart Cards */
 .chart-card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
     padding: 1.5rem;
     height: 100%;

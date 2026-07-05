@@ -12,9 +12,10 @@ class ProductSeeder extends Seeder
         $now = now();
 
         $products = [
+            // Foods
             [
                 'name' => 'Bắp rang bơ size M',
-                'type' => 'popcorn',
+                'type' => 'food',
                 'price' => 45000,
                 'stock' => 200,
                 'image_url' => '/images/products/popcorn-m.jpg',
@@ -23,7 +24,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Bắp rang bơ size L',
-                'type' => 'popcorn',
+                'type' => 'food',
                 'price' => 55000,
                 'stock' => 200,
                 'image_url' => '/images/products/popcorn-l.jpg',
@@ -32,7 +33,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Bắp phô mai size L',
-                'type' => 'popcorn',
+                'type' => 'food',
                 'price' => 65000,
                 'stock' => 150,
                 'image_url' => '/images/products/popcorn-cheese-l.jpg',
@@ -76,44 +77,8 @@ class ProductSeeder extends Seeder
                 'status' => 1,
             ],
             [
-                'name' => 'Combo Solo',
-                'type' => 'combo',
-                'price' => 75000,
-                'stock' => 150,
-                'image_url' => '/images/products/combo-solo.jpg',
-                'description' => '01 bắp size M + 01 nước size M.',
-                'status' => 1,
-            ],
-            [
-                'name' => 'Combo Couple',
-                'type' => 'combo',
-                'price' => 129000,
-                'stock' => 150,
-                'image_url' => '/images/products/combo-couple.jpg',
-                'description' => '01 bắp size L + 02 nước size M, phù hợp cho 2 người.',
-                'status' => 1,
-            ],
-            [
-                'name' => 'Combo Family',
-                'type' => 'combo',
-                'price' => 199000,
-                'stock' => 100,
-                'image_url' => '/images/products/combo-family.jpg',
-                'description' => '02 bắp size L + 04 nước size M, phù hợp gia đình/nhóm bạn.',
-                'status' => 1,
-            ],
-            [
-                'name' => 'Combo VIP',
-                'type' => 'combo',
-                'price' => 249000,
-                'stock' => 80,
-                'image_url' => '/images/products/combo-vip.jpg',
-                'description' => '02 bắp phô mai size L + 02 nước size L + snack.',
-                'status' => 1,
-            ],
-            [
                 'name' => 'Snack khoai tây',
-                'type' => 'snack',
+                'type' => 'food',
                 'price' => 35000,
                 'stock' => 180,
                 'image_url' => '/images/products/potato-snack.jpg',
@@ -133,6 +98,6 @@ class ProductSeeder extends Seeder
             );
         }
 
-        $this->command->info('Products and combos seeded successfully!');
+        $this->command->info('Products seeded successfully!');
     }
 }

@@ -32,6 +32,8 @@ class DatabaseSeeder extends Seeder
             // Promotions and concessions
             PromotionSeeder::class,
             ProductSeeder::class,
+            ComboSeeder::class,      // Phải chạy sau ProductSeeder
+            ComboItemSeeder::class,  // Phải chạy sau ComboSeeder
 
             // Movies (independent)
             MovieSeeder::class,

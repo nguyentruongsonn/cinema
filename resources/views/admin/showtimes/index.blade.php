@@ -127,15 +127,15 @@
 {{-- ── Modal: Thêm suất chiếu (2 tabs) ─────────────────── --}}
 <div class="modal fade" id="addShowtimeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content border-0" id="showtimeModalContent">
-            <div class="modal-header" id="showtimeModalHeader">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
                 <h5 class="modal-title">
                     <i class="bi bi-calendar-plus me-2"></i>Thêm suất chiếu
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
-            <div class="modal-body" id="showtimeModalBody">
+            <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
                 {{-- Tabs --}}
                 <ul class="nav nav-tabs combo-tabs mb-4" id="addModeTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -163,7 +163,7 @@
                                         {{-- Chọn phim --}}
                                         <div class="col-md-12">
                                             <label class="form-label text-secondary">Phim <span class="text-danger">*</span></label>
-                                            <select class="form-select filter-input" id="mMovieId" name="movie_id" required>
+                                            <select class="form-select bg-dark text-white border-secondary" id="mMovieId" name="movie_id" required>
                                                 <option value="">-- Chọn phim --</option>
                                             </select>
                                         </div>
@@ -171,7 +171,7 @@
                                         {{-- Chọn rạp --}}
                                         <div class="col-md-4">
                                             <label class="form-label text-secondary">Rạp chiếu <span class="text-danger">*</span></label>
-                                            <select class="form-select filter-input" id="mTheaterId" required>
+                                            <select class="form-select bg-dark text-white border-secondary" id="mTheaterId" required>
                                                 <option value="">-- Chọn rạp --</option>
                                             </select>
                                         </div>
@@ -179,7 +179,7 @@
                                         {{-- Chọn phòng --}}
                                         <div class="col-md-4">
                                             <label class="form-label text-secondary">Phòng chiếu <span class="text-danger">*</span></label>
-                                            <select class="form-select filter-input" id="mScreenId" name="screen_id" disabled required>
+                                            <select class="form-select bg-dark text-white border-secondary" id="mScreenId" name="screen_id" disabled required>
                                                 <option value="">-- Chọn phòng --</option>
                                             </select>
                                         </div>
@@ -187,11 +187,11 @@
                                         {{-- Ngày từ / đến --}}
                                         <div class="col-md-4">
                                             <label class="form-label text-secondary">Ngày bắt đầu <span class="text-danger">*</span></label>
-                                            <input type="date" class="filter-input w-100" id="mDateFrom" name="date_from" required>
+                                            <input type="date" class="form-control bg-dark text-white border-secondary" id="mDateFrom" name="date_from" required>
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label text-secondary">Ngày kết thúc <span class="text-danger">*</span></label>
-                                            <input type="date" class="filter-input w-100" id="mDateTo" name="date_to" required>
+                                            <input type="date" class="form-control bg-dark text-white border-secondary" id="mDateTo" name="date_to" required>
                                         </div>
 
                                         {{-- Các giờ chiếu --}}
@@ -201,7 +201,7 @@
                                             </label>
                                             <div class="d-flex align-items-center gap-2 flex-wrap mb-2" id="timeSlotTags"></div>
                                             <div class="d-flex gap-2">
-                                                <input type="time" class="filter-input time-input-sm" id="mTimeInput">
+                                                <input type="time" class="form-control bg-dark text-white border-secondary time-input-sm" id="mTimeInput">
                                                 <button type="button" class="btn btn-sm btn-add-time" id="mAddTimeBtn">
                                                     <i class="bi bi-plus"></i> Thêm giờ
                                                 </button>
@@ -211,13 +211,13 @@
                                         {{-- Định dạng --}}
                                         <div class="col-md-6">
                                             <label class="form-label text-secondary">Định dạng hình ảnh</label>
-                                            <select class="form-select filter-input" id="mFormatId" name="format_id">
+                                            <select class="form-select bg-dark text-white border-secondary" id="mFormatId" name="format_id">
                                                 <option value="">-- Mặc định --</option>
                                             </select>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label text-secondary">Phiên bản phim</label>
-                                            <select class="form-select filter-input" id="mVersionTypeId" name="version_type_id">
+                                            <select class="form-select bg-dark text-white border-secondary" id="mVersionTypeId" name="version_type_id">
                                                 <option value="">-- Chọn phiên bản --</option>
                                             </select>
                                         </div>
@@ -277,7 +277,7 @@
                                         {{-- Chọn phim --}}
                                         <div class="col-md-12">
                                             <label class="form-label text-secondary">Phim <span class="text-danger">*</span></label>
-                                            <select class="form-select filter-input" id="sMovieId" name="movie_id" required>
+                                            <select class="form-select bg-dark text-white border-secondary" id="sMovieId" name="movie_id" required>
                                                 <option value="">-- Chọn phim --</option>
                                             </select>
                                         </div>
@@ -285,19 +285,19 @@
                                         {{-- Ngày chiếu --}}
                                         <div class="col-md-4">
                                             <label class="form-label text-secondary">Ngày chiếu <span class="text-danger">*</span></label>
-                                            <input type="date" class="filter-input w-100" id="sDate" name="date" required>
+                                            <input type="date" class="form-control bg-dark text-white border-secondary" id="sDate" name="date" required>
                                         </div>
 
                                         {{-- Định dạng --}}
                                         <div class="col-md-6">
                                             <label class="form-label text-secondary">Định dạng hình ảnh</label>
-                                            <select class="form-select filter-input" id="sFormatId" name="format_id">
+                                            <select class="form-select bg-dark text-white border-secondary" id="sFormatId" name="format_id">
                                                 <option value="">-- Mặc định --</option>
                                             </select>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label text-secondary">Phiên bản phim</label>
-                                            <select class="form-select filter-input" id="sVersionTypeId" name="version_type_id">
+                                            <select class="form-select bg-dark text-white border-secondary" id="sVersionTypeId" name="version_type_id">
                                                 <option value="">-- Chọn phiên bản --</option>
                                             </select>
                                         </div>
@@ -363,18 +363,18 @@
 {{-- ── Modal: Sửa lịch chiếu ─────────────────────────────── --}}
 <div class="modal fade" id="editShowtimeModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0" id="showtimeModalContent">
-            <div class="modal-header" id="showtimeModalHeader">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
                 <h5 class="modal-title">
                     <i class="bi bi-pencil-square me-2"></i>Cập nhật lịch chiếu
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <form id="editShowtimeForm">
                 <input type="hidden" id="editShowtimeFormMethod" value="PUT">
                 <input type="hidden" name="showtime_id" id="editShowtimeIdInput" value="">
 
-                <div class="modal-body" id="showtimeModalBody">
+                <div class="modal-body">
                     <div class="row mb-3 g-3">
                         <div class="col-md-12">
                             <label class="form-label text-secondary">Phim <span class="text-danger">*</span></label>
@@ -432,10 +432,8 @@
                     </div>
                 </div>
 
-                <div class="modal-footer" id="showtimeModalFooter">
-                    <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">
-                        Hủy bỏ
-                    </button>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0" id="editShowtimeSubmitBtn">Lưu thay đổi</button>
                 </div>
             </form>

@@ -74,18 +74,18 @@
 
                 <!-- Statistics -->
                 <li class="nav-item has-submenu">
-                    <a href="#menuThongKe" 
-                       class="nav-link {{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.*') ? 'active' : '' }}" 
-                       data-bs-toggle="collapse" 
+                    <a href="#menuThongKe"
+                       class="nav-link {{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.stats') ? 'active' : '' }}"
+                       data-bs-toggle="collapse"
                        role="button" 
-                       aria-expanded="{{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.*') ? 'true' : 'false' }}" 
+                       aria-expanded="{{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.stats') ? 'true' : 'false' }}" 
                        aria-controls="menuThongKe"
                        data-bs-tooltip="Thống kê">
                         <i class="bi bi-bar-chart"></i>
                         <span class="nav-text">Thống kê</span>
                         <i class="bi bi-chevron-down submenu-arrow"></i>
                     </a>
-                    <div class="collapse {{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.*') ? 'show' : '' }}" id="menuThongKe">
+                    <div class="collapse {{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.stats') ? 'show' : '' }}" id="menuThongKe">
                         <ul class="nav flex-column submenu">
                             <li class="nav-item">
                                 <a href="{{ route('admin.revenue.index') }}" class="nav-link {{ request()->routeIs('admin.revenue.index') ? 'active' : '' }}">
@@ -98,7 +98,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('admin.combos.index') }}" class="nav-link {{ request()->routeIs('admin.combos.index') ? 'active' : '' }}">
+                                <a href="{{ route('admin.combos.stats') }}" class="nav-link {{ request()->routeIs('admin.combos.stats') ? 'active' : '' }}">
                                     Thống kê combo
                                 </a>
                             </li>
@@ -153,21 +153,22 @@
 
                 <!-- Services & Offers -->
                 <li class="nav-item has-submenu">
-                    <a href="#menuDichVu" 
-                       class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" 
-                       data-bs-toggle="collapse" 
+                    <a href="#menuDichVu"
+                       class="nav-link {{ request()->routeIs('admin.products.*', 'admin.combos.index', 'admin.promotions.*') ? 'active' : '' }}"
+                       data-bs-toggle="collapse"
                        role="button" 
-                       aria-expanded="{{ request()->routeIs('admin.products.*') ? 'true' : 'false' }}" 
+                       aria-expanded="{{ request()->routeIs('admin.products.*', 'admin.combos.*', 'admin.promotions.*') ? 'true' : 'false' }}" 
                        aria-controls="menuDichVu"
                        data-bs-tooltip="Dịch vụ & Ưu đãi">
                         <i class="bi bi-box-seam"></i>
                         <span class="nav-text">Dịch vụ & Ưu đãi</span>
                         <i class="bi bi-chevron-down submenu-arrow"></i>
                     </a>
-                    <div class="collapse {{ request()->routeIs('admin.products.*') ? 'show' : '' }}" id="menuDichVu">
+                    <div class="collapse {{ request()->routeIs('admin.products.*', 'admin.combos.*', 'admin.promotions.*') ? 'show' : '' }}" id="menuDichVu">
                         <ul class="nav flex-column submenu">
-                            <li class="nav-item"><a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.index') ? 'active' : '' }}">Quản lý sản phẩm / Combo</a></li>
-                            <li class="nav-item"><a href="#" class="nav-link">Mã giảm giá</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.index', 'admin.products.foods', 'admin.products.drinks') ? 'active' : '' }}">Quản lý đồ ăn & nước uống</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.combos.index') }}" class="nav-link {{ request()->routeIs('admin.combos.index') ? 'active' : '' }}">Quản lý combo</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.promotions.index') }}" class="nav-link {{ request()->routeIs('admin.promotions.*') ? 'active' : '' }}">Mã giảm giá</a></li>
                         </ul>
                     </div>
                 </li>
@@ -175,19 +176,20 @@
                 <!-- Content -->
                 <li class="nav-item has-submenu">
                     <a href="#menuNoiDung" 
-                       class="nav-link" 
+                       class="nav-link {{ request()->routeIs('admin.posts.*', 'admin.banners.*') ? 'active' : '' }}" 
                        data-bs-toggle="collapse" 
                        role="button" 
-                       aria-expanded="false" 
+                       aria-expanded="{{ request()->routeIs('admin.posts.*', 'admin.banners.*') ? 'true' : 'false' }}" 
                        aria-controls="menuNoiDung"
                        data-bs-tooltip="Nội dung">
                         <i class="bi bi-journal-text"></i>
                         <span class="nav-text">Nội dung</span>
                         <i class="bi bi-chevron-down submenu-arrow"></i>
                     </a>
-                    <div class="collapse" id="menuNoiDung">
+                    <div class="collapse {{ request()->routeIs('admin.posts.*', 'admin.banners.*') ? 'show' : '' }}" id="menuNoiDung">
                         <ul class="nav flex-column submenu">
-                            <li class="nav-item"><a href="#" class="nav-link">Quản lý bài viết</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.posts.index') }}" class="nav-link {{ request()->routeIs('admin.posts.*') ? 'active' : '' }}">Quản lý bài viết</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.banners.index') }}" class="nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">Quản lý banner</a></li>
                         </ul>
                     </div>
                 </li>

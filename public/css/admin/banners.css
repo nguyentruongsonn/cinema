@@ -1,0 +1,252 @@
+/**
+ * Banners Management - banners.css
+ * Styling specific to banners management page
+ */
+
+/* Position badges */
+.badge-position {
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.75rem;
+    display: inline-block;
+}
+
+.badge-position-home_slider {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-position-sidebar {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.badge-position-popup {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.badge-position-top_bar {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-position-footer {
+    background: rgba(107, 114, 128, 0.15);
+    color: #9ca3af;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Banner image preview in table */
+.banner-image-preview {
+    width: 100px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.banner-image-preview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Table styling */
+.table-dark thead th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.7);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-dark tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table-dark tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Banner title in table */
+.banner-title {
+    font-weight: 500;
+    color: #fff;
+}
+
+.banner-description {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.5);
+    display: block;
+    margin-top: 0.25rem;
+}
+
+/* Display order badge */
+.order-badge {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Status toggle */
+.form-check-input:checked {
+    background-color: #22c55e;
+    border-color: #22c55e;
+}
+
+/* Action buttons */
+.btn-edit-banner {
+    transition: all 0.2s ease;
+}
+
+.btn-edit-banner:hover {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+}
+
+.btn-delete-banner {
+    transition: all 0.2s ease;
+}
+
+.btn-delete-banner:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+/* Modal styling */
+.modal-content {
+    background: #1a1d20 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Form controls */
+.form-control:focus,
+.form-select:focus {
+    background-color: #212529;
+    border-color: #e50914;
+    color: white;
+    box-shadow: 0 0 0 0.25rem rgba(229, 9, 20, 0.25);
+}
+
+/* Image upload preview in modal */
+.image-upload-preview {
+    margin-top: 1rem;
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Date range display */
+.date-range {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.date-range.active {
+    color: #4ade80;
+}
+
+.date-range.expired {
+    color: #f87171;
+}
+
+/* Pagination */
+.pagination .page-link {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.pagination .page-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #e50914;
+    border-color: #e50914;
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Search form */
+.input-group-text {
+    background-color: #212529;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Card styling */
+.card {
+    background: #1a1d20;
+    border: none;
+}
+
+.card-body {
+    background: #1a1d20;
+}
+
+.card-footer {
+    background: #151719;
+}
+
+/* Click count badge */
+.click-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.click-count i {
+    color: #60a5fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .badge-position {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .banner-image-preview {
+        width: 80px;
+        height: 48px;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}

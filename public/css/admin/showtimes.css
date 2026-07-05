@@ -1,24 +1,226 @@
 /* ── Showtimes Admin - Premium Dark Theme ───────────────── */
 
-/* Modal content */
-#showtimeModalContent {
-    background: linear-gradient(145deg, #18181b 0%, #1e1e24 100%) !important;
+/* ── Add Showtime Modal - follows Movie Modal pattern ───────────────── */
+#addShowtimeModal .modal-content,
+#editShowtimeModal .modal-content {
+    background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 16px !important;
-    box-shadow: 0 32px 96px rgba(0,0,0,0.75) !important;
+    box-shadow:
+        0 32px 96px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+    color: #f1f1f3 !important;
+}
+
+#addShowtimeModal .modal-header,
+#editShowtimeModal .modal-header {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+#addShowtimeModal .modal-title,
+#editShowtimeModal .modal-title {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    letter-spacing: 0.02em;
+}
+
+#addShowtimeModal .modal-title i,
+#editShowtimeModal .modal-title i {
+    color: #a1a1aa;
+}
+
+#addShowtimeModal .modal-body,
+#editShowtimeModal .modal-body {
+    background: transparent !important;
+    padding: 1.5rem !important;
+}
+
+#addShowtimeModal .modal-body::-webkit-scrollbar,
+#editShowtimeModal .modal-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+#addShowtimeModal .modal-body::-webkit-scrollbar-track,
+#editShowtimeModal .modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+#addShowtimeModal .modal-body::-webkit-scrollbar-thumb,
+#editShowtimeModal .modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+#addShowtimeModal .form-label,
+#editShowtimeModal .form-label {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.07em !important;
+    text-transform: uppercase !important;
+    color: #71717a !important;
+    margin-bottom: 0.4rem !important;
+}
+
+#addShowtimeModal .form-control,
+#addShowtimeModal .form-select,
+#editShowtimeModal .form-control,
+#editShowtimeModal .form-select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #f1f1f3 !important;
+    border-radius: 8px !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.9rem !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+#addShowtimeModal .form-control:focus,
+#addShowtimeModal .form-select:focus,
+#editShowtimeModal .form-control:focus,
+#editShowtimeModal .form-select:focus {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
+    color: #fff !important;
+    outline: none !important;
+}
+
+#addShowtimeModal .form-control::placeholder,
+#editShowtimeModal .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.2) !important;
+}
+
+#addShowtimeModal .form-select option,
+#editShowtimeModal .form-select option {
+    background: #1e1e24 !important;
+    color: #f1f1f3 !important;
+}
+
+#addShowtimeModal .form-check-input[type="checkbox"][role="switch"],
+#editShowtimeModal .form-check-input[type="checkbox"][role="switch"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    width: 2.4em !important;
+    height: 1.3em !important;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+#addShowtimeModal .form-check-input[type="checkbox"][role="switch"]:checked,
+#editShowtimeModal .form-check-input[type="checkbox"][role="switch"]:checked {
+    background-color: #e50914 !important;
+    border-color: #e50914 !important;
+}
+
+#addShowtimeModal .form-check-input[type="checkbox"][role="switch"]:focus,
+#editShowtimeModal .form-check-input[type="checkbox"][role="switch"]:focus {
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.18) !important;
+}
+
+#addShowtimeModal .form-check-label,
+#editShowtimeModal .form-check-label {
+    color: #a1a1aa !important;
+    font-size: 0.85rem !important;
+}
+
+#editShowtimeModal .modal-footer {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 0 0 16px 16px !important;
+    padding: 1rem 1.5rem !important;
+}
+
+#editShowtimeModal .modal-footer .btn {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #d4d4d8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.25rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    transition: background 0.2s !important;
+}
+
+#editShowtimeModal .modal-footer .btn:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+#addShowtimeModal .btn-primary-custom,
+#editShowtimeModal .btn-primary-custom {
+    background: linear-gradient(135deg, #e50914 0%, #b8070f 100%) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.5rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    box-shadow: 0 4px 16px rgba(229, 9, 20, 0.3) !important;
+    transition: all 0.2s !important;
+}
+
+#addShowtimeModal .btn-primary-custom:hover,
+#editShowtimeModal .btn-primary-custom:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.45) !important;
+}
+
+#addShowtimeModal .combo-tabs {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#addShowtimeModal .combo-tabs .nav-link {
+    background: transparent !important;
+    border: 0 !important;
+    border-bottom: 2px solid transparent !important;
+    color: #71717a !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    padding: 0.75rem 1rem !important;
+    transition: color 0.2s, border-color 0.2s !important;
+}
+
+#addShowtimeModal .combo-tabs .nav-link:hover {
+    color: #d4d4d8 !important;
+}
+
+#addShowtimeModal .combo-tabs .nav-link.active {
+    background: transparent !important;
+    border-color: #e50914 !important;
+    color: #fff !important;
+}
+
+.modal-backdrop.show {
+    opacity: 0.72 !important;
+}
+
+/* Legacy modal ids kept for compatibility */
+#showtimeModalContent {
+    background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        0 32px 96px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
     color: #f1f1f3 !important;
 }
 
 #showtimeModalHeader {
-    background: rgba(255,255,255,0.03) !important;
-    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 16px 16px 0 0 !important;
-    padding: 1.1rem 1.5rem !important;
+    padding: 1.25rem 1.5rem !important;
 }
 
 #showtimeModalHeader .modal-title {
-    font-size: 1rem !important;
+    font-size: 1.05rem !important;
     font-weight: 700 !important;
     color: #fff !important;
+    letter-spacing: 0.02em;
 }
 
 #showtimeModalBody {
@@ -27,8 +229,8 @@
 }
 
 #showtimeModalFooter {
-    background: rgba(255,255,255,0.02) !important;
-    border-top: 1px solid rgba(255,255,255,0.07) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
     border-radius: 0 0 16px 16px !important;
     padding: 1rem 1.5rem !important;
 }

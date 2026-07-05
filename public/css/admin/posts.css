@@ -1,0 +1,200 @@
+/**
+ * Posts Management - posts.css
+ * Styling specific to posts management page
+ */
+
+/* Category badges */
+.badge-category {
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.75rem;
+    display: inline-block;
+}
+
+.badge-category-news {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-category-blog {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.badge-category-announcement {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.badge-category-event {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-category-promotion {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Table styling */
+.table-dark thead th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.7);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-dark tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table-dark tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Post title in table */
+.post-title {
+    font-weight: 500;
+    color: #fff;
+    text-decoration: none;
+}
+
+.post-excerpt {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.5);
+    display: block;
+    margin-top: 0.25rem;
+}
+
+/* Author badge */
+.author-badge {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Status toggle */
+.form-check-input:checked {
+    background-color: #22c55e;
+    border-color: #22c55e;
+}
+
+/* Action buttons */
+.btn-edit-post {
+    transition: all 0.2s ease;
+}
+
+.btn-edit-post:hover {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+}
+
+.btn-delete-post {
+    transition: all 0.2s ease;
+}
+
+.btn-delete-post:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+/* Modal styling */
+.modal-content {
+    background: #1a1d20 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Form controls */
+.form-control:focus,
+.form-select:focus {
+    background-color: #212529;
+    border-color: #e50914;
+    color: white;
+    box-shadow: 0 0 0 0.25rem rgba(229, 9, 20, 0.25);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Pagination */
+.pagination .page-link {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.pagination .page-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #e50914;
+    border-color: #e50914;
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Search form */
+.input-group-text {
+    background-color: #212529;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Card styling */
+.card {
+    background: #1a1d20;
+    border: none;
+}
+
+.card-body {
+    background: #1a1d20;
+}
+
+.card-footer {
+    background: #151719;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .badge-category {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}

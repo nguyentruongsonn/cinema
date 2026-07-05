@@ -218,8 +218,55 @@ Route::prefix('v1')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ProductController::class, 'index']);
             Route::post('/', [\App\Http\Controllers\Admin\ProductController::class, 'store']);
             Route::put('{product}', [\App\Http\Controllers\Admin\ProductController::class, 'update']);
+            Route::post('{product}/update', [\App\Http\Controllers\Admin\ProductController::class, 'update']); // FormData upload (POST + _method=PUT)
             Route::delete('{product}', [\App\Http\Controllers\Admin\ProductController::class, 'destroy']);
             Route::post('{product}/toggle-active', [\App\Http\Controllers\Admin\ProductController::class, 'toggleActive']);
+        });
+
+        // Combo management
+        Route::prefix('admin/combos')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ComboController::class, 'index']);
+            Route::get('available-products', [\App\Http\Controllers\Admin\ComboController::class, 'getAvailableProducts']);
+            Route::get('{combo}', [\App\Http\Controllers\Admin\ComboController::class, 'show']);
+            Route::post('/', [\App\Http\Controllers\Admin\ComboController::class, 'store']);
+            Route::put('{combo}', [\App\Http\Controllers\Admin\ComboController::class, 'update']);
+            Route::post('{combo}/update', [\App\Http\Controllers\Admin\ComboController::class, 'update']); // FormData upload (POST + _method=PUT)
+            Route::delete('{combo}', [\App\Http\Controllers\Admin\ComboController::class, 'destroy']);
+            Route::post('{combo}/toggle-active', [\App\Http\Controllers\Admin\ComboController::class, 'toggleActive']);
+        });
+
+        // Promotion management
+        Route::prefix('admin/promotions')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\PromotionController::class, 'index']);
+            Route::get('categories', [\App\Http\Controllers\Admin\PromotionController::class, 'getCategories']);
+            Route::get('{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'show']);
+            Route::post('/', [\App\Http\Controllers\Admin\PromotionController::class, 'store']);
+            Route::put('{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'update']);
+            Route::delete('{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'destroy']);
+            Route::post('{promotion}/toggle-active', [\App\Http\Controllers\Admin\PromotionController::class, 'toggleActive']);
+            Route::post('{promotion}/reset-usage', [\App\Http\Controllers\Admin\PromotionController::class, 'resetUsageCount']);
+        });
+
+        // Posts management
+        Route::prefix('admin/posts')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\PostController::class, 'list']);
+            Route::get('categories', [\App\Http\Controllers\Admin\PostController::class, 'categories']);
+            Route::post('/', [\App\Http\Controllers\Admin\PostController::class, 'store']);
+            Route::put('{post}', [\App\Http\Controllers\Admin\PostController::class, 'update']);
+            Route::post('{post}/update', [\App\Http\Controllers\Admin\PostController::class, 'update']); // FormData upload
+            Route::delete('{post}', [\App\Http\Controllers\Admin\PostController::class, 'destroy']);
+            Route::post('{post}/toggle-publish', [\App\Http\Controllers\Admin\PostController::class, 'togglePublish']);
+        });
+
+        // Banners management
+        Route::prefix('admin/banners')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BannerController::class, 'list']);
+            Route::get('positions', [\App\Http\Controllers\Admin\BannerController::class, 'positions']);
+            Route::post('/', [\App\Http\Controllers\Admin\BannerController::class, 'store']);
+            Route::put('{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'update']);
+            Route::post('{banner}/update', [\App\Http\Controllers\Admin\BannerController::class, 'update']); // FormData upload
+            Route::delete('{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'destroy']);
+            Route::post('{banner}/toggle-active', [\App\Http\Controllers\Admin\BannerController::class, 'toggleActive']);
         });
     });
 

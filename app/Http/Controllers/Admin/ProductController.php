@@ -17,12 +17,17 @@ class ProductController extends Controller
         $query = Product::query();
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
                   ->orWhere('description', 'like', '%' . $request->search . '%');
+            });
         }
 
         if ($request->filled('type') && $request->type !== 'all') {
-            $query->where('type', $request->type);
+            $types = array_filter(explode(',', $request->type));
+            count($types) > 1
+                ? $query->whereIn('type', $types)
+                : $query->where('type', $request->type);
         }
 
         if ($request->filled('status') && $request->status !== 'all') {
@@ -38,13 +43,20 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:food,drink,combo',
+            'type' => 'required|in:food,drink',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'description' => 'nullable|string',
-            'image_url' => 'nullable|url',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'status' => 'boolean',
         ]);
+
+        if ($request->hasFile('image_file')) {
+            $file = $request->file('image_file');
+            $filename = time() . '_' . Str::slug($validated['name']) . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('images/products'), $filename);
+            $validated['image_url'] = '/images/products/' . $filename;
+        }
 
         $product = Product::create($validated);
 
@@ -55,13 +67,20 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:food,drink,combo',
+            'type' => 'required|in:food,drink',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'description' => 'nullable|string',
-            'image_url' => 'nullable|url',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'status' => 'boolean',
         ]);
+
+        if ($request->hasFile('image_file')) {
+            $file = $request->file('image_file');
+            $filename = time() . '_' . Str::slug($validated['name']) . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('images/products'), $filename);
+            $validated['image_url'] = '/images/products/' . $filename;
+        }
 
         $product->update($validated);
 
