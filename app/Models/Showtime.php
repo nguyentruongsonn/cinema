@@ -18,11 +18,9 @@ class Showtime extends Model
         'movie_id',
         'screen_id',
         'format_id',
-        'sound_id',
-        'subtitle_id',
+        'version_type_id',
         'price_rule_id',
         'scheduled_at',
-        'price',
         'pricing_snapshot',
         'status',
     ];
@@ -31,7 +29,6 @@ class Showtime extends Model
 
     protected $casts = [
         'scheduled_at' => 'datetime',
-        'price' => 'decimal:2',
         'pricing_snapshot' => 'json',
         'status' => 'boolean',
     ];
@@ -68,14 +65,9 @@ class Showtime extends Model
         return $this->belongsTo(Format::class);
     }
 
-    public function sound(): BelongsTo
+    public function versionType(): BelongsTo
     {
-        return $this->belongsTo(Sound::class);
-    }
-
-    public function subtitle(): BelongsTo
-    {
-        return $this->belongsTo(Subtitle::class);
+        return $this->belongsTo(VersionType::class);
     }
 
     public function priceRule(): BelongsTo

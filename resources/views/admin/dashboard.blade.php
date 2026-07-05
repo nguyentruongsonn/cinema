@@ -78,7 +78,7 @@
 <!-- Revenue Chart Row -->
 <div class="row g-4 mb-4">
     <div class="col-12">
-        <div class="chart-card">
+        <div class="admin-table-container">
             <div class="chart-header">
                 <h3 class="chart-title">Doanh Thu Theo Thời Gian</h3>
                 <select id="revenueFilter" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;">
@@ -95,7 +95,7 @@
 <!-- Heatmap Row -->
 <div class="row g-4 mb-4">
     <div class="col-12">
-        <div class="chart-card">
+        <div class="admin-table-container">
             <div class="chart-header">
                 <h3 class="chart-title">Lượng Khách Hàng Theo Giờ & Tuần</h3>
             </div>

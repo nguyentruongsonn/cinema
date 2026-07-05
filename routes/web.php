@@ -37,6 +37,7 @@ Route::prefix('admin')->middleware(['admin'])->group(function () {
     Route::view('/products', 'admin.products.index')->name('admin.products.index');
     Route::view('/combos', 'admin.combos.index')->name('admin.combos.index');
     Route::view('/showtimes', 'admin.showtimes.index')->name('admin.showtimes.index');
+    Route::view('/orders', 'admin.orders.index')->name('admin.orders.index');
     
     // Branches
     Route::view('branches', 'admin.branches.index')->name('admin.branches.index');

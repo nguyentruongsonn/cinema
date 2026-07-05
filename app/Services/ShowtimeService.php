@@ -19,13 +19,12 @@ class ShowtimeService
     {
         $query = Showtime::with([
             'movie:id,title,slug,duration,age_rating,poster_url',
-            'screen:id,name,code,format_id,sound_id,theater_id,capacity',
+            'screen:id,name,code,format_id,theater_id,capacity',
             'screen.theater:id,name,address,branch_id',
             'screen.theater.branch:id,name',
             'screen.format:id,name',
-            'screen.sound:id,name',
             'format:id,name,surcharge',
-            'subtitle:id,name',
+            'versionType:id,name,slug',
         ]);
 
         $query = $this->applyFilters($query, $request);
@@ -49,7 +48,7 @@ class ShowtimeService
             'screen',
             'screen.theater',
             'format',
-            'subtitle',
+            'versionType',
             'seatLayoutSnapshot',
         ])->findOrFail($id);
 
@@ -125,8 +124,7 @@ class ShowtimeService
                 'screen.theater.branch:id,name',
                 'screen:id,name,code,theater_id',
                 'format:id,name,surcharge',
-                'sound:id,name',
-                'subtitle:id,name',
+                'versionType:id,name,slug',
             ])
             ->where('movie_id', $movieId)
             ->where('status', 1)
@@ -180,13 +178,10 @@ class ShowtimeService
                     'id' => $showtime->screen->id,
                     'name' => $showtime->screen->name,
                 ],
-                'subtitle' => [
-                    'id' => $showtime->subtitle?->id,
-                    'name' => $showtime->subtitle?->name ?? 'N/A',
-                ],
-                'sound' => [
-                    'id' => $showtime->sound?->id,
-                    'name' => $showtime->sound?->name ?? 'N/A',
+                'version_type' => [
+                    'id' => $showtime->versionType?->id,
+                    'name' => $showtime->versionType?->name ?? 'N/A',
+                    'slug' => $showtime->versionType?->slug ?? 'standard',
                 ],
                 'scheduled_date' => $showtime->scheduled_at->format('Y-m-d'),
             ];
@@ -273,7 +268,7 @@ class ShowtimeService
         $sortField = $request->query('sort_by', 'scheduled_at');
         $sortDir = $request->query('sort_dir', 'asc');
 
-        $allowedSortFields = ['scheduled_at', 'price', 'created_at'];
+        $allowedSortFields = ['scheduled_at', 'created_at'];
         if (!in_array($sortField, $allowedSortFields, true)) {
             $sortField = 'scheduled_at';
         }

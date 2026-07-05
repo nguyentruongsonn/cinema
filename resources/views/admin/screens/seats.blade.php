@@ -15,7 +15,7 @@
             </h5>
             <span class="ms-2 badge bg-secondary" id="screenCodeBadge">--</span>
             <span class="ms-2 small text-white-50" id="theaterNameSpan"></span>
-            
+
             <a href="{{ route('admin.screens.index') }}"
                 class="btn btn-sm ms-auto d-inline-flex align-items-center text-white btn-header-back">
                 <i class="bi bi-arrow-return-left me-2"></i> Quay lại
@@ -30,23 +30,49 @@
         <div class="col-lg-9 col-md-8">
             <div class="chart-card p-4 overflow-x-auto">
                 {{-- Màn hình chiếu --}}
-                <div class="text-center mb-4">
-                    <div class="screen-bar mx-auto">MÀN HÌNH CHIẾU</div>
+                <div class="screen-display">
+                    <div class="screen-label">MÀN HÌNH CHIẾU</div>
                 </div>
 
-                {{-- Loading Spinner --}}
-                <div id="seatGridLoading" class="text-center py-5 text-muted">
-                    <div class="spinner-border text-secondary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                {{-- Seat Map --}}
+                <div id="seatMapContainer" class="seat-map-container">
+                    {{-- Skeleton Loading --}}
+                    <div class="seat-map-skeleton">
+                        <div class="skeleton-rows">
+                            <div class="skeleton-row" v-for="i in 10">
+                                <div class="skeleton-seat" v-for="j in 15"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mt-2">Đang tải sơ đồ ghế...</div>
+                    {{-- Actual seat map rendered by JS --}}
+                    <div id="seatGrid" class="seat-grid mx-auto d-none"></div>
+                    {{-- Column labels (populated by JS) --}}
+                    <div id="seatGridColLabels" class="seat-grid-col-labels mx-auto mt-2 d-none"></div>
                 </div>
 
-                {{-- Grid ghế (JS populated) --}}
-                <div id="seatGrid" class="seat-grid mx-auto d-none"></div>
-
-                {{-- Nhãn cột (JS populated) --}}
-                <div id="seatGridColLabels" class="seat-grid-col-labels mx-auto mt-2 d-none"></div>
+                {{-- Seat Legend - Giống hệt Client --}}
+                <div class="seat-legend">
+                    <div class="legend-item">
+                        <span class="seat-demo seat-available"></span>
+                        <span>Ghế trống</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="seat-demo seat-selected"></span>
+                        <span>Đang chọn</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="seat-demo seat-vip"></span>
+                        <span>Ghế VIP</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="seat-demo seat-disabled-legend"></span>
+                        <span>Ghế hỏng / Đã bán</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="seat-demo seat-couple"></span>
+                        <span>Ghế đôi</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -85,7 +111,8 @@
                     </div>
 
                     {{-- Button Cập nhật sơ đồ --}}
-                    <button type="button" class="btn-primary-custom w-100 border-0 py-2 mt-2 btn-update-layout" id="btnUpdateSeats">
+                    <button type="button" class="btn-primary-custom w-100 border-0 py-2 mt-2 btn-update-layout"
+                        id="btnUpdateSeats">
                         <i class="bi bi-save me-2"></i>Cập nhật sơ đồ
                     </button>
                 </div>
@@ -99,61 +126,13 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <span class="small text-white">Kích hoạt phòng chiếu</span>
                     <div class="form-check form-switch mb-0">
-                        <input class="form-check-input toggle-switch-lg" type="checkbox" role="switch" id="screenActiveToggle">
+                        <input class="form-check-input toggle-switch-lg" type="checkbox" role="switch"
+                            id="screenActiveToggle">
                     </div>
                 </div>
             </div>
 
-            {{-- ── Chú thích loại ghế ────────────────────────────────── --}}
-            <div class="chart-card p-4 mb-3">
-                <h6 class="text-secondary fw-semibold mb-3 text-uppercase card-heading-title">
-                    <i class="bi bi-bookmark me-1" style="color:var(--accent-color);"></i>Chú thích
-                </h6>
-                <div class="d-flex flex-column gap-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="seat-legend-box seat-standard">
-                            <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor">
-                                <rect x="5" y="2" width="14" height="11" rx="2" />
-                                <rect x="4" y="14" width="16" height="5" rx="1" />
-                                <rect x="2" y="11" width="3" height="8" rx="1" />
-                                <rect x="19" y="11" width="3" height="8" rx="1" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="small fw-medium text-white">Ghế thường</div>
-                            <div class="small text-secondary" style="font-size:0.72rem;">Standard</div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="seat-legend-box seat-vip">
-                            <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor">
-                                <rect x="5" y="2" width="14" height="11" rx="2" />
-                                <rect x="4" y="14" width="16" height="5" rx="1" />
-                                <rect x="2" y="11" width="3" height="8" rx="1" />
-                                <rect x="19" y="11" width="3" height="8" rx="1" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="small fw-medium text-white">Ghế VIP</div>
-                            <div class="small text-secondary" style="font-size:0.72rem;">VIP / Premium</div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="seat-legend-box seat-couple">
-                            <svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor">
-                                <rect x="5" y="2" width="38" height="11" rx="2" />
-                                <rect x="4" y="14" width="40" height="5" rx="1" />
-                                <rect x="2" y="11" width="3" height="8" rx="1" />
-                                <rect x="43" y="11" width="3" height="8" rx="1" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="small fw-medium text-white">Ghế đôi</div>
-                            <div class="small text-secondary" style="font-size:0.72rem;">Couple </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
         </div>
     </div>{{-- end .row --}}
@@ -168,6 +147,7 @@
 @endsection
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('css/skeleton.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('css/admin/seat-layout.css') }}?v={{ time() }}">
 @endpush

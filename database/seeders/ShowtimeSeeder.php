@@ -39,6 +39,10 @@ class ShowtimeSeeder extends Seeder
         $formatIMAX = 1; // IMAX
         $format4DX = 2;  // 4DX
 
+        // Get version type IDs
+        $versionSubtitle = 1; // Phụ đề
+        $versionDubbed = 2;   // Lồng tiếng
+
         $now = now();
         $showtimesCreated = 0;
 
@@ -55,6 +59,9 @@ class ShowtimeSeeder extends Seeder
                     $lateFormat = $screenIndex == 0 ? $format3D : ($screenIndex == 1 ? $formatIMAX : $format3D);
                     $premiumFormat = $screenIndex == 2 ? $format4DX : $formatIMAX;
 
+                    // Morning showtimes mostly for families (dubbed), others subtitle
+                    $morningVersion = $day % 3 == 0 ? $versionDubbed : $versionSubtitle;
+
                     // Morning showtime (9:00) - Budget price, mostly 2D
                     Showtime::updateOrCreate(
                         [
@@ -64,7 +71,7 @@ class ShowtimeSeeder extends Seeder
                         ],
                         [
                             'format_id' => $morningFormat,
-                            'price' => 80000,
+                            'version_type_id' => $morningVersion,
                             'status' => 1,
                         ]
                     );
@@ -79,7 +86,7 @@ class ShowtimeSeeder extends Seeder
                         ],
                         [
                             'format_id' => $screenIndex % 2 == 0 ? $format2D : $format3D,
-                            'price' => 90000,
+                            'version_type_id' => $versionSubtitle,
                             'status' => 1,
                         ]
                     );
@@ -94,7 +101,7 @@ class ShowtimeSeeder extends Seeder
                         ],
                         [
                             'format_id' => $lateFormat,
-                            'price' => 100000,
+                            'version_type_id' => $versionSubtitle,
                             'status' => 1,
                         ]
                     );
@@ -109,7 +116,7 @@ class ShowtimeSeeder extends Seeder
                         ],
                         [
                             'format_id' => $lateFormat,
-                            'price' => 110000,
+                            'version_type_id' => $versionSubtitle,
                             'status' => 1,
                         ]
                     );
@@ -124,7 +131,7 @@ class ShowtimeSeeder extends Seeder
                         ],
                         [
                             'format_id' => $premiumFormat,
-                            'price' => 130000,
+                            'version_type_id' => $versionSubtitle,
                             'status' => 1,
                         ]
                     );
@@ -139,7 +146,7 @@ class ShowtimeSeeder extends Seeder
                         ],
                         [
                             'format_id' => $screenIndex == 1 ? $formatIMAX : $format3D,
-                            'price' => 120000,
+                            'version_type_id' => $versionSubtitle,
                             'status' => 1,
                         ]
                     );

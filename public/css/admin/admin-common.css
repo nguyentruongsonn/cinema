@@ -1,0 +1,378 @@
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * ADMIN COMMON STYLES
+ * Shared styles for all admin pages following orders page pattern
+ * ════════════════════════════════════════════════════════════════════════════
+ */
+
+/* ─── Filter & Content Containers ──────────────────────────────────────── */
+
+.admin-filter-container,
+.admin-content-container,
+.admin-table-container,
+.admin-card-container,
+.admin-stats-container {
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-filter-container {
+    padding: 1.5rem;
+}
+
+/* ─── Filter Grid ────────────────────────────────────────────────────────── */
+
+.admin-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
+.admin-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.admin-filter-label {
+    color: rgba(242,201,195,0.8);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.admin-filter-input,
+.admin-filter-select {
+    padding: 0.65rem 1rem;
+    background: rgba(30,30,35,0.6);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    color: #e5e5e7;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+/* Only apply width: 100% when NOT inside input-group */
+.admin-filter-group .admin-filter-input,
+.admin-filter-group .admin-filter-select {
+    width: 100%;
+}
+
+.admin-filter-input:focus,
+.admin-filter-select:focus {
+    outline: none;
+    border-color: rgba(255,17,29,0.4);
+    background: rgba(30,30,35,0.8);
+    box-shadow: 0 0 0 3px rgba(255,17,29,0.08);
+}
+
+.admin-filter-select option {
+    background: #1e1e23;
+    color: #e5e5e7;
+}
+
+.admin-filter-btn,
+.admin-action-btn {
+    padding: 0.65rem 1.5rem;
+    background: linear-gradient(135deg, #FF111D 0%, #c70d17 100%);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.admin-filter-btn:hover,
+.admin-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(255,17,29,0.3);
+}
+
+.admin-filter-btn:active,
+.admin-action-btn:active {
+    transform: translateY(0);
+}
+
+/* ─── Table Styles ──────────────────────────────────────────────────────── */
+
+.admin-table-wrapper {
+    overflow-x: auto;
+    margin: -1.2rem;
+    padding: 1.2rem;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.admin-table thead th {
+    padding: 1rem;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    color: rgba(242,201,195,0.9);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.admin-table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: #e5e5e7;
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+
+.admin-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+    background: rgba(255,255,255,0.02);
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ─── Action Buttons in Table ──────────────────────────────────────────── */
+
+.admin-table-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.admin-btn-icon {
+    padding: 0.5rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    color: #e5e5e7;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.admin-btn-icon:hover {
+    background: rgba(255,17,29,0.15);
+    border-color: rgba(255,17,29,0.3);
+    color: #ff5865;
+}
+
+.admin-btn-icon.admin-btn-edit:hover {
+    background: rgba(59,130,246,0.15);
+    border-color: rgba(59,130,246,0.3);
+    color: #60a5fa;
+}
+
+.admin-btn-icon.admin-btn-delete:hover {
+    background: rgba(239,68,68,0.15);
+    border-color: rgba(239,68,68,0.3);
+    color: #f87171;
+}
+
+/* ─── Status Badges ─────────────────────────────────────────────────────── */
+
+.admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.admin-badge-success {
+    background: rgba(34,197,94,0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34,197,94,0.25);
+}
+
+.admin-badge-warning {
+    background: rgba(251,191,36,0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(251,191,36,0.25);
+}
+
+.admin-badge-danger {
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239,68,68,0.25);
+}
+
+.admin-badge-info {
+    background: rgba(59,130,246,0.15);
+    color: #3b82f6;
+    border: 1px solid rgba(59,130,246,0.25);
+}
+
+.admin-badge-secondary {
+    background: rgba(148,163,184,0.15);
+    color: #94a3b8;
+    border: 1px solid rgba(148,163,184,0.25);
+}
+
+/* ─── Stats Cards ───────────────────────────────────────────────────────── */
+
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.2rem;
+}
+
+.admin-stat-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.admin-stat-card:hover {
+    border-color: rgba(255,255,255,0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.admin-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.admin-stat-icon.stat-primary {
+    background: rgba(255,17,29,0.15);
+    color: #ff5865;
+}
+
+.admin-stat-icon.stat-success {
+    background: rgba(34,197,94,0.15);
+    color: #22c55e;
+}
+
+.admin-stat-icon.stat-warning {
+    background: rgba(251,191,36,0.15);
+    color: #fbbf24;
+}
+
+.admin-stat-icon.stat-info {
+    background: rgba(59,130,246,0.15);
+    color: #3b82f6;
+}
+
+.admin-stat-label {
+    color: rgba(242,201,195,0.7);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.admin-stat-value {
+    color: #f5f5f7;
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.admin-stat-change {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.admin-stat-change.positive {
+    color: #22c55e;
+}
+
+.admin-stat-change.negative {
+    color: #ef4444;
+}
+
+/* ─── Empty State ───────────────────────────────────────────────────────── */
+
+.admin-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: rgba(242,201,195,0.6);
+}
+
+.admin-empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+}
+
+.admin-empty-state h3 {
+    color: #e5e5e7;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.admin-empty-state p {
+    color: rgba(242,201,195,0.5);
+    font-size: 0.9rem;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 1200px) {
+    .admin-filter-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-filter-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-table-wrapper {
+        margin: -1rem;
+        padding: 1rem;
+    }
+    
+    .admin-filter-container,
+    .admin-content-container,
+    .admin-table-container {
+        padding: 1rem;
+    }
+}

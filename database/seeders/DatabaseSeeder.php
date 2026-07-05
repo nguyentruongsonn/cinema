@@ -17,8 +17,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             CategorySeeder::class,
             FormatSeeder::class,
-            SoundSeeder::class,
-            SubtitleSeeder::class,
+            VersionTypeSeeder::class,
             SeatTypeSeeder::class,
             UserSeeder::class,
 

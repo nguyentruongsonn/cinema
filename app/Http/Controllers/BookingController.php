@@ -23,7 +23,7 @@ class BookingController extends Controller
             'movie',
             'screen.theater',
             'format',
-            'subtitle',
+            'versionType',
         ])->findOrFail($showtimeId);
 
         return view('users.booking.index', [

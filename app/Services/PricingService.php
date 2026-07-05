@@ -10,6 +10,10 @@ use App\Models\User;
 
 class PricingService
 {
+    public function __construct(
+        private readonly TicketPricingService $ticketPricingService
+    ) {
+    }
     public function buildSnapshot(
         User $user,
         Showtime $showtime,
@@ -18,17 +22,40 @@ class PricingService
         ?string $voucherCode,
         int $pointsUsed
     ): array {
-        // Seat pricing
-        $seatIds = array_map(fn($item) => (int) ($item['id'] ?? $item), $seatRequests); // handle if item is array or scalar
+        // Load relations
+        $showtime->load(['format', 'movie']);
+
+        // Seat pricing with dynamic ticket pricing
+        $seatIds = array_map(fn($item) => (int) ($item['id'] ?? $item), $seatRequests);
         $seats = Seat::with('seatType')->whereIn('id', $seatIds)->get();
 
         $seatItems = [];
         $seatTotal = 0;
-        $basePrice = (float) $showtime->price;
+
+        // Get format name and movie surcharge
+        $formatName = $showtime->format?->name ?? '2D';
+        $movieSurcharge = (int) ($showtime->movie?->surcharge ?? 0);
+        $scheduledAt = $showtime->scheduled_at;
 
         foreach ($seats as $seat) {
-            $unitPrice = $basePrice + (float) ($seat->seatType->surcharge ?? 0);
+            // Check if this is a double/couple seat
+            $seatTypeName = $seat->seatType?->name ?? '';
+            $seatTypeSlug = $seat->seatType?->slug ?? '';
+            $isDoubleSeat = $this->isDoubleSeat($seatTypeName, $seatTypeSlug);
+
+            // Calculate dynamic price using TicketPricingService
+            // Default customer type is 'adult' (can be extended later to accept user preferences)
+            $pricingResult = $this->ticketPricingService->calculate(
+                format: $formatName,
+                scheduledAt: $scheduledAt,
+                customerType: 'adult',
+                isDoubleSeat: $isDoubleSeat,
+                movieSurcharge: $movieSurcharge
+            );
+
+            $unitPrice = $pricingResult['total_price'];
             $seatTotal += $unitPrice;
+
             $seatItems[] = [
                 'id' => $seat->id,
                 'name' => $seat->label ?: ($seat->row . $seat->number),
@@ -37,6 +64,13 @@ class PricingService
                 'row' => $seat->row,
                 'number' => $seat->number,
                 'type' => $seat->seatType?->name,
+                'pricing_details' => [
+                    'base_price' => $pricingResult['base_price'],
+                    'surcharges' => $pricingResult['surcharges'],
+                    'day_type' => $pricingResult['day_type'],
+                    'time_slot' => $pricingResult['time_slot'],
+                    'is_beta_ten' => $pricingResult['is_beta_ten'],
+                ],
             ];
         }
 
@@ -169,5 +203,24 @@ class PricingService
         }
 
         return 0;
+    }
+
+    /**
+     * Check if a seat is a double/couple seat based on name or slug
+     */
+    private function isDoubleSeat(string $name, string $slug): bool
+    {
+        $nameLower = mb_strtolower($name);
+        $slugLower = mb_strtolower($slug);
+
+        $doubleKeywords = ['double', 'couple', 'đôi', 'sweetbox', 'sweet-box'];
+
+        foreach ($doubleKeywords as $keyword) {
+            if (str_contains($nameLower, $keyword) || str_contains($slugLower, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

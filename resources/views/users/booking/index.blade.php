@@ -37,22 +37,6 @@
             <div class="tab-contents">
                 <!-- Step 1: Seat Selection -->
                 <div class="tab-content active" id="tab-seats">
-                    <div class="movie-info-card">
-                        <h3 class="section-title">{{ $showtime->movie->title }}</h3>
-                        <div class="movie-meta">
-                            <span class="format-badge">
-                                <span class="badge-label">FORMAT</span>
-                                <span class="badge-value">{{ $showtime->format?->name ?? '2D Standard' }}</span>
-                            </span>
-                            <span class="theater-info">
-                                <i class="bi bi-geo-alt-fill"></i>
-                                {{ $showtime->screen->theater->name }} - Phòng {{ $showtime->screen->name }} -
-                                {{ $showtime->format?->name ?? '2D Standard' }} -
-                                Hôm nay, {{ $showtime->formatted_start_time }}
-                            </span>
-                        </div>
-                    </div>
-
                     <!-- Screen Display -->
                     <div class="screen-display">
                         <div class="screen-label">MÀN HÌNH CHIẾU</div>
@@ -69,7 +53,9 @@
                             </div>
                         </div>
                         <!-- Actual seat map rendered by JS -->
-                        <div id="seatMap" class="seat-map d-none"></div>
+                        <div id="seatMap" class="seat-grid mx-auto d-none"></div>
+                        <!-- Column labels (populated by JS) -->
+                        <div id="seatGridColLabels" class="seat-grid-col-labels mx-auto mt-2 d-none"></div>
                     </div>
 
                     <!-- Seat Legend - Icon ghế thống nhất, chỉ khác màu -->
@@ -247,10 +233,19 @@
                     <h4 class="movie-title">{{ $showtime->movie->title }}</h4>
                     <div class="movie-details">
                         <span class="detail-item">
-                            <i class="bi bi-tag-fill"></i> {{ $showtime->subtitle?->name ?? 'Phụ đề' }} • {{ $showtime->format?->name ?? '2D Standard' }}
+                            <i class="bi bi-tag-fill"></i> {{ $showtime->versionType?->name ?? 'Standard' }} • {{ $showtime->format?->name ?? '2D Standard' }}
                         </span>
                         <span class="detail-item">
                             <i class="bi bi-clock-fill"></i> {{ $showtime->movie->duration ?? 120 }} phút
+                        </span>
+                        <span class="detail-item">
+                            <i class="bi bi-geo-alt-fill"></i> {{ $showtime->screen->theater->name }}
+                        </span>
+                        <span class="detail-item">
+                            <i class="bi bi-camera-reels-fill"></i> Phòng {{ $showtime->screen->name }}
+                        </span>
+                        <span class="detail-item">
+                            <i class="bi bi-calendar-check-fill"></i> {{ $showtime->formatted_start_time ?? $showtime->start_time }}
                         </span>
                     </div>
                 </div>

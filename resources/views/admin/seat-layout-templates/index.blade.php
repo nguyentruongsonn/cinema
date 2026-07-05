@@ -7,37 +7,34 @@
 @section('content')
 
 {{-- ── Dòng 1 + Dòng 2: Header & Filter Bar ────────────────────────── --}}
-<div class="filter-bar mb-4">
-    <div class="filter-bar-inner align-items-center w-100">
-        <h5 class="mb-0 text-white fw-bold me-4"><i class="bi bi-grid-3x3-gap me-2"></i>Danh sách mẫu sơ đồ ghế</h5>
+<div class="admin-filter-container">
+    <div class="d-flex align-items-center w-100 gap-3">
+        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;"><i class="bi bi-grid-3x3-gap me-2"></i>Danh sách mẫu sơ đồ ghế</h5>
 
-        <form id="searchForm" class="d-flex flex-grow-1 align-items-center gap-3">
-            <div class="filter-group flex-grow-1" style="max-width: 420px;">
-                <label for="search" class="filter-label" style="display:none;">Tìm kiếm</label>
-                <div class="input-group">
-                    <input
-                        type="text"
-                        id="search"
-                        name="search"
-                        class="filter-input"
-                        placeholder="Tên mẫu sơ đồ ghế..."
-                        style="border-radius: 6px 0 0 6px;"
-                    >
-                    <button class="btn btn-outline-secondary border-0 slt-search-btn" type="submit" aria-label="Tìm kiếm">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </div>
+        <form id="searchForm" class="flex-grow-1" style="max-width: 500px;">
+            <div class="input-group">
+                <input
+                    type="text"
+                    id="search"
+                    name="search"
+                    class="admin-filter-input"
+                    placeholder="Tên mẫu sơ đồ ghế..."
+                    style="border-radius: 8px 0 0 8px;"
+                >
+                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit" aria-label="Tìm kiếm">
+                    <i class="bi bi-search"></i>
+                </button>
             </div>
         </form>
 
-        <button type="button" id="btnOpenCreateSeatLayoutTemplate" class="btn-primary-custom ms-auto border-0">
+        <button type="button" id="btnOpenCreateSeatLayoutTemplate" class="admin-action-btn ms-auto">
             <i class="bi bi-plus-lg"></i> Tạo mẫu sơ đồ ghế
         </button>
     </div>
 </div>
 
 {{-- ── Dòng 3: Tabs + Table ─────────────────────────────────────────── --}}
-<div class="chart-card">
+<div class="admin-table-container">
     {{-- Tabs: client-side Bootstrap --}}
     <ul class="nav nav-tabs combo-tabs mb-4" id="sltTabs" role="tablist">
         <li class="nav-item" role="presentation">

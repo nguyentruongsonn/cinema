@@ -7,32 +7,29 @@
 @section('content')
 
 {{-- ── Dòng 1: Header & Search ────────────────────────── --}}
-<div class="filter-bar mb-4">
-    <div class="filter-bar-inner align-items-center w-100">
-        <h5 class="mb-0 text-white fw-bold me-4">
+<div class="admin-filter-container">
+    <div class="d-flex align-items-center w-100 gap-3">
+        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
             <i class="bi bi-film me-2"></i>Danh sách Phim
         </h5>
 
-        <form id="searchForm" class="d-flex flex-grow-1 align-items-center gap-3">
-            <div class="filter-group flex-grow-1" style="max-width: 400px;">
-                <label for="search" class="filter-label" style="display:none;">Tìm kiếm</label>
-                <div class="input-group">
-                    <input type="text" id="search" name="search" class="filter-input" placeholder="Tên phim..." style="border-radius: 6px 0 0 6px;">
-                    <button class="btn btn-outline-secondary border-0" type="submit" style="background: rgba(255,255,255,0.05); border-radius: 0 6px 6px 0;">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </div>
+        <form id="searchForm" class="flex-grow-1" style="max-width: 500px;">
+            <div class="input-group">
+                <input type="text" id="search" name="search" class="admin-filter-input" placeholder="Tên phim..." style="border-radius: 8px 0 0 8px;">
+                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
             </div>
         </form>
 
-        <button type="button" id="btnOpenCreateMovie" class="btn-primary-custom ms-auto border-0">
+        <button type="button" id="btnOpenCreateMovie" class="admin-action-btn ms-auto">
             <i class="bi bi-plus-lg"></i> Thêm phim
         </button>
-    </div>
+    </div>ch 
 </div>
 
 {{-- ── Dòng 2: Tabs + Content ─────────────────────────────────────── --}}
-<div class="chart-card">
+<div class="admin-table-container">
     <ul class="nav nav-tabs combo-tabs mb-4" id="movieTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" data-status="all" type="button" role="tab">Tất cả</button>

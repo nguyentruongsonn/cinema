@@ -226,6 +226,15 @@ Route::prefix('v1')->group(function () {
     // Public product routes
     Route::get('products', [ProductController::class, 'index']);
 
+    // Pricing routes (public — không cần đăng nhập)
+    Route::prefix('pricing')->group(function () {
+        Route::match(['get', 'post'], 'calculate',     [\App\Http\Controllers\PricingController::class, 'calculate']);
+        Route::match(['get', 'post'], 'calculate-all', [\App\Http\Controllers\PricingController::class, 'calculateAll']);
+        Route::get('weekly-table',                     [\App\Http\Controllers\PricingController::class, 'weeklyTable']);
+        Route::get('showtime/{id}',                    [\App\Http\Controllers\PricingController::class, 'fromShowtime']);
+    });
+
+
     // Broadcasting channel auth – uses JWT instead of web session
     Route::middleware('auth:api')->post('broadcasting/auth', function (\Illuminate\Http\Request $request) {
         return \Illuminate\Support\Facades\Broadcast::auth($request);

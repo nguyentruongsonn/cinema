@@ -20,7 +20,8 @@ class OrderService
     private const STATUS_CONFIRMED = 2;
 
     public function __construct(
-        private readonly OrderExpirationService $orderExpirationService
+        private readonly OrderExpirationService $orderExpirationService,
+        private readonly TicketPricingService $ticketPricingService
     ) {
     }
 
@@ -29,7 +30,7 @@ class OrderService
         return DB::transaction(function () use ($data, $user) {
             $this->orderExpirationService->expirePendingOrders((int) $data['showtime_id']);
 
-            $showtime = Showtime::lockForUpdate()->findOrFail($data['showtime_id']);
+            $showtime = Showtime::with(['format', 'movie'])->lockForUpdate()->findOrFail($data['showtime_id']);
             $seatIds = array_values(array_map('intval', $data['seat_ids']));
 
             $seatHold = $this->getValidSeatHold($showtime->id, $user->id, $data['seat_hold_id'] ?? null);
@@ -53,7 +54,7 @@ class OrderService
             }
 
             $order = $this->createPendingOrder($showtime, $user->id, $seatIds, $seatHold->id);
-            $seatTotal = $this->createSeatOrderItems($order, $seats, (float) $showtime->price);
+            $seatTotal = $this->createSeatOrderItems($order, $seats, $showtime);
             $productTotal = $this->createProductOrderItems($order, $data['products'] ?? []);
             $subtotal = $seatTotal + $productTotal;
             [$discountAmount, $promotionPayload] = $this->applyPromotion($data['promotion_code'] ?? null, $subtotal);
@@ -113,7 +114,7 @@ class OrderService
                 'showtime.movie',
                 'showtime.format',
                 'showtime.sound',
-                'showtime.subtitle',
+                'showtime.versionType',
                 'showtime.screen.theater.branch',
                 'orderItems.item',
                 'payment',
@@ -380,12 +381,32 @@ class OrderService
         return 0;
     }
 
-    private function createSeatOrderItems(Order $order, $seats, float $basePrice): float
+    private function createSeatOrderItems(Order $order, $seats, Showtime $showtime): float
     {
         $totalAmount = 0;
 
+        // Lấy thông tin format và phụ thu phim
+        $formatName = $showtime->format?->name ?? '2D';
+        $movieSurcharge = (int) ($showtime->movie?->surcharge ?? 0);
+        $scheduledAt = $showtime->scheduled_at;
+
         foreach ($seats as $seat) {
-            $unitPrice = $basePrice + (float) ($seat->seatType->surcharge ?? 0);
+            // Kiểm tra ghế đôi
+            $isDoubleSeat = $this->isDoubleSeat(
+                $seat->seatType?->name ?? '',
+                $seat->seatType?->slug ?? ''
+            );
+
+            // Tính giá vé bằng TicketPricingService (mặc định adult cho đặt vé online)
+            $pricingResult = $this->ticketPricingService->calculate(
+                format: $formatName,
+                scheduledAt: $scheduledAt,
+                customerType: 'adult', // Online booking luôn tính giá adult
+                isDoubleSeat: $isDoubleSeat,
+                movieSurcharge: $movieSurcharge
+            );
+
+            $unitPrice = $pricingResult['total_price'];
             $totalAmount += $unitPrice;
 
             OrderItem::create([
@@ -400,11 +421,38 @@ class OrderService
                     'row' => $seat->row,
                     'number' => $seat->number,
                     'seat_type' => $seat->seatType?->name,
+                    'pricing_details' => [
+                        'base_price' => $pricingResult['base_price'],
+                        'surcharges' => $pricingResult['surcharges'],
+                        'day_type' => $pricingResult['day_type'],
+                        'time_slot' => $pricingResult['time_slot'],
+                        'customer_type' => $pricingResult['customer_type'],
+                        'format' => $pricingResult['format'],
+                    ],
                 ],
             ]);
         }
 
         return $totalAmount;
+    }
+
+    /**
+     * Kiểm tra xem ghế có phải ghế đôi không
+     */
+    private function isDoubleSeat(string $name, string $slug): bool
+    {
+        $nameLower = mb_strtolower($name);
+        $slugLower = mb_strtolower($slug);
+
+        $keywords = ['double', 'couple', 'đôi', 'sweetbox', 'sweet-box'];
+
+        foreach ($keywords as $keyword) {
+            if (str_contains($nameLower, $keyword) || str_contains($slugLower, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function ensureUserCanAccess(Order $order, $user): void

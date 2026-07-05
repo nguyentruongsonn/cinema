@@ -6,59 +6,54 @@
 
 @section('content')
 
-{{-- ── Header & Filter Bar ────────────────────────── --}}
-<div class="filter-bar mb-4">
-    <div class="filter-bar-inner align-items-center w-100">
-        <h5 class="mb-0 text-white fw-bold me-4"><i class="bi bi-box-seam me-2"></i>Danh sách Sản phẩm</h5>
+{{-- ── Filter Bar ─────────────────────────────────────────── --}}
+<div class="admin-filter-container">
+    <div class="d-flex align-items-center w-100 gap-3 flex-wrap">
+        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
+            <i class="bi bi-box-seam me-2"></i>Danh sách Sản phẩm
+        </h5>
 
-        <form id="searchForm" class="d-flex flex-grow-1 align-items-center gap-3">
-            <div class="filter-group flex-grow-1" style="max-width: 400px;">
-                <label for="search" class="filter-label" style="display:none;">Tìm kiếm</label>
-                <div class="input-group">
-                    <input type="text" id="search" name="search" class="filter-input" placeholder="Tên sản phẩm..." style="border-radius: 6px 0 0 6px;">
-                    <button class="btn btn-outline-secondary border-0" type="submit" style="background: rgba(255,255,255,0.05); color: #fff;">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="filter-group">
-                <select id="typeFilter" class="form-select filter-input">
-                    <option value="all">Tất cả loại</option>
-                    <option value="combo">Combo</option>
-                    <option value="food">Đồ ăn</option>
-                    <option value="drink">Đồ uống</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <select id="statusFilter" class="form-select filter-input">
-                    <option value="all">Tất cả trạng thái</option>
-                    <option value="active">Đang bán</option>
-                    <option value="inactive">Ngừng bán</option>
-                </select>
+        <form id="searchForm" class="flex-grow-1" style="max-width: 400px;">
+            <div class="input-group">
+                <input type="text" id="search" name="search" class="admin-filter-input" placeholder="Tên sản phẩm..." style="border-radius: 8px 0 0 8px;">
+                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
             </div>
         </form>
 
-        <button type="button" id="btnOpenCreateProduct" class="btn-primary-custom ms-auto border-0">
+        <select id="typeFilter" class="admin-filter-select" style="width: auto; min-width: 140px;">
+            <option value="all">Tất cả loại</option>
+            <option value="combo">Combo</option>
+            <option value="food">Đồ ăn</option>
+            <option value="drink">Đồ uống</option>
+        </select>
+
+        <select id="statusFilter" class="admin-filter-select" style="width: auto; min-width: 160px;">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="active">Đang bán</option>
+            <option value="inactive">Ngừng bán</option>
+        </select>
+
+        <button type="button" id="btnOpenCreateProduct" class="admin-action-btn ms-auto">
             <i class="bi bi-plus-lg"></i> Thêm Sản phẩm
         </button>
     </div>
 </div>
 
-{{-- ── Table ─────────────────────────────────────────── --}}
-<div class="chart-card">
-    <div class="table-responsive">
-        <table class="table table-dark table-hover align-middle mb-0" style="background:transparent;">
-            <thead style="border-bottom: 1px solid var(--border-color);">
+{{-- ── Table ─────────────────────────────────────────────────── --}}
+<div class="admin-table-container">
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <th class="text-center text-secondary fw-semibold border-0" style="width: 60px;">STT</th>
-                    <th class="text-secondary fw-semibold border-0" style="width: 80px;">Hình ảnh</th>
-                    <th class="text-secondary fw-semibold border-0">Tên sản phẩm</th>
-                    <th class="text-secondary fw-semibold border-0">Loại &amp; Tồn kho</th>
-                    <th class="text-secondary fw-semibold border-0">Giá bán</th>
-                    <th class="text-secondary fw-semibold border-0 text-center" style="width: 120px;">Trạng thái</th>
-                    <th class="text-center text-secondary fw-semibold border-0" style="width: 150px;">Hành động</th>
+                    <th class="text-center" style="width: 60px;">STT</th>
+                    <th style="width: 80px;">Hình ảnh</th>
+                    <th>Tên sản phẩm</th>
+                    <th>Loại & Tồn kho</th>
+                    <th>Giá bán</th>
+                    <th class="text-center" style="width: 120px;">Trạng thái</th>
+                    <th class="text-center" style="width: 140px;">Hành động</th>
                 </tr>
             </thead>
             <tbody id="productsTableBody">
@@ -73,8 +68,7 @@
         </table>
     </div>
 
-    <div class="d-flex justify-content-end mt-4 pt-3" style="border-top: 1px solid var(--border-color);" id="paginationContainer">
-    </div>
+    <div class="d-flex justify-content-end mt-4 pt-3" id="paginationContainer"></div>
 </div>
 
 {{-- ── Modal: Thêm / Sửa Sản phẩm ─────────────────────────────── --}}

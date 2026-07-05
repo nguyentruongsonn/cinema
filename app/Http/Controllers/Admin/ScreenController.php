@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Screen;
 use App\Models\Theater;
 use App\Models\Format;
-use App\Models\Sound;
+use App\Models\VersionType;
 use App\Models\SeatLayoutTemplate;
 use App\Models\Seat;
 use App\Models\SeatType;
@@ -14,8 +14,6 @@ use App\Http\Requests\Admin\StoreScreenRequest;
 use App\Http\Requests\Admin\UpdateScreenRequest;
 use App\Http\Requests\Admin\StoreFormatRequest;
 use App\Http\Requests\Admin\UpdateFormatRequest;
-use App\Http\Requests\Admin\StoreSoundRequest;
-use App\Http\Requests\Admin\UpdateSoundRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +25,7 @@ class ScreenController extends Controller
         $search = $request->input('search');
 
         $screens = Screen::query()
-            ->with(['theater', 'format', 'sound', 'seatLayoutTemplate'])
+            ->with(['theater', 'format', 'seatLayoutTemplate'])
             ->when($search, function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
                       ->orWhere('code', 'like', "%{$search}%")
@@ -39,14 +37,14 @@ class ScreenController extends Controller
             ->paginate(10);
 
         $formats = Format::latest()->get();
-        $sounds = Sound::latest()->get();
+        $versionTypes = VersionType::latest()->get();
         $theaters = Theater::active()->get();
         $templates = SeatLayoutTemplate::active()->get();
 
         return response()->json([
             'screens' => $screens,
             'formats' => $formats,
-            'sounds' => $sounds,
+            'version_types' => $versionTypes,
             'theaters' => $theaters,
             'templates' => $templates
         ]);
@@ -121,7 +119,7 @@ class ScreenController extends Controller
 
     public function showSeats(Screen $screen)
     {
-        $screen->load(['theater', 'format', 'sound', 'seatLayoutTemplate']);
+        $screen->load(['theater', 'format', 'seatLayoutTemplate']);
 
         $seats = $screen->seats()
             ->with('seatType')
@@ -138,7 +136,7 @@ class ScreenController extends Controller
     public function updateSeats(Request $request, Screen $screen)
     {
         $seats = $request->input('seats', []);
-        
+
         // Optimizing with a loop since we just update status
         foreach ($seats as $id => $status) {
             Seat::where('id', $id)->where('screen_id', $screen->id)->update(['status' => (bool)$status]);
@@ -165,29 +163,6 @@ class ScreenController extends Controller
         try {
             $format->delete();
             return response()->json(['success' => true, 'message' => 'Xóa định dạng chiếu thành công.']);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Không thể xóa định dạng vì đang có phòng chiếu sử dụng.'], 400);
-        }
-    }
-
-    /* ── Sound CRUD Actions ─────────────────────────────────────────── */
-    public function storeSound(StoreSoundRequest $request)
-    {
-        $sound = Sound::create($request->validated());
-        return response()->json(['success' => true, 'message' => 'Tạo định dạng âm thanh thành công.', 'data' => $sound]);
-    }
-
-    public function updateSound(UpdateSoundRequest $request, Sound $sound)
-    {
-        $sound->update($request->validated());
-        return response()->json(['success' => true, 'message' => 'Cập nhật định dạng âm thanh thành công.', 'data' => $sound]);
-    }
-
-    public function destroySound(Sound $sound)
-    {
-        try {
-            $sound->delete();
-            return response()->json(['success' => true, 'message' => 'Xóa định dạng âm thanh thành công.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Không thể xóa định dạng vì đang có phòng chiếu sử dụng.'], 400);
         }

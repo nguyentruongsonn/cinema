@@ -14,23 +14,21 @@
         title: document.getElementById('screenNameTitle'),
         codeBadge: document.getElementById('screenCodeBadge'),
         theaterSpan: document.getElementById('theaterNameSpan'),
-        
-        seatGridLoading: document.getElementById('seatGridLoading'),
+
         seatGrid: document.getElementById('seatGrid'),
         colLabels: document.getElementById('seatGridColLabels'),
-        
+
         infoTheater: document.getElementById('infoTheater'),
         infoFormat: document.getElementById('infoFormat'),
-        infoSound: document.getElementById('infoSound'),
         infoMatrix: document.getElementById('infoMatrix'),
         capacityCounter: document.getElementById('capacityCounter'),
         totalSeatsCounter: document.getElementById('totalSeatsCounter'),
-        
+
         screenActiveToggle: document.getElementById('screenActiveToggle'),
         btnUpdateSeats: document.getElementById('btnUpdateSeats'),
     };
 
-    let modifiedSeats = {}; 
+    let modifiedSeats = {};
     let currentScreen = null;
 
     /* ── Fetch Data ────────────────────────────────────────────── */
@@ -45,7 +43,10 @@
             }
         } catch (error) {
             console.error('Error loading seats:', error);
-            els.seatGridLoading.innerHTML = '<div class="text-danger py-4">Lỗi khi tải dữ liệu sơ đồ ghế.</div>';
+            const skeleton = document.querySelector('.seat-map-skeleton');
+            if (skeleton) {
+                skeleton.innerHTML = '<div class="text-danger py-4 text-center">Lỗi khi tải dữ liệu sơ đồ ghế.</div>';
+            }
         }
     }
 
@@ -53,20 +54,19 @@
     function renderInfo(screen, seats) {
         els.title.textContent = screen.name;
         els.codeBadge.textContent = screen.code;
-        
+
         const theaterName = screen.theater?.name || '—';
         els.theaterSpan.textContent = `| ${theaterName}`;
         els.infoTheater.textContent = theaterName;
-        
+
         els.infoFormat.textContent = screen.format?.name || '—';
-        els.infoSound.textContent = screen.sound?.name || '—';
-        
+
         els.screenActiveToggle.checked = screen.status === 1;
 
         let rows = 0;
         let cols = 0;
         let activeCount = 0;
-        
+
         if (seats && seats.length > 0) {
             rows = Math.max(...seats.map(s => s.row_index)) + 1;
             cols = Math.max(...seats.map(s => s.column_index)) + 1;
@@ -83,7 +83,7 @@
 
     /* ── Render Grid ───────────────────────────────────────────── */
     function renderGrid(screen, seats) {
-        els.seatGridLoading.classList.add('d-none');
+        document.querySelector('.seat-map-skeleton')?.classList.add('d-none');
         els.seatGrid.classList.remove('d-none');
         els.colLabels.classList.remove('d-none');
 
@@ -132,7 +132,7 @@
                     const isDisabled = seat.status === 0;
                     const span = isCouple ? 2 : 1;
 
-                    let classList = `admin-seat ${cssClass}`;
+                    let classList = `seat admin-seat ${cssClass}`;
                     if (isCouple) classList += ' seat-couple-span';
                     if (isDisabled) classList += ' seat-disabled';
 
@@ -147,7 +147,7 @@
                     if (isDisabled) {
                         div.innerHTML = `<i class="bi bi-slash-circle"></i>`;
                     } else if (isCouple) {
-                        div.innerHTML = `<svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor" class="svg-icon-lg"><rect x="5" y="2" width="38" height="11" rx="2" /><rect x="4" y="14" width="40" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="43" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${seat.label}</span>`;
+                        div.innerHTML = `<svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="38" height="11" rx="2" /><rect x="4" y="14" width="40" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="43" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${seat.label}</span>`;
                     } else {
                         div.innerHTML = `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="14" height="11" rx="2" /><rect x="4" y="14" width="16" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="19" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${seat.label}</span>`;
                     }
@@ -156,7 +156,7 @@
                     c += span;
                 } else {
                     const empty = document.createElement('div');
-                    empty.className = 'admin-seat seat-empty';
+                    empty.className = 'seat admin-seat seat-empty';
                     els.seatGrid.appendChild(empty);
                     c++;
                 }
@@ -194,7 +194,7 @@
             seatEl.classList.remove('seat-disabled');
             seatEl.title = `${label} · ${typeName}`;
             if (isCouple) {
-                seatEl.innerHTML = `<svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor" class="svg-icon-lg"><rect x="5" y="2" width="38" height="11" rx="2" /><rect x="4" y="14" width="40" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="43" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${label}</span>`;
+                seatEl.innerHTML = `<svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="38" height="11" rx="2" /><rect x="4" y="14" width="40" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="43" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${label}</span>`;
             } else {
                 seatEl.innerHTML = `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="14" height="11" rx="2" /><rect x="4" y="14" width="16" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="19" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${label}</span>`;
             }

@@ -7,40 +7,37 @@
 @section('content')
 
 {{-- ── Dòng 1 + Dòng 2: Header & Filter Bar ────────────────────────── --}}
-<div class="filter-bar mb-4">
-    <div class="filter-bar-inner align-items-center w-100">
-        <h5 class="mb-0 text-white fw-bold me-4"><i class="bi bi-buildings me-2"></i>Danh sách chi nhánh</h5>
+<div class="admin-filter-container">
+    <div class="d-flex align-items-center w-100 gap-3">
+        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;"><i class="bi bi-buildings me-2"></i>Danh sách chi nhánh</h5>
         
-        <form id="searchForm" class="d-flex flex-grow-1 align-items-center gap-3">
-            <div class="filter-group flex-grow-1" style="max-width: 400px;">
-                <label for="search" class="filter-label" style="display:none;">Tìm kiếm</label>
-                <div class="input-group">
-                    <input type="text" id="search" class="filter-input" placeholder="Tìm chi nhánh..." style="border-radius: 6px 0 0 6px;">
-                    <button class="btn btn-outline-secondary border-0" style="background: rgba(255,255,255,0.05); border-radius: 0 6px 6px 0;" type="submit">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </div>
+        <form id="searchForm" class="flex-grow-1" style="max-width: 500px;">
+            <div class="input-group">
+                <input type="text" id="search" class="admin-filter-input" placeholder="Tìm chi nhánh..." style="border-radius: 8px 0 0 8px;">
+                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
             </div>
         </form>
 
-        <button type="button" class="btn-primary-custom ms-auto border-0" id="btnCreateBranch">
+        <button type="button" class="admin-action-btn ms-auto" id="btnCreateBranch">
             <i class="bi bi-plus-lg"></i> Tạo chi nhánh
         </button>
     </div>
 </div>
 
 {{-- ── Dòng 3: Table ───────────────────────────────────────────────── --}}
-<div class="chart-card">
-    <div class="table-responsive">
-        <table class="table table-dark table-hover align-middle mb-0" style="background: transparent;">
-            <thead style="border-bottom: 1px solid var(--border-color);">
+<div class="admin-table-container">
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <th class="text-center text-secondary fw-semibold border-0" style="width: 60px;">STT</th>
-                    <th class="text-secondary fw-semibold border-0">Tên chi nhánh</th>
-                    <th class="text-center text-secondary fw-semibold border-0">Hoạt động</th>
-                    <th class="text-secondary fw-semibold border-0">Ngày tạo</th>
-                    <th class="text-secondary fw-semibold border-0">Ngày cập nhật</th>
-                    <th class="text-center text-secondary fw-semibold border-0" style="width: 120px;">Hành động</th>
+                    <th class="text-center" style="width: 60px;">STT</th>
+                    <th>Tên chi nhánh</th>
+                    <th class="text-center">Hoạt động</th>
+                    <th>Ngày tạo</th>
+                    <th>Ngày cập nhật</th>
+                    <th class="text-center" style="width: 120px;">Hành động</th>
                 </tr>
             </thead>
             <tbody id="branchesTableBody">
@@ -55,7 +52,7 @@
         </table>
     </div>
 
-    <div class="d-flex justify-content-end mt-4 pt-3" style="border-top: 1px solid var(--border-color);" id="paginationContainer"></div>
+    <div class="d-flex justify-content-end mt-4 pt-3" id="paginationContainer"></div>
 </div>
 
 {{-- Modal Thêm/Sửa --}}

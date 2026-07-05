@@ -1,6 +1,7 @@
 /**
  * Screens Management - screens.js
  * Pattern: IIFE, SPA Architecture
+ * FIXED: Removed all Sound references (sound model/table no longer exists)
  */
 (function () {
     'use strict';
@@ -10,13 +11,11 @@
         // Tables
         screensTableBody: document.getElementById('screensTableBody'),
         formatsTableBody: document.getElementById('formatsTableBody'),
-        soundsTableBody: document.getElementById('soundsTableBody'),
         pagination: document.getElementById('paginationContainer'),
 
         // Badges
         countScreens: document.getElementById('count-screens'),
         countFormats: document.getElementById('count-formats'),
-        countSounds: document.getElementById('count-sounds'),
 
         // Search
         searchForm: document.getElementById('screenSearchForm'),
@@ -25,7 +24,6 @@
         // Selects
         screenTheater: document.getElementById('screenTheater'),
         screenFormat: document.getElementById('screenFormat'),
-        screenSound: document.getElementById('screenSound'),
         screenTemplate: document.getElementById('screenTemplate'),
     };
 
@@ -39,9 +37,6 @@
         </button>`,
         'pane-formats': `<button type="button" class="btn-primary-custom border-0" id="btnCreateFormat">
             <i class="bi bi-plus-lg"></i> Thêm định dạng chiếu
-        </button>`,
-        'pane-sounds': `<button type="button" class="btn-primary-custom border-0" id="btnCreateSound">
-            <i class="bi bi-plus-lg"></i> Thêm định dạng âm thanh
         </button>`,
     };
 
@@ -69,24 +64,22 @@
             const res = await window.AdminCore.apiFetch(url.toString());
             if (res && res.ok) {
                 const data = await res.json();
-                
+
                 // Render UI
                 renderScreens(data.screens.data, data.screens.from);
                 renderPagination(data.screens);
                 renderFormats(data.formats);
-                renderSounds(data.sounds);
-                
+
                 // Populate Dropdowns
-                populateDropdowns(data.theaters, data.formats, data.sounds, data.templates);
+                populateDropdowns(data.theaters, data.formats, data.templates);
 
                 // Update Badges
                 if (els.countScreens) els.countScreens.textContent = data.screens.total;
                 if (els.countFormats) els.countFormats.textContent = data.formats.length;
-                if (els.countSounds) els.countSounds.textContent = data.sounds.length;
             }
         } catch (error) {
             console.error('Error loading data:', error);
-            els.screensTableBody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
+            els.screensTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
     }
 
@@ -95,7 +88,7 @@
         if (!screens || screens.length === 0) {
             els.screensTableBody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="text-center py-5 text-muted">
+                    <td colspan="8" class="text-center py-5 text-muted">
                         <i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>
                         Không tìm thấy phòng chiếu nào.
                     </td>
@@ -107,11 +100,10 @@
         screens.forEach((screen, index) => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-            
+
             const theaterName = screen.theater?.name || '—';
             const formatName = screen.format?.name || '—';
-            const soundName = screen.sound?.name || '—';
-            
+
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td>
@@ -121,16 +113,13 @@
                         <a href="/admin/screens/${screen.id}/seats"
                             class="small fw-semibold text-decoration-none d-inline-flex align-items-center gap-1"
                             style="color: var(--accent-color);">
-                            <i class="bi bi-grid-3x3"></i> Xem &amp; chỉnh sơ đồ ghế
+                            <i class="bi bi-grid-3x3"></i> Xem & chỉnh sơ đồ ghế
                         </a>
                     </div>
                 </td>
                 <td class="text-white-50 small">${theaterName}</td>
                 <td>
                     <span class="badge" style="background: rgba(96,165,250,0.12); color:#60a5fa;">${formatName}</span>
-                </td>
-                <td>
-                    <span class="badge" style="background: rgba(167,139,250,0.12); color:#a78bfa;">${soundName}</span>
                 </td>
                 <td class="text-white-50 small">${screen.capacity} chỗ</td>
                 <td>
@@ -151,14 +140,13 @@
                             data-code="${screen.code}"
                             data-theater-id="${screen.theater_id}"
                             data-format-id="${screen.format_id}"
-                            data-sound-id="${screen.sound_id}"
                             data-template-id="${screen.seat_layout_template_id}"
                             data-status="${screen.status ? '1' : '0'}"
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button type="button" class="btn btn-sm ms-1 btn-delete-screen"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);" 
+                            style="color:#ef4444; background:rgba(239,68,68,0.1);"
                             data-id="${screen.id}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -198,35 +186,7 @@
         });
     }
 
-    function renderSounds(sounds) {
-        if (!sounds || sounds.length === 0) {
-            els.soundsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-5 text-muted">Chưa có định dạng âm thanh nào.</td></tr>`;
-            return;
-        }
-        els.soundsTableBody.innerHTML = '';
-        sounds.forEach((s, i) => {
-            els.soundsTableBody.innerHTML += `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <td class="text-center text-white-50">${i + 1}</td>
-                    <td class="fw-medium text-white">${s.name}</td>
-                    <td class="text-center">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-edit-sound"
-                                style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
-                                data-id="${s.id}" data-name="${s.name}">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm ms-1 btn-delete-sound"
-                                style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${s.id}">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-        });
-    }
-
-    function populateDropdowns(theaters, formats, sounds, templates) {
+    function populateDropdowns(theaters, formats, templates) {
         if (els.screenTheater) {
             els.screenTheater.innerHTML = '<option value="">-- Chọn rạp --</option>';
             theaters.forEach(t => els.screenTheater.innerHTML += `<option value="${t.id}">${t.name}</option>`);
@@ -234,10 +194,6 @@
         if (els.screenFormat) {
             els.screenFormat.innerHTML = '<option value="">-- Chọn định dạng --</option>';
             formats.forEach(f => els.screenFormat.innerHTML += `<option value="${f.id}">${f.name} (+${parseInt(f.surcharge).toLocaleString()}đ)</option>`);
-        }
-        if (els.screenSound) {
-            els.screenSound.innerHTML = '<option value="">-- Chọn âm thanh --</option>';
-            sounds.forEach(s => els.screenSound.innerHTML += `<option value="${s.id}">${s.name}</option>`);
         }
         if (els.screenTemplate) {
             els.screenTemplate.innerHTML = '<option value="">-- Chọn mẫu --</option>';
@@ -252,7 +208,7 @@
             els.pagination.innerHTML = '';
             return;
         }
-        
+
         let html = '<ul class="pagination pagination-sm m-0">';
         if (meta.current_page > 1) {
             html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>`;
@@ -274,7 +230,7 @@
             html += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
         }
         html += '</ul>';
-        
+
         els.pagination.innerHTML = html;
         els.pagination.querySelectorAll('a.page-link').forEach(a => {
             a.addEventListener('click', (e) => {
@@ -306,14 +262,6 @@
         document.getElementById('formatModalLabel').innerHTML = '<i class="bi bi-camera-reels me-2" style="color:var(--accent-color);"></i>Thêm định dạng chiếu';
     }
 
-    function resetSoundForm() {
-        const form = document.getElementById('soundForm');
-        if (!form) return;
-        form.reset();
-        document.getElementById('soundFormMethod').value = 'POST';
-        document.getElementById('soundModalLabel').innerHTML = '<i class="bi bi-volume-up me-2" style="color:var(--accent-color);"></i>Thêm định dạng âm thanh';
-    }
-
     function updateTemplateInfo(selectEl) {
         const badgesEl  = document.getElementById('templateDetailBadges');
         const option    = selectEl.options[selectEl.selectedIndex];
@@ -336,10 +284,6 @@
             resetFormatForm();
             getModal('formatModal')?.show();
         });
-        document.getElementById('btnCreateSound')?.addEventListener('click', () => {
-            resetSoundForm();
-            getModal('soundModal')?.show();
-        });
     }
 
     /* ── Event Delegation for Actions ────────────────────────────── */
@@ -351,17 +295,16 @@
             document.getElementById('screenFormMethod').value = 'PUT';
             document.getElementById('screenIdInput').value   = editScreen.dataset.id;
             document.getElementById('screenModalLabel').innerHTML = '<i class="bi bi-display me-2" style="color:var(--accent-color);"></i>Cập nhật phòng chiếu';
-            
+
             document.getElementById('screenName').value       = editScreen.dataset.name    || '';
             document.getElementById('screenCode').value       = editScreen.dataset.code    || '';
             document.getElementById('screenTheater').value    = editScreen.dataset.theaterId || '';
             document.getElementById('screenFormat').value     = editScreen.dataset.formatId  || '';
-            document.getElementById('screenSound').value      = editScreen.dataset.soundId   || '';
-            
+
             const tplSelect = document.getElementById('screenTemplate');
             tplSelect.value = editScreen.dataset.templateId || '';
             updateTemplateInfo(tplSelect);
-            
+
             document.getElementById('screenStatus').checked   = editScreen.dataset.status === '1';
             document.getElementById('templateEditWarning')?.classList.remove('d-none');
             getModal('screenModal')?.show();
@@ -409,30 +352,6 @@
             } catch (err) {}
             return;
         }
-
-        // --- Edit Sound ---
-        const editSound = e.target.closest('.btn-edit-sound');
-        if (editSound) {
-            resetSoundForm();
-            document.getElementById('soundFormMethod').value = 'PUT';
-            document.getElementById('soundForm').dataset.id = editSound.dataset.id;
-            document.getElementById('soundModalLabel').innerHTML = '<i class="bi bi-volume-up me-2" style="color:var(--accent-color);"></i>Cập nhật định dạng âm thanh';
-            document.getElementById('soundName').value = editSound.dataset.name || '';
-            getModal('soundModal')?.show();
-            return;
-        }
-
-        // --- Delete Sound ---
-        const delSound = e.target.closest('.btn-delete-sound');
-        if (delSound) {
-            if(!confirm('Bạn có chắc muốn xóa định dạng này?')) return;
-            try {
-                const res = await window.AdminCore.apiFetch(`/api/v1/admin/sounds/${delSound.dataset.id}`, { method: 'DELETE' });
-                if (res && res.ok) { window.showAdminToast?.('Xóa thành công', 'success'); loadData(currentPage, currentSearch); }
-                else { window.showAdminToast?.((await res.json()).message, 'error'); }
-            } catch (err) {}
-            return;
-        }
     });
 
     els.screensTableBody.addEventListener('change', async (e) => {
@@ -452,97 +371,84 @@
         }
     });
 
-    /* ── Form Submissions via Fetch ─────────────────────────────── */
-    async function handleFormSubmit(e, formId, urlBase) {
+    /* ── Form Submissions ────────────────────────────────────────── */
+    document.getElementById('screenForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const form = document.getElementById(formId);
-        if (!form) return;
-        
-        const isEdit = document.getElementById(formId + 'Method').value === 'PUT';
-        let id = '';
-        if (formId === 'screenForm') id = document.getElementById('screenIdInput').value;
-        else id = form.dataset.id || '';
+        const method = document.getElementById('screenFormMethod').value;
+        const id     = document.getElementById('screenIdInput').value;
+        const url    = method === 'POST' ? '/api/v1/admin/screens' : `/api/v1/admin/screens/${id}`;
 
-        const url = isEdit ? `/api/v1/admin/${urlBase}/${id}` : `/api/v1/admin/${urlBase}`;
-        
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-        if (formId === 'screenForm') {
-            data.status = document.getElementById('screenStatus').checked ? 1 : 0;
-        }
+        const formData = new FormData(e.target);
+        const body = {};
+        formData.forEach((v, k) => body[k] = v);
 
         try {
-            const res = await window.AdminCore.apiFetch(url, {
-                method: isEdit ? 'PUT' : 'POST',
-                body: JSON.stringify(data)
-            });
-            
+            const res = await window.AdminCore.apiFetch(url, { method, body: JSON.stringify(body) });
+            const data = await res.json();
             if (res && res.ok) {
-                getModal(formId.replace('Form', 'Modal'))?.hide();
-                window.showAdminToast?.(isEdit ? 'Cập nhật thành công!' : 'Thêm mới thành công!', 'success');
+                window.showAdminToast?.(data.message || 'Thành công', 'success');
+                getModal('screenModal')?.hide();
                 loadData(currentPage, currentSearch);
             } else {
-                const errData = await res.json();
-                alert('Lỗi: ' + JSON.stringify(errData.errors || errData.message));
+                window.showAdminToast?.(data.message || 'Có lỗi xảy ra', 'error');
             }
-        } catch (error) {
-            console.error('Submit form error', error);
-        }
-    }
-
-    document.getElementById('screenForm')?.addEventListener('submit', (e) => handleFormSubmit(e, 'screenForm', 'screens'));
-    document.getElementById('formatForm')?.addEventListener('submit', (e) => handleFormSubmit(e, 'formatForm', 'formats'));
-    document.getElementById('soundForm')?.addEventListener('submit', (e) => handleFormSubmit(e, 'soundForm', 'sounds'));
-
-    /* ── Toggle screen active ─────────────────────────────── */
-    document.addEventListener('change', async (e) => {
-        const toggle = e.target.closest('.toggle-screen-active');
-        if (toggle) {
-            const id = toggle.getAttribute('data-id');
-            const isActive = toggle.checked;
-            try {
-                const res = await window.AdminCore.apiFetch(`/api/v1/admin/screens/${id}/toggle-active`, { method: 'POST' });
-                if (!res || !res.ok) throw new Error();
-            } catch (error) {
-                window.showAdminToast?.('Cập nhật trạng thái thất bại', 'error');
-                toggle.checked = !isActive;
-            }
-        }
-        
-        if (e.target.id === 'screenTemplate') {
-            updateTemplateInfo(e.target);
+        } catch (err) {
+            console.error(err);
+            window.showAdminToast?.('Có lỗi xảy ra', 'error');
         }
     });
 
-    /* ── Search Form ────────────────────────────────────────── */
-    if (els.searchForm) {
-        els.searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            currentSearch = els.searchInput.value.trim();
-            currentPage = 1;
-            loadData(currentPage, currentSearch);
-        });
-    }
+    document.getElementById('formatForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const method = document.getElementById('formatFormMethod').value;
+        const id     = document.getElementById('formatForm').dataset.id;
+        const url    = method === 'POST' ? '/api/v1/admin/formats' : `/api/v1/admin/formats/${id}`;
 
-    /* ── Tab change: inject header button ────────────────────────── */
-    function initTabs() {
-        const tabs = document.querySelectorAll('#screenTabs .nav-link');
-        tabs.forEach(tab => {
-            tab.addEventListener('shown.bs.tab', (e) => {
-                const paneId = e.target.getAttribute('data-bs-target')?.replace('#', '');
-                injectHeaderBtn(paneId);
-            });
-        });
-        const activeTab = document.querySelector('#screenTabs .nav-link.active');
-        if (activeTab) {
-            const paneId = activeTab.getAttribute('data-bs-target')?.replace('#', '');
-            injectHeaderBtn(paneId);
+        const formData = new FormData(e.target);
+        const body = {};
+        formData.forEach((v, k) => body[k] = v);
+
+        try {
+            const res = await window.AdminCore.apiFetch(url, { method, body: JSON.stringify(body) });
+            const data = await res.json();
+            if (res && res.ok) {
+                window.showAdminToast?.(data.message || 'Thành công', 'success');
+                getModal('formatModal')?.hide();
+                loadData(currentPage, currentSearch);
+            } else {
+                window.showAdminToast?.(data.message || 'Có lỗi xảy ra', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            window.showAdminToast?.('Có lỗi xảy ra', 'error');
         }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        initTabs();
-        loadData();
     });
+
+    /* ── Search ────────────────────────────────────────────────── */
+    els.searchForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        currentSearch = els.searchInput.value.trim();
+        currentPage = 1;
+        loadData(currentPage, currentSearch);
+    });
+
+    /* ── Template select onChange ────────────────────────────────── */
+    document.getElementById('screenTemplate')?.addEventListener('change', function() {
+        updateTemplateInfo(this);
+    });
+
+    /* ── Tabs change => reload header button ──────────────────────── */
+    const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabEls.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', (e) => {
+            const targetId = e.target.getAttribute('data-bs-target')?.substring(1);
+            injectHeaderBtn(targetId);
+        });
+    });
+
+    /* ── Initialize ─────────────────────────────────────────────── */
+    loadData();
+    const activeTab = document.querySelector('.tab-pane.active')?.id;
+    injectHeaderBtn(activeTab || 'pane-screens');
 
 })();

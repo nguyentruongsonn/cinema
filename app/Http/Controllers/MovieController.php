@@ -37,7 +37,7 @@ class MovieController extends Controller
                 'release_to' => ['nullable', 'date', 'after_or_equal:release_from'],
                 'sort_by' => ['nullable', Rule::in(['title', 'release_date', 'duration', 'created_at', 'is_hot'])],
                 'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
-                'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
             ]);
 
             $movies = $this->movieService->getMovies($filters);

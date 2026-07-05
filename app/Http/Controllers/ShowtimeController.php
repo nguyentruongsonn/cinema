@@ -43,10 +43,8 @@ class ShowtimeController extends Controller
             'movie_id' => 'required|exists:movies,id',
             'screen_id' => 'required|exists:screens,id',
             'format_id' => 'nullable|exists:formats,id',
-            'sound_id' => 'nullable|exists:sounds,id',
-            'subtitle_id' => 'nullable|exists:subtitles,id',
+            'version_type_id' => 'nullable|exists:version_types,id',
             'scheduled_at' => 'required|date_format:Y-m-d H:i:s|after:now',
-            'price' => 'required|numeric|min:0',
             'status' => 'required|in:0,1',
         ]);
 
@@ -80,10 +78,8 @@ class ShowtimeController extends Controller
             'movie_id' => 'sometimes|exists:movies,id',
             'screen_id' => 'sometimes|exists:screens,id',
             'format_id' => 'nullable|exists:formats,id',
-            'sound_id' => 'nullable|exists:sounds,id',
-            'subtitle_id' => 'nullable|exists:subtitles,id',
+            'version_type_id' => 'nullable|exists:version_types,id',
             'scheduled_at' => 'sometimes|date_format:Y-m-d H:i:s',
-            'price' => 'sometimes|numeric|min:0',
             'status' => 'sometimes|in:0,1',
         ]);
 
@@ -97,7 +93,7 @@ class ShowtimeController extends Controller
 
     /**
      * Bulk create showtimes across a date range × multiple times (Tab 1)
-     * Payload: { movie_id, screen_id, date_from, date_to, times[], price, format_id?, sound_id?, subtitle_id? }
+     * Payload: { movie_id, screen_id, date_from, date_to, times[], format_id?, version_type_id? }
      */
     public function bulkCreate(Request $request)
     {
@@ -108,10 +104,8 @@ class ShowtimeController extends Controller
             'date_to'     => 'required|date',
             'times'       => 'required|array|min:1',
             'times.*'     => 'required|date_format:H:i',
-            'price'       => 'required|numeric|min:0',
             'format_id'   => 'nullable|exists:formats,id',
-            'sound_id'    => 'nullable|exists:sounds,id',
-            'subtitle_id' => 'nullable|exists:subtitles,id',
+            'version_type_id' => 'nullable|exists:version_types,id',
         ]);
 
         try {
@@ -124,10 +118,8 @@ class ShowtimeController extends Controller
             $base = [
                 'movie_id'    => $validated['movie_id'],
                 'screen_id'   => $validated['screen_id'],
-                'price'       => $validated['price'],
                 'format_id'   => $validated['format_id'] ?? null,
-                'sound_id'    => $validated['sound_id'] ?? null,
-                'subtitle_id' => $validated['subtitle_id'] ?? null,
+                'version_type_id' => $validated['version_type_id'] ?? null,
                 'status'      => 1,
             ];
 
@@ -159,17 +151,15 @@ class ShowtimeController extends Controller
 
     /**
      * Bulk create showtimes for a single day, multiple (time × screen) slots (Tab 2)
-     * Payload: { movie_id, date, slots[{time, screen_id}], price, format_id?, sound_id?, subtitle_id?, status }
+     * Payload: { movie_id, date, slots[{time, screen_id}], format_id?, version_type_id?, status }
      */
     public function bulkSingleDay(Request $request)
     {
         $validated = $request->validate([
             'movie_id'       => 'required|exists:movies,id',
             'date'           => 'required|date',
-            'price'          => 'required|numeric|min:0',
             'format_id'      => 'nullable|exists:formats,id',
-            'sound_id'       => 'nullable|exists:sounds,id',
-            'subtitle_id'    => 'nullable|exists:subtitles,id',
+            'version_type_id' => 'nullable|exists:version_types,id',
             'status'         => 'nullable|in:0,1',
             'slots'          => 'required|array|min:1',
             'slots.*.time'   => 'required|date_format:H:i',
@@ -193,10 +183,8 @@ class ShowtimeController extends Controller
                     'movie_id'    => $validated['movie_id'],
                     'screen_id'   => $slot['screen_id'],
                     'scheduled_at'=> $scheduledAt,
-                    'price'       => $validated['price'],
                     'format_id'   => $validated['format_id'] ?? null,
-                    'sound_id'    => $validated['sound_id'] ?? null,
-                    'subtitle_id' => $validated['subtitle_id'] ?? null,
+                    'version_type_id' => $validated['version_type_id'] ?? null,
                     'status'      => $validated['status'] ?? 1,
                 ]);
                 $created++;

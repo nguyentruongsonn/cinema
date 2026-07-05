@@ -23,8 +23,8 @@
                         <!-- Movie Info -->
                         <div class="movie-info mb-4">
                             <div class="d-flex gap-3">
-                                <img src="{{ $order->showtime->movie->poster_url ?? 'https://via.placeholder.com/80x120?text=No+Image' }}" 
-                                     alt="{{ $order->showtime->movie->title }}" 
+                                <img src="{{ $order->showtime->movie->poster_url ?? 'https://via.placeholder.com/80x120?text=No+Image' }}"
+                                     alt="{{ $order->showtime->movie->title }}"
                                      class="movie-poster">
                                 <div class="flex-grow-1">
                                     <h6 class="movie-title mb-2">{{ $order->showtime->movie->title }}</h6>
@@ -46,8 +46,7 @@
                                         </div>
                                         <div>
                                             <span class="badge bg-primary me-1">{{ $order->showtime->format->name }}</span>
-                                            <span class="badge bg-secondary me-1">{{ $order->showtime->sound->name }}</span>
-                                            <span class="badge bg-info">{{ $order->showtime->subtitle->name }}</span>
+                                            <span class="badge bg-info">{{ $order->showtime->versionType->name }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -69,7 +68,7 @@
                                 </div>
                                 @endforeach
                             </div>
-                            
+
                             <!-- Price Breakdown -->
                             <div class="price-breakdown">
                                 <div class="d-flex justify-content-between mb-2">

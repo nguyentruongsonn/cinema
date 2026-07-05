@@ -746,88 +746,161 @@ class BookingManager {
     renderSeatMap() {
         if (!this.seatMapContainer) return;
 
-        // Hide skeleton, show map
         this.seatMapSkeleton?.classList.add('d-none');
         this.seatMapContainer.classList.remove('d-none');
+        this.seatMapContainer.classList.add('seat-grid');
         this.seatMapContainer.innerHTML = '';
 
-        // Group seats by row
-        const seatsByRow = {};
-        this.seats.forEach(seat => {
-            if (!seatsByRow[seat.row]) {
-                seatsByRow[seat.row] = [];
+        const dimensions = this.getSeatGridDimensions();
+        this.seatMapContainer.style.setProperty('--cols', dimensions.cols);
+        this.renderSeatColumnLabels(dimensions.cols);
+
+        const seatMap = this.buildSeatPositionMap();
+
+        for (let rowIndex = 0; rowIndex < dimensions.rows; rowIndex++) {
+            const rowLabel = document.createElement('div');
+            rowLabel.className = 'seat-row-label';
+            rowLabel.textContent = this.getSeatRowLabel(rowIndex);
+            this.seatMapContainer.appendChild(rowLabel);
+
+            let colIndex = 0;
+            while (colIndex < dimensions.cols) {
+                const seat = seatMap[rowIndex]?.[colIndex];
+
+                if (!seat) {
+                    this.seatMapContainer.appendChild(this.createEmptySeat());
+                    colIndex++;
+                    continue;
+                }
+
+                this.seatMapContainer.appendChild(this.createSeat(seat));
+                colIndex += this.isCoupleSeat(seat) ? 2 : 1;
             }
-            seatsByRow[seat.row].push(seat);
-        });
-
-        // Sort rows
-        const rows = Object.keys(seatsByRow).sort();
-
-        // Render each row
-        rows.forEach(rowLetter => {
-            const rowSeats = seatsByRow[rowLetter].sort((a, b) => a.number - b.number);
-            const rowElement = this.createSeatRow(rowLetter, rowSeats);
-            this.seatMapContainer.appendChild(rowElement);
-        });
+        }
     }
 
-    createSeatRow(rowLetter, seats) {
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'seat-row';
+    getSeatGridDimensions() {
+        if (!this.seats.length) {
+            return { rows: 0, cols: 0 };
+        }
 
-        // Row label
-        const label = document.createElement('div');
-        label.className = 'seat-row-label';
-        label.textContent = rowLetter;
-        rowDiv.appendChild(label);
+        return {
+            rows: Math.max(...this.seats.map(seat => this.getSeatRowIndex(seat))) + 1,
+            cols: Math.max(...this.seats.map(seat => this.getSeatColumnIndex(seat))) + 1,
+        };
+    }
 
-        // Seats
-        seats.forEach(seat => {
-            const seatElement = this.createSeat(seat);
-            rowDiv.appendChild(seatElement);
-        });
+    buildSeatPositionMap() {
+        return this.seats.reduce((map, seat) => {
+            const rowIndex = this.getSeatRowIndex(seat);
+            const columnIndex = this.getSeatColumnIndex(seat);
 
-        return rowDiv;
+            if (!map[rowIndex]) {
+                map[rowIndex] = {};
+            }
+
+            map[rowIndex][columnIndex] = seat;
+            return map;
+        }, {});
+    }
+
+    getSeatRowIndex(seat) {
+        if (Number.isInteger(seat.row_index)) return seat.row_index;
+        if (Number.isInteger(seat.rowIndex)) return seat.rowIndex;
+
+        const row = String(seat.row || '').trim().toUpperCase();
+        return row ? row.charCodeAt(0) - 65 : 0;
+    }
+
+    getSeatColumnIndex(seat) {
+        if (Number.isInteger(seat.column_index)) return seat.column_index;
+        if (Number.isInteger(seat.columnIndex)) return seat.columnIndex;
+
+        return Math.max(0, (parseInt(seat.number, 10) || 1) - 1);
+    }
+
+    getSeatRowLabel(rowIndex) {
+        return String.fromCharCode(65 + rowIndex);
+    }
+
+    renderSeatColumnLabels(cols) {
+        const parent = this.seatMapContainer?.parentElement;
+        if (!parent) return;
+
+        let labels = parent.querySelector('.seat-grid-col-labels');
+        if (!labels) {
+            labels = document.createElement('div');
+            labels.className = 'seat-grid-col-labels mx-auto mt-2';
+            this.seatMapContainer.insertAdjacentElement('afterend', labels);
+        }
+
+        labels.classList.remove('d-none');
+        labels.style.setProperty('--cols', cols);
+        labels.innerHTML = '<div></div>';
+
+        for (let col = 1; col <= cols; col++) {
+            const label = document.createElement('div');
+            label.className = 'seat-col-label';
+            label.textContent = col;
+            labels.appendChild(label);
+        }
+    }
+
+    createEmptySeat() {
+        const empty = document.createElement('div');
+        empty.className = 'seat admin-seat seat-empty';
+        empty.setAttribute('aria-hidden', 'true');
+        return empty;
+    }
+
+    isCoupleSeat(seat) {
+        const seatTypeName = (seat.seat_type?.name || '').toLowerCase();
+
+        return seatTypeName.includes('đôi')
+            || seatTypeName.includes('doi')
+            || seatTypeName.includes('couple')
+            || seatTypeName.includes('double')
+            || seatTypeName.includes('sweetbox');
     }
 
     createSeat(seat) {
         const seatDiv = document.createElement('div');
-        seatDiv.className = 'seat';
+        seatDiv.className = 'seat admin-seat seat-standard';
         seatDiv.dataset.seatId = seat.id;
         seatDiv.dataset.row = seat.row;
         seatDiv.dataset.number = seat.number;
         seatDiv.dataset.seatTypeId = seat.seat_type_id || '';
         seatDiv.dataset.surcharge = seat.seat_type?.surcharge || 0;
 
-        // Determine seat status
         const status = this.getSeatStatus(seat);
         seatDiv.classList.add(`seat-${status}`);
 
-        // Seat label
-        seatDiv.textContent = seat.label || `${seat.row}${seat.number}`;
-
-        // Seat type indicators
         const seatTypeName = (seat.seat_type?.name || '').toLowerCase();
+        const isVip = seatTypeName.includes('vip') || seatTypeName.includes('premium');
+        const isCouple = this.isCoupleSeat(seat);
 
-        if (seatTypeName.includes('vip')) {
+        if (isVip) {
+            seatDiv.classList.remove('seat-standard');
             seatDiv.classList.add('seat-vip');
         }
 
-        if (
-            seatTypeName.includes('đôi') ||
-            seatTypeName.includes('doi') ||
-            seatTypeName.includes('couple') ||
-            seatTypeName.includes('double')
-        ) {
-            seatDiv.classList.add('seat-couple');
+        if (isCouple) {
+            seatDiv.classList.remove('seat-standard');
+            seatDiv.classList.add('seat-couple', 'seat-couple-span');
         }
+
+        const label = seat.label || `${seat.row}${seat.number}`;
+        const icon = isCouple
+            ? '<svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="38" height="11" rx="2"/><rect x="4" y="14" width="40" height="5" rx="1"/><rect x="2" y="11" width="3" height="8" rx="1"/><rect x="43" y="11" width="3" height="8" rx="1"/></svg>'
+            : '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="14" height="11" rx="2"/><rect x="4" y="14" width="16" height="5" rx="1"/><rect x="2" y="11" width="3" height="8" rx="1"/><rect x="19" y="11" width="3" height="8" rx="1"/></svg>';
+
+        seatDiv.innerHTML = `${icon}<span class="seat-label">${label}</span>`;
 
         if (this.isLockingSeats && this.selectedSeats.has(seat.id)) {
             seatDiv.classList.add('seat-pending-hold');
             seatDiv.setAttribute('aria-busy', 'true');
         }
 
-        // Click handler
         if (!this.isLockingSeats && (status === 'available' || status === 'selected' || status === 'holding')) {
             seatDiv.addEventListener('click', () => this.handleSeatClick(seat));
             seatDiv.setAttribute('role', 'button');

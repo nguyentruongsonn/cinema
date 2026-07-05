@@ -207,16 +207,28 @@ body {
 }
 
 .screen-label {
-    display: inline-block;
-    background: linear-gradient(180deg, rgba(229, 9, 20, 0.3) 0%, transparent 100%);
-    border: 2px solid var(--accent-primary);
+    display: block;
+    width: 90%;
+    max-width: 860px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, rgba(229, 9, 20, 0.35) 0%, transparent 100%);
+    border-top: 3px solid var(--accent-primary);
+    border-left: 2px solid rgba(229, 9, 20, 0.55);
+    border-right: 2px solid rgba(229, 9, 20, 0.55);
     border-bottom: none;
-    border-radius: 100px 100px 0 0;
-    padding: 12px 80px;
+    /* Elliptical radius: wide horizontal arc, shallow vertical — cinema screen look */
+    border-radius: 50% 50% 0 0 / 22px 22px 0 0;
+    padding: 22px 80px 14px;
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: var(--text-primary);
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #fff;
+    text-align: center;
+    box-shadow:
+        0 -8px 24px rgba(229, 9, 20, 0.65),
+        0 -20px 50px rgba(229, 9, 20, 0.3);
+    text-shadow: 0 0 8px rgba(255,255,255,0.85), 0 0 18px var(--accent-primary);
 }
 
 /* === SEAT MAP === */
@@ -225,91 +237,174 @@ body {
     min-height: 400px;
 }
 
-.seat-map {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: center;
-    padding: 20px;
+/* CSS Grid layout như admin */
+.seat-grid {
+    display: grid;
+    grid-template-columns: 28px repeat(var(--cols), minmax(36px, 40px));
+    gap: 14px;
+    width: fit-content;
+    margin: 0 auto;
+    padding: 0;
 }
 
-.seat-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+.seat-grid-col-labels {
+    display: grid;
+    grid-template-columns: 28px repeat(var(--cols), minmax(36px, 40px));
+    gap: 14px;
+    width: fit-content;
+    margin: 0 auto;
+    padding: 0;
 }
 
-.row-label {
-    width: 30px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-}
-
-.seat {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px 6px 0 0;
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    font-size: 10px;
+.seat-row-label,
+.seat-col-label {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: transparent;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
 }
 
-.seat:hover {
-    transform: scale(1.1);
+/* === BASE SEAT (giống admin) === */
+.seat {
+    position: relative;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    overflow: visible;
+    box-shadow: none;
+    outline: none;
 }
 
-.seat.seat-available:hover {
-    background-color: rgba(229, 9, 20, 0.3);
-    border-color: var(--accent-primary);
+.seat .seat-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+    display: block;
 }
 
-.seat.seat-selected {
-    background-color: var(--accent-primary);
-    border-color: var(--accent-primary);
-    color: white;
+.seat .seat-label {
+    font-size: 0.75rem;
+    line-height: 1;
+    opacity: 1;
+    letter-spacing: 0.03em;
+    font-weight: 700;
 }
 
-.seat.seat-holding,
-.seat.seat-booked {
-    background-color: rgba(128, 128, 128, 0.3);
-    border-color: rgba(128, 128, 128, 0.5);
-    cursor: not-allowed;
+.seat:hover:not(.seat-disabled):not(.seat-empty):not(.seat-booked):not(.seat-holding) {
+    transform: translateY(-3px);
+    filter: brightness(1.3);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
 }
 
+/* === SEAT TYPES (giống admin) === */
+
+/* Standard — xanh dương */
+.seat.seat-available {
+    background: transparent;
+    color: #60a5fa;
+    border: none;
+}
+
+/* VIP — vàng amber */
 .seat.seat-vip {
-    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-    border-color: #ffd700;
+    background: transparent;
+    color: #f59e0b;
+    border: none;
+}
+
+/* Couple — hồng, spans 2 cols */
+.seat.seat-couple {
+    background: transparent;
+    color: #ec4899;
+    border: none;
+}
+
+.seat.seat-couple-span {
+    grid-column: span 2;
+    border-radius: 5px 5px 14px 14px;
+}
+
+/* === SEAT STATUS === */
+
+/* Selected */
+.seat.seat-selected {
+    background: transparent;
+    color: var(--accent-primary);
 }
 
 .seat.seat-vip.seat-selected {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-}
-
-/* Ghế đôi - rộng gấp đôi như ghế dài */
-.seat.seat-couple {
-    width: 70px;
-    background-color: rgba(255, 179, 217, 0.3);
-    border-color: rgba(255, 179, 217, 0.5);
+    background: transparent;
+    color: var(--accent-primary);
 }
 
 .seat.seat-couple.seat-selected {
-    background-color: #ff69b4;
-    border-color: #ff1493;
+    background: transparent;
+    color: var(--accent-primary);
 }
 
-.seat.seat-couple.seat-available:hover {
-    background-color: rgba(255, 105, 180, 0.4);
-    border-color: #ff69b4;
+/* Holding/Booked */
+.seat.seat-holding,
+.seat.seat-booked {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+/* Empty placeholder */
+.seat.seat-empty {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.04);
+    cursor: default;
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+/* Pending hold animation */
+.seat.seat-pending-hold {
+    animation: seatPulse 1s ease-in-out infinite;
+}
+
+@keyframes seatPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 992px) {
+    .seat-grid {
+        grid-template-columns: 22px repeat(var(--cols), minmax(30px, 34px));
+    }
+
+    .seat-grid-col-labels {
+        grid-template-columns: 22px repeat(var(--cols), minmax(30px, 34px));
+    }
+
+    .seat {
+        height: 36px;
+    }
+
+    .seat .seat-icon {
+        font-size: 0.8rem;
+    }
+
+    .seat .seat-label {
+        font-size: 0.5rem;
+    }
 }
 
 /* === SEAT LEGEND === */
@@ -368,17 +463,17 @@ body {
 .products-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(260px, 1fr));
-    gap: 18px;
+    gap: 20px;
 }
 
 .product-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 16px;
+    padding: 18px;
     display: grid;
     grid-template-columns: 120px 1fr;
-    gap: 16px;
+    gap: 18px;
     align-items: center;
     min-height: 132px;
     transition: border-color 0.25s ease, transform 0.25s ease;
@@ -928,11 +1023,20 @@ body {
 }
 
 .booking-container {
-    grid-template-columns: minmax(0, 676px) 326px;
+    grid-template-columns: minmax(0, 1fr) 326px;
     gap: 24px;
-    max-width: 1040px;
+    max-width: 1320px;
+    width: calc(100% - 24px);
     padding: 18px 0 24px;
     align-items: start;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.booking-page .tab-content,
+.booking-page .movie-info-card {
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .booking-main {
@@ -985,8 +1089,8 @@ body {
 
 .movie-info-card {
     min-height: 92px;
-    padding: 20px 22px;
-    margin-bottom: 20px;
+    padding: 24px 28px;
+    margin-bottom: 28px;
 }
 
 .movie-info-card .section-title {
@@ -1027,16 +1131,16 @@ body {
 }
 
 .booking-page .tab-content {
-    padding: 42px 20px 30px;
+    padding: 42px 32px 40px;
     min-height: 390px;
 }
 
 .booking-page #tab-seats.tab-content {
-    padding-top: 28px;
+    padding: 32px 24px 40px;
 }
 
 .section-header {
-    margin: 0 0 22px;
+    margin: 0 0 28px;
 }
 
 .section-title {
@@ -1051,19 +1155,24 @@ body {
 }
 
 .screen-display {
-    margin: 14px 0 28px;
+    margin: 18px 0 36px;
 }
 
 .screen-label {
-    min-width: 420px;
-    padding: 22px 70px 10px;
-    background: radial-gradient(ellipse at center top, rgba(229, 9, 20, 0.28), rgba(229, 9, 20, 0.03) 58%, transparent 70%);
+    position: relative;
+    min-width: 460px;
+    padding: 24px 80px 12px;
+    background:
+        radial-gradient(ellipse at center top, rgba(255, 255, 255, 0.16), transparent 34%),
+        radial-gradient(ellipse at center top, rgba(229, 9, 20, 0.42), rgba(229, 9, 20, 0.08) 58%, transparent 74%);
     border: none;
-    border-top: 1px solid rgba(229, 9, 20, 0.6);
+    border-top: 2px solid rgba(255, 94, 102, 0.9);
     border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    color: #707784;
-    font-size: 10px;
-    letter-spacing: 7px;
+    color: #c8d0dc;
+    font-size: 11px;
+    letter-spacing: 8px;
+    text-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+    box-shadow: 0 -12px 36px rgba(229, 9, 20, 0.24), inset 0 10px 24px rgba(255, 255, 255, 0.08);
 }
 
 .seat-map-container {
@@ -1073,13 +1182,13 @@ body {
 }
 
 .seat-map {
-    gap: 8px;
-    padding: 8px 0 30px;
+    gap: 20px;
+    padding: 16px 0 40px;
     min-width: max-content;
 }
 
 .seat-row {
-    gap: 7px;
+    gap: 18px;
     justify-content: center;
 }
 
@@ -1147,18 +1256,18 @@ body {
 }
 
 .seat-legend {
-    margin-top: 18px;
-    padding: 20px 0 0;
-    gap: 6px;
+    margin-top: 28px;
+    padding: 24px 0 0;
+    gap: 24px;
     background: transparent;
     border-top: 1px solid #8d8d8d;
     border-radius: 0;
 }
 
 .legend-item {
-    gap: 4px;
+    gap: 8px;
     color: #838b98;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .seat-demo {
@@ -1247,7 +1356,7 @@ body {
 
 /* Promotion tab */
 .booking-page #tab-promotion {
-    padding: 44px 40px 40px;
+    padding: 42px 36px 40px;
 }
 
 .promotion-section {
@@ -1256,7 +1365,7 @@ body {
 
 .promotion-input-box,
 .points-section {
-    padding: 20px;
+    padding: 24px;
     background: #1b1b1b;
     border: 1px solid #2f2f2f;
     border-radius: 9px;
@@ -1298,7 +1407,7 @@ body {
 }
 
 .voucher-section {
-    padding: 18px 20px 6px;
+    padding: 22px 24px 10px;
     background: #1b1b1b;
     border: 1px solid #2f2f2f;
     border-radius: 9px;
@@ -2327,5 +2436,162 @@ body {
         opacity: 0;
         transform: translateX(100%) translateY(-10px);
     }
+}
+
+/* === SEAT MAP NO BORDER / NO PADDING FOR SEATS === */
+.booking-page .seat-grid,
+.booking-page .seat-grid-col-labels,
+.booking-page .seat-map {
+    padding: 0 !important;
+}
+
+/* Ghế không border, không padding, không background, không shadow */
+.booking-page .seat,
+.booking-page .seat.seat-available,
+.booking-page .seat.seat-standard,
+.booking-page .seat.seat-vip,
+.booking-page .seat.seat-couple,
+.booking-page .seat.seat-selected,
+.booking-page .seat.seat-holding,
+.booking-page .seat.seat-booked,
+.booking-page .seat.seat-locked,
+.booking-page .seat.seat-empty {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.booking-page .seat:hover,
+.booking-page .seat:focus,
+.booking-page .seat:active {
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.booking-page .seat {
+    position: relative !important;
+    width: 54px !important;
+    height: 54px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+    color: #7dd3fc !important;
+    filter: drop-shadow(0 0 6px rgba(125, 211, 252, 0.35));
+}
+
+.booking-page .seat::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12) 0%, rgba(125, 211, 252, 0.08) 50%, transparent 70%);
+    border-radius: 12px;
+    opacity: 0.6;
+    z-index: 0;
+}
+
+.booking-page .seat .seat-icon-shape,
+.booking-page .seat .seat-label {
+    z-index: 1;
+}
+
+.booking-page .seat.seat-standard,
+.booking-page .seat.seat-available {
+    color: #78aeca !important;
+    filter: drop-shadow(0 0 7px rgba(120, 174, 202, 0.42));
+}
+
+.booking-page .seat.seat-standard::before,
+.booking-page .seat.seat-available::before {
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.13) 0%, rgba(120, 174, 202, 0.09) 50%, transparent 70%);
+}
+
+.booking-page .seat.seat-vip {
+    color: #c8a94b !important;
+    filter: drop-shadow(0 0 8px rgba(200, 169, 75, 0.42));
+}
+
+.booking-page .seat.seat-vip::before {
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.14) 0%, rgba(200, 169, 75, 0.11) 50%, transparent 70%);
+}
+
+.booking-page .seat.seat-couple {
+    width: 96px !important;
+    color: #bf6f98 !important;
+    filter: drop-shadow(0 0 8px rgba(191, 111, 152, 0.42));
+}
+
+.booking-page .seat.seat-couple::before {
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.13) 0%, rgba(191, 111, 152, 0.1) 50%, transparent 70%);
+}
+
+.booking-page .seat.seat-selected,
+.booking-page .seat.seat-vip.seat-selected,
+.booking-page .seat.seat-couple.seat-selected {
+    color: #d83b46 !important;
+    filter: drop-shadow(0 0 10px rgba(216, 59, 70, 0.58));
+}
+
+.booking-page .seat.seat-selected::before {
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.18) 0%, rgba(216, 59, 70, 0.16) 50%, transparent 70%);
+}
+
+.booking-page .seat.seat-holding,
+.booking-page .seat.seat-booked,
+.booking-page .seat.seat-locked {
+    color: rgba(210, 220, 232, 0.42) !important;
+    filter: drop-shadow(0 0 5px rgba(210, 220, 232, 0.18));
+}
+
+.booking-page .seat .seat-icon,
+.booking-page .seat .seat-icon-shape {
+    display: block !important;
+    width: 54px !important;
+    height: 54px !important;
+    min-width: 54px !important;
+    min-height: 54px !important;
+    font-size: 3.4rem !important;
+    line-height: 1 !important;
+    color: currentColor !important;
+    fill: currentColor !important;
+    stroke: rgba(255, 255, 255, 0.14) !important;
+    stroke-width: 0.45 !important;
+}
+
+.booking-page .seat.seat-couple .seat-icon-shape {
+    width: 96px !important;
+    height: 54px !important;
+    min-width: 96px !important;
+    min-height: 54px !important;
+}
+
+.booking-page .seat .seat-label {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.82rem !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95) !important;
+    pointer-events: none !important;
+}
+
+/* Demo ghế trong legend cũng không border/padding */
+.booking-page .seat-demo,
+.booking-page .seat-demo.seat-available,
+.booking-page .seat-demo.seat-selected,
+.booking-page .seat-demo.seat-holding,
+.booking-page .seat-demo.seat-vip,
+.booking-page .seat-demo.seat-couple {
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
 }
 

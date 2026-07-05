@@ -117,3 +117,477 @@
 #toggleAddPanelBtn {
     transition: all 0.2s;
 }
+
+/* Fix dropdown options visibility */
+.filter-input,
+.form-select {
+    background-color: #2a2a2a !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+}
+
+.filter-input option,
+.form-select option {
+    background-color: #1f1f1f;
+    color: #ffffff;
+}
+
+.filter-input option:hover,
+.form-select option:hover {
+    background-color: #2a2a2a;
+}
+
+/* Slot row select options */
+.slot-theater-select,
+.slot-screen-select {
+    background-color: #2a2a2a !important;
+    color: #ffffff !important;
+}
+
+.slot-theater-select option,
+.slot-screen-select option {
+    background-color: #1f1f1f;
+    color: #ffffff;
+}
+
+/* Movie Info Sidebar */
+.movie-info-sidebar {
+    position: sticky;
+    top: 20px;
+    padding: 1.25rem;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    text-align: center;
+    min-height: 520px;
+    max-height: 520px;
+    overflow: hidden;
+}
+
+.movie-poster-sidebar {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    margin-bottom: 1rem;
+    transition: opacity 0.3s ease;
+}
+
+.movie-title-sidebar {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    min-height: 48px;
+    max-height: 48px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.3s ease;
+}
+
+.movie-meta-sidebar {
+    transition: opacity 0.3s ease;
+}
+
+.movie-meta-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #d4d4d8;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    min-height: 38px;
+    max-height: 38px;
+    overflow: hidden;
+}
+
+.meta-item i {
+    color: #6366f1;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.meta-item span {
+    flex: 1;
+    text-align: left;
+}
+
+/* ── Movies Table Styles ────────────────────────────────── */
+.movie-row {
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background-color 0.15s ease;
+}
+
+.movie-row:hover {
+    background-color: rgba(255,255,255,0.03);
+}
+
+.movie-stt {
+    width: 50px;
+}
+
+.movie-info-cell {
+    min-width: 320px;
+}
+
+.movie-poster-thumb {
+    width: 50px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.movie-text-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.movie-title {
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.movie-release {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+}
+
+.movie-duration {
+    width: 120px;
+}
+
+.movie-categories {
+    min-width: 180px;
+}
+
+/* ── Showtimes Table Styles ─────────────────────────────── */
+.showtime-row {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background-color 0.15s ease;
+}
+
+.showtime-row:hover {
+    background-color: rgba(255,255,255,0.02);
+}
+
+.showtime-time-cell {
+    min-width: 140px;
+}
+
+.showtime-time {
+    font-weight: 700;
+    color: #818cf8;
+    font-size: 1.1rem;
+    margin-bottom: 2px;
+}
+
+.showtime-date {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+}
+
+.showtime-theater-cell {
+    min-width: 200px;
+}
+
+.theater-name {
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.screen-name {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+}
+
+/* ── Action Buttons ─────────────────────────────────────── */
+.btn-edit-showtime {
+    color: var(--text-secondary, #a1a1aa);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.15s ease;
+}
+
+.btn-edit-showtime:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.btn-delete-showtime {
+    color: #ef4444;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    transition: all 0.15s ease;
+}
+
+.btn-delete-showtime:hover {
+    background: rgba(239,68,68,0.2);
+    color: #fff;
+}
+
+/* ── Back Button ────────────────────────────────────────── */
+.back-to-movies-btn {
+    background: linear-gradient(135deg, #e50914 0%, #ff1a1a 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(229, 9, 20, 0.3);
+}
+
+.back-to-movies-btn:hover {
+    background: linear-gradient(135deg, #ff1a1a 0%, #ff3838 100%);
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.5);
+    transform: translateY(-1px);
+}
+
+.back-to-movies-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(229, 9, 20, 0.3);
+}
+
+/* ── Filter Bar Elements ────────────────────────────────── */
+.filter-group {
+    flex-shrink: 0;
+}
+
+.filter-group-branch {
+    max-width: 200px;
+}
+
+.filter-group-theater {
+    max-width: 200px;
+}
+
+.filter-group-date {
+    width: 160px;
+}
+
+.filter-group-status {
+    max-width: 160px;
+}
+
+.filter-search-btn {
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+}
+
+.time-input-label-hint {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.72rem;
+}
+
+.preview-label {
+    color: var(--text-secondary, #a1a1aa);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+/* ── Badge Styles ───────────────────────────────────────── */
+.count-badge {
+    background: rgba(255,255,255,0.08);
+    color: #a1a1aa;
+    font-size: 0.8rem;
+}
+
+/* ── Pagination Styles ──────────────────────────────────── */
+#paginationContainer .pagination {
+    gap: 0.5rem;
+}
+
+#paginationContainer .page-link {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #d4d4d8;
+    padding: 0.65rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    min-width: 45px;
+    text-align: center;
+}
+
+#paginationContainer .page-link:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(229, 9, 20, 0.5);
+    color: #fff;
+}
+
+#paginationContainer .page-item.active .page-link {
+    background: linear-gradient(135deg, #e50914 0%, #ff1a1a 100%);
+    border-color: #e50914;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(229, 9, 20, 0.3);
+}
+
+/* ── Button Styles ──────────────────────────────────────── */
+.btn-preview {
+    background: rgba(255,255,255,0.07);
+    color: #d4d4d8;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: background 0.15s ease;
+}
+
+.btn-preview:hover {
+    background: rgba(255,255,255,0.12);
+}
+
+.btn-add-time {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+}
+
+.btn-add-slot {
+    background: rgba(255,255,255,0.06);
+    color: #a1a1aa;
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 6px;
+    width: 100%;
+    padding: 0.5rem;
+}
+
+.btn-modal-cancel {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* ── Table Styling ──────────────────────────────────────── */
+.table-transparent {
+    background: transparent;
+}
+
+.pagination-border {
+    border-top: 1px solid var(--border-color);
+}
+
+/* ── Showtimes Table Header Widths ──────────────────────── */
+.showtime-stt-col {
+    width: 50px;
+}
+
+.showtime-time-col {
+    width: 140px;
+}
+
+.showtime-screen-col {
+    min-width: 180px;
+}
+
+.showtime-capacity-col {
+    width: 80px;
+}
+
+.showtime-format-col {
+    min-width: 150px;
+}
+
+.showtime-active-col {
+    width: 100px;
+}
+
+.showtime-actions-col {
+    width: 120px;
+}
+
+/* ── New Table Cell Styles ──────────────────────────────── */
+.screen-name-display {
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.theater-name-sub {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.5);
+}
+
+.format-display {
+    color: #d4d4d8;
+    font-size: 0.9rem;
+}
+
+/* ── Toggle Switch Styling ──────────────────────────────── */
+.status-toggle {
+    cursor: pointer;
+    width: 40px;
+    height: 20px;
+    background-color: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.status-toggle:checked {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+
+.status-toggle:focus {
+    box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25);
+}
+
+.form-check-input:checked[type=checkbox] {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+}
+
+/* ── Form Input Widths ──────────────────────────────────── */
+.time-input-sm {
+    width: 130px;
+}
+
+/* ── Responsive Table Adjustments ───────────────────────── */
+@media (max-width: 1400px) {
+    .movie-info-cell {
+        min-width: 280px;
+    }
+
+    .movie-categories {
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .movie-poster-thumb {
+        width: 40px;
+        height: 60px;
+    }
+
+    .movie-duration,
+    .movie-categories {
+        font-size: 0.9rem;
+    }
+}

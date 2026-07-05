@@ -1,37 +1,38 @@
 /**
- * Showtimes Management - showtimes.js
- * SPA Architecture — Tab-based add system
+ * Showtimes Management - New Flow
+ * Filter → Movies List → Click Movie → Show Showtimes
  */
 (function () {
     'use strict';
 
-    /* ── DOM refs ─────────────────────────────────────────── */
+    /* ── DOM Elements ────────────────────────────────────── */
     const els = {
-        tableBody: document.getElementById('showtimesTableBody'),
-        pagination: document.getElementById('paginationContainer'),
-        totalCount: document.getElementById('totalCount'),
-
-        searchForm: document.getElementById('searchForm'),
-        dateFilter: document.getElementById('dateFilter'),
-        movieFilter: document.getElementById('movieFilter'),
+        // Filter bar
+        filterForm: document.getElementById('filterForm'),
+        branchFilter: document.getElementById('branchFilter'),
         theaterFilter: document.getElementById('theaterFilter'),
+        dateFilter: document.getElementById('dateFilter'),
+        statusFilter: document.getElementById('statusFilter'),
+        addShowtimeBtn: document.getElementById('addShowtimeBtn'),
 
-        // Edit modal
-        modalEl: document.getElementById('showtimeModal'),
-        form: document.getElementById('showtimeForm'),
-        formMethod: document.getElementById('showtimeFormMethod'),
-        idInput: document.getElementById('showtimeIdInput'),
-        formMovieId: document.getElementById('formMovieId'),
-        formTheaterId: document.getElementById('formTheaterId'),
-        formScreenId: document.getElementById('formScreenId'),
-        formScheduledAt: document.getElementById('formScheduledAt'),
-        formPrice: document.getElementById('formPrice'),
-        formFormatId: document.getElementById('formFormatId'),
-        formSoundId: document.getElementById('formSoundId'),
-        formSubtitleId: document.getElementById('formSubtitleId'),
-        formStatus: document.getElementById('formStatus'),
+        // Movies table
+        moviesTableBody: document.getElementById('moviesTableBody'),
+        movieCount: document.getElementById('movieCount'),
 
-        // Multi-day tab
+        // Showtimes panel
+        showtimesPanel: document.getElementById('showtimesPanel'),
+        selectedMovieTitle: document.getElementById('selectedMovieTitle'),
+        showtimesTableBody: document.getElementById('showtimesTableBody'),
+        showtimeCount: document.getElementById('showtimeCount'),
+        backToMoviesBtn: document.getElementById('backToMoviesBtn'),
+        paginationContainer: document.getElementById('paginationContainer'),
+
+        // Add modal
+        addModal: document.getElementById('addShowtimeModal'),
+        multiDayForm: document.getElementById('multiDayForm'),
+        singleDayForm: document.getElementById('singleDayForm'),
+
+        // Multi-day form elements
         mMovieId: document.getElementById('mMovieId'),
         mTheaterId: document.getElementById('mTheaterId'),
         mScreenId: document.getElementById('mScreenId'),
@@ -39,43 +40,56 @@
         mDateTo: document.getElementById('mDateTo'),
         mTimeInput: document.getElementById('mTimeInput'),
         mAddTimeBtn: document.getElementById('mAddTimeBtn'),
-        mPrice: document.getElementById('mPrice'),
         mFormatId: document.getElementById('mFormatId'),
-        mSoundId: document.getElementById('mSoundId'),
-        mSubtitleId: document.getElementById('mSubtitleId'),
+        mVersionTypeId: document.getElementById('mVersionTypeId'),
         timeSlotTags: document.getElementById('timeSlotTags'),
         previewMultiBtn: document.getElementById('previewMultiBtn'),
         multiPreviewBlock: document.getElementById('multiPreviewBlock'),
         multiPreviewList: document.getElementById('multiPreviewList'),
-        multiDayForm: document.getElementById('multiDayForm'),
+        mMoviePoster: document.getElementById('mMoviePoster'),
+        mMovieTitle: document.getElementById('mMovieTitle'),
+        mMovieDuration: document.getElementById('mMovieDuration'),
+        mMovieRelease: document.getElementById('mMovieRelease'),
+        mMovieEnd: document.getElementById('mMovieEnd'),
 
-        // Single-day tab
+        // Single-day form elements
         sMovieId: document.getElementById('sMovieId'),
         sDate: document.getElementById('sDate'),
-        sPrice: document.getElementById('sPrice'),
         sFormatId: document.getElementById('sFormatId'),
-        sSoundId: document.getElementById('sSoundId'),
-        sSubtitleId: document.getElementById('sSubtitleId'),
+        sVersionTypeId: document.getElementById('sVersionTypeId'),
         sStatusToggle: document.getElementById('sStatusToggle'),
         sSlotRows: document.getElementById('sSlotRows'),
         sAddSlotBtn: document.getElementById('sAddSlotBtn'),
-        singleDayForm: document.getElementById('singleDayForm'),
+        sMoviePoster: document.getElementById('sMoviePoster'),
+        sMovieTitle: document.getElementById('sMovieTitle'),
+        sMovieDuration: document.getElementById('sMovieDuration'),
+        sMovieRelease: document.getElementById('sMovieRelease'),
+        sMovieEnd: document.getElementById('sMovieEnd'),
+
+        // Edit modal
+        editModal: document.getElementById('editShowtimeModal'),
+        editForm: document.getElementById('editShowtimeForm'),
+        editIdInput: document.getElementById('editShowtimeIdInput'),
+        editFormMovieId: document.getElementById('editFormMovieId'),
+        editFormTheaterId: document.getElementById('editFormTheaterId'),
+        editFormScreenId: document.getElementById('editFormScreenId'),
+        editFormScheduledAt: document.getElementById('editFormScheduledAt'),
+        editFormFormatId: document.getElementById('editFormFormatId'),
+        editFormVersionTypeId: document.getElementById('editFormVersionTypeId'),
+        editFormStatus: document.getElementById('editFormStatus'),
     };
 
-    let currentPage = 1;
     let cachedMovies = [];
+    let cachedBranches = [];
     let cachedTheaters = [];
     let cachedFormats = [];
-    let cachedSounds = [];
-    let cachedSubtitles = [];
-    let multiTimeSlots = []; // array of "HH:MM"
+    let cachedVersionTypes = [];
+    let multiTimeSlots = [];
     let singleSlotCount = 0;
+    let selectedMovieId = null;
+    let currentShowtimePage = 1;
 
-    function getModalInstance() {
-        return bootstrap.Modal.getOrCreateInstance(els.modalEl);
-    }
-
-    /* ── Populate helpers ─────────────────────────────────── */
+    /* ── Utility Functions ───────────────────────────────── */
     function fillSelect(el, items, valueKey, labelKey, emptyLabel = '-- Chọn --') {
         if (!el) return;
         el.innerHTML = `<option value="">${emptyLabel}</option>`;
@@ -84,42 +98,59 @@
         });
     }
 
+    function formatDate(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function setTodayDate() {
+        if (els.dateFilter) {
+            const today = new Date().toISOString().split('T')[0];
+            els.dateFilter.value = today;
+        }
+    }
+
     /* ── Fetch Prerequisites ─────────────────────────────── */
     async function fetchPrerequisites() {
         try {
-            // Movies
-            const mRes = await fetch('/api/v1/movies?per_page=200&status=all', { headers: { Accept: 'application/json' } });
+            // Fetch movies
+            const mRes = await fetch('/api/v1/movies?per_page=200&status=all', {
+                headers: { Accept: 'application/json' }
+            });
             if (mRes.ok) {
                 const mData = await mRes.json();
                 cachedMovies = mData.data || [];
-                [els.movieFilter, els.formMovieId, els.mMovieId, els.sMovieId].forEach(el =>
-                    fillSelect(el, cachedMovies, 'id', 'title', 'Tất cả phim')
+                [els.mMovieId, els.sMovieId, els.editFormMovieId].forEach(el =>
+                    fillSelect(el, cachedMovies, 'id', 'title', '-- Chọn phim --')
                 );
-                if (els.movieFilter) els.movieFilter.querySelector('option').textContent = 'Tất cả phim';
             }
 
-            // Theaters / formats / sounds from screens meta
+            // Fetch branches
+            const bRes = await window.AdminCore.apiFetch('/api/v1/admin/branches?per_page=200');
+            if (bRes && bRes.ok) {
+                const bData = await bRes.json();
+                cachedBranches = bData.data || [];
+                fillSelect(els.branchFilter, cachedBranches, 'id', 'name', 'Tất cả chi nhánh');
+            }
+
+            // Fetch theaters, formats, version types from screens meta
             const sRes = await window.AdminCore.apiFetch('/api/v1/admin/screens?per_page=1');
             if (sRes && sRes.ok) {
                 const sData = await sRes.json();
                 cachedTheaters = sData.theaters || [];
                 cachedFormats = sData.formats || [];
-                cachedSounds = sData.sounds || [];
-                cachedSubtitles = sData.subtitles || [];
+                cachedVersionTypes = sData.version_types || [];
 
-                [els.theaterFilter, els.formTheaterId, els.mTheaterId].forEach(el =>
-                    fillSelect(el, cachedTheaters, 'id', 'name', 'Tất cả rạp')
+                fillSelect(els.theaterFilter, cachedTheaters, 'id', 'name', 'Tất cả rạp');
+                [els.mTheaterId, els.editFormTheaterId].forEach(el =>
+                    fillSelect(el, cachedTheaters, 'id', 'name', '-- Chọn rạp --')
                 );
-                if (els.theaterFilter) els.theaterFilter.querySelector('option').textContent = 'Tất cả rạp';
-
-                [els.formFormatId, els.mFormatId, els.sFormatId].forEach(el =>
+                [els.mFormatId, els.sFormatId, els.editFormFormatId].forEach(el =>
                     fillSelect(el, cachedFormats, 'id', 'name', '-- Mặc định --')
                 );
-                [els.formSoundId, els.mSoundId, els.sSoundId].forEach(el =>
-                    fillSelect(el, cachedSounds, 'id', 'name', '-- Mặc định --')
-                );
-                [els.formSubtitleId, els.mSubtitleId, els.sSubtitleId].forEach(el =>
-                    fillSelect(el, cachedSubtitles, 'id', 'name', '-- Không --')
+                [els.mVersionTypeId, els.sVersionTypeId, els.editFormVersionTypeId].forEach(el =>
+                    fillSelect(el, cachedVersionTypes, 'id', 'name', '-- Chọn phiên bản --')
                 );
             }
         } catch (err) {
@@ -127,488 +158,715 @@
         }
     }
 
-    /* ── Load screens for theater ────────────────────────── */
-    async function loadScreensForTheater(theaterId, screenEl) {
-        if (!screenEl) return;
-        screenEl.disabled = true;
-        screenEl.innerHTML = '<option value="">Đang tải...</option>';
-        if (!theaterId) {
-            screenEl.innerHTML = '<option value="">-- Chọn phòng --</option>';
-            return;
-        }
+    /* ── Load Movies List ────────────────────────────────── */
+    async function loadMoviesList() {
+        els.moviesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+
         try {
-            const res = await fetch(`/api/v1/theaters/${theaterId}/screens`, { headers: { Accept: 'application/json' } });
-            if (res.ok) {
-                const data = await res.json();
-                fillSelect(screenEl, data.data || [], 'id', 'name', '-- Chọn phòng --');
-                screenEl.disabled = false;
+            const params = new URLSearchParams();
+            params.append('per_page', '200');
+            params.append('status', 'all');
+            params.append('include', 'categories');
+
+            const res = await fetch(`/api/v1/movies?${params}`, {
+                headers: { Accept: 'application/json' }
+            });
+
+            if (!res.ok) throw new Error('Failed to load movies');
+
+            const data = await res.json();
+            const movies = data.data || [];
+
+            if (movies.length === 0) {
+                els.moviesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>Không có phim nào.</td></tr>`;
+                els.movieCount.textContent = '0 phim';
+                return;
             }
+
+            renderMoviesTable(movies);
+            els.movieCount.textContent = `${movies.length} phim`;
+
         } catch (err) {
-            screenEl.innerHTML = '<option value="">-- Chọn phòng --</option>';
+            console.error('loadMoviesList error:', err);
+            els.moviesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
     }
 
-    /* ── Multi-day: Time slot tags ───────────────────────── */
-    function renderTimeSlotTags() {
-        els.timeSlotTags.innerHTML = '';
-        multiTimeSlots.forEach((t, i) => {
-            const chip = document.createElement('span');
-            chip.className = 'time-slot-tag';
-            chip.innerHTML = `<i class="bi bi-clock"></i>${t} <button class="remove-tag" data-index="${i}" title="Xóa">×</button>`;
-            els.timeSlotTags.appendChild(chip);
-        });
-    }
+    function renderMoviesTable(movies) {
+        els.moviesTableBody.innerHTML = '';
 
-    function addTimeSlot(time) {
-        if (!time) return;
-        if (multiTimeSlots.includes(time)) {
-            window.showAdminToast?.(`Giờ ${time} đã có trong danh sách`, 'warning');
-            return;
-        }
-        multiTimeSlots.push(time);
-        multiTimeSlots.sort();
-        renderTimeSlotTags();
-    }
+        movies.forEach((movie, index) => {
+            const tr = document.createElement('tr');
+            tr.className = 'movie-row';
+            tr.dataset.movieId = movie.id;
 
-    if (els.mAddTimeBtn) {
-        els.mAddTimeBtn.addEventListener('click', () => {
-            addTimeSlot(els.mTimeInput.value);
-        });
-    }
-    if (els.mTimeInput) {
-        els.mTimeInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); addTimeSlot(els.mTimeInput.value); }
-        });
-    }
-    if (els.timeSlotTags) {
-        els.timeSlotTags.addEventListener('click', (e) => {
-            const btn = e.target.closest('.remove-tag');
-            if (btn) {
-                multiTimeSlots.splice(parseInt(btn.dataset.index), 1);
-                renderTimeSlotTags();
-            }
-        });
-    }
+            const posterUrl = movie.poster_path
+                ? `/storage/${movie.poster_path}`
+                : (movie.poster_url || '/images/default-poster.jpg');
 
-    /* ── Multi-day: Preview ──────────────────────────────── */
-    if (els.previewMultiBtn) {
-        els.previewMultiBtn.addEventListener('click', () => {
-            const from = els.mDateFrom?.value;
-            const to = els.mDateTo?.value;
-            if (!from || !to || multiTimeSlots.length === 0) {
-                window.showAdminToast?.('Chọn đầy đủ ngày và ít nhất 1 giờ chiếu', 'warning');
-                return;
-            }
-            const dates = [];
-            let cur = new Date(from);
-            const end = new Date(to);
-            while (cur <= end) {
-                dates.push(cur.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }));
-                cur.setDate(cur.getDate() + 1);
-            }
-            els.multiPreviewList.innerHTML = '';
-            dates.forEach(d => {
-                multiTimeSlots.forEach(t => {
-                    const badge = document.createElement('span');
-                    badge.className = 'preview-slot-badge';
-                    badge.innerHTML = `<i class="bi bi-calendar3" style="font-size:0.7rem;"></i>${d} ${t}`;
-                    els.multiPreviewList.appendChild(badge);
-                });
-            });
-            els.multiPreviewBlock.classList.remove('d-none');
-        });
-    }
+            const categories = movie.categories && movie.categories.length > 0
+                ? movie.categories.map(c => c.name).join(', ')
+                : '—';
 
-    /* ── Multi-day: Submit ───────────────────────────────── */
-    if (els.multiDayForm) {
-        els.multiDayForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (multiTimeSlots.length === 0) {
-                window.showAdminToast?.('Vui lòng thêm ít nhất 1 giờ chiếu', 'warning');
-                return;
-            }
+            tr.innerHTML = `
+                <td class="text-center text-white-50 movie-stt">${index + 1}</td>
+                <td class="movie-info-cell">
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="${posterUrl}" alt="${movie.title}" class="movie-poster-thumb">
+                        <div class="movie-text-info">
+                            <div class="movie-title">${movie.title}</div>
+                            <div class="movie-release">${formatDate(movie.release_date)}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center text-white movie-duration">${movie.duration || '—'} phút</td>
+                <td class="text-white-50 movie-categories">${categories}</td>
+            `;
 
-            const data = {
-                movie_id: els.mMovieId.value,
-                screen_id: els.mScreenId.value,
-                date_from: els.mDateFrom.value,
-                date_to: els.mDateTo.value,
-                times: multiTimeSlots,
-                price: els.mPrice.value,
-                format_id: els.mFormatId.value || null,
-                sound_id: els.mSoundId.value || null,
-                subtitle_id: els.mSubtitleId.value || null,
-                status: 1,
-            };
-
-            try {
-                const res = await window.AdminCore.apiFetch('/api/v1/admin/showtimes/bulk', {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                });
-                if (res && res.ok) {
-                    const result = await res.json();
-                    window.showAdminToast?.(
-                        `Tạo thành công ${result.data?.created || ''} suất chiếu!`,
-                        'success'
-                    );
-                    multiTimeSlots = [];
-                    renderTimeSlotTags();
-                    els.multiDayForm.reset();
-                    els.multiPreviewBlock.classList.add('d-none');
-                    loadData(1);
-                } else {
-                    const errData = await res.json();
-                    alert('Lỗi: ' + JSON.stringify(errData.errors || errData.message));
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        });
-    }
-
-    /* ── Single-day: Slot rows ───────────────────────────── */
-    function addSlotRow(time = '', screenId = '') {
-        singleSlotCount++;
-        const idx = singleSlotCount;
-        const row = document.createElement('div');
-        row.className = 'slot-row';
-        row.id = `slot-row-${idx}`;
-
-        const theaterOptions = cachedTheaters.map(t =>
-            `<option value="${t.id}">${t.name}</option>`
-        ).join('');
-
-        row.innerHTML = `
-            <div>
-                <label class="form-label text-secondary" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.07em;">Giờ chiếu</label>
-                <input type="time" class="filter-input w-100 slot-time-input" value="${time}" required>
-            </div>
-            <div>
-                <label class="form-label text-secondary" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.07em;">Rạp</label>
-                <select class="form-select filter-input slot-theater-select">
-                    <option value="">-- Chọn rạp --</option>
-                    ${theaterOptions}
-                </select>
-            </div>
-            <div>
-                <label class="form-label text-secondary" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.07em;">Phòng chiếu</label>
-                <select class="form-select filter-input slot-screen-select" disabled>
-                    <option value="">-- Chọn phòng --</option>
-                </select>
-            </div>
-            <div>
-                <label class="form-label text-secondary d-block" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.07em;opacity:0;">Xóa</label>
-                <button type="button" class="slot-remove-btn" data-slot="${idx}">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>
-        `;
-
-        els.sSlotRows.appendChild(row);
-
-        // Theater → Screen cascade
-        const theaterSel = row.querySelector('.slot-theater-select');
-        const screenSel = row.querySelector('.slot-screen-select');
-        theaterSel.addEventListener('change', () => {
-            loadScreensForTheater(theaterSel.value, screenSel);
-        });
-
-        // Remove
-        row.querySelector('.slot-remove-btn').addEventListener('click', () => {
-            row.remove();
-        });
-    }
-
-    if (els.sAddSlotBtn) {
-        els.sAddSlotBtn.addEventListener('click', () => addSlotRow());
-    }
-
-    /* ── Single-day: Submit ──────────────────────────────── */
-    if (els.singleDayForm) {
-        els.singleDayForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const rows = els.sSlotRows.querySelectorAll('.slot-row');
-            if (rows.length === 0) {
-                window.showAdminToast?.('Thêm ít nhất 1 suất chiếu', 'warning');
-                return;
-            }
-
-            const slots = [];
-            rows.forEach(row => {
-                const time = row.querySelector('.slot-time-input')?.value;
-                const screen = row.querySelector('.slot-screen-select')?.value;
-                if (time && screen) {
-                    slots.push({ time, screen_id: screen });
-                }
+            tr.addEventListener('click', () => {
+                selectedMovieId = movie.id;
+                showMovieShowtimes(movie);
             });
 
-            if (slots.length === 0) {
-                window.showAdminToast?.('Vui lòng chọn phòng chiếu cho mỗi suất', 'warning');
-                return;
-            }
-
-            const data = {
-                movie_id: els.sMovieId.value,
-                date: els.sDate.value,
-                price: els.sPrice.value,
-                format_id: els.sFormatId.value || null,
-                sound_id: els.sSoundId.value || null,
-                subtitle_id: els.sSubtitleId.value || null,
-                status: els.sStatusToggle?.checked ? 1 : 0,
-                slots,
-            };
-
-            try {
-                const res = await window.AdminCore.apiFetch('/api/v1/admin/showtimes/bulk-single', {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                });
-                if (res && res.ok) {
-                    const result = await res.json();
-                    window.showAdminToast?.(
-                        `Tạo thành công ${result.data?.created || slots.length} suất chiếu!`,
-                        'success'
-                    );
-                    els.singleDayForm.reset();
-                    els.sSlotRows.innerHTML = '';
-                    loadData(1);
-                } else {
-                    const errData = await res.json();
-                    alert('Lỗi: ' + JSON.stringify(errData.errors || errData.message));
-                }
-            } catch (err) {
-                console.error(err);
-            }
+            els.moviesTableBody.appendChild(tr);
         });
     }
 
-    /* ── Theater → Screens (edit modal) ─────────────────── */
-    if (els.formTheaterId) {
-        els.formTheaterId.addEventListener('change', () => {
-            loadScreensForTheater(els.formTheaterId.value, els.formScreenId);
-        });
-    }
-    if (els.mTheaterId) {
-        els.mTheaterId.addEventListener('change', () => {
-            loadScreensForTheater(els.mTheaterId.value, els.mScreenId);
-        });
+    /* ── Show Showtimes for Selected Movie ───────────────── */
+    async function showMovieShowtimes(movie) {
+        // Hide movies table, show showtimes panel
+        document.querySelector('.chart-card.mb-4').style.display = 'none';
+        els.showtimesPanel.style.display = 'block';
+        els.selectedMovieTitle.textContent = movie.title;
+
+        // Load showtimes
+        await loadShowtimesForMovie(movie.id, 1);
     }
 
-    /* ── Load & Render table ─────────────────────────────── */
-    async function loadData(page = 1) {
-        currentPage = page;
-        els.tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+    async function loadShowtimesForMovie(movieId, page = 1) {
+        currentShowtimePage = page;
+        els.showtimesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
 
         try {
             const url = new URL(window.location.origin + '/api/v1/admin/showtimes');
             url.searchParams.append('page', page);
+            url.searchParams.append('movie_id', movieId);
             url.searchParams.append('status', 'all');
+
+            // Apply filters
             if (els.dateFilter?.value) url.searchParams.append('date', els.dateFilter.value);
-            if (els.movieFilter?.value) url.searchParams.append('movie_id', els.movieFilter.value);
             if (els.theaterFilter?.value) url.searchParams.append('theater_id', els.theaterFilter.value);
+            if (els.statusFilter?.value) url.searchParams.append('status', els.statusFilter.value);
 
             const res = await window.AdminCore.apiFetch(url.toString());
             if (!res || !res.ok) throw new Error();
 
             const json = await res.json();
-            // paginatedResponse: { data: [...], pagination: {...} }
             const showtimes = json.data || [];
             const pagination = json.pagination || {};
 
-            renderTable(showtimes, pagination.from ?? 1);
+            renderShowtimesTable(showtimes, pagination.from ?? 1);
             renderPagination(pagination);
-            if (els.totalCount) els.totalCount.textContent = `${pagination.total ?? showtimes.length} suất chiếu`;
+            els.showtimeCount.textContent = `${pagination.total ?? showtimes.length} suất chiếu`;
+
         } catch (err) {
             console.error(err);
-            els.tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
+            els.showtimesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
     }
 
-    function renderTable(showtimes, startIndex) {
+    function renderShowtimesTable(showtimes, startIndex) {
         if (!showtimes || showtimes.length === 0) {
-            els.tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>Không tìm thấy lịch chiếu nào.</td></tr>`;
+            els.showtimesTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>Không có suất chiếu nào.</td></tr>`;
             return;
         }
 
-        els.tableBody.innerHTML = '';
+        els.showtimesTableBody.innerHTML = '';
         showtimes.forEach((st, index) => {
             const tr = document.createElement('tr');
-            tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+            tr.className = 'showtime-row';
 
+            // Time calculation - end time is calculated from actual movie duration
             const scheduledAt = new Date(st.scheduled_at);
-            const timeStr = scheduledAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-            const dateStr = scheduledAt.toLocaleDateString('vi-VN');
-            const priceFmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(st.price);
-            const statusHtml = st.status
-                ? '<span class="badge bg-success">Mở bán</span>'
-                : '<span class="badge bg-secondary">Đóng</span>';
+            const movieDuration = st.movie?.duration || 120; // Minutes from database, fallback 120
+            const endTime = new Date(scheduledAt.getTime() + movieDuration * 60000); // Convert to milliseconds
+
+            const startTimeStr = scheduledAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            const endTimeStr = endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = scheduledAt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+
+            // Format info
+            const formatName = st.format?.name || '2D';
+            const versionName = st.version_type?.name || 'Phụ đề';
+            const formatDisplay = `${formatName} - ${versionName}`;
+
+            // Capacity
+            const capacity = st.screen?.capacity || st.screen?.total_seats || '—';
+
+            // Toggle switch for status
+            const toggleId = `toggle-${st.id}`;
+            const checked = st.status ? 'checked' : '';
 
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
-                <td>
-                    <div class="fw-bold" style="color:#818cf8;font-size:1.1rem;">${timeStr}</div>
-                    <div class="small text-white-50">${dateStr}</div>
+                <td class="showtime-time-cell">
+                    <div class="showtime-time">${startTimeStr} - ${endTimeStr}</div>
+                    <div class="showtime-date">${dateStr}</div>
                 </td>
                 <td>
-                    <div class="fw-medium text-white">${st.movie?.title || '—'}</div>
+                    <div class="screen-name-display">${st.screen?.name || '—'}</div>
+                    <div class="theater-name-sub">${st.screen?.theater?.name || '—'}</div>
                 </td>
-                <td>
-                    <div class="fw-medium text-white">${st.screen?.theater?.name || '—'}</div>
-                    <div class="small text-white-50">Phòng: ${st.screen?.name || '—'}</div>
-                </td>
-                <td>
-                    <div class="fw-medium text-white">${priceFmt}</div>
-                    <div class="small mt-1">
-                        ${st.format?.name ? `<span class="badge" style="background:rgba(96,165,250,0.12);color:#60a5fa;">${st.format.name}</span>` : ''}
-                        ${st.sound?.name ? `<span class="badge ms-1" style="background:rgba(167,139,250,0.12);color:#a78bfa;">${st.sound.name}</span>` : ''}
+                <td class="text-center text-white">${capacity}</td>
+                <td class="format-display">${formatDisplay}</td>
+                <td class="text-center">
+                    <div class="form-check form-switch d-inline-block">
+                        <input class="form-check-input status-toggle" type="checkbox" id="${toggleId}" ${checked} data-id="${st.id}">
                     </div>
                 </td>
-                <td class="text-center">${statusHtml}</td>
                 <td class="text-center">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-sm btn-edit-showtime"
-                            style="color:var(--text-secondary);background:rgba(255,255,255,0.05);"
-                            data-showtime='${JSON.stringify(st).replace(/'/g, "&#39;")}' title="Sửa">
+                        <button type="button" class="btn btn-sm btn-edit-showtime" data-showtime='${JSON.stringify(st).replace(/'/g, "&#39;")}' title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-showtime"
-                            style="color:#ef4444;background:rgba(239,68,68,0.1);"
-                            data-id="${st.id}" title="Xóa">
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-showtime" data-id="${st.id}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
                 </td>
             `;
-            els.tableBody.appendChild(tr);
+            els.showtimesTableBody.appendChild(tr);
         });
     }
 
-    function renderPagination(meta) {
-        if (!els.pagination || !meta || meta.last_page <= 1) {
-            if (els.pagination) els.pagination.innerHTML = '';
+    function renderPagination(pag) {
+        if (!els.paginationContainer) return;
+        if (!pag || pag.total <= pag.per_page) {
+            els.paginationContainer.innerHTML = '';
             return;
         }
 
-        let html = '<ul class="pagination pagination-sm m-0">';
-        html += meta.current_page > 1
-            ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>`
-            : `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-
-        for (let i = 1; i <= meta.last_page; i++) {
-            html += i === meta.current_page
-                ? `<li class="page-item active"><span class="page-link">${i}</span></li>`
-                : `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+        let html = '<nav><ul class="pagination mb-0">';
+        for (let i = 1; i <= (pag.last_page || 1); i++) {
+            const active = i === pag.current_page ? 'active' : '';
+            html += `<li class="page-item ${active}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
         }
+        html += '</ul></nav>';
+        els.paginationContainer.innerHTML = html;
 
-        html += meta.current_page < meta.last_page
-            ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>`
-            : `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-        html += '</ul>';
-
-        els.pagination.innerHTML = html;
-        els.pagination.querySelectorAll('a.page-link').forEach(a => {
-            a.addEventListener('click', (e) => {
+        els.paginationContainer.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', (e) => {
                 e.preventDefault();
-                loadData(parseInt(a.dataset.page));
+                const page = parseInt(link.dataset.page);
+                if (selectedMovieId) {
+                    loadShowtimesForMovie(selectedMovieId, page);
+                }
             });
         });
     }
 
-    /* ── Table click: Edit / Delete ──────────────────────── */
-    els.tableBody.addEventListener('click', async (e) => {
-        const btnEdit = e.target.closest('.btn-edit-showtime');
-        if (btnEdit) {
-            const st = JSON.parse(btnEdit.dataset.showtime);
-            els.idInput.value = st.id;
+    /* ── Back to Movies Button ────────────────────────────── */
+    function backToMoviesList() {
+        els.showtimesPanel.style.display = 'none';
+        document.querySelector('.chart-card.mb-4').style.display = 'block';
+        selectedMovieId = null;
+    }
 
-            // Fill dropdowns
-            if (els.formMovieId) els.formMovieId.value = st.movie_id || '';
-            if (els.formPrice) els.formPrice.value = st.price || '';
-            if (els.formFormatId) els.formFormatId.value = st.format_id || '';
-            if (els.formSoundId) els.formSoundId.value = st.sound_id || '';
-            if (els.formSubtitleId) els.formSubtitleId.value = st.subtitle_id || '';
-            if (els.formStatus) els.formStatus.checked = st.status === 1;
+    /* ── Filter Handlers ─────────────────────────────────── */
+    function handleFilterSubmit(e) {
+        e.preventDefault();
+        if (selectedMovieId) {
+            // Reload showtimes with filters
+            loadShowtimesForMovie(selectedMovieId, 1);
+        } else {
+            // Just reload movies list (filters don't affect it in current flow)
+            loadMoviesList();
+        }
+    }
 
-            if (st.scheduled_at && els.formScheduledAt) {
-                const d = new Date(st.scheduled_at);
-                els.formScheduledAt.value = new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-            }
+    function handleBranchChange() {
+        const branchId = els.branchFilter?.value;
+        if (!branchId) {
+            fillSelect(els.theaterFilter, cachedTheaters, 'id', 'name', 'Tất cả rạp');
+            return;
+        }
+        const filtered = cachedTheaters.filter(t => t.branch_id == branchId);
+        fillSelect(els.theaterFilter, filtered, 'id', 'name', 'Tất cả rạp');
+    }
 
-            if (st.screen?.theater_id && els.formTheaterId) {
-                els.formTheaterId.value = st.screen.theater_id;
-                await loadScreensForTheater(st.screen.theater_id, els.formScreenId);
-                if (els.formScreenId) els.formScreenId.value = st.screen_id || '';
-            }
+    /* ── Add Modal Management ────────────────────────────── */
+    function openAddModal() {
+        const bsModal = new bootstrap.Modal(els.addModal);
+        bsModal.show();
+        resetMultiDayForm();
+        resetSingleDayForm();
+    }
 
-            getModalInstance().show();
+    function resetMultiDayForm() {
+        els.multiDayForm?.reset();
+        multiTimeSlots = [];
+        renderTimeSlotTags();
+        els.multiPreviewBlock?.classList.add('d-none');
+        resetMovieInfo('m');
+    }
+
+    function resetSingleDayForm() {
+        els.singleDayForm?.reset();
+        singleSlotCount = 0;
+        if (els.sSlotRows) els.sSlotRows.innerHTML = '';
+        addSingleSlotRow();
+        resetMovieInfo('s');
+    }
+
+    function resetMovieInfo(prefix) {
+        const poster = document.getElementById(`${prefix}MoviePoster`);
+        const title = document.getElementById(`${prefix}MovieTitle`);
+        const duration = document.getElementById(`${prefix}MovieDuration`);
+        const release = document.getElementById(`${prefix}MovieRelease`);
+        const end = document.getElementById(`${prefix}MovieEnd`);
+
+        if (poster) poster.src = '/images/default-poster.jpg';
+        if (title) title.textContent = 'Chọn phim để xem thông tin';
+        if (duration) duration.textContent = '—';
+        if (release) release.textContent = '—';
+        if (end) end.textContent = '—';
+    }
+
+    /* ── Multi-day Form: Time Slots ──────────────────────── */
+    function addTimeSlot() {
+        const time = els.mTimeInput?.value;
+        if (!time) return;
+        if (multiTimeSlots.includes(time)) {
+            alert('Giờ này đã được thêm!');
+            return;
+        }
+        multiTimeSlots.push(time);
+        multiTimeSlots.sort();
+        renderTimeSlotTags();
+        if (els.mTimeInput) els.mTimeInput.value = '';
+    }
+
+    function removeTimeSlot(time) {
+        multiTimeSlots = multiTimeSlots.filter(t => t !== time);
+        renderTimeSlotTags();
+    }
+
+    function renderTimeSlotTags() {
+        if (!els.timeSlotTags) return;
+        els.timeSlotTags.innerHTML = '';
+        multiTimeSlots.forEach(time => {
+            const tag = document.createElement('span');
+            tag.className = 'time-slot-tag';
+            tag.innerHTML = `${time} <button class="remove-tag" type="button">&times;</button>`;
+            tag.querySelector('.remove-tag').addEventListener('click', () => removeTimeSlot(time));
+            els.timeSlotTags.appendChild(tag);
+        });
+    }
+
+    function previewMultiDay() {
+        if (!els.mDateFrom?.value || !els.mDateTo?.value || multiTimeSlots.length === 0) {
+            alert('Vui lòng điền đủ: Ngày từ, Ngày đến và ít nhất 1 giờ chiếu!');
             return;
         }
 
-        const btnDel = e.target.closest('.btn-delete-showtime');
-        if (btnDel) {
-            if (!confirm('Xóa lịch chiếu này? Khách hàng đã đặt vé sẽ bị ảnh hưởng!')) return;
-            try {
-                const res = await window.AdminCore.apiFetch(`/api/v1/admin/showtimes/${btnDel.dataset.id}`, { method: 'DELETE' });
-                if (res && res.ok) {
-                    window.showAdminToast?.('Xóa thành công', 'success');
-                    loadData(currentPage);
-                } else {
-                    const err = await res.json();
-                    window.showAdminToast?.(err.message || 'Xóa thất bại', 'error');
-                }
-            } catch (err) {}
+        const from = new Date(els.mDateFrom.value);
+        const to = new Date(els.mDateTo.value);
+        if (from > to) {
+            alert('Ngày bắt đầu phải nhỏ hơn ngày kết thúc!');
+            return;
         }
-    });
 
-    /* ── Edit modal submit ───────────────────────────────── */
-    if (els.form) {
-        els.form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = els.idInput.value;
-            const url = `/api/v1/admin/showtimes/${id}`;
+        const days = [];
+        for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+            days.push(new Date(d));
+        }
 
-            const formData = new FormData(els.form);
-            const data = Object.fromEntries(formData.entries());
-            data.status = els.formStatus.checked ? 1 : 0;
+        els.multiPreviewBlock?.classList.remove('d-none');
+        if (els.multiPreviewList) {
+            els.multiPreviewList.innerHTML = '';
+            days.forEach(day => {
+                const dateStr = day.toLocaleDateString('vi-VN');
+                multiTimeSlots.forEach(time => {
+                    const badge = document.createElement('span');
+                    badge.className = 'preview-slot-badge';
+                    badge.innerHTML = `<i class="bi bi-calendar-check me-1"></i>${dateStr} ${time}`;
+                    els.multiPreviewList.appendChild(badge);
+                });
+            });
+        }
+    }
 
-            if (data.scheduled_at) {
-                const d = new Date(data.scheduled_at);
-                data.scheduled_at = d.getFullYear() + '-' +
-                    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-                    String(d.getDate()).padStart(2, '0') + ' ' +
-                    String(d.getHours()).padStart(2, '0') + ':' +
-                    String(d.getMinutes()).padStart(2, '0') + ':00';
+    async function handleMultiDaySubmit(e) {
+        e.preventDefault();
+        if (multiTimeSlots.length === 0) {
+            alert('Vui lòng thêm ít nhất 1 giờ chiếu!');
+            return;
+        }
+
+        const formData = new FormData(els.multiDayForm);
+        formData.append('time_slots', JSON.stringify(multiTimeSlots));
+        formData.append('status', '1');
+
+        try {
+            const res = await window.AdminCore.apiFetch('/api/v1/admin/showtimes/bulk', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res || !res.ok) throw new Error();
+            const json = await res.json();
+
+            window.AdminCore.showToast(json.message || 'Tạo lịch chiếu thành công!', 'success');
+            bootstrap.Modal.getInstance(els.addModal)?.hide();
+            if (selectedMovieId) {
+                loadShowtimesForMovie(selectedMovieId, 1);
+            } else {
+                loadMoviesList();
+            }
+        } catch (err) {
+            console.error(err);
+            window.AdminCore.showToast('Lỗi tạo lịch chiếu!', 'error');
+        }
+    }
+
+    /* ── Single-day Form: Slot Rows ──────────────────────── */
+    function addSingleSlotRow() {
+        singleSlotCount++;
+        const row = document.createElement('div');
+        row.className = 'slot-row';
+        row.dataset.slotId = singleSlotCount;
+
+        row.innerHTML = `
+            <div class="slot-time"><input type="time" class="filter-input" name="times[]" required></div>
+            <div><select class="filter-input slot-theater-select" name="theater_ids[]" required><option value="">-- Chọn rạp --</option></select></div>
+            <div><select class="filter-input slot-screen-select" name="screen_ids[]" required disabled><option value="">-- Chọn phòng --</option></select></div>
+            <button type="button" class="slot-remove-btn" ${singleSlotCount === 1 ? 'disabled' : ''}>Xóa</button>
+        `;
+
+        const theaterSel = row.querySelector('.slot-theater-select');
+        const screenSel = row.querySelector('.slot-screen-select');
+        fillSelect(theaterSel, cachedTheaters, 'id', 'name', '-- Chọn rạp --');
+
+        theaterSel.addEventListener('change', async () => {
+            const tid = theaterSel.value;
+            screenSel.disabled = !tid;
+            if (!tid) {
+                screenSel.innerHTML = '<option value="">-- Chọn phòng --</option>';
+                return;
             }
 
             try {
-                const res = await window.AdminCore.apiFetch(url, { method: 'PUT', body: JSON.stringify(data) });
+                const res = await window.AdminCore.apiFetch(`/api/v1/admin/screens?theater_id=${tid}&per_page=200`);
                 if (res && res.ok) {
-                    getModalInstance().hide();
-                    window.showAdminToast?.('Cập nhật thành công!', 'success');
-                    loadData(currentPage);
-                } else {
-                    const errData = await res.json();
-                    alert('Lỗi: ' + JSON.stringify(errData.errors || errData.message));
+                    const json = await res.json();
+                    fillSelect(screenSel, json.data || [], 'id', 'name', '-- Chọn phòng --');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        row.querySelector('.slot-remove-btn').addEventListener('click', () => {
+            if (els.sSlotRows.children.length > 1) {
+                row.remove();
+            }
+        });
+
+        els.sSlotRows?.appendChild(row);
+    }
+
+    async function handleSingleDaySubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(els.singleDayForm);
+        const status = els.sStatusToggle?.checked ? '1' : '0';
+        formData.append('status', status);
+
+        try {
+            const res = await window.AdminCore.apiFetch('/api/v1/admin/showtimes/single-day', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res || !res.ok) throw new Error();
+            const json = await res.json();
+
+            window.AdminCore.showToast(json.message || 'Tạo lịch chiếu thành công!', 'success');
+            bootstrap.Modal.getInstance(els.addModal)?.hide();
+            if (selectedMovieId) {
+                loadShowtimesForMovie(selectedMovieId, 1);
+            } else {
+                loadMoviesList();
+            }
+        } catch (err) {
+            console.error(err);
+            window.AdminCore.showToast('Lỗi tạo lịch chiếu!', 'error');
+        }
+    }
+
+    /* ── Movie Info Update ───────────────────────────────── */
+    function updateMovieInfo(prefix, movieId) {
+        const movie = cachedMovies.find(m => m.id == movieId);
+        if (!movie) {
+            resetMovieInfo(prefix);
+            return;
+        }
+
+        const poster = document.getElementById(`${prefix}MoviePoster`);
+        const title = document.getElementById(`${prefix}MovieTitle`);
+        const duration = document.getElementById(`${prefix}MovieDuration`);
+        const release = document.getElementById(`${prefix}MovieRelease`);
+        const end = document.getElementById(`${prefix}MovieEnd`);
+
+        const posterUrl = movie.poster_path
+            ? `/storage/${movie.poster_path}`
+            : (movie.poster_url || '/images/default-poster.jpg');
+
+        if (poster) poster.src = posterUrl;
+        if (title) title.textContent = movie.title || '—';
+        if (duration) duration.textContent = movie.duration || '—';
+        if (release) release.textContent = formatDate(movie.release_date);
+        if (end) end.textContent = formatDate(movie.end_date);
+    }
+
+    /* ── Edit Modal ──────────────────────────────────────── */
+    async function openEditModal(showtime) {
+        console.log('[EDIT MODAL] Opening with showtime:', showtime);
+
+        els.editIdInput.value = showtime.id;
+        els.editFormMovieId.value = showtime.movie_id || '';
+        els.editFormTheaterId.value = showtime.screen?.theater_id || '';
+        els.editFormScheduledAt.value = showtime.scheduled_at?.slice(0, 16) || '';
+        els.editFormFormatId.value = showtime.format_id || '';
+        els.editFormVersionTypeId.value = showtime.version_type_id || '';
+        els.editFormStatus.checked = !!showtime.status;
+
+        console.log('[EDIT MODAL] Theater ID:', showtime.screen?.theater_id);
+        console.log('[EDIT MODAL] Screen ID to set:', showtime.screen_id);
+        console.log('[EDIT MODAL] editFormScreenId element:', els.editFormScreenId);
+
+        // Load screens for theater and wait for completion
+        if (showtime.screen?.theater_id) {
+            console.log('[EDIT MODAL] Loading screens for theater:', showtime.screen.theater_id);
+            await loadScreensForTheater(showtime.screen.theater_id, els.editFormScreenId);
+            console.log('[EDIT MODAL] Screens loaded, setting value to:', showtime.screen_id);
+            els.editFormScreenId.value = showtime.screen_id || '';
+            console.log('[EDIT MODAL] Screen dropdown value after set:', els.editFormScreenId.value);
+        }
+
+        const bsModal = new bootstrap.Modal(els.editModal);
+        bsModal.show();
+    }
+
+    async function loadScreensForTheater(theaterId, screenEl) {
+        console.log('[LOAD SCREENS] Called with theaterId:', theaterId, 'element:', screenEl);
+
+        if (!screenEl) {
+            console.error('[LOAD SCREENS] Screen element is null!');
+            return;
+        }
+
+        screenEl.disabled = !theaterId;
+        if (!theaterId) {
+            screenEl.innerHTML = '<option value="">-- Chọn phòng --</option>';
+            return;
+        }
+
+        try {
+            // Use PUBLIC endpoint (supports theater_id filter) instead of admin endpoint
+            const url = `/api/v1/screens?theater_id=${theaterId}&per_page=200&status=all`;
+            console.log('[LOAD SCREENS] Fetching from:', url);
+
+            const res = await window.AdminCore.apiFetch(url);
+            console.log('[LOAD SCREENS] Response:', res);
+
+            if (res && res.ok) {
+                const json = await res.json();
+                console.log('[LOAD SCREENS] JSON response:', json);
+                console.log('[LOAD SCREENS] json.data:', json.data);
+                console.log('[LOAD SCREENS] Number of screens:', json.data?.length);
+
+                // Public endpoint returns { data: [...], pagination: {...} }
+                const screens = json.data || [];
+                fillSelect(screenEl, screens, 'id', 'name', '-- Chọn phòng --');
+                console.log('[LOAD SCREENS] Dropdown populated with', screens.length, 'screens');
+            } else {
+                console.error('[LOAD SCREENS] API call failed, response:', res);
+            }
+        } catch (err) {
+            console.error('[LOAD SCREENS] Exception:', err);
+        }
+    }
+
+    async function handleEditSubmit(e) {
+        e.preventDefault();
+        const id = els.editIdInput.value;
+        const formData = new FormData(els.editForm);
+        formData.append('status', els.editFormStatus.checked ? '1' : '0');
+
+        try {
+            const res = await window.AdminCore.apiFetch(`/api/v1/admin/showtimes/${id}`, {
+                method: 'PUT',
+                body: formData
+            });
+
+            if (!res || !res.ok) throw new Error();
+            const json = await res.json();
+
+            window.AdminCore.showToast(json.message || 'Cập nhật thành công!', 'success');
+            bootstrap.Modal.getInstance(els.editModal)?.hide();
+            if (selectedMovieId) {
+                loadShowtimesForMovie(selectedMovieId, currentShowtimePage);
+            }
+        } catch (err) {
+            console.error(err);
+            window.AdminCore.showToast('Lỗi cập nhật lịch chiếu!', 'error');
+        }
+    }
+
+    /* ── Delete Showtime ─────────────────────────────────── */
+    async function deleteShowtime(id) {
+        if (!confirm('Xác nhận xóa suất chiếu này?')) return;
+
+        try {
+            const res = await window.AdminCore.apiFetch(`/api/v1/admin/showtimes/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!res || !res.ok) throw new Error();
+            const json = await res.json();
+
+            window.AdminCore.showToast(json.message || 'Xóa thành công!', 'success');
+            if (selectedMovieId) {
+                loadShowtimesForMovie(selectedMovieId, currentShowtimePage);
+            }
+        } catch (err) {
+            console.error(err);
+            window.AdminCore.showToast('Lỗi xóa suất chiếu!', 'error');
+        }
+    }
+
+    /* ── Event Listeners Setup ───────────────────────────── */
+    function setupEventListeners() {
+        // Filter form
+        els.filterForm?.addEventListener('submit', handleFilterSubmit);
+        els.branchFilter?.addEventListener('change', handleBranchChange);
+
+        // Back to movies
+        els.backToMoviesBtn?.addEventListener('click', backToMoviesList);
+
+        // Add showtime button
+        els.addShowtimeBtn?.addEventListener('click', openAddModal);
+
+        // Multi-day form
+        els.mAddTimeBtn?.addEventListener('click', addTimeSlot);
+        els.mTimeInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTimeSlot();
+            }
+        });
+        els.previewMultiBtn?.addEventListener('click', previewMultiDay);
+        els.multiDayForm?.addEventListener('submit', handleMultiDaySubmit);
+        els.mMovieId?.addEventListener('change', () => updateMovieInfo('m', els.mMovieId.value));
+        els.mTheaterId?.addEventListener('change', () => {
+            const tid = els.mTheaterId.value;
+            els.mScreenId.disabled = !tid;
+            if (!tid) {
+                els.mScreenId.innerHTML = '<option value="">-- Chọn phòng --</option>';
+                return;
+            }
+            loadScreensForTheater(tid, els.mScreenId);
+        });
+
+        // Single-day form
+        els.sAddSlotBtn?.addEventListener('click', addSingleSlotRow);
+        els.singleDayForm?.addEventListener('submit', handleSingleDaySubmit);
+        els.sMovieId?.addEventListener('change', () => updateMovieInfo('s', els.sMovieId.value));
+
+        // Edit form
+        els.editForm?.addEventListener('submit', handleEditSubmit);
+        els.editFormTheaterId?.addEventListener('change', () => {
+            const tid = els.editFormTheaterId.value;
+            els.editFormScreenId.disabled = !tid;
+            if (!tid) {
+                els.editFormScreenId.innerHTML = '<option value="">-- Chọn phòng chiếu --</option>';
+                return;
+            }
+            loadScreensForTheater(tid, els.editFormScreenId);
+        });
+
+        // Event delegation for edit/delete buttons
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('.btn-edit-showtime')) {
+                const btn = e.target.closest('.btn-edit-showtime');
+                const showtime = JSON.parse(btn.dataset.showtime);
+                await openEditModal(showtime); // Await to ensure screens load before modal shows
+            }
+
+            if (e.target.closest('.btn-delete-showtime')) {
+                const btn = e.target.closest('.btn-delete-showtime');
+                const id = btn.dataset.id;
+                deleteShowtime(id);
+            }
+        });
+
+        // Event delegation for status toggle switches
+        document.addEventListener('change', async (e) => {
+            if (e.target.classList.contains('status-toggle')) {
+                const toggle = e.target;
+                const id = toggle.dataset.id;
+                const newStatus = toggle.checked ? 1 : 0;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('status', newStatus);
+
+                    const res = await window.AdminCore.apiFetch(`/api/v1/admin/showtimes/${id}/status`, {
+                        method: 'PUT',
+                        body: formData
+                    });
+
+                    if (!res || !res.ok) {
+                        // Revert toggle if failed
+                        toggle.checked = !toggle.checked;
+                        throw new Error('Failed to update status');
+                    }
+
+                    const json = await res.json();
+                    window.AdminCore.showToast(json.message || 'Cập nhật trạng thái thành công!', 'success');
+                } catch (err) {
+                    console.error('Toggle status error:', err);
+                    window.AdminCore.showToast('Lỗi cập nhật trạng thái!', 'error');
+                    // Revert toggle on error
+                    toggle.checked = !toggle.checked;
+                }
+            }
         });
     }
 
-    /* ── Search form ─────────────────────────────────────── */
-    if (els.searchForm) {
-        els.searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            loadData(1);
-        });
-    }
+    /* ── Initialize ──────────────────────────────────────── */
+    async function init() {
+        console.log('[Showtimes] Initializing...');
 
-    /* ── Init ────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', async () => {
+        // Set default date to today
+        setTodayDate();
+
+        // Fetch all prerequisites
         await fetchPrerequisites();
-        // Add 1 default slot row for single-day tab
-        addSlotRow();
-        loadData(1);
-    });
 
+        // Load movies list
+        await loadMoviesList();
+
+        // Setup all event listeners
+        setupEventListeners();
+
+        console.log('[Showtimes] Ready.');
+    }
+
+    // Auto-init when DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
