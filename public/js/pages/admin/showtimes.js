@@ -92,10 +92,22 @@
     /* ── Utility Functions ───────────────────────────────── */
     function fillSelect(el, items, valueKey, labelKey, emptyLabel = '-- Chọn --') {
         if (!el) return;
+        
+        // Preserve current selected value
+        const currentValue = el.value;
+        
         el.innerHTML = `<option value="">${emptyLabel}</option>`;
         items.forEach(item => {
             el.innerHTML += `<option value="${item[valueKey]}">${item[labelKey]}</option>`;
         });
+        
+        // Restore selected value if it still exists in the new options
+        if (currentValue) {
+            const optionExists = items.some(item => String(item[valueKey]) === String(currentValue));
+            if (optionExists) {
+                el.value = currentValue;
+            }
+        }
     }
 
     function formatDate(dateStr) {
@@ -235,7 +247,7 @@
     /* ── Show Showtimes for Selected Movie ───────────────── */
     async function showMovieShowtimes(movie) {
         // Hide movies table, show showtimes panel
-        document.querySelector('.chart-card.mb-4').style.display = 'none';
+        document.getElementById('moviesPanel').style.display = 'none';
         els.showtimesPanel.style.display = 'block';
         els.selectedMovieTitle.textContent = movie.title;
 
@@ -368,7 +380,7 @@
     /* ── Back to Movies Button ────────────────────────────── */
     function backToMoviesList() {
         els.showtimesPanel.style.display = 'none';
-        document.querySelector('.chart-card.mb-4').style.display = 'block';
+        document.getElementById('moviesPanel').style.display = 'block';
         selectedMovieId = null;
     }
 

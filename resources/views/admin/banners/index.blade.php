@@ -5,7 +5,7 @@
 @section('header_subtitle', 'Quản lý banner quảng cáo hiển thị trên website.')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/banners.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
 @endpush
 
 @section('content')
@@ -14,7 +14,7 @@
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
         <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
-            <i class="bi bi-badge-ad me-2"></i>Danh sách banner
+            Danh sách banner
         </h5>
         
         <form id="searchForm" class="d-flex flex-grow-1 align-items-center gap-3">

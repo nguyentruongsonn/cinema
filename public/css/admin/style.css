@@ -362,11 +362,6 @@ body {
     margin-bottom: 0.25rem;
 }
 
-.page-subtitle {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
 .topbar-actions {
     display: flex;
     align-items: center;
@@ -733,10 +728,6 @@ body {
 
     .page-title h2 {
         font-size: 1.2rem;
-    }
-
-    .page-subtitle {
-        font-size: 0.8rem;
     }
 
     .stat-card {

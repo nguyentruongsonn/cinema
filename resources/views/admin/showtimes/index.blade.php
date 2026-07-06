@@ -2,62 +2,48 @@
 
 @section('title', 'Quản lý lịch chiếu')
 @section('header_title', 'Quản lý lịch chiếu')
-@section('header_subtitle', 'Sắp xếp lịch chiếu phim tại các rạp.')
 
 @section('content')
 
-{{-- ── Dòng 1: Filter Bar & Add Button ─────────────────── --}}
+{{-- ── Dòng 1: Header, Filters & Add Button ─────────────────── --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center justify-content-between w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold">
-            <i class="bi bi-calendar-event me-2"></i>Lịch chiếu
+        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0; min-width: 120px;">
+            Lịch chiếu
         </h5>
 
-        <form id="filterForm" class="d-flex flex-grow-1 align-items-end gap-3">
-            {{-- Chi nhánh --}}
-            <div class="admin-filter-group">
-                <select id="branchFilter" class="admin-filter-select">
-                    <option value="">Tất cả chi nhánh</option>
-                </select>
-            </div>
+        <form id="filterForm" class="d-flex flex-grow-1 align-items-center gap-2" style="max-width: 900px;">
+            <select id="branchFilter" class="admin-filter-select" style="min-width: 140px; max-width: 180px;">
+                <option value="">Tất cả chi nhánh</option>
+            </select>
 
-            {{-- Rạp --}}
-            <div class="admin-filter-group">
-                <select id="theaterFilter" class="admin-filter-select">
-                    <option value="">Tất cả rạp</option>
-                </select>
-            </div>
+            <select id="theaterFilter" class="admin-filter-select" style="min-width: 130px; max-width: 170px;">
+                <option value="">Tất cả rạp</option>
+            </select>
 
-            {{-- Ngày chiếu --}}
-            <div class="admin-filter-group">
-                <input type="date" id="dateFilter" class="admin-filter-input">
-            </div>
+            <input type="date" id="dateFilter" class="admin-filter-input" style="width: 150px;">
 
-            {{-- Trạng thái --}}
-            <div class="admin-filter-group">
-                <select id="statusFilter" class="admin-filter-select">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="1">Mở bán</option>
-                    <option value="0">Đóng</option>
-                </select>
-            </div>
+            <select id="statusFilter" class="admin-filter-select" style="width: 120px;">
+                <option value="">Trạng thái</option>
+                <option value="1">Mở bán</option>
+                <option value="0">Đóng</option>
+            </select>
 
-            <button class="admin-filter-btn" type="submit">
-                <i class="bi bi-search"></i> Tìm
+            <button class="admin-filter-btn" type="submit" style="padding: 0.5rem 1rem;">
+                <i class="bi bi-search"></i>
             </button>
         </form>
 
-        {{-- Add Button --}}
-        <button type="button" class="admin-action-btn" id="addShowtimeBtn">
+        <button type="button" class="admin-action-btn ms-auto" id="addShowtimeBtn" style="flex-shrink: 0;">
             <i class="bi bi-plus-circle"></i> Thêm suất chiếu
         </button>
     </div>
 </div>
 
 {{-- ── Dòng 2: Bảng danh sách phim ────────────────────── --}}
-<div class="admin-table-container mb-4">
+<div class="admin-table-container mb-4" id="moviesPanel">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="text-white fw-semibold mb-0"><i class="bi bi-film me-2"></i>Danh sách phim</h6>
+        <h6 class="text-white fw-semibold mb-0">Danh sách phim</h6>
         <span class="admin-badge admin-badge-info" id="movieCount"></span>
     </div>
     <div class="admin-table-wrapper">
@@ -92,7 +78,7 @@
         <div class="d-flex align-items-center gap-2">
             <span class="admin-badge admin-badge-info" id="showtimeCount"></span>
             <button type="button" id="backToMoviesBtn" class="admin-action-btn">
-                <i class="bi bi-arrow-left"></i> Danh sách phim
+                Danh sách phim
             </button>
         </div>
     </div>

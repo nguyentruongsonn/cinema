@@ -1,7 +1,7 @@
 /* ── Admin Modals - Premium Dark Theme ────────────────────────────────────
    Applies to: branchModal, theaterModal, screenModal, formatModal,
                soundModal, seatLayoutTemplateModal, movieModal, comboModal,
-               addShowtimeModal, editShowtimeModal
+               productModal, addShowtimeModal, editShowtimeModal
    ─────────────────────────────────────────────────────────────────────── */
 
 #branchModal .modal-content,
@@ -12,6 +12,7 @@
 #seatLayoutTemplateModal .modal-content,
 #movieModal .modal-content,
 #comboModal .modal-content,
+#productModal .modal-content,
 #addShowtimeModal .modal-content,
 #editShowtimeModal .modal-content {
     background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
@@ -32,6 +33,7 @@
 #seatLayoutTemplateModal .modal-header,
 #movieModal .modal-header,
 #comboModal .modal-header,
+#productModal .modal-header,
 #addShowtimeModal .modal-header,
 #editShowtimeModal .modal-header {
     background: rgba(255, 255, 255, 0.03) !important;
@@ -48,6 +50,7 @@
 #seatLayoutTemplateModal .modal-title,
 #movieModal .modal-title,
 #comboModal .modal-title,
+#productModal .modal-title,
 #addShowtimeModal .modal-title,
 #editShowtimeModal .modal-title {
     font-size: 1.05rem !important;
@@ -64,6 +67,7 @@
 #seatLayoutTemplateModal .modal-title i,
 #movieModal .modal-title i,
 #comboModal .modal-title i,
+#productModal .modal-title i,
 #addShowtimeModal .modal-title i,
 #editShowtimeModal .modal-title i {
     color: #a1a1aa;
@@ -78,6 +82,7 @@
 #seatLayoutTemplateModal .modal-body,
 #movieModal .modal-body,
 #comboModal .modal-body,
+#productModal .modal-body,
 #addShowtimeModal .modal-body,
 #editShowtimeModal .modal-body {
     background: transparent !important;
@@ -93,6 +98,7 @@
 #seatLayoutTemplateModal .modal-body::-webkit-scrollbar,
 #movieModal .modal-body::-webkit-scrollbar,
 #comboModal .modal-body::-webkit-scrollbar,
+#productModal .modal-body::-webkit-scrollbar,
 #addShowtimeModal .modal-body::-webkit-scrollbar,
 #editShowtimeModal .modal-body::-webkit-scrollbar {
     width: 5px;
@@ -131,7 +137,8 @@
 #formatModal .form-label,
 #soundModal .form-label,
 #seatLayoutTemplateModal .form-label,
-#comboModal .form-label {
+#comboModal .form-label,
+#productModal .form-label {
     font-size: 0.75rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.07em !important;
@@ -154,7 +161,9 @@
 #seatLayoutTemplateModal .form-control,
 #seatLayoutTemplateModal .form-select,
 #comboModal .form-control,
-#comboModal .form-select {
+#comboModal .form-select,
+#productModal .form-control,
+#productModal .form-select {
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     color: #f1f1f3 !important;
@@ -177,7 +186,9 @@
 #seatLayoutTemplateModal .form-control:focus,
 #seatLayoutTemplateModal .form-select:focus,
 #comboModal .form-control:focus,
-#comboModal .form-select:focus {
+#comboModal .form-select:focus,
+#productModal .form-control:focus,
+#productModal .form-select:focus {
     background: rgba(255, 255, 255, 0.07) !important;
     border-color: rgba(255, 255, 255, 0.3) !important;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
@@ -191,7 +202,8 @@
 #formatModal .form-control::placeholder,
 #soundModal .form-control::placeholder,
 #seatLayoutTemplateModal .form-control::placeholder,
-#comboModal .form-control::placeholder {
+#comboModal .form-control::placeholder,
+#productModal .form-control::placeholder {
     color: rgba(255, 255, 255, 0.2) !important;
 }
 
@@ -201,7 +213,8 @@
 #formatModal textarea.form-control,
 #soundModal textarea.form-control,
 #seatLayoutTemplateModal textarea.form-control,
-#comboModal textarea.form-control {
+#comboModal textarea.form-control,
+#productModal textarea.form-control {
     resize: vertical;
     min-height: 80px;
 }
@@ -213,7 +226,8 @@
 #formatModal .form-select option,
 #soundModal .form-select option,
 #seatLayoutTemplateModal .form-select option,
-#comboModal .form-select option {
+#comboModal .form-select option,
+#productModal .form-select option {
     background: #1e1e24 !important;
     color: #f1f1f3 !important;
 }
@@ -225,7 +239,8 @@
 #formatModal hr,
 #soundModal hr,
 #seatLayoutTemplateModal hr,
-#comboModal hr {
+#comboModal hr,
+#productModal hr {
     border-color: rgba(255, 255, 255, 0.08) !important;
     margin: 1rem 0 !important;
 }
@@ -237,7 +252,8 @@
 #formatModal .form-check-input[type="checkbox"],
 #soundModal .form-check-input[type="checkbox"],
 #seatLayoutTemplateModal .form-check-input[type="checkbox"],
-#comboModal .form-check-input[type="checkbox"] {
+#comboModal .form-check-input[type="checkbox"],
+#productModal .form-check-input[type="checkbox"] {
     background-color: rgba(255, 255, 255, 0.1) !important;
     border-color: rgba(255, 255, 255, 0.18) !important;
     cursor: pointer;
@@ -250,7 +266,8 @@
 #formatModal .form-check-input[type="checkbox"]:checked,
 #soundModal .form-check-input[type="checkbox"]:checked,
 #seatLayoutTemplateModal .form-check-input[type="checkbox"]:checked,
-#comboModal .form-check-input[type="checkbox"]:checked {
+#comboModal .form-check-input[type="checkbox"]:checked,
+#productModal .form-check-input[type="checkbox"]:checked {
     background-color: #e50914 !important;
     border-color: #e50914 !important;
 }
@@ -259,7 +276,8 @@
 #theaterModal .form-check-input[type="checkbox"][role="switch"],
 #screenModal .form-check-input[type="checkbox"][role="switch"],
 #seatLayoutTemplateModal .form-check-input[type="checkbox"][role="switch"],
-#comboModal .form-check-input[type="checkbox"][role="switch"] {
+#comboModal .form-check-input[type="checkbox"][role="switch"],
+#productModal .form-check-input[type="checkbox"][role="switch"] {
     width: 2.4em !important;
     height: 1.3em !important;
 }
@@ -270,7 +288,8 @@
 #formatModal .form-check-input:focus,
 #soundModal .form-check-input:focus,
 #seatLayoutTemplateModal .form-check-input:focus,
-#comboModal .form-check-input:focus {
+#comboModal .form-check-input:focus,
+#productModal .form-check-input:focus {
     box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.18) !important;
 }
 
@@ -281,7 +300,8 @@
 #formatModal .form-check-label,
 #soundModal .form-check-label,
 #seatLayoutTemplateModal .form-check-label,
-#comboModal .form-check-label {
+#comboModal .form-check-label,
+#productModal .form-check-label {
     color: #a1a1aa !important;
     font-size: 0.85rem !important;
     cursor: pointer;
@@ -314,6 +334,7 @@
 #seatLayoutTemplateModal .slt-btn-cancel,
 #movieModal .modal-footer .btn,
 #comboModal .modal-footer .btn,
+#productModal .modal-footer .btn,
 #addShowtimeModal .modal-footer .btn,
 #editShowtimeModal .modal-footer .btn {
     background: rgba(255, 255, 255, 0.07) !important;
@@ -335,6 +356,7 @@
 #seatLayoutTemplateModal .slt-btn-cancel:hover,
 #movieModal .modal-footer .btn:hover,
 #comboModal .modal-footer .btn:hover,
+#productModal .modal-footer .btn:hover,
 #addShowtimeModal .modal-footer .btn:hover,
 #editShowtimeModal .modal-footer .btn:hover {
     background: rgba(255, 255, 255, 0.12) !important;
@@ -349,6 +371,7 @@
 #seatLayoutTemplateModal .btn-primary-custom,
 #movieModal .btn-primary-custom,
 #comboModal .btn-primary-custom,
+#productModal .btn-primary-custom,
 #addShowtimeModal .btn-primary-custom,
 #editShowtimeModal .btn-primary-custom {
     background: linear-gradient(135deg, #e50914 0%, #b8070f 100%) !important;
@@ -370,6 +393,7 @@
 #seatLayoutTemplateModal .btn-primary-custom:hover,
 #movieModal .btn-primary-custom:hover,
 #comboModal .btn-primary-custom:hover,
+#productModal .btn-primary-custom:hover,
 #addShowtimeModal .btn-primary-custom:hover,
 #editShowtimeModal .btn-primary-custom:hover {
     transform: translateY(-1px) !important;

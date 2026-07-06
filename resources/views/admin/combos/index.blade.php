@@ -10,7 +10,7 @@
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3 flex-wrap">
         <h5 class="mb-0 text-white fw-bold combo-page-title">
-            <i class="bi bi-box-seam me-2"></i>Danh sách Combo
+            Danh sách Combo
         </h5>
 
         <form id="searchForm" class="flex-grow-1 combo-search-form">

@@ -13,7 +13,6 @@
     <section class="movies-header">
         <div class="container">
             <h1 class="page-title">Movies</h1>
-            <p class="page-subtitle">Discover the latest films showing at Cinema Premium</p>
         </div>
     </section>
 

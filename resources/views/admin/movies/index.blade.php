@@ -10,7 +10,7 @@
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
         <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
-            <i class="bi bi-film me-2"></i>Danh sách Phim
+            Danh sách Phim
         </h5>
 
         <form id="searchForm" class="flex-grow-1" style="max-width: 500px;">
@@ -25,7 +25,7 @@
         <button type="button" id="btnOpenCreateMovie" class="admin-action-btn ms-auto">
             <i class="bi bi-plus-lg"></i> Thêm phim
         </button>
-    </div>ch 
+    </div>
 </div>
 
 {{-- ── Dòng 2: Tabs + Content ─────────────────────────────────────── --}}

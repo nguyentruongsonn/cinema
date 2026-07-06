@@ -9,7 +9,7 @@
 {{-- ── Dòng 1 + Dòng 2: Header & Filter Bar ────────────────────────── --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;"><i class="bi bi-camera-reels me-2"></i>Danh sách rạp chiếu</h5>
+        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">Danh sách rạp chiếu</h5>
         
         <form id="searchForm" class="flex-grow-1" style="max-width: 500px;">
             <div class="input-group">

@@ -268,6 +268,19 @@ Route::prefix('v1')->group(function () {
             Route::delete('{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'destroy']);
             Route::post('{banner}/toggle-active', [\App\Http\Controllers\Admin\BannerController::class, 'toggleActive']);
         });
+
+        // User management
+        Route::prefix('admin/users')->group(function () {
+            Route::get('/', [\App\Http\Controllers\UserController::class, 'list']);
+            Route::get('stats', [\App\Http\Controllers\UserController::class, 'stats']);
+            Route::get('roles', [\App\Http\Controllers\UserController::class, 'getRoles']);
+            Route::get('{user}', [\App\Http\Controllers\UserController::class, 'show']);
+            Route::post('/', [\App\Http\Controllers\UserController::class, 'store']);
+            Route::put('{user}', [\App\Http\Controllers\UserController::class, 'update']);
+            Route::delete('{user}', [\App\Http\Controllers\UserController::class, 'destroy']);
+            Route::post('{user}/toggle-status', [\App\Http\Controllers\UserController::class, 'toggleStatus']);
+            Route::post('{user}/reset-password', [\App\Http\Controllers\UserController::class, 'resetPassword']);
+        });
     });
 
     // Public product routes

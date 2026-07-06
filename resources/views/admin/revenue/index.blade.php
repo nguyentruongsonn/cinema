@@ -2,7 +2,6 @@
 
 @section('title', 'Thống kê Doanh thu')
 @section('header_title', 'Thống kê Doanh thu')
-@section('header_subtitle', 'Phân tích doanh thu chi tiết theo thời gian, rạp và phim.')
 
 @section('content')
 

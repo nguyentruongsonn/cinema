@@ -197,19 +197,23 @@
                 <!-- Accounts -->
                 <li class="nav-item has-submenu">
                     <a href="#menuTaiKhoan" 
-                       class="nav-link" 
+                       class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" 
                        data-bs-toggle="collapse" 
                        role="button" 
-                       aria-expanded="false" 
+                       aria-expanded="{{ request()->routeIs('admin.users.*') ? 'true' : 'false' }}" 
                        aria-controls="menuTaiKhoan"
                        data-bs-tooltip="Tài khoản">
                         <i class="bi bi-people"></i>
                         <span class="nav-text">Tài khoản</span>
                         <i class="bi bi-chevron-down submenu-arrow"></i>
                     </a>
-                    <div class="collapse" id="menuTaiKhoan">
+                    <div class="collapse {{ request()->routeIs('admin.users.*') ? 'show' : '' }}" id="menuTaiKhoan">
                         <ul class="nav flex-column submenu">
-                            <li class="nav-item"><a href="#" class="nav-link">Quản lý tài khoản</a></li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
+                                    Quản lý tài khoản
+                                </a>
+                            </li>
                             <li class="nav-item"><a href="#" class="nav-link">Phân quyền</a></li>
                         </ul>
                     </div>
@@ -243,7 +247,6 @@
                     </button>
                     <div class="page-title">
                         <h2>@yield('header_title', 'Overview')</h2>
-                        <span class="page-subtitle">@yield('header_subtitle', "Welcome back. Here's what's happening today.")</span>
                     </div>
                 </div>
 

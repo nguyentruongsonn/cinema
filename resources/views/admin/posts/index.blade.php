@@ -2,7 +2,6 @@
 
 @section('title', 'Quản lý bài viết')
 @section('header_title', 'Quản lý bài viết')
-@section('header_subtitle', 'Quản lý nội dung tin tức, blog và thông báo.')
 
 @push('styles')
 <link href="{{ asset('vendor/summernote/summernote-lite.min.css') }}" rel="stylesheet">
@@ -15,7 +14,7 @@
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
         <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
-            <i class="bi bi-file-text me-2"></i>Danh sách bài viết
+            Danh sách bài viết
         </h5>
         
         <form id="searchForm" class="d-flex flex-grow-1 align-items-center gap-3">

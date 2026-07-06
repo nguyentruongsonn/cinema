@@ -30,7 +30,7 @@
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
         <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
-            <i class="bi bi-display me-2"></i>Danh sách phòng chiếu
+            Danh sách phòng chiếu
         </h5>
         
         {{-- Search --}}

@@ -2,7 +2,6 @@
 
 @section('title', 'Overview')
 @section('header_title', 'Overview')
-@section('header_subtitle', "Welcome back. Here's what's happening today.")
 
 @section('topbar_action')
     <button class="btn-primary-custom">

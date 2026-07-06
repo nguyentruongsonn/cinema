@@ -793,3 +793,29 @@
         font-size: 0.9rem;
     }
 }
+
+/* ── Fix Filter Width Jumping ───────────────────────────── */
+/* Prevent layout shift when filter options load by fixing widths */
+#branchFilter {
+    width: 160px !important;
+    min-width: 160px !important;
+    max-width: 160px !important;
+}
+
+#theaterFilter {
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+}
+
+#statusFilter {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+}
+
+#dateFilter {
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+}
