@@ -1,0 +1,151 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Reset & Base Styles
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Box Sizing ──────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* ── Remove Default Margins ──────────────────────────────────────────── */
+body,
+h1, h2, h3, h4, h5, h6,
+p,
+ul, ol,
+figure,
+blockquote,
+dl, dd {
+    margin: 0;
+}
+
+/* ── List Styles ─────────────────────────────────────────────────────── */
+ul[role="list"],
+ol[role="list"] {
+    list-style: none;
+    padding: 0;
+}
+
+/* ── Root Defaults ───────────────────────────────────────────────────── */
+html:focus-within {
+    scroll-behavior: smooth;
+}
+
+/* ── Body Defaults ───────────────────────────────────────────────────── */
+body {
+    min-height: 100vh;
+    text-rendering: optimizeSpeed;
+    line-height: var(--admin-line-height-normal);
+    font-family: var(--admin-font-family);
+    font-size: var(--admin-font-size-base);
+    color: var(--admin-text-secondary);
+    background-color: var(--admin-bg-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Links ───────────────────────────────────────────────────────────── */
+a:not([class]) {
+    text-decoration-skip-ink: auto;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* ── Images & Media ──────────────────────────────────────────────────── */
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+/* ── Form Elements ───────────────────────────────────────────────────── */
+input,
+button,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+}
+
+/* ── Remove Animations for Reduced Motion ────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    html:focus-within {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ── Text Selection ──────────────────────────────────────────────────── */
+::selection {
+    background-color: var(--admin-primary);
+    color: var(--admin-text-primary);
+}
+
+::-moz-selection {
+    background-color: var(--admin-primary);
+    color: var(--admin-text-primary);
+}
+
+/* ── Scrollbar Styling ───────────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: var(--admin-scrollbar-width);
+    height: var(--admin-scrollbar-width);
+}
+
+::-webkit-scrollbar-track {
+    background: var(--admin-scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--admin-scrollbar-thumb);
+    border-radius: var(--admin-radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--admin-scrollbar-thumb-hover);
+}
+
+/* ── Focus Visible ───────────────────────────────────────────────────── */
+:focus-visible {
+    outline: 2px solid var(--admin-primary);
+    outline-offset: 2px;
+}
+
+/* Remove default focus outline for mouse users */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* ── Utility Classes ─────────────────────────────────────────────────── */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}

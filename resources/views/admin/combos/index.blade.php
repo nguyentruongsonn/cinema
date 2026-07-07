@@ -51,12 +51,56 @@
                 </tr>
             </thead>
             <tbody id="combosTableBody">
-                <tr>
-                    <td colspan="8" class="text-center py-5 text-muted">
-                        <div class="spinner-border text-secondary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
+                <!-- Skeleton Loading Rows -->
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
                 </tr>
             </tbody>
         </table>
@@ -85,26 +129,26 @@
                         <div class="col-md-7">
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
-                                    <label for="comboName" class="form-label text-secondary">Tên combo <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control bg-dark text-white border-secondary" id="comboName" name="name" required>
+                                    <label for="comboName" class="form-label">Tên combo <span class="text-danger">*</span></label>
+                                    <input type="text" class="admin-input" id="comboName" name="name" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="comboPrice" class="form-label text-secondary">Giá bán (VNĐ) <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control bg-dark text-white border-secondary" id="comboPrice" name="price" min="0" step="1000" required>
+                                    <label for="comboPrice" class="form-label">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                                    <input type="number" class="admin-input" id="comboPrice" name="price" min="0" step="1000" required>
                                 </div>
                             </div>
 
                             <div class="mb-3">
-                                <label for="comboDescription" class="form-label text-secondary">Mô tả chi tiết</label>
-                                <textarea class="form-control bg-dark text-white border-secondary" id="comboDescription" name="description" rows="3" placeholder="Mô tả combo..."></textarea>
+                                <label for="comboDescription" class="form-label">Mô tả chi tiết</label>
+                                <textarea class="admin-input admin-textarea" id="comboDescription" name="description" rows="3" placeholder="Mô tả combo..."></textarea>
                             </div>
 
                             <hr class="border-secondary">
 
                             <div class="mb-3">
-                                <label class="form-label text-secondary">Sản phẩm trong combo <span class="text-danger">*</span></label>
+                                <label class="form-label">Sản phẩm trong combo <span class="text-danger">*</span></label>
                                 <div class="d-flex gap-2 mb-2">
-                                    <select id="availableProducts" class="form-select bg-dark text-white border-secondary flex-grow-1">
+                                    <select id="availableProducts" class="admin-select flex-grow-1">
                                         <option value="">-- Chọn sản phẩm --</option>
                                     </select>
                                     <button type="button" id="btnAddComboItem" class="btn-primary-custom border-0">
@@ -131,19 +175,19 @@
                         {{-- Cột phải: Hình ảnh và trạng thái --}}
                         <div class="col-md-5">
                             <div class="mb-3">
-                                <label class="form-label text-secondary">Hình ảnh combo</label>
-                                <div class="poster-upload-box combo-image-upload-box mb-2" id="imageUploadBox">
-                                    <img id="imagePreview" class="combo-image-preview" src="" alt="Preview">
-                                    <div id="imagePlaceholder" class="text-center text-white-50 p-3">
+                                <label class="form-label">Hình ảnh combo</label>
+                                <div class="image-upload-box combo-image-upload-box mb-2" id="imageUploadBox">
+                                    <img id="imagePreview" class="image-preview combo-image-preview" src="" alt="Preview">
+                                    <div id="imagePlaceholder" class="image-placeholder text-white-50">
                                         <i class="bi bi-cloud-arrow-up fs-2 d-block mb-1"></i>
                                         <div class="small fw-semibold">Kéo thả hoặc click để chọn</div>
-                                        <div class="combo-upload-hint">JPG, PNG, WEBP · Tối đa 5MB</div>
+                                        <div class="small-text combo-upload-hint">JPG, PNG, WEBP · Tối đa 5MB</div>
                                     </div>
                                     <input type="file" id="comboImageFile" name="image_file"
                                            accept="image/jpeg,image/png,image/webp"
-                                           class="combo-file-input">
+                                           class="image-upload-input combo-file-input">
                                 </div>
-                                <button type="button" id="clearImageBtn" class="btn btn-sm w-100 d-none combo-clear-image-btn">
+                                <button type="button" id="clearImageBtn" class="btn btn-sm w-100 d-none btn-clear-image combo-clear-image-btn">
                                     <i class="bi bi-x me-1"></i>Xóa ảnh
                                 </button>
                             </div>
@@ -151,7 +195,7 @@
                             <hr class="border-secondary">
 
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="form-label text-secondary mb-0">Trạng thái xuất bản</label>
+                                <label class="form-label mb-0">Trạng thái xuất bản</label>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" role="switch" id="comboStatus" name="status" value="1" checked>
                                     <label class="form-check-label text-white small" for="comboStatus" id="comboStatusLabel">Đang bán</label>
@@ -161,9 +205,9 @@
                     </div>
                 </div>
 
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal">Hủy bỏ</button>
-                    <button type="submit" class="btn-primary-custom border-0" id="comboSubmitBtn">Lưu combo</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-primary-custom" id="comboSubmitBtn">Lưu combo</button>
                 </div>
             </form>
         </div>
@@ -173,10 +217,11 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-common.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/combos.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-common.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/combos.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
@@ -188,5 +233,5 @@
         updateSuccess: 'Cập nhật combo thành công!',
     };
 </script>
-<script src="{{ asset('js/pages/admin/combos.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/combos.js') }}?v={{ time() }}"></script>
 @endpush

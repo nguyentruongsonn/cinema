@@ -8,28 +8,28 @@
 {{-- Filter Bar --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3 flex-wrap">
-        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">Danh sách người dùng</h5>
-        
-        <form id="searchForm" class="flex-grow-1" style="max-width: 400px;">
+        <h5 class="mb-0 text-white fw-bold flex-no-shrink">Danh sách người dùng</h5>
+
+        <form id="searchForm" class="flex-grow-1 search-container">
             <div class="input-group">
-                <input type="text" id="search" class="admin-filter-input" placeholder="Tìm theo tên, email, SĐT..." style="border-radius: 8px 0 0 8px;">
-                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+                <input type="text" id="search" class="admin-filter-input search-input-rounded-left" placeholder="Tìm theo tên, email, SĐT...">
+                <button class="admin-filter-btn search-btn-rounded-right" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
         </form>
 
-        <select id="roleFilter" class="admin-filter-select" style="width: 160px;">
+        <select id="roleFilter" class="admin-filter-select filter-select-md">
             <option value="">Tất cả vai trò</option>
         </select>
 
-        <select id="statusFilter" class="admin-filter-select" style="width: 140px;">
+        <select id="statusFilter" class="admin-filter-select filter-select-sm">
             <option value="">Tất cả trạng thái</option>
             <option value="1">Đang hoạt động</option>
             <option value="0">Đã khóa</option>
         </select>
 
-        <select id="verifiedFilter" class="admin-filter-select" style="width: 160px;">
+        <select id="verifiedFilter" class="admin-filter-select filter-select-md">
             <option value="">Tất cả xác thực</option>
             <option value="1">Đã xác thực</option>
             <option value="0">Chưa xác thực</option>
@@ -47,7 +47,7 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 60px;">STT</th>
+                    <th class="text-center col-stt">STT</th>
                     <th>Họ tên</th>
                     <th>Email</th>
                     <th>Số điện thoại</th>
@@ -55,16 +55,65 @@
                     <th class="text-center">Trạng thái</th>
                     <th class="text-center">Xác thực</th>
                     <th>Ngày tạo</th>
-                    <th class="text-center" style="width: 140px;">Hành động</th>
+                    <th class="text-center col-actions">Hành động</th>
                 </tr>
             </thead>
             <tbody id="usersTableBody">
-                <tr>
-                    <td colspan="9" class="text-center py-5 text-muted">
-                        <div class="spinner-border text-secondary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
+                <!-- Skeleton Loading Rows -->
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-badge skeleton-w-80"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-badge skeleton-w-80"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-badge skeleton-w-80"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-55"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-badge skeleton-w-80"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-badge skeleton-w-80"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
                 </tr>
             </tbody>
         </table>
@@ -84,14 +133,14 @@
             <form id="userForm">
                 <input type="hidden" id="formMethod" value="POST">
                 <input type="hidden" id="userIdInput" value="">
-                
+
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="userName" class="form-label text-secondary">Họ tên <span class="text-danger">*</span></label>
                             <input type="text" class="form-control bg-dark text-white border-secondary" id="userName" name="name" required>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="userEmail" class="form-label text-secondary">Email <span class="text-danger">*</span></label>
                             <input type="email" class="form-control bg-dark text-white border-secondary" id="userEmail" name="email" required>
@@ -103,7 +152,7 @@
                             <label for="userUsername" class="form-label text-secondary">Tên đăng nhập</label>
                             <input type="text" class="form-control bg-dark text-white border-secondary" id="userUsername" name="username">
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="userPhone" class="form-label text-secondary">Số điện thoại</label>
                             <input type="text" class="form-control bg-dark text-white border-secondary" id="userPhone" name="phone">
@@ -118,7 +167,7 @@
                             <input type="password" class="form-control bg-dark text-white border-secondary" id="userPassword" name="password">
                             <small class="text-muted">Tối thiểu 6 ký tự. Để trống nếu không muốn thay đổi khi cập nhật.</small>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="userBirthday" class="form-label text-secondary">Ngày sinh</label>
                             <input type="date" class="form-control bg-dark text-white border-secondary" id="userBirthday" name="birthday">
@@ -135,7 +184,7 @@
                                 <option value="other">Khác</option>
                             </select>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="userLoyaltyPoints" class="form-label text-secondary">Điểm thành viên</label>
                             <input type="number" class="form-control bg-dark text-white border-secondary" id="userLoyaltyPoints" name="loyalty_points" value="0" min="0">
@@ -162,9 +211,9 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" style="background:rgba(255,255,255,0.1);" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu thông tin</button>
                 </div>
             </form>
@@ -182,24 +231,24 @@
             </div>
             <form id="resetPasswordForm">
                 <input type="hidden" id="resetUserId" value="">
-                
+
                 <div class="modal-body">
                     <p class="text-muted mb-3">Đặt lại mật khẩu cho người dùng: <strong id="resetUserName"></strong></p>
-                    
+
                     <div class="mb-3">
                         <label for="newPassword" class="form-label text-secondary">Mật khẩu mới <span class="text-danger">*</span></label>
                         <input type="password" class="form-control bg-dark text-white border-secondary" id="newPassword" name="password" required minlength="6">
                         <small class="text-muted">Tối thiểu 6 ký tự</small>
                     </div>
-                    
+
                     <div class="mb-0">
                         <label for="newPasswordConfirmation" class="form-label text-secondary">Xác nhận mật khẩu <span class="text-danger">*</span></label>
                         <input type="password" class="form-control bg-dark text-white border-secondary" id="newPasswordConfirmation" name="password_confirmation" required minlength="6">
                     </div>
                 </div>
-                
+
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" style="background:rgba(255,255,255,0.1);" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn-primary-custom border-0">Đặt lại mật khẩu</button>
                 </div>
             </form>
@@ -210,10 +259,11 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/pages/admin/users.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/admin/pages/users.js') }}?v={{ time() }}"></script>
 @endpush

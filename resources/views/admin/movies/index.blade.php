@@ -9,14 +9,14 @@
 {{-- ── Dòng 1: Header & Search ────────────────────────── --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
+        <h5 class="mb-0 text-white fw-bold flex-no-shrink">
             Danh sách Phim
         </h5>
 
-        <form id="searchForm" class="flex-grow-1" style="max-width: 500px;">
+        <form id="searchForm" class="flex-grow-1 search-container-lg">
             <div class="input-group">
-                <input type="text" id="search" name="search" class="admin-filter-input" placeholder="Tên phim..." style="border-radius: 8px 0 0 8px;">
-                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+                <input type="text" id="search" name="search" class="admin-filter-input search-input-rounded-left" placeholder="Tên phim...">
+                <button class="admin-filter-btn search-btn-rounded-right" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
@@ -42,26 +42,65 @@
         </li>
     </ul>
 
-    <div class="table-responsive">
-        <table class="table table-dark table-hover align-middle mb-0" style="background:transparent;">
-            <thead style="border-bottom: 1px solid var(--border-color);">
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <th class="text-center text-secondary fw-semibold border-0" style="width: 60px;">STT</th>
-                    <th class="text-secondary fw-semibold border-0" style="width: 70px;">Poster</th>
-                    <th class="text-secondary fw-semibold border-0">Thông tin phim</th>
-                    <th class="text-secondary fw-semibold border-0 text-center" style="width: 120px;">Trạng thái</th>
-                    <th class="text-center text-secondary fw-semibold border-0" style="width: 100px;">Hoạt động</th>
-                    <th class="text-center text-secondary fw-semibold border-0" style="width: 90px;">Hot</th>
-                    <th class="text-center text-secondary fw-semibold border-0" style="width: 110px;">Action</th>
+                    <th class="text-center col-stt">STT</th>
+                    <th class="col-poster">Poster</th>
+                    <th>Thông tin phim</th>
+                    <th class="text-center col-status">Trạng thái</th>
+                    <th class="text-center col-activity">Hoạt động</th>
+                    <th class="text-center col-hot">Hot</th>
+                    <th class="text-center col-actions-md">Action</th>
                 </tr>
             </thead>
             <tbody id="moviesTableBody">
-                <tr>
-                    <td colspan="7" class="text-center py-5 text-muted">
-                        <div class="spinner-border text-secondary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
+                <!-- Skeleton Loading Rows -->
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-avatar" style="width: 50px; height: 70px; border-radius: 4px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-avatar" style="width: 50px; height: 70px; border-radius: 4px;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
                 </tr>
             </tbody>
         </table>
@@ -266,10 +305,11 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/movies.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/movies.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/pages/admin/movies.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/movies.js') }}?v={{ time() }}"></script>
 @endpush

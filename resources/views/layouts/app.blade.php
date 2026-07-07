@@ -16,8 +16,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     {{-- Local assets --}}
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/auth-no-flicker.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/users/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/users/auth-no-flicker.css') }}">
 
     @stack('styles')
 </head>

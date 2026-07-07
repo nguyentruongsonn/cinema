@@ -13,7 +13,7 @@
             <span id="orderCount" class="tickets-count">0 đơn hàng</span>
         </div>
     </div>
-    
+
     {{-- Filter Tabs --}}
     <div class="tickets-tabs" role="tablist">
         <button class="tickets-tab active" data-filter-status="all" role="tab">Tất cả</button>
@@ -49,10 +49,40 @@
     </div>
 </div>
 
-{{-- Loading State --}}
-<div id="ordersLoading" class="text-center py-5">
-    <div class="spinner-border text-danger" role="status">
-        <span class="visually-hidden">Loading...</span>
+{{-- Loading State (Skeleton Cards) --}}
+<div id="ordersLoading" class="tickets-list">
+    <div class="admin-skeleton-card">
+        <div class="admin-skeleton-card-header">
+            <div class="admin-skeleton admin-skeleton-text" style="width: 120px;"></div>
+            <div class="admin-skeleton admin-skeleton-badge"></div>
+        </div>
+        <div class="admin-skeleton-card-body">
+            <div class="admin-skeleton admin-skeleton-text" style="width: 80%; margin-bottom: 8px;"></div>
+            <div class="admin-skeleton admin-skeleton-text" style="width: 60%; margin-bottom: 12px;"></div>
+            <div class="admin-skeleton admin-skeleton-text" style="width: 40%;"></div>
+        </div>
+    </div>
+    <div class="admin-skeleton-card">
+        <div class="admin-skeleton-card-header">
+            <div class="admin-skeleton admin-skeleton-text" style="width: 110px;"></div>
+            <div class="admin-skeleton admin-skeleton-badge"></div>
+        </div>
+        <div class="admin-skeleton-card-body">
+            <div class="admin-skeleton admin-skeleton-text" style="width: 75%; margin-bottom: 8px;"></div>
+            <div class="admin-skeleton admin-skeleton-text" style="width: 65%; margin-bottom: 12px;"></div>
+            <div class="admin-skeleton admin-skeleton-text" style="width: 45%;"></div>
+        </div>
+    </div>
+    <div class="admin-skeleton-card">
+        <div class="admin-skeleton-card-header">
+            <div class="admin-skeleton admin-skeleton-text" style="width: 130px;"></div>
+            <div class="admin-skeleton admin-skeleton-badge"></div>
+        </div>
+        <div class="admin-skeleton-card-body">
+            <div class="admin-skeleton admin-skeleton-text" style="width: 70%; margin-bottom: 8px;"></div>
+            <div class="admin-skeleton admin-skeleton-text" style="width: 55%; margin-bottom: 12px;"></div>
+            <div class="admin-skeleton admin-skeleton-text" style="width: 50%;"></div>
+        </div>
     </div>
 </div>
 
@@ -87,10 +117,11 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/tickets.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/orders.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/users/pages/tickets.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/orders.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/pages/admin/orders.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/orders.js') }}?v={{ time() }}"></script>
 @endpush

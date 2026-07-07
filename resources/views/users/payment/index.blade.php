@@ -3,7 +3,7 @@
 @section('title', 'Thanh toán - ' . config('app.name'))
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('css/payment.css') }}">
+<link rel="stylesheet" href="{{ asset('css/users/pages/payment.css') }}">
 @endsection
 
 @section('content')

@@ -3,9 +3,9 @@
 @section('title', 'Đặt vé - ' . $showtime->movie->title)
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/booking.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/booking-toast.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/skeleton.css') }}">
+<link rel="stylesheet" href="{{ asset('css/users/pages/booking.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/users/booking-toast.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}">
 @endpush
 
 @section('content')

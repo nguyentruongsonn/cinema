@@ -13,15 +13,15 @@
 {{-- ── Filter Bar ──────────────────────────────────────────────────── --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
+        <h5 class="mb-0 text-white fw-bold flex-no-shrink">
             Danh sách bài viết
         </h5>
-        
+
         <form id="searchForm" class="d-flex flex-grow-1 align-items-center gap-3">
             {{-- Search --}}
-            <div class="input-group" style="max-width: 400px;">
-                <input type="text" id="search" class="admin-filter-input" placeholder="Tìm bài viết..." style="border-radius: 8px 0 0 8px;">
-                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+            <div class="input-group search-container">
+                <input type="text" id="search" class="admin-filter-input search-input-rounded-left" placeholder="Tìm bài viết...">
+                <button class="admin-filter-btn search-btn-rounded-right" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
@@ -55,23 +55,67 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 60px;">STT</th>
-                    <th style="min-width: 250px;">Tiêu đề</th>
-                    <th class="text-center" style="width: 130px;">Danh mục</th>
-                    <th class="text-center" style="width: 120px;">Tác giả</th>
-                    <th class="text-center" style="width: 100px;">Lượt xem</th>
-                    <th class="text-center" style="width: 110px;">Ngày tạo</th>
-                    <th class="text-center" style="width: 100px;">Trạng thái</th>
-                    <th class="text-center" style="width: 120px;">Hành động</th>
+                    <th class="text-center col-stt">STT</th>
+                    <th class="col-min-250">Tiêu đề</th>
+                    <th class="text-center col-category">Danh mục</th>
+                    <th class="text-center col-author">Tác giả</th>
+                    <th class="text-center col-views">Lượt xem</th>
+                    <th class="text-center col-date">Ngày tạo</th>
+                    <th class="text-center col-status">Trạng thái</th>
+                    <th class="text-center col-actions">Hành động</th>
                 </tr>
             </thead>
             <tbody id="postsTableBody">
-                <tr>
-                    <td colspan="8" class="text-center py-5 text-muted">
-                        <div class="spinner-border text-secondary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
+                <!-- Skeleton Loading Rows -->
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="width: 90px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 70%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 70%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="width: 90px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 65%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 75%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="width: 90px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 80%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 65%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="width: 90px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 75%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 80%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="width: 90px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 60%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 70%; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
                 </tr>
             </tbody>
         </table>
@@ -165,8 +209,12 @@
 
 @endsection
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+@endpush
+
 @push('scripts')
 <script src="{{ asset('vendor/summernote/jquery-3.6.0.min.js') }}"></script>
 <script src="{{ asset('vendor/summernote/summernote-lite.min.js') }}"></script>
-<script src="{{ asset('js/pages/admin/posts.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/admin/pages/posts.js') }}?v={{ time() }}"></script>
 @endpush

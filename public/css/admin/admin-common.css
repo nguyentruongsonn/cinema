@@ -13,20 +13,20 @@
     --text-base: 0.9rem;     /* 14.4px - Body, inputs, buttons */
     --text-lg: 1rem;         /* 16px - Emphasized */
     --text-xl: 1.1rem;       /* 17.6px - Headings */
-    
+
     /* Font Weights */
     --font-regular: 400;
     --font-medium: 500;
     --font-semibold: 600;
     --font-bold: 700;
-    
+
     /* Letter Spacing */
     --tracking-tight: -0.01em;
     --tracking-normal: 0;
     --tracking-wide: 0.02em;
     --tracking-wider: 0.05em;
     --tracking-widest: 0.08em;
-    
+
     /* Line Heights */
     --leading-tight: 1.25;
     --leading-normal: 1.5;
@@ -428,29 +428,233 @@
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 
-@media (max-width: 1200px) {
-    .admin-filter-grid {
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .admin-filter-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .admin-stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .admin-table-wrapper {
-        margin: -1rem;
-        padding: 1rem;
-    }
-    
+/* Laptop (≤1366px) */
+@media (max-width: 1366px) {
     .admin-filter-container,
     .admin-content-container,
     .admin-table-container {
         padding: 1rem;
+    }
+
+    .admin-filter-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.85rem;
+    }
+
+    .admin-stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+}
+
+/* Tablet (≤1024px) */
+@media (max-width: 1024px) {
+    .admin-filter-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .admin-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .admin-filter-container,
+    .admin-content-container,
+    .admin-table-container,
+    .admin-card-container {
+        padding: 0.85rem;
+    }
+}
+
+/* Mobile (≤768px) */
+@media (max-width: 768px) {
+    .admin-content {
+        padding: 0.75rem;
+    }
+
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Hide page title h1 - already in mobile-header */
+    .content-header h1 {
+        display: none;
+    }
+
+    /* Hide h5 titles in filter containers */
+    .admin-filter-container h5 {
+        display: none;
+    }
+
+    /* Hide search input by default, keep button */
+    .admin-filter-container .input-group input,
+    .admin-filter-container #search,
+    .admin-filter-container .admin-filter-input,
+    .admin-filter-container .search-input-rounded-left {
+        display: none;
+        transition: all 0.3s ease;
+    }
+
+    /* Show search input when form is active */
+    .admin-filter-container form.search-active .input-group input,
+    .admin-filter-container #searchForm.search-active #search,
+    .admin-filter-container .search-container-lg.search-active input {
+        display: block !important;
+        width: 200px;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            width: 0;
+            opacity: 0;
+        }
+        to {
+            width: 200px;
+            opacity: 1;
+        }
+    }
+
+    /* Search button - icon only, compact */
+    .admin-filter-container .admin-filter-btn,
+    .admin-filter-container .search-btn-rounded-right,
+    .admin-filter-container button[type="submit"] {
+        padding: 0.5rem;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        border-radius: 8px !important;
+    }
+
+    /* Expand form when active */
+    .admin-filter-container form.search-active,
+    .admin-filter-container #searchForm.search-active,
+    .admin-filter-container .search-container-lg.search-active {
+        max-width: 238px !important;
+    }
+
+    .admin-filter-container form.search-active .input-group,
+    .admin-filter-container #searchForm.search-active .input-group {
+        width: 238px !important;
+    }
+
+    /* Make action buttons icon-only */
+    .admin-filter-container .admin-action-btn,
+    .admin-filter-container #btnCreateBranch,
+    .admin-filter-container button[id^="btnCreate"] {
+        padding: 0.5rem;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        justify-content: center;
+        font-size: 0;
+    }
+
+    .admin-filter-container .admin-action-btn i,
+    .admin-filter-container button[id^="btnCreate"] i,
+    .admin-filter-container .admin-filter-btn i,
+    .admin-filter-container .search-btn-rounded-right i {
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Keep form visible but compact */
+    .admin-filter-container form,
+    .admin-filter-container .search-container-lg,
+    .admin-filter-container #searchForm {
+        flex: 0 0 auto;
+        max-width: 38px;
+    }
+
+    .admin-filter-container .input-group {
+        width: 38px;
+    }
+
+    .breadcrumb {
+        font-size: 0.8rem;
+    }
+
+    .content-header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 0.5rem;
+    }
+
+    /* Action buttons - icon only */
+    .content-header-actions .admin-btn,
+    .content-header-actions .btn-primary-custom {
+        padding: 0.5rem;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        justify-content: center;
+    }
+
+    /* Hide button text, show icon only */
+    .content-header-actions .admin-btn span:not(.bi):not(.fa):not(.fas):not(.far),
+    .content-header-actions .btn-primary-custom span:not(.bi):not(.fa):not(.fas):not(.far) {
+        display: none;
+    }
+
+    .content-header-actions .admin-btn i,
+    .content-header-actions .btn-primary-custom i {
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    .admin-filter-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .admin-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-filter-container,
+    .admin-content-container,
+    .admin-table-container {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .admin-table-wrapper {
+        margin: -0.75rem;
+        padding: 0.75rem;
+    }
+
+    .admin-table thead th,
+    .admin-table tbody td {
+        padding: 0.75rem;
+        font-size: var(--text-sm);
+    }
+
+    .admin-empty-state {
+        padding: 3rem 1.5rem;
+    }
+
+    .admin-empty-state i {
+        font-size: 3rem;
+    }
+}
+
+/* Small Mobile (≤480px) */
+@media (max-width: 480px) {
+    .admin-filter-container,
+    .admin-content-container,
+    .admin-table-container {
+        padding: 0.65rem;
+    }
+
+    .admin-table thead th,
+    .admin-table tbody td {
+        padding: 0.65rem;
+    }
+
+    .admin-btn-icon {
+        width: 28px;
+        height: 28px;
+        padding: 0.4rem;
     }
 }

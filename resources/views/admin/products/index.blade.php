@@ -8,27 +8,27 @@
 {{-- ── Filter Bar ─────────────────────────────────────────── --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3 flex-wrap">
-        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
+        <h5 class="mb-0 text-white fw-bold flex-no-shrink">
             Danh sách Sản phẩm
         </h5>
 
-        <form id="searchForm" class="flex-grow-1" style="max-width: 400px;">
+        <form id="searchForm" class="flex-grow-1 search-container">
             <div class="input-group">
-                <input type="text" id="search" name="search" class="admin-filter-input" placeholder="Tên sản phẩm..." style="border-radius: 8px 0 0 8px;">
-                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+                <input type="text" id="search" name="search" class="admin-filter-input search-input-rounded-left" placeholder="Tên sản phẩm...">
+                <button class="admin-filter-btn search-btn-rounded-right" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
         </form>
 
-        <select id="typeFilter" class="admin-filter-select" style="width: auto; min-width: 140px;">
+        <select id="typeFilter" class="admin-filter-select filter-select-sm filter-rounded">
             <option value="all">Tất cả loại</option>
             <option value="combo">Combo</option>
             <option value="food">Đồ ăn</option>
             <option value="drink">Đồ uống</option>
         </select>
 
-        <select id="statusFilter" class="admin-filter-select" style="width: auto; min-width: 160px;">
+        <select id="statusFilter" class="admin-filter-select filter-select-md filter-rounded">
             <option value="all">Tất cả trạng thái</option>
             <option value="active">Đang bán</option>
             <option value="inactive">Ngừng bán</option>
@@ -46,22 +46,61 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 60px;">STT</th>
-                    <th style="width: 80px;">Hình ảnh</th>
+                    <th class="text-center col-stt">STT</th>
+                    <th class="col-image">Hình ảnh</th>
                     <th>Tên sản phẩm</th>
                     <th>Loại & Tồn kho</th>
                     <th>Giá bán</th>
-                    <th class="text-center" style="width: 120px;">Trạng thái</th>
-                    <th class="text-center" style="width: 140px;">Hành động</th>
+                    <th class="text-center col-status">Trạng thái</th>
+                    <th class="text-center col-actions-lg">Hành động</th>
                 </tr>
             </thead>
             <tbody id="productsTableBody">
-                <tr>
-                    <td colspan="7" class="text-center py-5 text-muted">
-                        <div class="spinner-border text-secondary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
+                <!-- Skeleton Loading Rows -->
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-55"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
                 </tr>
             </tbody>
         </table>
@@ -84,7 +123,7 @@
                 <input type="hidden" id="productFormMethod" value="POST">
                 <input type="hidden" name="product_id" id="productIdInput" value="">
 
-                <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+                <div class="modal-body modal-body-scrollable">
                     <div class="row g-4">
                         {{-- Cột trái --}}
                         <div class="col-md-7">
@@ -92,7 +131,7 @@
                                 <label for="productName" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="productName" name="name" required>
                             </div>
-                            
+
                             <div class="row mb-3 g-3">
                                 <div class="col-md-6">
                                     <label for="productType" class="form-label">Phân loại <span class="text-danger">*</span></label>
@@ -117,30 +156,25 @@
                                 <label for="productDescription" class="form-label">Mô tả chi tiết</label>
                                 <textarea class="form-control" id="productDescription" name="description" rows="3" placeholder="Bao gồm 1 bắp + 1 nước..."></textarea>
                             </div>
-                            
+
 
                         </div>
-                        
+
                         {{-- Cột phải (Ảnh) --}}
                         <div class="col-md-5">
                             <div class="mb-3">
                                 <label class="form-label">Hình ảnh sản phẩm</label>
-                                <div class="poster-upload-box mb-2" id="imageUploadBox"
-                                     style="border: 2px dashed rgba(255,255,255,0.15); border-radius: 10px; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.2s;">
-                                    <img id="imagePreview" src="" alt="Preview"
-                                         style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; border-radius: 8px; display: none; background: rgba(0,0,0,0.5);">
-                                    <div id="imagePlaceholder" class="text-center text-white-50 p-3">
+                                <div class="image-upload-box mb-2" id="imageUploadBox">
+                                    <img id="imagePreview" src="" alt="Preview" class="image-preview">
+                                    <div id="imagePlaceholder" class="image-placeholder text-white-50">
                                         <i class="bi bi-cloud-arrow-up fs-2 d-block mb-1"></i>
                                         <div class="small fw-semibold">Kéo thả hoặc click để chọn</div>
-                                        <div style="font-size:0.72rem;">JPG, PNG, WEBP · Tối đa 5MB</div>
+                                        <div class="small-text">JPG, PNG, WEBP · Tối đa 5MB</div>
                                     </div>
                                     <input type="file" id="productImageFile" name="image_file"
-                                           accept="image/jpeg,image/png,image/webp"
-                                           style="position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;">
+                                           accept="image/jpeg,image/png,image/webp" class="image-upload-input">
                                 </div>
-                                <button type="button" id="clearImageBtn"
-                                        class="btn btn-sm w-100 d-none"
-                                        style="background: rgba(255,255,255,0.06); color:#a1a1aa; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size:0.78rem;">
+                                <button type="button" id="clearImageBtn" class="btn btn-sm w-100 d-none btn-clear-image">
                                     <i class="bi bi-x me-1"></i>Xóa ảnh
                                 </button>
                             </div>
@@ -159,7 +193,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom" id="productSubmitBtn">Lưu sản phẩm</button>
                 </div>
             </form>
@@ -170,8 +204,9 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
@@ -185,5 +220,5 @@
         updateSuccess: 'Cập nhật sản phẩm thành công!',
     };
 </script>
-<script src="{{ asset('js/pages/admin/products.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/products.js') }}?v={{ time() }}"></script>
 @endpush

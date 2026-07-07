@@ -1,0 +1,441 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Filter Components
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Filter Container ────────────────────────────────────────────────── */
+.admin-filters {
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-xl);
+    padding: var(--admin-space-lg);
+    margin-bottom: var(--admin-space-xl);
+}
+
+.admin-filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--admin-space-lg);
+}
+
+.admin-filters-title {
+    color: rgba(242, 201, 195, 0.9);
+    font-size: var(--admin-font-size-sm);
+    font-weight: var(--admin-font-weight-bold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.admin-filters-toggle {
+    display: none;
+}
+
+/* ── Filter Grid Layout ──────────────────────────────────────────────── */
+.admin-filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--admin-space-md);
+    align-items: end;
+}
+
+.admin-filters-row {
+    display: flex;
+    gap: var(--admin-space-md);
+    flex-wrap: wrap;
+    align-items: end;
+}
+
+/* ── Filter Group ────────────────────────────────────────────────────── */
+.admin-filter-group {
+    flex: 1;
+    min-width: 180px;
+}
+
+.admin-filter-group.auto-width {
+    flex: 0 0 auto;
+    min-width: auto;
+}
+
+.admin-filter-label {
+    display: block;
+    margin-bottom: var(--admin-space-xs);
+    color: rgba(242, 201, 195, 0.7);
+    font-size: var(--admin-font-size-xs);
+    font-weight: var(--admin-font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+/* ── Filter Actions ──────────────────────────────────────────────────── */
+.admin-filters-actions {
+    display: flex;
+    gap: var(--admin-space-sm);
+    align-items: end;
+}
+
+.admin-filter-actions-group {
+    display: flex;
+    gap: var(--admin-space-sm);
+}
+
+/* ── Active Filters Display ──────────────────────────────────────────── */
+.admin-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--admin-space-sm);
+    padding-top: var(--admin-space-md);
+    margin-top: var(--admin-space-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-active-filters-label {
+    color: rgba(242, 201, 195, 0.6);
+    font-size: var(--admin-font-size-xs);
+    font-weight: var(--admin-font-weight-semibold);
+    text-transform: uppercase;
+    align-self: center;
+}
+
+.admin-filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--admin-space-xs);
+    padding: 0.35rem 0.65rem;
+    background: rgba(229, 9, 20, 0.1);
+    border: 1px solid rgba(229, 9, 20, 0.2);
+    border-radius: var(--admin-radius-sm);
+    color: var(--admin-primary-light);
+    font-size: var(--admin-font-size-xs);
+    font-weight: var(--admin-font-weight-medium);
+}
+
+.admin-filter-tag-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.2);
+    color: inherit;
+    cursor: pointer;
+    transition: background var(--admin-transition-fast);
+}
+
+.admin-filter-tag-remove:hover {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+/* ── Date Range Filters ──────────────────────────────────────────────── */
+.admin-date-range {
+    display: flex;
+    gap: var(--admin-space-sm);
+    align-items: center;
+}
+
+.admin-date-range-separator {
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-sm);
+}
+
+/* ── Search Filter ───────────────────────────────────────────────────── */
+.admin-search-filter {
+    position: relative;
+}
+
+.admin-search-filter .admin-input {
+    padding-left: 2.5rem;
+}
+
+.admin-search-filter-icon {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-base);
+    pointer-events: none;
+}
+
+/* ── Collapsible Filters ─────────────────────────────────────────────── */
+.admin-filters.collapsible .admin-filters-body {
+    max-height: 1000px;
+    overflow: hidden;
+    transition: max-height var(--admin-transition-base);
+}
+
+.admin-filters.collapsible.collapsed .admin-filters-body {
+    max-height: 0;
+}
+
+.admin-filters.collapsible .admin-filters-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--admin-space-xs);
+    color: var(--admin-primary-light);
+    font-size: var(--admin-font-size-sm);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: color var(--admin-transition-fast);
+}
+
+.admin-filters.collapsible .admin-filters-toggle:hover {
+    color: var(--admin-primary);
+}
+
+.admin-filters.collapsible .admin-filters-toggle i {
+    transition: transform var(--admin-transition-fast);
+}
+
+.admin-filters.collapsible.collapsed .admin-filters-toggle i {
+    transform: rotate(-90deg);
+}
+
+/* ── Quick Filters (Chips) ───────────────────────────────────────────── */
+.admin-quick-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--admin-space-sm);
+    margin-bottom: var(--admin-space-lg);
+}
+
+.admin-quick-filter {
+    padding: 0.45rem 0.85rem;
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-full);
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-sm);
+    font-weight: var(--admin-font-weight-medium);
+    cursor: pointer;
+    transition: all var(--admin-transition-fast);
+}
+
+.admin-quick-filter:hover {
+    background: var(--admin-surface-hover);
+    border-color: var(--admin-primary);
+}
+
+.admin-quick-filter.active {
+    background: rgba(229, 9, 20, 0.15);
+    border-color: var(--admin-primary);
+    color: var(--admin-primary-light);
+}
+
+/* ── Filter Loading State ────────────────────────────────────────────── */
+.admin-filters.is-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.admin-filters.is-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(24, 24, 27, 0.3);
+    backdrop-filter: blur(1px);
+    border-radius: var(--admin-radius-xl);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+
+/* Laptop (≤1366px) */
+@media (max-width: 1366px) {
+    .admin-filters {
+        padding: var(--admin-space-md);
+    }
+
+    .admin-filters-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: var(--admin-space-sm);
+    }
+}
+
+/* Tablet (≤1024px) */
+@media (max-width: 1024px) {
+    .admin-filters {
+        padding: var(--admin-space-md);
+        margin-bottom: var(--admin-space-lg);
+    }
+
+    .admin-filters-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--admin-space-sm);
+    }
+
+    .admin-filters-row {
+        flex-wrap: wrap;
+    }
+
+    .admin-filter-group {
+        min-width: calc(50% - var(--admin-space-sm) / 2);
+    }
+
+    .admin-filters-actions {
+        width: 100%;
+        margin-top: var(--admin-space-sm);
+    }
+}
+
+/* Mobile (≤768px) */
+@media (max-width: 768px) {
+    .admin-filters {
+        padding: var(--admin-space-sm);
+        margin-bottom: var(--admin-space-md);
+        border-radius: var(--admin-radius-lg);
+    }
+
+    .admin-filters-header {
+        margin-bottom: var(--admin-space-md);
+    }
+
+    /* Hide filter title on mobile */
+    .admin-filters-title {
+        display: none;
+    }
+
+    /* Hide filter labels on mobile */
+    .admin-filter-label {
+        display: none;
+    }
+
+    .admin-filters-grid {
+        grid-template-columns: 1fr;
+        gap: var(--admin-space-sm);
+    }
+
+    .admin-filters-row {
+        flex-direction: column;
+        gap: var(--admin-space-sm);
+    }
+
+    .admin-filter-group {
+        min-width: 100%;
+    }
+
+    .admin-filters-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: var(--admin-space-xs);
+    }
+
+    .admin-filters-actions .admin-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .admin-filter-actions-group {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .admin-filter-actions-group .admin-btn {
+        width: 100%;
+    }
+
+    .admin-date-range {
+        flex-direction: column;
+        gap: var(--admin-space-xs);
+    }
+
+    .admin-date-range-separator {
+        display: none;
+    }
+
+    .admin-active-filters {
+        padding-top: var(--admin-space-sm);
+        margin-top: var(--admin-space-sm);
+    }
+
+    /* Show collapse toggle on mobile */
+    .admin-filters.collapsible .admin-filters-toggle {
+        display: flex;
+    }
+
+    /* Compact quick filters on mobile */
+    .admin-quick-filters {
+        gap: var(--admin-space-xs);
+        margin-bottom: var(--admin-space-md);
+    }
+
+    .admin-quick-filter {
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+    }
+
+    /* Hide search input completely on mobile */
+    .admin-search-filter {
+        display: none;
+    }
+
+    /* Show only filter/search icon buttons */
+    .admin-filters-actions .admin-filter-btn,
+    .admin-filters-actions .admin-action-btn {
+        padding: 0.5rem;
+        width: 38px;
+        height: 38px;
+        justify-content: center;
+    }
+
+    /* Hide button text, show icon only */
+    .admin-filters-actions .admin-btn .btn-text,
+    .admin-filters-actions .admin-btn span:not(.bi):not(.fa) {
+        display: none;
+    }
+
+    .admin-filters-actions .admin-btn i {
+        margin: 0;
+    }
+}
+
+/* Small Mobile (≤480px) */
+@media (max-width: 480px) {
+    .admin-filters {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .admin-filters-header {
+        margin-bottom: 0.75rem;
+    }
+
+    .admin-filters-title {
+        font-size: 0.7rem;
+    }
+
+    .admin-filter-label {
+        font-size: 0.7rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .admin-filters-grid,
+    .admin-filters-row {
+        gap: 0.5rem;
+    }
+
+    .admin-filters-actions {
+        gap: 0.5rem;
+    }
+}
+
+/* ── Filter Width Utilities ──────────────────────────────────────────── */
+.filter-select-xs {
+    width: 130px;
+}
+
+.filter-select-sm {
+    width: 140px;
+}
+
+.filter-select-md {
+    width: 160px;
+}
+
+.search-container-lg {
+    max-width: 700px;
+}

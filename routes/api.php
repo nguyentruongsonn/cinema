@@ -247,6 +247,11 @@ Route::prefix('v1')->group(function () {
             Route::post('{promotion}/reset-usage', [\App\Http\Controllers\Admin\PromotionController::class, 'resetUsageCount']);
         });
 
+        // Ticket management (Admin)
+        Route::prefix('admin/tickets')->group(function () {
+            Route::post('verify', [TicketController::class, 'verify']);
+        });
+
         // Posts management
         Route::prefix('admin/posts')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\PostController::class, 'list']);

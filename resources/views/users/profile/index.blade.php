@@ -4,8 +4,8 @@
 @section('meta_description', 'Quản lý hồ sơ cá nhân, thông tin tài khoản và bảo mật tài khoản Cinema.')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/profile.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/tickets.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/users/pages/profile.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/users/pages/tickets.css') }}">
 @endpush
 
 @section('content')

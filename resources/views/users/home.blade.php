@@ -4,8 +4,8 @@
 @section('meta_description', 'Cinema premium - đặt vé xem phim trực tuyến với trải nghiệm tối giản, hiện đại và nhanh chóng.')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/skeleton.css') }}">
-<link rel="stylesheet" href="{{ asset('css/home.css') }}">
+<link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}">
+<link rel="stylesheet" href="{{ asset('css/users/pages/home.css') }}">
 @endpush
 
 @section('content')

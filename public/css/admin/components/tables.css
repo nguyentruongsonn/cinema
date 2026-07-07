@@ -1,0 +1,381 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Table Components
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Table Container ─────────────────────────────────────────────────── */
+.admin-table-container {
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-xl);
+    padding: var(--admin-space-xl);
+    margin-bottom: var(--admin-space-xl);
+}
+
+.admin-table-wrapper {
+    overflow-x: auto;
+    margin: calc(var(--admin-space-xl) * -1);
+    padding: var(--admin-space-xl);
+}
+
+/* ── Base Table Styles ───────────────────────────────────────────────── */
+.admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--admin-font-size-base);
+}
+
+/* ── Table Header ────────────────────────────────────────────────────── */
+.admin-table thead {
+    position: relative;
+}
+
+.admin-table thead th {
+    padding: var(--admin-space-lg);
+    background: var(--admin-table-header-bg);
+    border-bottom: 1px solid var(--admin-table-border);
+    color: rgba(242, 201, 195, 0.9);
+    font-size: var(--admin-font-size-xs);
+    font-weight: var(--admin-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: left;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.admin-table thead th:first-child {
+    border-top-left-radius: var(--admin-radius-md);
+}
+
+.admin-table thead th:last-child {
+    border-top-right-radius: var(--admin-radius-md);
+}
+
+/* ── Table Body ──────────────────────────────────────────────────────── */
+.admin-table tbody td {
+    padding: var(--admin-space-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-base);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr {
+    transition: background-color var(--admin-transition-fast);
+}
+
+.admin-table tbody tr:hover {
+    background: var(--admin-table-row-hover);
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: var(--admin-radius-md);
+}
+
+.admin-table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: var(--admin-radius-md);
+}
+
+/* ── Table Actions Column ────────────────────────────────────────────── */
+.admin-table-actions {
+    display: flex;
+    gap: var(--admin-space-sm);
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.admin-table th.actions-column,
+.admin-table td.actions-column {
+    width: 120px;
+    text-align: right;
+}
+
+/* ── Sortable Headers ────────────────────────────────────────────────── */
+.admin-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: var(--admin-space-2xl);
+}
+
+.admin-table th.sortable:hover {
+    color: var(--admin-primary);
+}
+
+.admin-table th.sortable::after {
+    content: '⇅';
+    position: absolute;
+    right: var(--admin-space-lg);
+    opacity: 0.3;
+    transition: opacity var(--admin-transition-fast);
+}
+
+.admin-table th.sortable:hover::after {
+    opacity: 0.6;
+}
+
+.admin-table th.sortable.sorted-asc::after {
+    content: '↑';
+    opacity: 1;
+    color: var(--admin-primary);
+}
+
+.admin-table th.sortable.sorted-desc::after {
+    content: '↓';
+    opacity: 1;
+    color: var(--admin-primary);
+}
+
+/* ── Table Cell Alignments ───────────────────────────────────────────── */
+.admin-table .text-center {
+    text-align: center;
+}
+
+.admin-table .text-right {
+    text-align: right;
+}
+
+.admin-table .text-nowrap {
+    white-space: nowrap;
+}
+
+/* ── Table Zebra Striping (Optional) ─────────────────────────────────── */
+.admin-table.table-striped tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.admin-table.table-striped tbody tr:nth-child(even):hover {
+    background: var(--admin-table-row-hover);
+}
+
+/* ── Compact Table Variant ───────────────────────────────────────────── */
+.admin-table.table-compact thead th,
+.admin-table.table-compact tbody td {
+    padding: var(--admin-space-sm) var(--admin-space-md);
+}
+
+/* ── Bordered Table Variant ──────────────────────────────────────────── */
+.admin-table.table-bordered {
+    border: 1px solid var(--admin-border);
+}
+
+.admin-table.table-bordered th,
+.admin-table.table-bordered td {
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.admin-table.table-bordered th:last-child,
+.admin-table.table-bordered td:last-child {
+    border-right: none;
+}
+
+/* ── Loading State ───────────────────────────────────────────────────── */
+.admin-table-wrapper.is-loading {
+    position: relative;
+    min-height: 300px;
+    pointer-events: none;
+}
+
+.admin-table-wrapper.is-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(24, 24, 27, 0.7);
+    backdrop-filter: blur(2px);
+    z-index: 1;
+    border-radius: var(--admin-radius-md);
+}
+
+.admin-table-wrapper.is-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 3px solid transparent;
+    border-top-color: var(--admin-primary);
+    border-radius: 50%;
+    animation: table-spin 0.8s linear infinite;
+    z-index: 2;
+}
+
+@keyframes table-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Empty State ─────────────────────────────────────────────────────── */
+.admin-empty-state {
+    text-align: center;
+    padding: var(--admin-space-4xl) var(--admin-space-2xl);
+    color: rgba(242, 201, 195, 0.6);
+}
+
+.admin-empty-state i {
+    font-size: 4rem;
+    margin-bottom: var(--admin-space-lg);
+    opacity: 0.4;
+}
+
+.admin-empty-state h3 {
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-xl);
+    font-weight: var(--admin-font-weight-bold);
+    margin-bottom: var(--admin-space-sm);
+}
+
+.admin-empty-state p {
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-base);
+}
+
+/* ── Table Column Width Utilities (replace inline widths) ────────────── */
+.col-stt { width: 60px; }
+.col-code { width: 110px; }
+.col-actions { width: 120px; }
+.col-actions-md { width: 110px; }
+.col-actions-lg { width: 140px; }
+.col-status { width: 100px; }
+.col-activity { width: 100px; }
+.col-date { width: 110px; }
+.col-poster { width: 70px; }
+.col-image { width: 120px; }
+.col-order { width: 130px; }
+.col-position { width: 130px; }
+.col-category { width: 130px; }
+.col-category-sm { width: 90px; white-space: nowrap; }
+.col-discount { width: 110px; }
+.col-period { width: 140px; }
+.col-min-order { width: 110px; }
+.col-usage { width: 90px; }
+.col-author { width: 120px; }
+.col-views { width: 100px; }
+.col-active { width: 100px; }
+.col-hot { width: 90px; }
+.col-min-200 { min-width: 200px; }
+.col-min-250 { min-width: 250px; }
+
+/* ── Responsive Tables ───────────────────────────────────────────────── */
+
+/* Laptop (≤1366px) */
+@media (max-width: 1366px) {
+    .admin-table {
+        font-size: 0.82rem;
+    }
+
+    .admin-table thead th {
+        padding: 0.85rem 0.75rem;
+        font-size: 0.68rem;
+    }
+
+    .admin-table tbody td {
+        padding: 0.85rem 0.75rem;
+    }
+
+    .admin-table-container {
+        padding: var(--admin-space-lg);
+    }
+}
+
+/* Tablet (≤1024px) */
+@media (max-width: 1024px) {
+    .admin-table-wrapper {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-table {
+        min-width: 900px;
+        font-size: 0.8rem;
+    }
+
+    .admin-table thead th {
+        padding: 0.75rem 0.65rem;
+    }
+
+    .admin-table tbody td {
+        padding: 0.75rem 0.65rem;
+    }
+
+    .admin-table-container {
+        padding: var(--admin-space-md);
+    }
+}
+
+/* Mobile Large (≤768px) */
+@media (max-width: 768px) {
+    .admin-table-wrapper {
+        margin: calc(var(--admin-space-lg) * -1);
+        padding: var(--admin-space-lg);
+    }
+
+    .admin-table thead th,
+    .admin-table tbody td {
+        padding: var(--admin-space-sm) var(--admin-space-md);
+        font-size: var(--admin-font-size-sm);
+    }
+
+    .admin-table-actions {
+        flex-direction: column;
+        gap: var(--admin-space-xs);
+    }
+
+    /* Stack table on mobile */
+    .admin-table.table-responsive {
+        display: block;
+    }
+
+    .admin-table.table-responsive thead {
+        display: none;
+    }
+
+    .admin-table.table-responsive tbody,
+    .admin-table.table-responsive tr,
+    .admin-table.table-responsive td {
+        display: block;
+        width: 100%;
+    }
+
+    .admin-table.table-responsive tr {
+        margin-bottom: var(--admin-space-lg);
+        padding: var(--admin-space-md);
+        background: var(--admin-surface);
+        border-radius: var(--admin-radius-md);
+        border: 1px solid var(--admin-border);
+    }
+
+    .admin-table.table-responsive td {
+        padding: var(--admin-space-sm) 0;
+        border: none;
+        text-align: right;
+        position: relative;
+        padding-left: 50%;
+    }
+
+    .admin-table.table-responsive td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 45%;
+        padding-right: var(--admin-space-sm);
+        text-align: left;
+        font-weight: var(--admin-font-weight-semibold);
+        color: var(--admin-text-muted);
+        font-size: var(--admin-font-size-xs);
+        text-transform: uppercase;
+    }
+
+    .admin-table.table-responsive .admin-table-actions {
+        justify-content: flex-end;
+    }
+}

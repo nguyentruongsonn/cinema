@@ -127,6 +127,10 @@
 </div>
 @endsection
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+@endpush
+
 @push('scripts')
-<script src="{{ asset('js/pages/admin/dashboard.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/dashboard.js') }}?v={{ time() }}" defer></script>
 @endpush

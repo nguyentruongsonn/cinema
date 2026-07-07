@@ -29,15 +29,15 @@
 {{-- ── Dòng 1: Header ─────────────────────────────────────────────── --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">
+        <h5 class="mb-0 text-white fw-bold flex-no-shrink">
             Danh sách phòng chiếu
         </h5>
-        
+
         {{-- Search --}}
-        <form id="screenSearchForm" class="flex-grow-1" style="max-width: 500px;">
+        <form id="screenSearchForm" class="flex-grow-1 search-container-lg">
             <div class="input-group">
-                <input type="text" id="searchInput" name="search" class="admin-filter-input" placeholder="Tìm tên phòng, mã phòng..." style="border-radius: 8px 0 0 8px;">
-                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+                <input type="text" id="searchInput" name="search" class="admin-filter-input search-input-rounded-left" placeholder="Tìm tên phòng, mã phòng...">
+                <button class="admin-filter-btn search-btn-rounded-right" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
@@ -91,12 +91,56 @@
                         </tr>
                     </thead>
                     <tbody id="screensTableBody">
-                        <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
-                                <div class="spinner-border text-secondary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </td>
+                        <!-- Skeleton Loading Rows -->
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 60%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 50%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 55%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 45%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 60%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 55%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 68%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 58%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 48%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 63%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 62%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 52%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
                         </tr>
                     </tbody>
                 </table>
@@ -288,10 +332,11 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/pages/admin/screens.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/screens.js') }}?v={{ time() }}"></script>
 @endpush

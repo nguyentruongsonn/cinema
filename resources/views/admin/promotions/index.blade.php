@@ -9,23 +9,23 @@
 {{-- Header & Filter Bar --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">Danh sách mã giảm giá</h5>
-        
-        <form id="searchForm" class="d-flex gap-2 flex-grow-1" style="max-width: 700px;">
-            <select id="categoryFilter" class="admin-filter-input" style="width: 130px; border-radius: 8px;">
+        <h5 class="mb-0 text-white fw-bold flex-no-shrink">Danh sách mã giảm giá</h5>
+
+        <form id="searchForm" class="d-flex gap-2 flex-grow-1 search-container-lg">
+            <select id="categoryFilter" class="admin-filter-input filter-select-xs filter-rounded">
                 <option value="all">Tất cả loại</option>
                 <option value="ticket">Vé phim</option>
                 <option value="food">Đồ ăn</option>
                 <option value="combo">Combo</option>
             </select>
-            <select id="statusFilter" class="admin-filter-input" style="width: 140px; border-radius: 8px;">
+            <select id="statusFilter" class="admin-filter-input filter-select-sm filter-rounded">
                 <option value="all">Trạng thái</option>
                 <option value="1">Hoạt động</option>
                 <option value="0">Tạm dừng</option>
             </select>
             <div class="input-group flex-grow-1">
-                <input type="text" id="search" class="admin-filter-input" placeholder="Tìm mã..." style="border-radius: 8px 0 0 8px;">
-                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+                <input type="text" id="search" class="admin-filter-input search-input-rounded-left" placeholder="Tìm mã...">
+                <button class="admin-filter-btn search-btn-rounded-right" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
@@ -43,25 +43,79 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 60px;">STT</th>
-                    <th style="width: 110px;">Mã</th>
+                    <th class="text-center col-stt">STT</th>
+                    <th class="col-code">Mã</th>
                     <th>Tên</th>
-                    <th class="text-center" style="width: 90px; white-space: nowrap;">Loại</th>
-                    <th class="text-center" style="width: 110px;">Giảm giá</th>
-                    <th class="text-center" style="width: 140px;">Thời hạn</th>
-                    <th class="text-center" style="width: 110px;">Đơn tối thiểu</th>
-                    <th class="text-center" style="width: 90px;">Sử dụng</th>
-                    <th class="text-center" style="width: 90px;">Trạng thái</th>
-                    <th class="text-center" style="width: 130px;">Hành động</th>
+                    <th class="text-center col-category-sm">Loại</th>
+                    <th class="text-center col-discount">Giảm giá</th>
+                    <th class="text-center col-period">Thời hạn</th>
+                    <th class="text-center col-min-order">Đơn tối thiểu</th>
+                    <th class="text-center col-usage">Sử dụng</th>
+                    <th class="text-center col-usage">Trạng thái</th>
+                    <th class="text-center col-actions-lg">Hành động</th>
                 </tr>
             </thead>
             <tbody id="promotionsTableBody">
-                <tr>
-                    <td colspan="10" class="text-center py-5 text-muted">
-                        <div class="spinner-border text-secondary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
+                <!-- Skeleton Loading Rows -->
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-w-60 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-70 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-90 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-80 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-50 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-w-60 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-65 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-95 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-75 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-50 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-w-60 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-75 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-85 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-85 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-50 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-90"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-w-60 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-80 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-100 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-70 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-50 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-w-60 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-60 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-90 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-90 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-50 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
                 </tr>
             </tbody>
         </table>
@@ -81,7 +135,7 @@
             <form id="promotionForm">
                 <input type="hidden" id="formMethod" value="POST">
                 <input type="hidden" id="promotionIdInput" value="">
-                
+
                 <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -89,7 +143,7 @@
                             <input type="text" class="form-control bg-dark text-white border-secondary" id="promotionCode" required>
                             <small class="text-muted">VD: SUMMER2024, FILM50</small>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="promotionName" class="form-label text-secondary">Tên mã <span class="text-danger">*</span></label>
                             <input type="text" class="form-control bg-dark text-white border-secondary" id="promotionName" required>
@@ -159,7 +213,7 @@
                             <input type="datetime-local" class="form-control bg-dark text-white border-secondary" id="promotionEndDate">
                         </div>
                     </div>
-                    
+
                     <div class="mb-0">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="promotionStatus" checked>
@@ -167,9 +221,9 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" style="background:rgba(255,255,255,0.1);" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu thông tin</button>
                 </div>
             </form>
@@ -180,9 +234,10 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/pages/admin/promotions.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/promotions.js') }}?v={{ time() }}"></script>
 @endpush

@@ -9,12 +9,12 @@
 {{-- ── Dòng 1 + Dòng 2: Header & Filter Bar ────────────────────────── --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">Danh sách chi nhánh</h5>
-        
-        <form id="searchForm" class="flex-grow-1" style="max-width: 500px;">
+        <h5 class="mb-0 text-white fw-bold flex-no-shrink">Danh sách chi nhánh</h5>
+
+        <form id="searchForm" class="flex-grow-1 search-container-lg">
             <div class="input-group">
-                <input type="text" id="search" class="admin-filter-input" placeholder="Tìm chi nhánh..." style="border-radius: 8px 0 0 8px;">
-                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit">
+                <input type="text" id="search" class="admin-filter-input search-input-rounded-left" placeholder="Tìm chi nhánh...">
+                <button class="admin-filter-btn search-btn-rounded-right" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
@@ -32,21 +32,55 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 60px;">STT</th>
+                    <th class="text-center col-stt">STT</th>
                     <th>Tên chi nhánh</th>
                     <th class="text-center">Hoạt động</th>
                     <th>Ngày tạo</th>
                     <th>Ngày cập nhật</th>
-                    <th class="text-center" style="width: 120px;">Hành động</th>
+                    <th class="text-center col-actions">Hành động</th>
                 </tr>
             </thead>
             <tbody id="branchesTableBody">
-                <tr>
-                    <td colspan="6" class="text-center py-5 text-muted">
-                        <div class="spinner-border text-secondary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
+                <!-- Skeleton Loading Rows -->
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
                 </tr>
             </tbody>
         </table>
@@ -66,13 +100,13 @@
             <form id="branchForm">
                 <input type="hidden" id="formMethod" value="POST">
                 <input type="hidden" id="branchIdInput" value="">
-                
+
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="branchName" class="form-label text-secondary">Tên chi nhánh <span class="text-danger">*</span></label>
                         <input type="text" class="form-control bg-dark text-white border-secondary" id="branchName" name="name" required>
                     </div>
-                    
+
                     <div class="mb-0">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="branchIsActive" name="is_active" value="1" checked>
@@ -80,9 +114,9 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" style="background:rgba(255,255,255,0.1);" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu thông tin</button>
                 </div>
             </form>
@@ -93,10 +127,11 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/pages/admin/branches.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/branches.js') }}?v={{ time() }}"></script>
 @endpush

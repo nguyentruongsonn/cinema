@@ -1,0 +1,535 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Form Components
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Form Container ──────────────────────────────────────────────────── */
+.admin-form {
+    width: 100%;
+}
+
+.admin-form-group {
+    margin-bottom: var(--admin-space-lg);
+}
+
+.admin-form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* ── Form Labels ─────────────────────────────────────────────────────── */
+.admin-form-label {
+    display: block;
+    margin-bottom: var(--admin-space-sm);
+    color: rgba(242, 201, 195, 0.8);
+    font-size: var(--admin-font-size-xs);
+    font-weight: var(--admin-font-weight-bold);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.admin-form-label.required::after {
+    content: '*';
+    color: var(--admin-error);
+    margin-left: var(--admin-space-xs);
+}
+
+/* ── Input Fields ────────────────────────────────────────────────────── */
+.admin-input,
+.admin-filter-input,
+.admin-form-control {
+    width: 100%;
+    padding: var(--admin-input-padding-y) var(--admin-input-padding-x);
+    background: rgba(30, 30, 35, 0.6);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-md);
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-base);
+    font-weight: var(--admin-font-weight-medium);
+    font-family: var(--admin-font-family);
+    transition: all var(--admin-transition-base);
+    line-height: var(--admin-line-height-normal);
+}
+
+.admin-input:focus,
+.admin-filter-input:focus,
+.admin-form-control:focus {
+    outline: none;
+    border-color: rgba(229, 9, 20, 0.4);
+    background: rgba(30, 30, 35, 0.8);
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.08);
+}
+
+.admin-input:disabled,
+.admin-form-control:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(30, 30, 35, 0.3);
+}
+
+.admin-input::placeholder,
+.admin-form-control::placeholder {
+    color: var(--admin-text-placeholder);
+}
+
+/* ── Input Sizes ─────────────────────────────────────────────────────── */
+.admin-input-sm {
+    padding: 0.45rem 0.75rem;
+    font-size: var(--admin-font-size-sm);
+}
+
+.admin-input-lg {
+    padding: 0.75rem 1.1rem;
+    font-size: var(--admin-font-size-lg);
+}
+
+/* ── Mobile Input Sizing ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .admin-filters .admin-input,
+    .admin-filters .admin-filter-input,
+    .admin-filters .admin-select,
+    .admin-filters .admin-filter-select,
+    .admin-filters .admin-form-control {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        height: 38px;
+    }
+
+    .admin-filters .admin-form-label,
+    .admin-filters .admin-filter-label {
+        font-size: 0.7rem;
+        margin-bottom: 0.35rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-filters .admin-input,
+    .admin-filters .admin-filter-input,
+    .admin-filters .admin-select,
+    .admin-filters .admin-filter-select,
+    .admin-filters .admin-form-control {
+        padding: 0.45rem 0.65rem;
+        font-size: 0.8125rem;
+        height: 36px;
+    }
+
+    .admin-filters .admin-form-label,
+    .admin-filters .admin-filter-label {
+        font-size: 0.65rem;
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* ── Textarea ────────────────────────────────────────────────────────── */
+.admin-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* ── Select/Dropdown ─────────────────────────────────────────────────── */
+.admin-select,
+.admin-filter-select {
+    width: 100%;
+    padding: var(--admin-input-padding-y) var(--admin-input-padding-x);
+    background: rgba(30, 30, 35, 0.6);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-md);
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-base);
+    font-weight: var(--admin-font-weight-medium);
+    transition: all var(--admin-transition-base);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23e5e5e7' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
+}
+
+.admin-select:focus,
+.admin-filter-select:focus {
+    outline: none;
+    border-color: rgba(229, 9, 20, 0.4);
+    background-color: rgba(30, 30, 35, 0.8);
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.08);
+}
+
+.admin-select option,
+.admin-filter-select option {
+    background: #1e1e23;
+    color: #e5e5e7;
+}
+
+/* ── Checkbox & Radio ────────────────────────────────────────────────── */
+.admin-checkbox,
+.admin-radio {
+    display: flex;
+    align-items: center;
+    gap: var(--admin-space-sm);
+    cursor: pointer;
+    margin-bottom: var(--admin-space-sm);
+}
+
+.admin-checkbox input[type="checkbox"],
+.admin-radio input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--admin-primary);
+}
+
+.admin-checkbox label,
+.admin-radio label {
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-base);
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ── File Input ──────────────────────────────────────────────────────── */
+.admin-file-input {
+    display: block;
+    width: 100%;
+    padding: var(--admin-input-padding-y) var(--admin-input-padding-x);
+    background: rgba(30, 30, 35, 0.6);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-md);
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-base);
+    cursor: pointer;
+}
+
+.admin-file-input::-webkit-file-upload-button {
+    padding: 0.35rem 0.85rem;
+    margin-right: var(--admin-space-md);
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-sm);
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-sm);
+    font-weight: var(--admin-font-weight-semibold);
+    cursor: pointer;
+    transition: all var(--admin-transition-fast);
+}
+
+.admin-file-input::-webkit-file-upload-button:hover {
+    background: var(--admin-surface-hover);
+    border-color: var(--admin-primary);
+}
+
+/* ── Input Group (with icons/buttons) ────────────────────────────────── */
+.admin-input-group {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+}
+
+.admin-input-group .admin-input {
+    flex: 1;
+    border-radius: 0;
+}
+
+.admin-input-group .admin-input:first-child {
+    border-top-left-radius: var(--admin-radius-md);
+    border-bottom-left-radius: var(--admin-radius-md);
+}
+
+.admin-input-group .admin-input:last-child {
+    border-top-right-radius: var(--admin-radius-md);
+    border-bottom-right-radius: var(--admin-radius-md);
+}
+
+.admin-input-group-prepend,
+.admin-input-group-append {
+    display: flex;
+    align-items: center;
+    padding: var(--admin-input-padding-y) var(--admin-input-padding-x);
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-base);
+    white-space: nowrap;
+}
+
+.admin-input-group-prepend {
+    border-right: none;
+    border-top-left-radius: var(--admin-radius-md);
+    border-bottom-left-radius: var(--admin-radius-md);
+}
+
+.admin-input-group-append {
+    border-left: none;
+    border-top-right-radius: var(--admin-radius-md);
+    border-bottom-right-radius: var(--admin-radius-md);
+}
+
+/* ── Validation States ───────────────────────────────────────────────── */
+.admin-input.is-valid,
+.admin-form-control.is-valid {
+    border-color: var(--admin-success);
+}
+
+.admin-input.is-valid:focus,
+.admin-form-control.is-valid:focus {
+    border-color: var(--admin-success);
+    box-shadow: 0 0 0 3px var(--admin-success-bg);
+}
+
+.admin-input.is-invalid,
+.admin-form-control.is-invalid {
+    border-color: var(--admin-error);
+}
+
+.admin-input.is-invalid:focus,
+.admin-form-control.is-invalid:focus {
+    border-color: var(--admin-error);
+    box-shadow: 0 0 0 3px var(--admin-error-bg);
+}
+
+/* ── Form Feedback Messages ──────────────────────────────────────────── */
+.admin-form-feedback {
+    margin-top: var(--admin-space-xs);
+    font-size: var(--admin-font-size-sm);
+    line-height: var(--admin-line-height-tight);
+}
+
+.admin-form-feedback.valid-feedback {
+    color: var(--admin-success);
+}
+
+.admin-form-feedback.invalid-feedback {
+    color: var(--admin-error);
+}
+
+.admin-form-text {
+    margin-top: var(--admin-space-xs);
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-sm);
+}
+
+/* ── Form Layouts ────────────────────────────────────────────────────── */
+.admin-form-row {
+    display: flex;
+    gap: var(--admin-space-lg);
+    margin-bottom: var(--admin-space-lg);
+}
+
+.admin-form-col {
+    flex: 1;
+}
+
+.admin-form-col-auto {
+    flex: 0 0 auto;
+}
+
+/* ── Form Actions ────────────────────────────────────────────────────── */
+.admin-form-actions {
+    display: flex;
+    gap: var(--admin-space-md);
+    padding-top: var(--admin-space-lg);
+    border-top: 1px solid var(--admin-border);
+    margin-top: var(--admin-space-xl);
+}
+
+.admin-form-actions.align-right {
+    justify-content: flex-end;
+}
+
+.admin-form-actions.align-center {
+    justify-content: center;
+}
+
+.admin-form-actions.space-between {
+    justify-content: space-between;
+}
+
+/* ── Form Utilities (replace inline styles) ──────────────────────────── */
+/* Search container widths */
+.search-container {
+    max-width: 400px;
+}
+
+.search-container-lg {
+    max-width: 500px;
+}
+
+/* Search input rounded corners */
+.search-input-rounded-left {
+    border-radius: 8px 0 0 8px;
+}
+
+.search-btn-rounded-right {
+    border-radius: 0 8px 8px 0;
+}
+
+/* Filter select widths */
+.filter-select-sm {
+    width: 140px;
+}
+
+.filter-select-md {
+    width: 160px;
+}
+
+/* Filter form widths */
+.filter-form-wide {
+    max-width: 900px;
+}
+
+/* Cursor utilities */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.flex-no-shrink {
+    flex-shrink: 0;
+}
+
+.filter-rounded {
+    border-radius: 8px;
+}
+
+/* ── Image Upload Box ────────────────────────────────────────────────── */
+.image-upload-box {
+    border: 2px dashed rgba(255,255,255,0.15);
+    border-radius: 10px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.image-upload-box:hover {
+    border-color: rgba(255,255,255,0.25);
+}
+
+.image-preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    display: none;
+    background: rgba(0,0,0,0.5);
+}
+
+.image-preview.active {
+    display: block;
+}
+
+.image-placeholder {
+    text-align: center;
+    padding: 1rem;
+}
+
+.image-upload-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+.btn-clear-image {
+    background: rgba(255,255,255,0.06);
+    color: #a1a1aa;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
+
+.text-white-50 {
+    color: rgba(255,255,255,0.5);
+}
+
+.fs-2 {
+    font-size: 2rem;
+}
+
+.small-text {
+    font-size: 0.72rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+
+/* Laptop (≤1366px) */
+@media (max-width: 1366px) {
+    .admin-form-row {
+        gap: var(--admin-space-md);
+    }
+
+    .admin-input,
+    .admin-filter-input,
+    .admin-form-control,
+    .admin-select,
+    .admin-filter-select {
+        font-size: 0.82rem;
+    }
+}
+
+/* Tablet (≤1024px) */
+@media (max-width: 1024px) {
+    .admin-form-row {
+        flex-direction: column;
+        gap: var(--admin-space-md);
+    }
+
+    .admin-form-group {
+        margin-bottom: var(--admin-space-md);
+    }
+
+    .search-container,
+    .search-container-lg {
+        max-width: 100%;
+    }
+
+    .filter-select-sm,
+    .filter-select-md {
+        width: 100%;
+        max-width: none;
+    }
+
+    .filter-form-wide {
+        max-width: 100%;
+    }
+}
+
+/* Mobile (≤768px) */
+@media (max-width: 768px) {
+    .admin-form-row {
+        flex-direction: column;
+        gap: var(--admin-space-sm);
+    }
+
+    .admin-form-actions {
+        flex-direction: column;
+        gap: var(--admin-space-sm);
+    }
+
+    .admin-form-actions .admin-btn {
+        width: 100%;
+    }
+
+    .admin-input,
+    .admin-filter-input,
+    .admin-form-control,
+    .admin-select,
+    .admin-filter-select {
+        font-size: 1rem; /* Prevent zoom on iOS */
+        padding: 0.75rem;
+    }
+
+    .admin-form-group {
+        margin-bottom: var(--admin-space-md);
+    }
+
+    .image-upload-box {
+        min-height: 150px;
+    }
+}

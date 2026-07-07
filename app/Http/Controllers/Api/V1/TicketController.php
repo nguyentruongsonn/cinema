@@ -109,4 +109,79 @@ class TicketController extends Controller
             return $this->error('Đã xảy ra lỗi khi tải thông tin vé.', 500);
         }
     }
+
+    /**
+     * Verify ticket by code (for admin scanner)
+     */
+    public function verify(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'ticket_code' => 'required|string'
+            ]);
+
+            $ticketCode = $request->input('ticket_code');
+
+            $ticket = Ticket::query()
+                ->where('ticket_code', $ticketCode)
+                ->with([
+                    'order:id,code,total_amount,created_at',
+                    'showtime:id,scheduled_at,screen_id,movie_id',
+                    'showtime.movie:id,title,poster_url',
+                    'showtime.screen:id,name,theater_id',
+                    'showtime.screen.theater:id,name,branch_id',
+                    'showtime.screen.theater.branch:id,name',
+                    'seat:id,row,number,label',
+                ])
+                ->first();
+
+            if (!$ticket) {
+                return $this->error('Vé không tồn tại.', 404);
+            }
+
+            // Check ticket status
+            if ($ticket->status === 'used') {
+                return $this->error('Vé đã được sử dụng trước đó vào lúc ' . $ticket->used_at->format('d/m/Y H:i'), 400);
+            }
+
+            if ($ticket->status === 'cancelled') {
+                return $this->error('Vé đã bị hủy.', 400);
+            }
+
+            if ($ticket->status === 'refunded') {
+                return $this->error('Vé đã được hoàn tiền.', 400);
+            }
+
+            // Check if showtime has passed
+            if ($ticket->showtime && $ticket->showtime->scheduled_at < now()) {
+                return $this->error('Suất chiếu đã qua. Vé không còn hiệu lực.', 400);
+            }
+
+            // Mark ticket as used
+            $ticket->status = 'used';
+            $ticket->used_at = now();
+            $ticket->save();
+
+            // Prepare response data
+            $responseData = [
+                'code' => $ticket->ticket_code,
+                'movie' => $ticket->showtime->movie->title ?? 'N/A',
+                'showtime' => $ticket->showtime ? $ticket->showtime->scheduled_at->format('d/m/Y H:i') : 'N/A',
+                'seat' => $ticket->seat ? $ticket->seat->label : 'N/A',
+                'screen' => $ticket->showtime->screen->name ?? 'N/A',
+                'theater' => $ticket->showtime->screen->theater->name ?? 'N/A',
+                'branch' => $ticket->showtime->screen->theater->branch->name ?? 'N/A',
+                'status' => 'Đã xác thực',
+                'verified_at' => now()->format('d/m/Y H:i:s')
+            ];
+
+            return $this->ok($responseData, 'Vé hợp lệ. Đã xác thực thành công.');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->error('Dữ liệu không hợp lệ: ' . $e->getMessage(), 422);
+        } catch (Throwable $e) {
+            report($e);
+            return $this->error('Đã xảy ra lỗi khi xác thực vé.', 500);
+        }
+    }
 }

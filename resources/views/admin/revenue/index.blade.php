@@ -70,7 +70,7 @@
             <div class="stat-value skeleton skeleton-text" id="cardTopMovieRevenue" style="font-size:1.5rem"></div>
             <div class="stat-trend mt-2">
                 <span class="fw-bold text-warning text-truncate d-block skeleton skeleton-text" id="cardTopMovieTitle"
-                      style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+                      class="text-truncate" style="max-width:200px;"></span>
                 <span class="trend-text skeleton skeleton-text" id="cardTopMovieTickets"></span>
             </div>
         </div>
@@ -137,9 +137,9 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/pages/admin/revenue.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/revenue.js') }}?v={{ time() }}" defer></script>
 @endpush

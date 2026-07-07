@@ -4,8 +4,8 @@
 @section('meta_description', 'Browse all movies currently showing and coming soon at Cinema Premium.')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/skeleton.css') }}">
-<link rel="stylesheet" href="{{ asset('css/movies.css') }}">
+<link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}">
+<link rel="stylesheet" href="{{ asset('css/users/pages/movies.css') }}">
 @endpush
 
 @section('content')

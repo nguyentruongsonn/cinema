@@ -147,11 +147,11 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/skeleton.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/seat-layout.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/seat-layout.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-    <script src="{{ asset('js/pages/admin/seat-layout.js') }}?v={{ time() }}" defer></script>
+    <script src="{{ asset('js/admin/pages/seat-layout.js') }}?v={{ time() }}" defer></script>
 @endpush

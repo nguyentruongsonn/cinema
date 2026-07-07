@@ -4,8 +4,8 @@
 @section('meta_description', 'View movie details and book tickets at Cinema Premium.')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/skeleton.css') }}">
-<link rel="stylesheet" href="{{ asset('css/movie-detail.css') }}">
+<link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}">
+<link rel="stylesheet" href="{{ asset('css/users/pages/movie-detail.css') }}">
 @endpush
 
 @section('content')

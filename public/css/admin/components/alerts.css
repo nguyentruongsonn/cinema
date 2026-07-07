@@ -1,0 +1,354 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Alert & Notification Components
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Alert Base Styles ───────────────────────────────────────────────── */
+.admin-alert {
+    position: relative;
+    padding: var(--admin-space-lg);
+    border-radius: var(--admin-radius-lg);
+    border: 1px solid;
+    display: flex;
+    gap: var(--admin-space-md);
+    align-items: flex-start;
+    margin-bottom: var(--admin-space-lg);
+}
+
+.admin-alert-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.admin-alert-content {
+    flex: 1;
+}
+
+.admin-alert-title {
+    font-size: var(--admin-font-size-base);
+    font-weight: var(--admin-font-weight-bold);
+    margin-bottom: var(--admin-space-xs);
+    line-height: var(--admin-line-height-tight);
+}
+
+.admin-alert-message {
+    font-size: var(--admin-font-size-sm);
+    line-height: var(--admin-line-height-relaxed);
+    opacity: 0.9;
+}
+
+.admin-alert-close {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: var(--admin-radius-sm);
+    opacity: 0.6;
+    transition: all var(--admin-transition-fast);
+}
+
+.admin-alert-close:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* ── Alert Variants ──────────────────────────────────────────────────── */
+.admin-alert-success {
+    background: var(--admin-success-bg);
+    border-color: var(--admin-success-border);
+    color: var(--admin-success);
+}
+
+.admin-alert-warning {
+    background: var(--admin-warning-bg);
+    border-color: var(--admin-warning-border);
+    color: var(--admin-warning);
+}
+
+.admin-alert-error,
+.admin-alert-danger {
+    background: var(--admin-error-bg);
+    border-color: var(--admin-error-border);
+    color: var(--admin-error);
+}
+
+.admin-alert-info {
+    background: var(--admin-info-bg);
+    border-color: var(--admin-info-border);
+    color: var(--admin-info);
+}
+
+/* ── Toast Notifications ─────────────────────────────────────────────── */
+.admin-toast-container {
+    position: fixed;
+    top: var(--admin-space-xl);
+    right: var(--admin-space-xl);
+    z-index: var(--admin-z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--admin-space-md);
+    max-width: 400px;
+}
+
+.admin-toast {
+    background: var(--admin-bg-elevated);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-lg);
+    padding: var(--admin-space-lg);
+    box-shadow: var(--admin-shadow-2xl);
+    display: flex;
+    gap: var(--admin-space-md);
+    align-items: flex-start;
+    animation: toast-slide-in 0.3s ease-out;
+    min-width: 320px;
+}
+
+.admin-toast.hiding {
+    animation: toast-slide-out 0.3s ease-out forwards;
+}
+
+@keyframes toast-slide-in {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes toast-slide-out {
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+.admin-toast-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.admin-toast-content {
+    flex: 1;
+}
+
+.admin-toast-title {
+    color: var(--admin-text-primary);
+    font-size: var(--admin-font-size-base);
+    font-weight: var(--admin-font-weight-semibold);
+    margin-bottom: var(--admin-space-xs);
+}
+
+.admin-toast-message {
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-sm);
+    line-height: var(--admin-line-height-relaxed);
+}
+
+.admin-toast-close {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--admin-text-muted);
+    cursor: pointer;
+    border-radius: var(--admin-radius-sm);
+    transition: all var(--admin-transition-fast);
+}
+
+.admin-toast-close:hover {
+    background: var(--admin-surface);
+    color: var(--admin-text-primary);
+}
+
+/* ── Toast Variants ──────────────────────────────────────────────────── */
+.admin-toast-success .admin-toast-icon {
+    color: var(--admin-success);
+}
+
+.admin-toast-warning .admin-toast-icon {
+    color: var(--admin-warning);
+}
+
+.admin-toast-error .admin-toast-icon,
+.admin-toast-danger .admin-toast-icon {
+    color: var(--admin-error);
+}
+
+.admin-toast-info .admin-toast-icon {
+    color: var(--admin-info);
+}
+
+/* ── Toast Progress Bar ──────────────────────────────────────────────── */
+.admin-toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom-left-radius: var(--admin-radius-lg);
+    border-bottom-right-radius: var(--admin-radius-lg);
+    overflow: hidden;
+}
+
+.admin-toast-progress-bar {
+    height: 100%;
+    background: currentColor;
+    transition: width linear;
+}
+
+.admin-toast-success .admin-toast-progress-bar {
+    background: var(--admin-success);
+}
+
+.admin-toast-warning .admin-toast-progress-bar {
+    background: var(--admin-warning);
+}
+
+.admin-toast-error .admin-toast-progress-bar,
+.admin-toast-danger .admin-toast-progress-bar {
+    background: var(--admin-error);
+}
+
+.admin-toast-info .admin-toast-progress-bar {
+    background: var(--admin-info);
+}
+
+/* ── Banner Notifications ────────────────────────────────────────────── */
+.admin-banner {
+    padding: var(--admin-space-md);
+    border-left: 4px solid;
+    display: flex;
+    gap: var(--admin-space-md);
+    align-items: center;
+    margin-bottom: var(--admin-space-lg);
+}
+
+.admin-banner-icon {
+    flex-shrink: 0;
+    font-size: 1.5rem;
+}
+
+.admin-banner-content {
+    flex: 1;
+}
+
+.admin-banner-title {
+    font-weight: var(--admin-font-weight-semibold);
+    margin-bottom: var(--admin-space-xs);
+}
+
+.admin-banner-message {
+    font-size: var(--admin-font-size-sm);
+    opacity: 0.9;
+}
+
+.admin-banner-action {
+    flex-shrink: 0;
+}
+
+/* ── Banner Variants ─────────────────────────────────────────────────── */
+.admin-banner-success {
+    background: var(--admin-success-bg);
+    border-left-color: var(--admin-success);
+    color: var(--admin-success);
+}
+
+.admin-banner-warning {
+    background: var(--admin-warning-bg);
+    border-left-color: var(--admin-warning);
+    color: var(--admin-warning);
+}
+
+.admin-banner-error,
+.admin-banner-danger {
+    background: var(--admin-error-bg);
+    border-left-color: var(--admin-error);
+    color: var(--admin-error);
+}
+
+.admin-banner-info {
+    background: var(--admin-info-bg);
+    border-left-color: var(--admin-info);
+    color: var(--admin-info);
+}
+
+/* ── Inline Messages ─────────────────────────────────────────────────── */
+.admin-message {
+    padding: var(--admin-space-sm) var(--admin-space-md);
+    border-radius: var(--admin-radius-sm);
+    font-size: var(--admin-font-size-sm);
+    line-height: var(--admin-line-height-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--admin-space-xs);
+}
+
+.admin-message-success {
+    background: var(--admin-success-bg);
+    color: var(--admin-success);
+}
+
+.admin-message-warning {
+    background: var(--admin-warning-bg);
+    color: var(--admin-warning);
+}
+
+.admin-message-error,
+.admin-message-danger {
+    background: var(--admin-error-bg);
+    color: var(--admin-error);
+}
+
+.admin-message-info {
+    background: var(--admin-info-bg);
+    color: var(--admin-info);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .admin-toast-container {
+        top: var(--admin-space-md);
+        right: var(--admin-space-md);
+        left: var(--admin-space-md);
+        max-width: none;
+    }
+
+    .admin-toast {
+        min-width: auto;
+    }
+
+    .admin-alert {
+        padding: var(--admin-space-md);
+    }
+
+    .admin-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-banner-action {
+        width: 100%;
+    }
+
+    .admin-banner-action .admin-btn {
+        width: 100%;
+    }
+}

@@ -9,9 +9,9 @@
 {{-- ── Dòng 1 + Dòng 2: Header & Filter Bar ────────────────────────── --}}
 <div class="admin-filter-container">
     <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold" style="flex-shrink: 0;">Danh sách mẫu sơ đồ ghế</h5>
+        <h5 class="mb-0 text-white fw-bold flex-no-shrink">Danh sách mẫu sơ đồ ghế</h5>
 
-        <form id="searchForm" class="flex-grow-1" style="max-width: 500px;">
+        <form id="searchForm" class="flex-grow-1 search-container-lg">
             <div class="input-group">
                 <input
                     type="text"
@@ -19,9 +19,8 @@
                     name="search"
                     class="admin-filter-input"
                     placeholder="Tên mẫu sơ đồ ghế..."
-                    style="border-radius: 8px 0 0 8px;"
                 >
-                <button class="admin-filter-btn" style="border-radius: 0 8px 8px 0;" type="submit" aria-label="Tìm kiếm">
+                <button class="admin-filter-btn search-btn-rounded-right" type="submit" aria-label="Tìm kiếm">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
@@ -69,12 +68,46 @@
                         </tr>
                     </thead>
                     <tbody id="templatesTableBody">
-                        <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
-                                <div class="spinner-border text-secondary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </td>
+                        <!-- Skeleton Loading Rows -->
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 60%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 68%;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 55%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 72%;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 68%;"></div></td>
+                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 77%;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
+                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
                         </tr>
                     </tbody>
                 </table>
@@ -174,11 +207,12 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/stats.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/seat-layout-templates.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/seat-layout-templates.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/pages/admin/seat-layout-templates.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/seat-layout-templates.js') }}?v={{ time() }}"></script>
 @endpush
