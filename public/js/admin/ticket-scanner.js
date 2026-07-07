@@ -1,16 +1,16 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * TICKET SCANNER MODULE
- * QR Code / Barcode scanner for ticket verification with html5-qrcode
+ * QR Code / Barcode scanner for ticket verification
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
 (function() {
     'use strict';
 
-    let html5QrcodeScanner = null;
+    let stream = null;
+    let scanning = false;
     let scannerModal = null;
-    let isScanning = false;
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
@@ -71,72 +71,47 @@
         document.getElementById('ticketCodeInput')?.focus();
     }
 
-    function startCamera() {
-        if (isScanning) return;
-
-        // Clear previous scanner if exists
-        const readerElement = document.getElementById('scannerVideo');
-        readerElement.innerHTML = '';
-
-        // Config for html5-qrcode
-        const config = {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
-            disableFlip: false,
-            videoConstraints: {
-                facingMode: { ideal: "environment" }
-            }
-        };
-
-        html5QrcodeScanner = new Html5Qrcode("scannerVideo");
-
-        html5QrcodeScanner.start(
-            { facingMode: "environment" }, // Use back camera
-            config,
-            onScanSuccess,
-            onScanFailure
-        ).then(() => {
-            isScanning = true;
-        }).catch(err => {
-            console.error('Camera start error:', err);
-            showResult('error', 'Không thể truy cập camera: ' + err);
-            // Fallback to manual mode
-            setTimeout(() => showManualMode(), 2000);
-        });
-    }
-
-    function stopCamera() {
-        if (html5QrcodeScanner && isScanning) {
-            html5QrcodeScanner.stop().then(() => {
-                isScanning = false;
-                html5QrcodeScanner = null;
-            }).catch(err => {
-                console.error('Camera stop error:', err);
-                isScanning = false;
-                html5QrcodeScanner = null;
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
             });
+            const video = document.getElementById('scannerVideo');
+            video.srcObject = stream;
+            scanning = true;
+            scanForCode();
+        } catch (err) {
+            showResult('error', 'Không thể truy cập camera: ' + err.message);
+            showManualMode();
         }
     }
 
-    function onScanSuccess(decodedText, decodedResult) {
-        // QR code detected successfully
-        console.log('QR Code detected:', decodedText);
-
-        // Stop scanner
-        stopCamera();
-
-        // Show manual mode with detected code
-        showManualMode();
-        document.getElementById('ticketCodeInput').value = decodedText;
-
-        // Auto verify
-        verifyTicket();
+    function stopCamera() {
+        scanning = false;
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
     }
 
-    function onScanFailure(error) {
-        // Handle scan failure silently (camera is continuously scanning)
-        // console.warn('QR scan error:', error);
+    function scanForCode() {
+        if (!scanning) return;
+
+        const video = document.getElementById('scannerVideo');
+        const canvas = document.getElementById('scannerCanvas');
+        const context = canvas.getContext('2d');
+
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            // TODO: Integrate with a QR/barcode scanning library like jsQR or QuaggaJS
+            // For now, this is a placeholder
+        }
+
+        requestAnimationFrame(scanForCode);
     }
 
     async function verifyTicket() {
@@ -155,42 +130,26 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xác thực...';
 
         try {
-            console.log('[Ticket Scanner] Verifying ticket:', code);
-
-            const token = localStorage.getItem('access_token');
-            console.log('[Ticket Scanner] Token exists:', !!token);
-
-            const response = await fetch('/api/v1/admin/tickets/verify', {
+            const response = await fetch('/api/admin/tickets/verify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Authorization': `Bearer ${token || ''}`
+                    'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`
                 },
                 body: JSON.stringify({ ticket_code: code })
             });
 
-            console.log('[Ticket Scanner] Response status:', response.status);
-
             const data = await response.json();
-            console.log('[Ticket Scanner] Response data:', data);
 
             if (response.ok && data.success) {
                 showResult('success', 'Xác thực thành công!', data.data);
                 input.value = '';
-
-                // Play success sound (optional)
-                playSound('success');
             } else {
-                const errorMsg = data.message || data.error || 'Vé không hợp lệ';
-                console.error('[Ticket Scanner] Error:', errorMsg);
-                showResult('error', errorMsg);
-                playSound('error');
+                showResult('error', data.message || 'Vé không hợp lệ');
             }
         } catch (error) {
-            console.error('[Ticket Scanner] Exception:', error);
             showResult('error', 'Lỗi kết nối: ' + error.message);
-            playSound('error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
@@ -205,44 +164,31 @@
             html = `
                 <div class="alert alert-success">
                     <div class="d-flex align-items-center mb-3">
-                        <i class="bi bi-check-circle-fill fs-3 me-3 text-success"></i>
+                        <i class="bi bi-check-circle-fill fs-3 me-3"></i>
                         <div>
-                            <h6 class="mb-0 text-success">✓ Vé Hợp Lệ</h6>
-                            <small class="text-muted">${message}</small>
+                            <h6 class="mb-0">Vé hợp lệ</h6>
+                            <small>${message}</small>
                         </div>
                     </div>
                     <hr>
                     <div class="row g-2 small">
-                        <div class="col-4"><strong>Mã vé:</strong></div>
-                        <div class="col-8"><code class="text-success">${ticketData.code || 'N/A'}</code></div>
-
-                        <div class="col-4"><strong>Phim:</strong></div>
-                        <div class="col-8">${ticketData.movie || 'N/A'}</div>
-
-                        <div class="col-4"><strong>Suất chiếu:</strong></div>
-                        <div class="col-8"><i class="bi bi-calendar3 me-1"></i>${ticketData.showtime || 'N/A'}</div>
-
-                        <div class="col-4"><strong>Ghế:</strong></div>
-                        <div class="col-8"><i class="bi bi-chair me-1"></i>${ticketData.seat || 'N/A'}</div>
-
-                        <div class="col-4"><strong>Phòng:</strong></div>
-                        <div class="col-8">${ticketData.screen || 'N/A'}</div>
-
-                        <div class="col-4"><strong>Rạp:</strong></div>
-                        <div class="col-8">${ticketData.theater || 'N/A'}</div>
-
-                        <div class="col-4"><strong>Chi nhánh:</strong></div>
-                        <div class="col-8">${ticketData.branch || 'N/A'}</div>
-
-                        <div class="col-4"><strong>Xác thực:</strong></div>
-                        <div class="col-8"><span class="badge bg-success">${ticketData.verified_at || 'Vừa xong'}</span></div>
+                        <div class="col-6"><strong>Mã vé:</strong></div>
+                        <div class="col-6">${ticketData.code || 'N/A'}</div>
+                        <div class="col-6"><strong>Phim:</strong></div>
+                        <div class="col-6">${ticketData.movie || 'N/A'}</div>
+                        <div class="col-6"><strong>Suất chiếu:</strong></div>
+                        <div class="col-6">${ticketData.showtime || 'N/A'}</div>
+                        <div class="col-6"><strong>Ghế:</strong></div>
+                        <div class="col-6">${ticketData.seat || 'N/A'}</div>
+                        <div class="col-6"><strong>Trạng thái:</strong></div>
+                        <div class="col-6"><span class="badge bg-success">${ticketData.status || 'Valid'}</span></div>
                     </div>
                 </div>
             `;
         } else if (type === 'error') {
             html = `
                 <div class="alert alert-danger">
-                    <i class="bi bi-x-circle-fill me-2"></i><strong>Lỗi:</strong> ${message}
+                    <i class="bi bi-x-circle-fill me-2"></i>${message}
                 </div>
             `;
         } else if (type === 'warning') {
@@ -256,27 +202,11 @@
         resultDiv.innerHTML = html;
         resultDiv.style.display = 'block';
 
-        // Auto-hide warnings/errors after 5 seconds
+        // Auto-hide after 5 seconds (except success)
         if (type !== 'success') {
             setTimeout(() => {
                 resultDiv.style.display = 'none';
             }, 5000);
-        }
-    }
-
-    function playSound(type) {
-        // Optional: Add audio feedback
-        try {
-            const audio = new Audio();
-            if (type === 'success') {
-                // Use system beep or custom sound
-                audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVKzn77BdGAg+ltryxnMpBSh+zPLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSF1xe/eizQHGme47+OZSA0PVKzn77BdGAg+ltryxnMpBSh+zPLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU2jdXyzn0vBSF1xe/eizQHGme47+OgPxwMIGS37O6jVRQLR5zg77phHAU=';
-            } else {
-                audio.src = 'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQ==';
-            }
-            audio.play().catch(e => console.log('Sound play failed:', e));
-        } catch (e) {
-            // Ignore sound errors
         }
     }
 
@@ -290,8 +220,6 @@
     // Expose globally for debugging
     window.ticketScanner = {
         open: openScanner,
-        verify: verifyTicket,
-        showCamera: showCameraMode,
-        showManual: showManualMode
+        verify: verifyTicket
     };
 })();

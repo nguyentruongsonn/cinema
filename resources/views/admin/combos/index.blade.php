@@ -233,5 +233,5 @@
         updateSuccess: 'Cập nhật combo thành công!',
     };
 </script>
-<script src="{{ asset('js/admin/pages/combos.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/admin/pages/combos.js') }}?v={{ time() }}" defer></script>
 @endpush

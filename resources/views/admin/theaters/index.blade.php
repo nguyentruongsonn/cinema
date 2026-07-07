@@ -159,5 +159,5 @@
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/admin/pages/theaters.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/admin/pages/theaters.js') }}?v={{ time() }}" defer></script>
 @endpush

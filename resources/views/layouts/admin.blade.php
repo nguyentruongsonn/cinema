@@ -319,7 +319,7 @@
                     <div id="manualScanner" class="scanner-mode">
                         <div class="mb-3">
                             <label for="ticketCodeInput" class="form-label">Mã vé</label>
-                            <input type="text" class="form-control form-control-lg bg-dark text-white border-secondary"
+                            <input type="text" class="form-control form-control-lg bg-dark text-white border-secondary" 
                                    id="ticketCodeInput" placeholder="Nhập hoặc quét mã vé..." autofocus>
                             <small class="text-muted">Có thể quét bằng máy quét mã vạch hoặc nhập thủ công</small>
                         </div>
@@ -337,10 +337,9 @@
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('js/admin-core.js') }}?v={{ time() }}"></script>
 
-    <!-- HTML5 QR Code Scanner (for camera scanning) -->
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
+    <!-- Admin Core JS -->
     <script>
         window.APP_CONFIG = {
             appName: @json(config('app.name', 'Cinema')),

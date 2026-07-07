@@ -214,5 +214,5 @@
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/admin/pages/seat-layout-templates.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/admin/pages/seat-layout-templates.js') }}?v={{ time() }}" defer></script>
 @endpush

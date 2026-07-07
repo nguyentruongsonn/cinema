@@ -338,5 +338,5 @@
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/admin/pages/screens.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/admin/pages/screens.js') }}?v={{ time() }}" defer></script>
 @endpush

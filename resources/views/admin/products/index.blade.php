@@ -220,5 +220,5 @@
         updateSuccess: 'Cập nhật sản phẩm thành công!',
     };
 </script>
-<script src="{{ asset('js/admin/pages/products.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/admin/pages/products.js') }}?v={{ time() }}" defer></script>
 @endpush

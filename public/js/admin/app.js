@@ -10,15 +10,6 @@
     /* ------------------------------------------------------------------ */
 
     /**
-     * Initialize API Client for Admin
-     * Tạo window.api object để các trang admin sử dụng
-     */
-    if (window.apiClient && !window.api) {
-        // Alias window.apiClient thành window.api để các trang admin dùng
-        window.api = window.apiClient;
-    }
-
-    /**
      * Format số tiền theo chuẩn Việt Nam (VNĐ).
      * @param {number} amount
      * @returns {string}
