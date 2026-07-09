@@ -1697,17 +1697,16 @@ class BookingManager {
     }
 
     calculateSubtotal() {
-        let totalSurcharge = 0;
-        const quantity = this.selectedSeats.size;
+        let seatsTotal = 0;
 
         this.selectedSeats.forEach(seatId => {
             const seat = this.seats.find(s => s.id === seatId);
-            if (seat && seat.seat_type) {
-                totalSurcharge += parseFloat(seat.seat_type.surcharge || 0);
+            if (seat && seat.price) {
+                seatsTotal += parseFloat(seat.price);
             }
         });
 
-        return (this.basePrice * quantity) + totalSurcharge + this.calculateProductsTotal();
+        return seatsTotal + this.calculateProductsTotal();
     }
 
     calculateProductsTotal() {
