@@ -530,7 +530,7 @@ class BookingManager {
                         if (!seat) return '';
                         const label = seat.label || `${seat.row}${seat.number}`;
                         const typeName = seat.seat_type?.name || 'Thường';
-                        const price = this.basePrice + parseFloat(seat.seat_type?.surcharge || 0);
+                        const price = seat.price || 0;  // Use dynamic price from API
                         return `
                             <div class="confirm-info-row">
                                 <span class="info-label">Ghế ${label} (${typeName})</span>
@@ -607,18 +607,16 @@ class BookingManager {
             }
         }
 
-        // Calculate prices
-        let totalSurcharge = 0;
+        // Calculate prices using dynamic prices from API
+        let seatTotal = 0;
         let quantity = this.selectedSeats.size;
 
         this.selectedSeats.forEach(seatId => {
             const seat = this.seats.find(s => s.id === seatId);
-            if (seat && seat.seat_type) {
-                totalSurcharge += parseFloat(seat.seat_type.surcharge || 0);
+            if (seat) {
+                seatTotal += seat.price || 0;  // Use dynamic price from API response
             }
         });
-
-        const seatTotal = (this.basePrice * quantity) + totalSurcharge;
         const productsTotal = this.calculateProductsTotal();
         const subtotal = seatTotal + productsTotal;
         const discount = this.calculateDiscount(subtotal);
@@ -1163,18 +1161,16 @@ class BookingManager {
             }
         }
 
-        // Calculate prices
-        let totalSurcharge = 0;
+        // Calculate prices using dynamic prices from API
+        let seatTotal = 0;
         let quantity = this.selectedSeats.size;
 
         this.selectedSeats.forEach(seatId => {
             const seat = this.seats.find(s => s.id === seatId);
-            if (seat && seat.seat_type) {
-                totalSurcharge += parseFloat(seat.seat_type.surcharge || 0);
+            if (seat) {
+                seatTotal += seat.price || 0;  // Use dynamic price from API response
             }
         });
-
-        const seatTotal = (this.basePrice * quantity) + totalSurcharge;
         const productsTotal = this.calculateProductsTotal();
         const subtotal = seatTotal + productsTotal;
         const discount = this.calculateDiscount(subtotal);
