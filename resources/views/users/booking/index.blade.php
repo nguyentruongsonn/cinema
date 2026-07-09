@@ -209,7 +209,7 @@
                 <button id="prevStepBtn" class="nav-btn btn-back" style="display: none;">
                     <i class="bi bi-arrow-left"></i> Quay lại
                 </button>
-                <button id="nextStepBtn" class="nav-btn btn-continue" disabled>
+                <button type="button" id="nextStepBtn" class="nav-btn btn-continue" disabled>
                     Tiếp tục
                 </button>
                 <button id="paymentBtn" class="nav-btn btn-payment" style="display: none;">
@@ -277,7 +277,7 @@
                 </div>
 
                 <!-- Continue Button in Sidebar -->
-                <button id="sidebarContinueBtn" class="sidebar-continue-btn" disabled>
+                <button type="button" id="sidebarContinueBtn" class="sidebar-continue-btn" disabled>
                     Tiếp tục
                 </button>
 
