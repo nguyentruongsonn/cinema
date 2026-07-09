@@ -369,3 +369,82 @@
 .dark-mode .btn-ghost:hover:not(:disabled) {
     background: var(--gray-800);
 }
+
+/* ============================================
+   RIPPLE EFFECT
+   ============================================ */
+
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ripple::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease-out, height 0.6s ease-out, opacity 0.6s ease-out;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.btn-ripple:active::before {
+    width: 300px;
+    height: 300px;
+    opacity: 1;
+    transition: width 0s, height 0s, opacity 0s;
+}
+
+.btn-ripple:active::before {
+    opacity: 0;
+    transition: opacity 0.6s ease-out;
+}
+
+/* Ripple for dark buttons */
+.btn-primary.btn-ripple::before,
+.btn-success.btn-ripple::before,
+.btn-error.btn-ripple::before,
+.btn-danger.btn-ripple::before,
+.btn-warning.btn-ripple::before {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Ripple for light buttons */
+.btn-secondary.btn-ripple::before,
+.btn-outline.btn-ripple::before,
+.btn-ghost.btn-ripple::before {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Ripple animation with JS support */
+.btn-ripple .ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(0);
+    animation: ripple-animation 0.6s ease-out;
+    pointer-events: none;
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Enhanced hover for ripple buttons */
+.btn-ripple:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-ripple:active:not(:disabled) {
+    transform: translateY(0);
+}
