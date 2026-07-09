@@ -259,5 +259,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/pages/profile.js') }}"></script>
+    <script src="{{ asset('js/users/pages/profile.js') }}"></script>
 @endpush

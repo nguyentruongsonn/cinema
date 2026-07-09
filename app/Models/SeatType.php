@@ -9,14 +9,12 @@ class SeatType extends Model
 {
     protected $fillable = [
         'name',
-        'slug',
-        'price_multiplier',
+        'surcharge',
         'color',
-        'description',
     ];
 
     protected $casts = [
-        'price_multiplier' => 'decimal:2',
+        'surcharge' => 'decimal:2',
     ];
 
     public function seats(): HasMany

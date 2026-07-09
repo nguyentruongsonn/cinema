@@ -1,3 +1,5 @@
+import Toast from '../components/toast.js';
+
 class ProfilePage {
     constructor() {
         this.user = null;
@@ -346,7 +348,9 @@ class ProfilePage {
             this.ticketPage = 1;
             this.loadTickets();
         } else {
-            alert('Chức năng đang phát triển');
+            if (typeof Toast !== 'undefined') {
+                Toast.info('Chức năng đang phát triển', 'Tính năng này sẽ sớm được cập nhật.');
+            }
         }
     }
 

@@ -5,6 +5,9 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import Toast from '../components/toast.js';
+import Modal from '../components/modal.js';
+
 (function() {
     'use strict';
 
@@ -197,17 +200,26 @@
         if (bookingSkeleton) bookingSkeleton.style.display = 'none';
         if (moviesSkeleton) moviesSkeleton.style.display = 'none';
 
-        const heroContent = document.getElementById('heroContent');
-        const moviesGrid = document.getElementById('moviesGrid');
+        // Use Toast notification instead of inline alerts
+        if (typeof Toast !== 'undefined') {
+            Toast.error(
+                'Unable to load content',
+                'Please refresh the page or try again later.'
+            );
+        } else {
+            // Fallback to inline alerts if Toast not available
+            const heroContent = document.getElementById('heroContent');
+            const moviesGrid = document.getElementById('moviesGrid');
 
-        if (heroContent) {
-            heroContent.innerHTML = '<div class="alert alert-danger">Unable to load content. Please refresh the page.</div>';
-            heroContent.classList.remove('d-none');
-        }
+            if (heroContent) {
+                heroContent.innerHTML = '<div class="alert alert-danger">Unable to load content. Please refresh the page.</div>';
+                heroContent.classList.remove('d-none');
+            }
 
-        if (moviesGrid) {
-            moviesGrid.innerHTML = '<div class="alert alert-danger">Unable to load movies. Please refresh the page.</div>';
-            moviesGrid.classList.remove('d-none');
+            if (moviesGrid) {
+                moviesGrid.innerHTML = '<div class="alert alert-danger">Unable to load movies. Please refresh the page.</div>';
+                moviesGrid.classList.remove('d-none');
+            }
         }
     }
 

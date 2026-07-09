@@ -1,0 +1,334 @@
+/**
+ * Skeleton Loading Components
+ * Provides visual feedback while content is loading
+ */
+
+/* ============================================
+   BASE SKELETON STYLES
+   ============================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--gray-100) 0%,
+    var(--gray-200) 50%,
+    var(--gray-100) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Skeleton with shimmer effect */
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ============================================
+   SKELETON VARIANTS
+   ============================================ */
+
+/* Text skeletons */
+.skeleton-text {
+  height: 1em;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-text-xs {
+  height: 0.75em;
+}
+
+.skeleton-text-sm {
+  height: 0.875em;
+}
+
+.skeleton-text-lg {
+  height: 1.125em;
+}
+
+.skeleton-text-xl {
+  height: 1.25em;
+}
+
+.skeleton-text-2xl {
+  height: 1.5em;
+}
+
+/* Title/heading skeleton */
+.skeleton-title {
+  height: 1.5em;
+  width: 70%;
+  margin-bottom: var(--space-4);
+}
+
+.skeleton-subtitle {
+  height: 1em;
+  width: 50%;
+  margin-bottom: var(--space-2);
+}
+
+/* Image skeletons */
+.skeleton-image {
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-image-square {
+  padding-bottom: 100%; /* 1:1 aspect ratio */
+}
+
+.skeleton-image-poster {
+  padding-bottom: 150%; /* Movie poster aspect ratio */
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+}
+
+.skeleton-avatar-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.skeleton-avatar-lg {
+  width: 64px;
+  height: 64px;
+}
+
+/* ============================================
+   SKELETON COMPONENTS
+   ============================================ */
+
+/* Movie Card Skeleton */
+.skeleton-movie-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.skeleton-movie-card .skeleton-image {
+  margin-bottom: var(--space-3);
+}
+
+.skeleton-movie-card .skeleton-title {
+  padding: 0 var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-movie-card .skeleton-text {
+  padding: 0 var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+/* Ticket Row Skeleton */
+.skeleton-ticket {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-3);
+}
+
+.skeleton-ticket .skeleton-image {
+  width: 80px;
+  height: 120px;
+  flex-shrink: 0;
+  padding-bottom: 0;
+}
+
+.skeleton-ticket-info {
+  flex: 1;
+}
+
+.skeleton-ticket-info .skeleton-text {
+  width: 100%;
+}
+
+.skeleton-ticket-info .skeleton-text:nth-child(2) {
+  width: 80%;
+}
+
+.skeleton-ticket-info .skeleton-text:last-child {
+  width: 60%;
+}
+
+/* List Item Skeleton */
+.skeleton-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-list-item .skeleton-avatar {
+  flex-shrink: 0;
+}
+
+.skeleton-list-item-content {
+  flex: 1;
+}
+
+/* Button Skeleton */
+.skeleton-button {
+  height: var(--btn-height-md);
+  width: 120px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-button-sm {
+  height: var(--btn-height-sm);
+}
+
+.skeleton-button-lg {
+  height: var(--btn-height-lg);
+  width: 160px;
+}
+
+.skeleton-button-full {
+  width: 100%;
+}
+
+/* Input Skeleton */
+.skeleton-input {
+  height: var(--input-height-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+/* ============================================
+   SKELETON LAYOUTS
+   ============================================ */
+
+/* Grid layout for movie cards */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+@media (max-width: 768px) {
+  .skeleton-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+}
+
+/* List layout */
+.skeleton-list {
+  padding: var(--space-4);
+}
+
+/* ============================================
+   SKELETON UTILITIES
+   ============================================ */
+
+/* Hide original content while loading */
+.loading .content {
+  display: none;
+}
+
+.loading .skeleton {
+  display: block;
+}
+
+/* Pulse animation variant */
+.skeleton-pulse {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Wave animation variant */
+.skeleton-wave {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  background-size: 200px 100%;
+  animation: skeleton-wave 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-wave {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* ============================================
+   DARK MODE SUPPORT
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--gray-800) 0%,
+      var(--gray-700) 50%,
+      var(--gray-800) 100%
+    );
+  }
+}
+
+.dark-mode .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--gray-800) 0%,
+    var(--gray-700) 50%,
+    var(--gray-800) 100%
+  );
+}

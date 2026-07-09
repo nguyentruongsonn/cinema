@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Events\SeatStatusUpdated;
 use App\Exceptions\SeatConflictException;
 use App\Models\OrderItem;
+use App\Services\TicketPricingService;
 use App\Models\Seat;
 use App\Models\SeatHold;
 use App\Models\Showtime;
@@ -18,7 +19,8 @@ class SeatService
     private const HOLD_MINUTES = 10;
 
     public function __construct(
-        private readonly OrderExpirationService $orderExpirationService
+        private readonly OrderExpirationService $orderExpirationService,
+        private readonly TicketPricingService $ticketPricingService
     ) {
     }
 
@@ -26,7 +28,7 @@ class SeatService
     {
         $this->cleanupExpiredReservations($showtimeId);
 
-        $showtime = Showtime::with('screen')->findOrFail($showtimeId);
+        $showtime = Showtime::with(['screen', 'format', 'movie'])->findOrFail($showtimeId);
 
         $seats = Seat::with('seatType')
             ->where('screen_id', $showtime->screen_id)
@@ -68,7 +70,7 @@ class SeatService
             ->values()
             ->all();
 
-        $seatsData = $seats->map(function (Seat $seat) use ($bookedSeatIds, $currentUserHoldSeatIds, $otherUserHoldSeatIds) {
+        $seatsData = $seats->map(function (Seat $seat) use ($showtime, $bookedSeatIds, $currentUserHoldSeatIds, $otherUserHoldSeatIds) {
             $seatId = $seat->id;
             $status = 'available';
 
@@ -79,6 +81,19 @@ class SeatService
             } elseif (in_array($seatId, $otherUserHoldSeatIds, true)) {
                 $status = 'locked';
             }
+
+            // Calculate dynamic price using TicketPricingService
+            $seatTypeName = $seat->seatType?->name ?? '';
+            $seatTypeSlug = $seat->seatType?->slug ?? '';
+            $isDoubleSeat = $this->isDoubleSeat($seatTypeName, $seatTypeSlug);
+
+            $pricingResult = $this->ticketPricingService->calculate(
+                format: $showtime->format?->name ?? '2D',
+                scheduledAt: $showtime->scheduled_at,
+                customerType: 'adult',
+                isDoubleSeat: $isDoubleSeat,
+                movieSurcharge: (int)($showtime->movie?->surcharge ?? 0)
+            );
 
             return [
                 'id' => $seat->id,
@@ -92,6 +107,7 @@ class SeatService
                 ] : null,
                 'seat_type_id' => $seat->seat_type_id,
                 'surcharge' => (float) ($seat->seatType?->surcharge ?? 0),
+                'price' => $pricingResult['total_price'],
                 'status' => $status,
                 'is_available' => $status === 'available',
                 'is_booked' => $status === 'booked',
@@ -355,5 +371,21 @@ class SeatService
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function isDoubleSeat(string $name, string $slug): bool
+    {
+        $nameLower = mb_strtolower($name);
+        $slugLower = mb_strtolower($slug);
+
+        $keywords = ['double', 'couple', 'đôi', 'sweetbox', 'sweet-box'];
+
+        foreach ($keywords as $keyword) {
+            if (str_contains($nameLower, $keyword) || str_contains($slugLower, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -101,5 +101,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/pages/movie-detail.js') }}"></script>
+    <script src="{{ asset('js/users/pages/movie-detail.js') }}"></script>
 @endpush

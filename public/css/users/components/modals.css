@@ -1,0 +1,422 @@
+/**
+ * Modal Component Styles
+ * Cinema Booking System - User Interface
+ *
+ * Accessible modal dialogs with smooth animations
+ */
+
+/* ============================================
+   MODAL BACKDROP
+   ============================================ */
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: var(--z-modal-backdrop);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-base), visibility var(--transition-base);
+}
+
+.modal-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ============================================
+   MODAL CONTAINER
+   ============================================ */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-base), visibility var(--transition-base);
+}
+
+.modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal.show .modal-content {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* ============================================
+   MODAL CONTENT
+   ============================================ */
+
+.modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform var(--transition-base), opacity var(--transition-base);
+}
+
+/* Modal Sizes */
+.modal-sm .modal-content {
+    max-width: 400px;
+}
+
+.modal-lg .modal-content {
+    max-width: 800px;
+}
+
+.modal-xl .modal-content {
+    max-width: 1200px;
+}
+
+.modal-fullscreen .modal-content {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+}
+
+/* ============================================
+   MODAL HEADER
+   ============================================ */
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.modal-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: var(--text-2xl);
+    line-height: 1;
+    transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+    background: var(--gray-100);
+    color: var(--text-primary);
+}
+
+.modal-close:active {
+    transform: scale(0.95);
+}
+
+/* ============================================
+   MODAL BODY
+   ============================================ */
+
+.modal-body {
+    padding: var(--space-6);
+    overflow-y: auto;
+    max-height: calc(90vh - 200px);
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: var(--gray-100);
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: var(--radius-full);
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+}
+
+/* ============================================
+   MODAL FOOTER
+   ============================================ */
+
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border-top: 1px solid var(--border-primary);
+    background: var(--gray-50);
+}
+
+.modal-footer .btn {
+    min-width: 100px;
+}
+
+/* ============================================
+   MODAL ANIMATIONS
+   ============================================ */
+
+/* Fade In/Out */
+.modal.fade .modal-content {
+    transition: transform var(--transition-base), opacity var(--transition-base);
+}
+
+/* Slide From Top */
+.modal.slide-top .modal-content {
+    transform: translateY(-100%);
+}
+
+.modal.slide-top.show .modal-content {
+    transform: translateY(0);
+}
+
+/* Slide From Bottom */
+.modal.slide-bottom .modal-content {
+    transform: translateY(100%);
+}
+
+.modal.slide-bottom.show .modal-content {
+    transform: translateY(0);
+}
+
+/* Zoom */
+.modal.zoom .modal-content {
+    transform: scale(0.5);
+}
+
+.modal.zoom.show .modal-content {
+    transform: scale(1);
+}
+
+/* ============================================
+   MODAL VARIANTS
+   ============================================ */
+
+/* Confirmation Modal */
+.modal-confirm .modal-header {
+    background: var(--color-primary);
+    color: white;
+    border-bottom: none;
+}
+
+.modal-confirm .modal-title {
+    color: white;
+}
+
+.modal-confirm .modal-close {
+    color: white;
+}
+
+.modal-confirm .modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Success Modal */
+.modal-success .modal-header {
+    background: var(--color-success);
+    color: white;
+    border-bottom: none;
+}
+
+.modal-success .modal-title {
+    color: white;
+}
+
+.modal-success .modal-close {
+    color: white;
+}
+
+.modal-success .modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Warning Modal */
+.modal-warning .modal-header {
+    background: var(--color-warning);
+    color: white;
+    border-bottom: none;
+}
+
+.modal-warning .modal-title {
+    color: white;
+}
+
+.modal-warning .modal-close {
+    color: white;
+}
+
+.modal-warning .modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Error Modal */
+.modal-error .modal-header {
+    background: var(--color-error);
+    color: white;
+    border-bottom: none;
+}
+
+.modal-error .modal-title {
+    color: white;
+}
+
+.modal-error .modal-close {
+    color: white;
+}
+
+.modal-error .modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   MODAL WITH IMAGE
+   ============================================ */
+
+.modal-image .modal-body {
+    padding: 0;
+}
+
+.modal-image img {
+    width: 100%;
+    display: block;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .modal {
+        padding: var(--space-2);
+    }
+
+    .modal-content {
+        max-height: 95vh;
+    }
+
+    .modal-header {
+        padding: var(--space-4);
+    }
+
+    .modal-body {
+        padding: var(--space-4);
+        max-height: calc(95vh - 180px);
+    }
+
+    .modal-footer {
+        padding: var(--space-4);
+        flex-direction: column;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    /* Full screen on mobile for large modals */
+    .modal-lg .modal-content,
+    .modal-xl .modal-content {
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: var(--radius-lg);
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.modal:focus {
+    outline: none;
+}
+
+.modal-content:focus {
+    outline: none;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .modal-content {
+        background: var(--gray-800);
+        border-color: var(--gray-700);
+    }
+
+    .modal-header {
+        border-bottom-color: var(--gray-700);
+    }
+
+    .modal-footer {
+        border-top-color: var(--gray-700);
+        background: var(--gray-900);
+    }
+
+    .modal-close:hover {
+        background: var(--gray-700);
+    }
+
+    .modal-body::-webkit-scrollbar-track {
+        background: var(--gray-900);
+    }
+
+    .modal-body::-webkit-scrollbar-thumb {
+        background: var(--gray-600);
+    }
+}
+
+.dark-mode .modal-content {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+.dark-mode .modal-header {
+    border-bottom-color: var(--gray-700);
+}
+
+.dark-mode .modal-footer {
+    border-top-color: var(--gray-700);
+    background: var(--gray-900);
+}
+
+.dark-mode .modal-close:hover {
+    background: var(--gray-700);
+}

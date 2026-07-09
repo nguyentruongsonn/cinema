@@ -5,6 +5,8 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import Toast from '../components/toast.js';
+
 (function() {
     'use strict';
 
@@ -329,6 +331,15 @@
         if (moviesSkeleton) moviesSkeleton.style.display = 'none';
         if (moviesGrid) moviesGrid.classList.add('d-none');
 
+        // Use Toast notification for better UX
+        if (typeof Toast !== 'undefined') {
+            Toast.error(
+                'Unable to load movies',
+                'Please try refreshing the page or check your connection.'
+            );
+        }
+
+        // Still show empty state as visual fallback
         if (emptyState) {
             emptyState.innerHTML = `
                 <i class="bi bi-exclamation-circle"></i>

@@ -397,5 +397,5 @@
         startTime: @json($showtime->start_time ?? $showtime->scheduled_at),
     };
 </script>
-<script src="{{ asset('js/pages/booking.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/users/pages/booking.js') }}?v={{ time() }}"></script>
 @endpush

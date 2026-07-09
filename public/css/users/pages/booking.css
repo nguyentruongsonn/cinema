@@ -267,96 +267,113 @@ body {
     letter-spacing: 0.05em;
 }
 
-/* === BASE SEAT (giống admin) === */
+/* === BASE SEAT (clone từ Admin) === */
 .seat {
     position: relative;
-    height: 40px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
+    width: 54px;
+    height: 54px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    font-size: 0.75rem;
-    font-weight: 700;
     border: none;
     padding: 0;
     background: transparent;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    user-select: none;
-    overflow: visible;
     box-shadow: none;
     outline: none;
+    cursor: pointer;
+    user-select: none;
+    overflow: visible;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    /* Default color — standard blue */
+    color: #60a5fa;
 }
 
-.seat .seat-icon {
-    font-size: 1.3rem;
-    line-height: 1;
+.seat .seat-icon-shape {
     display: block;
+    width: 54px;
+    height: 54px;
+    min-width: 54px;
+    min-height: 54px;
+    color: currentColor;
+    fill: currentColor;
+    position: relative;
+    z-index: 1;
 }
 
 .seat .seat-label {
-    font-size: 0.75rem;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 900;
     line-height: 1;
-    opacity: 1;
-    letter-spacing: 0.03em;
-    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+    pointer-events: none;
 }
 
 .seat:hover:not(.seat-disabled):not(.seat-empty):not(.seat-booked):not(.seat-holding) {
-    transform: translateY(-3px);
-    filter: brightness(1.3);
-    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
+    transform: translateY(-2px) scale(1.05);
 }
 
-/* === SEAT TYPES (giống admin) === */
+/* === SEAT TYPES (clone từ Admin) === */
 
-/* Standard — xanh dương */
+/* Ghế thường — xanh dương */
+.seat.seat-standard,
 .seat.seat-available {
     background: transparent;
     color: #60a5fa;
     border: none;
 }
 
-/* VIP — vàng amber */
+/* Ghế VIP — vàng amber */
 .seat.seat-vip {
     background: transparent;
     color: #f59e0b;
     border: none;
 }
 
-/* Couple — hồng, spans 2 cols */
+/* Ghế đôi — hồng, chiếm 2 cột */
 .seat.seat-couple {
     background: transparent;
     color: #ec4899;
     border: none;
+    width: 96px;
 }
 
-.seat.seat-couple-span {
+.seat.seat-couple .seat-icon-shape {
+    width: 96px;
+    height: 54px;
+    min-width: 96px;
+    min-height: 54px;
+}
+
+.seat-couple-span {
     grid-column: span 2;
-    border-radius: 5px 5px 14px 14px;
 }
 
 /* === SEAT STATUS === */
 
-/* Selected */
+/* Đã chọn (selected) */
 .seat.seat-selected {
     background: transparent;
-    color: var(--accent-primary);
+    color: var(--accent-primary, #e50914);
 }
 
 .seat.seat-vip.seat-selected {
     background: transparent;
-    color: var(--accent-primary);
+    color: var(--accent-primary, #e50914);
 }
 
 .seat.seat-couple.seat-selected {
     background: transparent;
-    color: var(--accent-primary);
+    color: var(--accent-primary, #e50914);
 }
 
-/* Holding/Booked */
+/* Đang giữ / Đã đặt */
 .seat.seat-holding,
 .seat.seat-booked {
     background: transparent;
@@ -365,7 +382,15 @@ body {
     opacity: 0.4;
 }
 
-/* Empty placeholder */
+/* Vô hiệu hóa / Hỏng */
+.seat.seat-disabled {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+/* Ô trống */
 .seat.seat-empty {
     background: transparent;
     border: 1px dashed rgba(255, 255, 255, 0.04);
@@ -374,7 +399,26 @@ body {
     border-radius: 4px;
 }
 
-/* Pending hold animation */
+/* Animation khi toggle ghế */
+@keyframes seatFlash {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    35% {
+        transform: scale(0.82);
+        opacity: 0.45;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.seat.toggling {
+    animation: seatFlash 0.28s ease;
+}
+
 .seat.seat-pending-hold {
     animation: seatPulse 1s ease-in-out infinite;
 }
@@ -384,26 +428,78 @@ body {
     50% { opacity: 0.6; }
 }
 
-/* === RESPONSIVE === */
-@media (max-width: 992px) {
+/* === RESPONSIVE (clone từ Admin) === */
+@media (max-width: 1200px) {
     .seat-grid {
-        grid-template-columns: 22px repeat(var(--cols), minmax(30px, 34px));
+        grid-template-columns: 24px repeat(var(--cols), 46px);
+        gap: 6px;
     }
 
     .seat-grid-col-labels {
-        grid-template-columns: 22px repeat(var(--cols), minmax(30px, 34px));
+        grid-template-columns: 24px repeat(var(--cols), 46px);
+        gap: 6px;
     }
 
     .seat {
-        height: 36px;
+        width: 46px !important;
+        height: 46px !important;
     }
 
-    .seat .seat-icon {
-        font-size: 0.8rem;
+    .seat .seat-icon-shape {
+        width: 46px !important;
+        height: 46px !important;
+        min-width: 46px !important;
+        min-height: 46px !important;
+    }
+
+    .seat.seat-couple {
+        width: 80px !important;
+    }
+
+    .seat.seat-couple .seat-icon-shape {
+        width: 80px !important;
+        height: 46px !important;
+        min-width: 80px !important;
+        min-height: 46px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .seat-grid {
+        grid-template-columns: 20px repeat(var(--cols), 36px);
+        gap: 5px;
+    }
+
+    .seat-grid-col-labels {
+        grid-template-columns: 20px repeat(var(--cols), 36px);
+        gap: 5px;
+    }
+
+    .seat {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    .seat .seat-icon-shape {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+    }
+
+    .seat.seat-couple {
+        width: 64px !important;
+    }
+
+    .seat.seat-couple .seat-icon-shape {
+        width: 64px !important;
+        height: 36px !important;
+        min-width: 64px !important;
+        min-height: 36px !important;
     }
 
     .seat .seat-label {
-        font-size: 0.5rem;
+        font-size: 0.6rem !important;
     }
 }
 

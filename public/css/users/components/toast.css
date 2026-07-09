@@ -1,0 +1,252 @@
+/**
+ * Toast Notification Component
+ * Provides user feedback through non-intrusive notifications
+ */
+
+/* ============================================
+   TOAST CONTAINER
+   ============================================ */
+
+.toast-container {
+  position: fixed;
+  z-index: var(--z-notification);
+  pointer-events: none;
+}
+
+/* Toast positions */
+.toast-container.top-right {
+  top: var(--space-4);
+  right: var(--space-4);
+}
+
+.toast-container.top-left {
+  top: var(--space-4);
+  left: var(--space-4);
+}
+
+.toast-container.top-center {
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.toast-container.bottom-right {
+  bottom: var(--space-4);
+  right: var(--space-4);
+}
+
+.toast-container.bottom-left {
+  bottom: var(--space-4);
+  left: var(--space-4);
+}
+
+.toast-container.bottom-center {
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ============================================
+   TOAST BASE
+   ============================================ */
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 300px;
+  max-width: 500px;
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all var(--transition-base);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast.hiding {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+/* ============================================
+   TOAST VARIANTS
+   ============================================ */
+
+.toast.toast-success {
+  border-left: 4px solid var(--color-success);
+}
+
+.toast.toast-error {
+  border-left: 4px solid var(--color-error);
+}
+
+.toast.toast-warning {
+  border-left: 4px solid var(--color-warning);
+}
+
+.toast.toast-info {
+  border-left: 4px solid var(--color-info);
+}
+
+/* ============================================
+   TOAST CONTENT
+   ============================================ */
+
+.toast-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+}
+
+.toast-success .toast-icon {
+  background: var(--color-success);
+  color: white;
+}
+
+.toast-error .toast-icon {
+  background: var(--color-error);
+  color: white;
+}
+
+.toast-warning .toast-icon {
+  background: var(--color-warning);
+  color: white;
+}
+
+.toast-info .toast-icon {
+  background: var(--color-info);
+  color: white;
+}
+
+.toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-title {
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.toast-message {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.toast-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.toast-close:hover {
+  background: var(--gray-100);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   TOAST PROGRESS BAR
+   ============================================ */
+
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  transition: width linear;
+}
+
+.toast-success .toast-progress {
+  background: var(--color-success);
+}
+
+.toast-error .toast-progress {
+  background: var(--color-error);
+}
+
+.toast-warning .toast-progress {
+  background: var(--color-warning);
+}
+
+.toast-info .toast-progress {
+  background: var(--color-info);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .toast {
+    min-width: calc(100vw - var(--space-8));
+    max-width: calc(100vw - var(--space-8));
+  }
+
+  .toast-container.top-right,
+  .toast-container.bottom-right {
+    right: var(--space-4);
+    left: var(--space-4);
+  }
+
+  .toast-container.top-left,
+  .toast-container.bottom-left {
+    left: var(--space-4);
+    right: var(--space-4);
+  }
+
+  .toast-container.top-center,
+  .toast-container.bottom-center {
+    left: var(--space-4);
+    right: var(--space-4);
+    transform: none;
+  }
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .toast {
+    background: var(--gray-800);
+  }
+
+  .toast-close:hover {
+    background: var(--gray-700);
+  }
+}
+
+.dark-mode .toast {
+  background: var(--gray-800);
+}
+
+.dark-mode .toast-close:hover {
+  background: var(--gray-700);
+}

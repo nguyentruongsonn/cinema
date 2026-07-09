@@ -6,6 +6,7 @@ use App\Models\Showtime;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Carbon\Carbon;
 
 class BookingController extends Controller
 {
@@ -25,6 +26,18 @@ class BookingController extends Controller
             'format',
             'versionType',
         ])->findOrFail($showtimeId);
+
+        // Validate showtime is bookable
+        if ($showtime->status != 1) {
+            abort(403, 'Suất chiếu này không khả dụng.');
+        }
+
+        $now = Carbon::now();
+        $cutoffTime = $now->copy()->subMinutes(20);
+
+        if ($showtime->scheduled_at <= $cutoffTime) {
+            abort(403, 'Suất chiếu này đã bắt đầu hoặc kết thúc.');
+        }
 
         return view('users.booking.index', [
             'showtime' => $showtime,

@@ -319,7 +319,7 @@
                     <div id="manualScanner" class="scanner-mode">
                         <div class="mb-3">
                             <label for="ticketCodeInput" class="form-label">Mã vé</label>
-                            <input type="text" class="form-control form-control-lg bg-dark text-white border-secondary" 
+                            <input type="text" class="form-control form-control-lg bg-dark text-white border-secondary"
                                    id="ticketCodeInput" placeholder="Nhập hoặc quét mã vé..." autofocus>
                             <small class="text-muted">Có thể quét bằng máy quét mã vạch hoặc nhập thủ công</small>
                         </div>
@@ -337,7 +337,7 @@
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ asset('js/admin-core.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/admin/admin-core.js') }}?v={{ time() }}"></script>
 
     <!-- Admin Core JS -->
     <script>
@@ -353,7 +353,7 @@
         };
     </script>
     <script src="{{ asset('js/core/api-client.js') }}"></script>
-    <script src="{{ asset('js/auth.js') }}"></script>
+    <script src="{{ asset('js/users/auth.js') }}"></script>
     <script src="{{ asset('js/admin/app.js') }}?v={{ time() }}"></script>
 
     <!-- Responsive Menu JS -->

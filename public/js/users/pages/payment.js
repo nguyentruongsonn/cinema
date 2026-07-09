@@ -5,6 +5,8 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import Toast from '../components/toast.js';
+
 (function() {
     'use strict';
 
@@ -102,8 +104,16 @@
     }
 
     function handleOrderExpired() {
-        alert('Đơn hàng đã hết hạn. Bạn sẽ được chuyển về trang chủ.');
-        window.location.href = '/';
+        if (typeof Toast !== 'undefined') {
+            Toast.error(
+                'Đơn hàng đã hết hạn',
+                'Bạn sẽ được chuyển về trang chủ trong giây lát.'
+            );
+        }
+
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 2000);
     }
 
     async function handlePayment() {
@@ -144,7 +154,15 @@
 
         } catch (error) {
             console.error('Payment error:', error);
-            alert(error.message || 'Có lỗi xảy ra khi xử lý thanh toán. Vui lòng thử lại.');
+
+            if (typeof Toast !== 'undefined') {
+                Toast.error(
+                    'Lỗi thanh toán',
+                    error.message || 'Có lỗi xảy ra khi xử lý thanh toán. Vui lòng thử lại.'
+                );
+            } else {
+                alert(error.message || 'Có lỗi xảy ra khi xử lý thanh toán. Vui lòng thử lại.');
+            }
 
             // Re-enable button and hide loading
             btnPayment.disabled = false;
@@ -176,12 +194,28 @@
                 throw new Error(error.message || 'Không thể hủy đơn hàng');
             }
 
-            alert('Đơn hàng đã được hủy thành công');
-            window.location.href = '/';
+            if (typeof Toast !== 'undefined') {
+                Toast.success(
+                    'Hủy đơn hàng thành công',
+                    'Bạn sẽ được chuyển về trang chủ trong giây lát.'
+                );
+            }
+
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
 
         } catch (error) {
             console.error('Cancel order error:', error);
-            alert(error.message || 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.');
+
+            if (typeof Toast !== 'undefined') {
+                Toast.error(
+                    'Lỗi hủy đơn hàng',
+                    error.message || 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.'
+                );
+            } else {
+                alert(error.message || 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.');
+            }
 
             // Re-enable button
             btnCancel.disabled = false;

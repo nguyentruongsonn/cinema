@@ -1,0 +1,441 @@
+/**
+ * User Interface - Typography Styles
+ * Cinema Booking System
+ *
+ * Typography system with utility classes for consistent text styling
+ */
+
+/* ============================================
+   HEADINGS
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    font-family: var(--font-display);
+}
+
+h1 {
+    font-size: var(--text-4xl);
+    margin-bottom: var(--space-6);
+}
+
+h2 {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-5);
+}
+
+h3 {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-4);
+}
+
+h4 {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-4);
+}
+
+h5 {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-3);
+}
+
+h6 {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-3);
+}
+
+/* ============================================
+   PARAGRAPHS
+   ============================================ */
+p {
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-relaxed);
+}
+
+p:last-child {
+    margin-bottom: 0;
+}
+
+/* ============================================
+   LINKS
+   ============================================ */
+a {
+    color: var(--text-link);
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--text-link-hover);
+}
+
+a:active {
+    opacity: 0.7;
+}
+
+/* ============================================
+   LISTS
+   ============================================ */
+ul:not([role="list"]),
+ol:not([role="list"]) {
+    margin-bottom: var(--space-4);
+    padding-left: var(--space-6);
+}
+
+ul li,
+ol li {
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+}
+
+ul:not([role="list"]) {
+    list-style-type: disc;
+}
+
+ol:not([role="list"]) {
+    list-style-type: decimal;
+}
+
+/* ============================================
+   TEXT SIZE UTILITIES
+   ============================================ */
+.text-xs {
+    font-size: var(--text-xs);
+}
+
+.text-sm {
+    font-size: var(--text-sm);
+}
+
+.text-base {
+    font-size: var(--text-base);
+}
+
+.text-lg {
+    font-size: var(--text-lg);
+}
+
+.text-xl {
+    font-size: var(--text-xl);
+}
+
+.text-2xl {
+    font-size: var(--text-2xl);
+}
+
+.text-3xl {
+    font-size: var(--text-3xl);
+}
+
+.text-4xl {
+    font-size: var(--text-4xl);
+}
+
+.text-5xl {
+    font-size: var(--text-5xl);
+}
+
+.text-6xl {
+    font-size: var(--text-6xl);
+}
+
+/* ============================================
+   FONT WEIGHTS
+   ============================================ */
+.font-light {
+    font-weight: var(--font-light);
+}
+
+.font-normal {
+    font-weight: var(--font-normal);
+}
+
+.font-medium {
+    font-weight: var(--font-medium);
+}
+
+.font-semibold {
+    font-weight: var(--font-semibold);
+}
+
+.font-bold {
+    font-weight: var(--font-bold);
+}
+
+.font-extrabold {
+    font-weight: var(--font-extrabold);
+}
+
+/* ============================================
+   TEXT COLORS
+   ============================================ */
+.text-primary {
+    color: var(--text-primary);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-tertiary {
+    color: var(--text-tertiary);
+}
+
+.text-inverse {
+    color: var(--text-inverse);
+}
+
+.text-link {
+    color: var(--text-link);
+}
+
+.text-success {
+    color: var(--color-success);
+}
+
+.text-warning {
+    color: var(--color-warning);
+}
+
+.text-error {
+    color: var(--color-error);
+}
+
+.text-info {
+    color: var(--color-info);
+}
+
+.text-brand {
+    color: var(--color-primary);
+}
+
+/* ============================================
+   TEXT ALIGNMENT
+   ============================================ */
+.text-left {
+    text-align: left;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-justify {
+    text-align: justify;
+}
+
+/* ============================================
+   TEXT TRANSFORM
+   ============================================ */
+.text-uppercase {
+    text-transform: uppercase;
+}
+
+.text-lowercase {
+    text-transform: lowercase;
+}
+
+.text-capitalize {
+    text-transform: capitalize;
+}
+
+.text-normal-case {
+    text-transform: none;
+}
+
+/* ============================================
+   TEXT DECORATION
+   ============================================ */
+.text-underline {
+    text-decoration: underline;
+}
+
+.text-line-through {
+    text-decoration: line-through;
+}
+
+.text-no-underline {
+    text-decoration: none;
+}
+
+/* ============================================
+   TEXT TRUNCATION
+   ============================================ */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text-line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.text-line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.text-line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.text-line-clamp-4 {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ============================================
+   LINE HEIGHT UTILITIES
+   ============================================ */
+.leading-none {
+    line-height: var(--leading-none);
+}
+
+.leading-tight {
+    line-height: var(--leading-tight);
+}
+
+.leading-snug {
+    line-height: var(--leading-snug);
+}
+
+.leading-normal {
+    line-height: var(--leading-normal);
+}
+
+.leading-relaxed {
+    line-height: var(--leading-relaxed);
+}
+
+.leading-loose {
+    line-height: var(--leading-loose);
+}
+
+/* ============================================
+   LETTER SPACING
+   ============================================ */
+.tracking-tighter {
+    letter-spacing: var(--tracking-tighter);
+}
+
+.tracking-tight {
+    letter-spacing: var(--tracking-tight);
+}
+
+.tracking-normal {
+    letter-spacing: var(--tracking-normal);
+}
+
+.tracking-wide {
+    letter-spacing: var(--tracking-wide);
+}
+
+.tracking-wider {
+    letter-spacing: var(--tracking-wider);
+}
+
+.tracking-widest {
+    letter-spacing: var(--tracking-widest);
+}
+
+/* ============================================
+   SPECIAL TEXT STYLES
+   ============================================ */
+.text-gradient {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ============================================
+   CODE & PRE
+   ============================================ */
+code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    padding: 0.2em 0.4em;
+    background-color: var(--gray-100);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-secondary);
+    color: var(--color-error-dark);
+}
+
+pre {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    padding: var(--space-4);
+    background-color: var(--gray-50);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    overflow-x: auto;
+    line-height: var(--leading-relaxed);
+}
+
+pre code {
+    padding: 0;
+    background: none;
+    border: none;
+    color: inherit;
+}
+
+/* ============================================
+   BLOCKQUOTE
+   ============================================ */
+blockquote {
+    padding: var(--space-4) var(--space-6);
+    margin: var(--space-6) 0;
+    border-left: 4px solid var(--color-primary);
+    background-color: var(--bg-secondary);
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+blockquote p {
+    margin-bottom: var(--space-2);
+}
+
+blockquote cite {
+    display: block;
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    font-style: normal;
+    color: var(--text-tertiary);
+}
+
+/* ============================================
+   RESPONSIVE TYPOGRAPHY
+   ============================================ */
+@media (max-width: 768px) {
+    h1 {
+        font-size: var(--text-3xl);
+    }
+
+    h2 {
+        font-size: var(--text-2xl);
+    }
+
+    h3 {
+        font-size: var(--text-xl);
+    }
+
+    h4 {
+        font-size: var(--text-lg);
+    }
+}

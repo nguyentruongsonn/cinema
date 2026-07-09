@@ -5,6 +5,8 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import Toast from '../components/toast.js';
+
 (function() {
     'use strict';
 
@@ -35,6 +37,7 @@
             hideSkeletons();
         } catch (error) {
             console.error('Failed to initialize movie detail page:', error);
+            showError();
         }
     }
 
@@ -423,6 +426,32 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function showError() {
+        // Use Toast notification for better UX
+        if (typeof Toast !== 'undefined') {
+            Toast.error(
+                'Unable to load movie details',
+                'Please try refreshing the page or check your connection.'
+            );
+        }
+
+        // Hide skeletons and show fallback message
+        hideSkeletons();
+
+        const heroContent = document.getElementById('heroContent');
+        if (heroContent) {
+            heroContent.innerHTML = `
+                <div class="container">
+                    <div class="alert alert-danger mt-5">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Unable to load movie details. Please try again later.
+                    </div>
+                </div>
+            `;
+            heroContent.classList.remove('d-none');
+        }
     }
 
     // Expose for debugging

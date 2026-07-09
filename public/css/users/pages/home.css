@@ -1,369 +1,447 @@
-/* Cinema Homepage Redesign - Dark Theme */
+/**
+ * Homepage Styles
+ * Cinema Booking System - User Interface
+ *
+ * Modern hero section, quick booking, and featured movies
+ */
 
-/* Hero Section */
+/* ============================================
+   HERO SECTION
+   ============================================ */
+
 .hero-section {
     position: relative;
     min-height: 600px;
-    padding-top: 74px;
+    display: flex;
+    align-items: center;
     overflow: hidden;
+    background: var(--gray-900);
 }
 
-.hero-content {
-    position: relative;
-    width: 100%;
-    min-height: 600px;
+.hero-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    display: flex;
-    align-items: center;
 }
 
-.hero-inner {
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.9) 0%,
+        rgba(0, 0, 0, 0.6) 50%,
+        rgba(0, 0, 0, 0.3) 100%
+    );
+}
+
+.hero-section .container {
     position: relative;
-    z-index: 2;
-    padding: 60px 0;
+    z-index: 1;
 }
 
 .hero-copy {
     max-width: 600px;
+    color: white;
+}
+
+.hero-badge {
+    display: inline-block;
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-primary);
+    color: white;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: var(--radius-full);
+    margin-bottom: var(--space-4);
+}
+
+.hero-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: var(--font-bold);
+    line-height: 1.1;
+    margin-bottom: var(--space-4);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.hero-description {
+    font-size: var(--text-lg);
+    line-height: 1.6;
+    margin-bottom: var(--space-6);
+    opacity: 0.9;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .hero-meta {
     display: flex;
+    gap: var(--space-6);
+    margin-bottom: var(--space-6);
+    font-size: var(--text-base);
+}
+
+.hero-meta span {
+    display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.85);
+    gap: var(--space-2);
 }
 
-.rating-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-}
-
-.hero-title {
-    font-size: clamp(2.5rem, 5vw, 4rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    margin-bottom: 24px;
-    text-transform: uppercase;
-}
-
-.hero-description {
-    font-size: 1.05rem;
-    line-height: 1.7;
-    color: rgba(255, 255, 255, 0.75);
-    margin-bottom: 32px;
-    max-width: 560px;
+.hero-meta i {
+    color: var(--color-primary);
 }
 
 .hero-actions {
     display: flex;
+    gap: var(--space-4);
     flex-wrap: wrap;
-    gap: 16px;
 }
 
 .btn-book-now,
 .btn-trailer {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 14px 28px;
-    border: none;
-    border-radius: 24px;
-    font-size: 0.95rem;
-    font-weight: 700;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-6);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
     cursor: pointer;
-    transition: all 0.25s ease;
+    border: none;
     text-decoration: none;
 }
 
 .btn-book-now {
-    background: var(--primary-color, #ff141f);
-    color: #ffffff;
+    background: var(--color-primary);
+    color: white;
 }
 
 .btn-book-now:hover {
-    background: #d90f18;
+    background: var(--color-primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(255, 20, 31, 0.35);
-    color: #ffffff;
+    box-shadow: var(--shadow-lg);
 }
 
 .btn-trailer {
-    background: transparent;
-    color: #ffffff;
-    border: 2px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    backdrop-filter: blur(10px);
 }
 
 .btn-trailer:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.4);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
-/* Quick Booking Widget */
-.quick-booking-widget {
-    position: relative;
-    margin-top: -60px;
-    z-index: 10;
+/* ============================================
+   QUICK BOOKING WIDGET
+   ============================================ */
+
+.quick-booking {
+    padding: var(--space-16) 0;
+    background: var(--gray-50);
+}
+
+.quick-booking-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-lg);
+}
+
+.quick-booking-title {
+    text-align: center;
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-8);
+    color: var(--text-primary);
 }
 
 .booking-form {
-    background: rgba(26, 26, 28, 0.95);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 24px;
-}
-
-.booking-controls {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    align-items: end;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
 }
 
-.booking-control {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.booking-form .form-group {
+    margin-bottom: 0;
 }
 
-.booking-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.6);
-    margin: 0;
+.booking-form-submit {
+    text-align: center;
 }
 
-.booking-select {
-    width: 100%;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #ffffff;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
+.booking-form-submit .btn {
+    min-width: 200px;
 }
 
-.booking-select:hover,
-.booking-select:focus {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    outline: none;
-}
+/* ============================================
+   NOW SHOWING SECTION
+   ============================================ */
 
-.booking-select option {
-    background: #1a1a1c;
-    color: #ffffff;
-}
-
-.btn-find-seats {
-    width: 100%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 14px 24px;
-    background: var(--primary-color, #ff141f);
-    border: none;
-    border-radius: 8px;
-    color: #ffffff;
-    font-size: 0.95rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.25s ease;
-}
-
-.btn-find-seats:hover {
-    background: #d90f18;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(255, 20, 31, 0.3);
-}
-
-/* Movies Section */
-.movies-section {
-    padding: 80px 0;
+.now-showing {
+    padding: var(--space-16) 0;
 }
 
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 32px;
+    margin-bottom: var(--space-8);
 }
 
 .section-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
 }
 
-.view-all-link {
+.section-link {
     display: inline-flex;
     align-items: center;
-    color: var(--primary-color, #ff141f);
-    font-size: 0.95rem;
-    font-weight: 600;
+    gap: var(--space-2);
+    color: var(--color-primary);
+    font-weight: var(--font-semibold);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: gap var(--transition-base);
 }
 
-.view-all-link:hover {
-    color: #d90f18;
-    transform: translateX(4px);
+.section-link:hover {
+    gap: var(--space-3);
 }
 
-/* Movie Cards Grid */
 .movies-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--space-6);
 }
 
-.movie-card {
-    position: relative;
-    background: #1a1a1c;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.movie-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-}
-
-.movie-card-link {
-    display: block;
+/* Use movie card styles from components/cards.css */
+.movies-grid .movie-card {
     text-decoration: none;
     color: inherit;
-}
-
-.movie-poster {
-    width: 100%;
-    aspect-ratio: 2/3;
-    object-fit: cover;
     display: block;
+    transition: transform var(--transition-base);
 }
 
-.movie-gradient {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 50%;
-    background: linear-gradient(to top, rgba(26, 26, 28, 0.95), transparent);
-    pointer-events: none;
+.movies-grid .movie-card:hover {
+    transform: translateY(-8px);
 }
 
-.movie-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 20px;
-    z-index: 2;
+/* ============================================
+   FEATURED SECTION
+   ============================================ */
+
+.featured-section {
+    padding: var(--space-16) 0;
+    background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+    color: white;
 }
 
-.movie-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 6px;
-    color: #ffffff;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.featured-content {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-.movie-meta {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.65);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 0;
+.featured-title {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-4);
 }
 
-/* Responsive */
-@media (max-width: 991px) {
-    .hero-title {
-        font-size: 2.5rem;
+.featured-description {
+    font-size: var(--text-xl);
+    line-height: 1.6;
+    margin-bottom: var(--space-8);
+    opacity: 0.9;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .hero-section {
+        min-height: 500px;
+    }
+
+    .hero-overlay {
+        background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.95) 0%,
+            rgba(0, 0, 0, 0.7) 50%,
+            rgba(0, 0, 0, 0.5) 100%
+        );
     }
 
     .hero-copy {
         max-width: 100%;
     }
 
-    .booking-controls {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 767px) {
-    .hero-section {
-        min-height: 500px;
-    }
-
-    .hero-content {
-        min-height: 500px;
-    }
-
-    .hero-inner {
-        padding: 40px 0;
-    }
-
     .hero-title {
-        font-size: 2rem;
+        font-size: clamp(1.75rem, 6vw, 2.5rem);
     }
 
     .hero-description {
-        font-size: 0.95rem;
+        font-size: var(--text-base);
     }
 
-    .quick-booking-widget {
-        margin-top: -40px;
+    .hero-meta {
+        flex-direction: column;
+        gap: var(--space-3);
     }
 
-    .movies-section {
-        padding: 60px 0;
+    .hero-actions {
+        flex-direction: column;
     }
 
-    .section-title {
-        font-size: 1.5rem;
+    .btn-book-now,
+    .btn-trailer {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .quick-booking {
+        padding: var(--space-12) 0;
+    }
+
+    .quick-booking-container {
+        padding: var(--space-6);
+    }
+
+    .booking-form {
+        grid-template-columns: 1fr;
+    }
+
+    .now-showing {
+        padding: var(--space-12) 0;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-4);
     }
 
     .movies-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: var(--space-4);
+    }
+
+    .featured-section {
+        padding: var(--space-12) 0;
+    }
+
+    .featured-title {
+        font-size: var(--text-2xl);
+    }
+
+    .featured-description {
+        font-size: var(--text-base);
     }
 }
 
 @media (max-width: 480px) {
-    .hero-title {
-        font-size: 1.75rem;
+    .hero-section {
+        min-height: 400px;
+    }
+
+    .quick-booking-title {
+        font-size: var(--text-2xl);
+    }
+
+    .section-title {
+        font-size: var(--text-2xl);
     }
 
     .movies-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
+}
+
+/* ============================================
+   SKELETON LOADERS
+   ============================================ */
+
+.hero-skeleton {
+    min-height: 600px;
+    background: linear-gradient(
+        90deg,
+        var(--gray-200) 0%,
+        var(--gray-300) 50%,
+        var(--gray-200) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.booking-skeleton {
+    height: 300px;
+    background: var(--gray-100);
+    border-radius: var(--radius-2xl);
+}
+
+.movies-skeleton {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--space-6);
+}
+
+.movie-skeleton-card {
+    aspect-ratio: 2/3;
+    background: linear-gradient(
+        90deg,
+        var(--gray-200) 0%,
+        var(--gray-300) 50%,
+        var(--gray-200) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-lg);
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .quick-booking {
+        background: var(--gray-900);
+    }
+
+    .quick-booking-container {
+        background: var(--gray-800);
+        border: 1px solid var(--gray-700);
+    }
+}
+
+.dark-mode .quick-booking {
+    background: var(--gray-900);
+}
+
+.dark-mode .quick-booking-container {
+    background: var(--gray-800);
+    border: 1px solid var(--gray-700);
 }
