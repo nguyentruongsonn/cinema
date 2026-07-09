@@ -9,9 +9,32 @@
 @endpush
 
 @section('content')
-<div class="booking-page" data-showtime-id="{{ $showtime->id }}" data-showtime-encrypted-id="{{ $showtime->encrypted_id }}">
+<div class="booking-page has-progress" data-showtime-id="{{ $showtime->id }}" data-showtime-encrypted-id="{{ $showtime->encrypted_id }}">
 
-    {{-- Tab Navigation --}}
+    {{-- Modern Progress Bar --}}
+    <div class="booking-progress" aria-label="Tiến trình đặt vé">
+        <button type="button" class="progress-step step-active" data-step="1" data-tab="seats" aria-current="step">
+            <span class="step-circle">1</span>
+            <span class="step-label">Chọn ghế</span>
+            <span class="step-connector"><span class="step-connector-fill"></span></span>
+        </button>
+        <button type="button" class="progress-step step-pending" data-step="2" data-tab="food" aria-disabled="true">
+            <span class="step-circle">2</span>
+            <span class="step-label">Bắp nước</span>
+            <span class="step-connector"><span class="step-connector-fill"></span></span>
+        </button>
+        <button type="button" class="progress-step step-pending" data-step="3" data-tab="promotion" aria-disabled="true">
+            <span class="step-circle">3</span>
+            <span class="step-label">Ưu đãi</span>
+            <span class="step-connector"><span class="step-connector-fill"></span></span>
+        </button>
+        <button type="button" class="progress-step step-pending" data-step="4" data-tab="confirm" aria-disabled="true">
+            <span class="step-circle">4</span>
+            <span class="step-label">Xác nhận</span>
+        </button>
+    </div>
+
+    {{-- Tab Navigation (kept for JS compatibility, hidden by .has-progress) --}}
     <div class="booking-tabs">
         <button class="tab-btn active" data-tab="seats">
             <span class="tab-number">1</span>

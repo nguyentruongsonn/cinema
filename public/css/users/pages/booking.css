@@ -105,6 +105,215 @@ body {
     font-weight: 500;
 }
 
+/* === MODERN PROGRESS BAR === */
+.booking-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    background-color: var(--bg-secondary);
+    padding: 32px 24px;
+    border-bottom: 1px solid var(--border-color);
+    max-width: 1600px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    flex: 1;
+    max-width: 200px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.progress-step:hover .step-circle {
+    transform: scale(1.05);
+}
+
+/* Disable hover for future steps */
+.progress-step.step-pending:hover .step-circle {
+    transform: scale(1);
+}
+
+.progress-step.step-pending {
+    cursor: not-allowed;
+}
+
+.step-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 18px;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
+    background-color: var(--bg-tertiary);
+    border: 3px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.progress-step.step-completed .step-circle {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+.progress-step.step-active .step-circle {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: white;
+    box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.2);
+    animation: pulseStep 2s ease-in-out infinite;
+}
+
+@keyframes pulseStep {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(229, 9, 20, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(229, 9, 20, 0.1);
+    }
+}
+
+.step-circle i {
+    font-size: 20px;
+}
+
+.step-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-align: center;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.progress-step.step-completed .step-label,
+.progress-step.step-active .step-label {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Connection Lines */
+.step-connector {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    width: 100%;
+    height: 3px;
+    background-color: var(--border-color);
+    z-index: 1;
+    transform: translateY(-50%);
+}
+
+.progress-step:last-child .step-connector {
+    display: none;
+}
+
+.step-connector-fill {
+    height: 100%;
+    background-color: var(--success-color);
+    width: 0%;
+    transition: width 0.5s ease;
+}
+
+.progress-step.step-completed .step-connector-fill {
+    width: 100%;
+}
+
+.progress-step.step-active .step-connector-fill {
+    width: 50%;
+    background: linear-gradient(to right, var(--success-color), var(--accent-primary));
+}
+
+/* Hide old tabs when progress bar is active */
+.booking-page.has-progress .booking-tabs {
+    display: none;
+}
+
+/* Progress Bar Responsive */
+@media (max-width: 768px) {
+    .booking-progress {
+        padding: 24px 16px;
+    }
+
+    .progress-step {
+        max-width: 150px;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .step-circle i {
+        font-size: 18px;
+    }
+
+    .step-label {
+        font-size: 12px;
+    }
+
+    .step-connector {
+        top: 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .booking-progress {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 20px 16px;
+        gap: 16px;
+    }
+
+    .progress-step {
+        flex-direction: row;
+        max-width: 100%;
+        gap: 16px;
+        padding: 12px;
+        border-radius: 12px;
+        background-color: rgba(255, 255, 255, 0.02);
+        transition: background-color 0.3s ease;
+    }
+
+    .progress-step.step-active {
+        background-color: rgba(229, 9, 20, 0.08);
+    }
+
+    .progress-step.step-completed {
+        background-color: rgba(70, 211, 105, 0.06);
+    }
+
+    .step-circle {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+    }
+
+    .step-label {
+        text-align: left;
+        flex: 1;
+        font-size: 14px;
+        align-self: center;
+    }
+
+    /* Hide connectors on mobile since steps are stacked */
+    .step-connector {
+        display: none;
+    }
+}
+
 /* === TAB CONTENTS === */
 .booking-page .tab-contents {
     padding: 32px;

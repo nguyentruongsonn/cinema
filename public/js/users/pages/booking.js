@@ -50,6 +50,9 @@ class BookingManager {
         this.paymentBtn = document.getElementById('paymentBtn');
         this.sidebarContinueBtn = document.getElementById('sidebarContinueBtn');
         this.timerDisplay = document.getElementById('bookingTimer');
+
+        // Progress bar elements
+        this.progressSteps = document.querySelectorAll('.progress-step');
         this.loadingOverlay = document.getElementById('loadingOverlay');
 
         this.init();
@@ -347,6 +350,19 @@ class BookingManager {
             });
         });
 
+        // Progress bar step navigation
+        this.progressSteps.forEach(stepEl => {
+            stepEl.addEventListener('click', () => {
+                const targetStep = parseInt(stepEl.dataset.step);
+                if (!targetStep || isNaN(targetStep)) return;
+
+                // Only allow navigating to completed steps or current step
+                if (stepEl.classList.contains('step-completed') || stepEl.classList.contains('step-active')) {
+                    this.switchTab(targetStep);
+                }
+            });
+        });
+
         // Step navigation buttons
         this.nextStepBtn?.addEventListener('click', () => this.goToNextStep());
         this.prevStepBtn?.addEventListener('click', () => this.goToPrevStep());
@@ -418,6 +434,9 @@ class BookingManager {
             btn.classList.toggle('completed', index < step - 1);
         });
 
+        // Update modern progress bar state
+        this.updateProgressBar();
+
         // Update tab content - scoped to booking page only, do not touch auth modal .tab-content
         document.querySelectorAll('.booking-page .tab-content').forEach((content, index) => {
             content.classList.toggle('active', index === step - 1);
@@ -435,6 +454,24 @@ class BookingManager {
         if (step === 4) {
             this.populateConfirmStep();
         }
+    }
+
+    updateProgressBar() {
+        if (!this.progressSteps || this.progressSteps.length === 0) return;
+
+        this.progressSteps.forEach(stepEl => {
+            const stepNumber = parseInt(stepEl.dataset.step, 10);
+            if (!stepNumber || Number.isNaN(stepNumber)) return;
+
+            const isCompleted = stepNumber < this.currentStep;
+            const isActive = stepNumber === this.currentStep;
+
+            stepEl.classList.toggle('step-completed', isCompleted);
+            stepEl.classList.toggle('step-active', isActive);
+            stepEl.classList.toggle('step-pending', stepNumber > this.currentStep);
+            stepEl.setAttribute('aria-current', isActive ? 'step' : 'false');
+            stepEl.setAttribute('aria-disabled', stepNumber > this.currentStep ? 'true' : 'false');
+        });
     }
 
     async goToNextStep() {
