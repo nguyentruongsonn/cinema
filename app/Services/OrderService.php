@@ -113,7 +113,6 @@ class OrderService
             ->with([
                 'showtime.movie',
                 'showtime.format',
-                'showtime.sound',
                 'showtime.versionType',
                 'showtime.screen.theater.branch',
                 'orderItems.item',
