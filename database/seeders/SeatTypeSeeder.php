@@ -19,28 +19,13 @@ class SeatTypeSeeder extends Seeder
             ],
             [
                 'name' => 'VIP',
-                'surcharge' => 50000,
+                'surcharge' => 10000,
                 'color' => '#ffc107',
             ],
             [
                 'name' => 'Couple',
-                'surcharge' => 100000,
+                'surcharge' => 20000,
                 'color' => '#e83e8c',
-            ],
-            [
-                'name' => 'Sweetbox',
-                'surcharge' => 120000,
-                'color' => '#dc3545',
-            ],
-            [
-                'name' => 'Premium',
-                'surcharge' => 70000,
-                'color' => '#0d6efd',
-            ],
-            [
-                'name' => 'Accessible',
-                'surcharge' => 0,
-                'color' => '#20c997',
             ],
         ];
 

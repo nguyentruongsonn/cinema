@@ -23,7 +23,7 @@ class PricingService
         int $pointsUsed
     ): array {
         // Load relations
-        $showtime->load(['format', 'movie']);
+        $showtime->load(['format', 'movie', 'screen.theater']);
 
         // Seat pricing with dynamic ticket pricing
         $seatIds = array_map(fn($item) => (int) ($item['id'] ?? $item), $seatRequests);
@@ -50,7 +50,11 @@ class PricingService
                 scheduledAt: $scheduledAt,
                 customerType: 'adult',
                 isDoubleSeat: $isDoubleSeat,
-                movieSurcharge: $movieSurcharge
+                movieSurcharge: $movieSurcharge,
+                extraHolidays: [],
+                formatSurcharge: (int) ($showtime->format?->surcharge ?? 0),
+                seatSurcharge: (int) ($seat->seatType?->surcharge ?? 0),
+                theaterPricing: $showtime->screen?->theater?->pricing_profile
             );
 
             $unitPrice = $pricingResult['total_price'];
@@ -69,7 +73,6 @@ class PricingService
                     'surcharges' => $pricingResult['surcharges'],
                     'day_type' => $pricingResult['day_type'],
                     'time_slot' => $pricingResult['time_slot'],
-                    'is_beta_ten' => $pricingResult['is_beta_ten'],
                 ],
             ];
         }
@@ -112,10 +115,10 @@ class PricingService
         // Voucher cũng phải tồn tại trong Kho Voucher của chính user để tránh nhập mã trực tiếp khi chưa đăng ký.
         [$voucherDiscount, $voucherPayload] = $this->applyPromotion($voucherCode, $subtotal, $user);
 
-        // Points (Assuming 1 point = 1 VND if supported, else ignore)
+        // Points (1 point = 1000 VND)
         $pointDiscount = 0;
-        if ($pointsUsed > 0 && method_exists($user, 'points') && $user->points >= $pointsUsed) {
-            $pointDiscount = $pointsUsed;
+        if ($pointsUsed > 0 && $user && $user->loyalty_points >= $pointsUsed) {
+            $pointDiscount = $pointsUsed * 1000;
         } else {
             $pointsUsed = 0;
         }

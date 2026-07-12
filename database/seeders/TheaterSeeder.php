@@ -16,6 +16,14 @@ class TheaterSeeder extends Seeder
                 'phone' => '1900 6017',
                 'email' => 'vincom@cgv.vn',
                 'status' => 1,
+                'pricing_profile' => [
+                    'base_price' => 80000,
+                    'weekend_surcharge' => 15000,
+                    'holiday_surcharge' => 25000,
+                    'happy_day_price' => 60000,
+                    'student_discount' => 15000,
+                    'beta_ten_discount' => -10000,
+                ],
             ],
             [
                 'name' => 'CGV Aeon Mall',
@@ -23,6 +31,14 @@ class TheaterSeeder extends Seeder
                 'phone' => '1900 6017',
                 'email' => 'aeon@cgv.vn',
                 'status' => 1,
+                'pricing_profile' => [
+                    'base_price' => 70000,
+                    'weekend_surcharge' => 10000,
+                    'holiday_surcharge' => 20000,
+                    'happy_day_price' => 50000,
+                    'student_discount' => 10000,
+                    'beta_ten_discount' => -10000,
+                ],
             ],
             [
                 'name' => 'CGV Landmark 81',
@@ -30,6 +46,14 @@ class TheaterSeeder extends Seeder
                 'phone' => '1900 6017',
                 'email' => 'landmark81@cgv.vn',
                 'status' => 1,
+                'pricing_profile' => [
+                    'base_price' => 90000,
+                    'weekend_surcharge' => 20000,
+                    'holiday_surcharge' => 30000,
+                    'happy_day_price' => 70000,
+                    'student_discount' => 20000,
+                    'beta_ten_discount' => -10000,
+                ],
             ],
         ];
 

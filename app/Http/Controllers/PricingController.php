@@ -85,7 +85,7 @@ class PricingController extends Controller
             'is_double_seat' => 'sometimes|boolean',
         ]);
 
-        $showtime = \App\Models\Showtime::with(['movie', 'format'])->findOrFail($id);
+        $showtime = \App\Models\Showtime::with(['movie', 'format', 'screen.theater'])->findOrFail($id);
 
         // Resolve format label từ format relation hoặc fallback '2D'
         $formatLabel = $showtime->format?->name ?? '2D';
@@ -97,6 +97,10 @@ class PricingController extends Controller
             customerType:    $validated['customer_type']  ?? 'adult',
             isDoubleSeat:    (bool) ($validated['is_double_seat'] ?? false),
             movieSurcharge:  (int) ($showtime->movie?->surcharge ?? 0),
+            extraHolidays:   [],
+            formatSurcharge: (int) ($showtime->format?->surcharge ?? 0),
+            seatSurcharge:   0, // Note: API doesn't know seat type here without seat_id
+            theaterPricing:  $showtime->screen?->theater?->pricing_profile
         );
 
         // Thêm giá cơ sở từ DB (showtime.price) để so sánh

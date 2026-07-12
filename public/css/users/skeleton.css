@@ -150,3 +150,53 @@
 .loaded .skeleton {
     display: none;
 }
+
+/* Booking Page Skeletons */
+.skel-seat-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+.skel-seat {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background-color: var(--skeleton-bg, rgba(255, 255, 255, 0.05));
+}
+.skel-food-card {
+    background-color: #1a1d24;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.skel-food-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.skel-food-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+}
+.skel-food-title {
+    width: 60%;
+    height: 20px;
+    border-radius: 4px;
+}
+.skel-food-desc {
+    width: 90%;
+    height: 14px;
+    border-radius: 4px;
+}
+.skel-food-price {
+    width: 40%;
+    height: 18px;
+    border-radius: 4px;
+}

@@ -66,7 +66,9 @@
         switch (range) {
             case 'week':
                 start = new Date(now);
-                start.setDate(now.getDate() - now.getDay() + 1); // Monday
+                const day = now.getDay();
+                const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                start.setDate(diff);
                 break;
             case 'month':
                 start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -93,8 +95,8 @@
             els.btnApply.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cập nhật...';
         }
         document.querySelectorAll('.stat-value, .stat-trend span, #chartTicketTrend, #chartTopMovies, #chartTheaterOccupancy').forEach(el => {
-            el.classList.add('skeleton');
-            if (!el.id.startsWith('chart')) el.classList.add('skeleton-text');
+            el.classList.add('admin-skeleton');
+            if (!el.id.startsWith('chart')) el.classList.add('admin-skeleton-text');
         });
     }
 
@@ -103,8 +105,8 @@
             els.btnApply.disabled = false;
             els.btnApply.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Cập nhật';
         }
-        document.querySelectorAll('.skeleton').forEach(el => {
-            el.classList.remove('skeleton', 'skeleton-text', 'skeleton-chart');
+        document.querySelectorAll('.skeleton, .admin-skeleton').forEach(el => {
+            el.classList.remove('skeleton', 'skeleton-text', 'skeleton-chart', 'admin-skeleton', 'admin-skeleton-text');
         });
     }
 

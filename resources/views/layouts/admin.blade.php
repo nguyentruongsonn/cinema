@@ -16,8 +16,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <!-- Admin Custom CSS -->
-    <link rel="stylesheet" href="{{ asset('css/admin/admin-common.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/style.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin.css') }}?v={{ time() }}">
 
     <!-- ApexCharts -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>

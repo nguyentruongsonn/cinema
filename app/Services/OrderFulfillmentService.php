@@ -170,8 +170,16 @@ class OrderFulfillmentService
             $pointsUsed = $payload['points_used'] ?? 0;
             if ($pointsUsed > 0 && $order->user_id) {
                 $user = $order->user;
-                if ($user && method_exists($user, 'points')) {
-                    $user->decrement('points', $pointsUsed);
+                if ($user) {
+                    $user->decrement('loyalty_points', $pointsUsed);
+                }
+            }
+
+            // 6.5. Add points based on total_amount
+            if ($order->user_id && $order->total_amount > 0) {
+                $pointsEarned = (int) floor($order->total_amount / 10000);
+                if ($pointsEarned > 0) {
+                    $order->user->increment('loyalty_points', $pointsEarned);
                 }
             }
 

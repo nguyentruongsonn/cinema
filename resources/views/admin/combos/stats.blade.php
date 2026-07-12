@@ -39,7 +39,7 @@
                 <span class="stat-title">TỔNG COMBO BÁN RA</span>
                 <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
             </div>
-            <div class="stat-value" id="cardTotalCombos">—</div>
+            <div class="stat-value admin-skeleton admin-skeleton-text" id="cardTotalCombos"></div>
             <div class="stat-trend mt-2">
                 <span class="text-secondary small">combo</span>
             </div>
@@ -53,7 +53,7 @@
                 <span class="stat-title">DOANH THU TỪ COMBO</span>
                 <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
             </div>
-            <div class="stat-value" id="cardRevenue">—</div>
+            <div class="stat-value admin-skeleton admin-skeleton-text" id="cardRevenue"></div>
             <div class="stat-trend mt-2">
                 <span class="text-secondary small">VNĐ</span>
             </div>
@@ -67,7 +67,7 @@
                 <span class="stat-title">TRUNG BÌNH MỖI NGÀY</span>
                 <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
             </div>
-            <div class="stat-value" id="cardAvgPerDay">—</div>
+            <div class="stat-value admin-skeleton admin-skeleton-text" id="cardAvgPerDay"></div>
             <div class="stat-trend mt-2">
                 <span class="text-secondary small">combo/ngày</span>
             </div>
@@ -81,7 +81,7 @@
                 <span class="stat-title">PHỔ BIẾN NHẤT</span>
                 <div class="stat-icon"><i class="bi bi-star"></i></div>
             </div>
-            <div class="stat-value" id="cardTopCombo" style="font-size:1.2rem">—</div>
+            <div class="stat-value admin-skeleton admin-skeleton-text" id="cardTopCombo" style="font-size:1.2rem"></div>
             <div class="stat-trend mt-2">
                 <span class="text-secondary small">combo bán chạy nhất</span>
             </div>
@@ -96,7 +96,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Xu hướng lượng combo bán ra</h3>
             </div>
-            <div id="chartComboTrend" style="min-height:300px;"></div>
+            <div id="chartComboTrend" class="admin-skeleton" style="min-height:300px;"></div>
         </div>
     </div>
     <div class="col-xl-4 col-lg-5">
@@ -104,7 +104,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Top combo bán chạy</h3>
             </div>
-            <div id="chartTopCombos" style="min-height:300px;"></div>
+            <div id="chartTopCombos" class="admin-skeleton" style="min-height:300px;"></div>
         </div>
     </div>
 </div>
@@ -116,7 +116,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Doanh thu theo combo</h3>
             </div>
-            <div id="chartComboRevenue" style="min-height:350px;"></div>
+            <div id="chartComboRevenue" class="admin-skeleton" style="min-height:350px;"></div>
         </div>
     </div>
 </div>
@@ -124,6 +124,7 @@
 @endsection
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
 <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
 @endpush
 

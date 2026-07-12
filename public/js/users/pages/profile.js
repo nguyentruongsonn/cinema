@@ -26,11 +26,97 @@ class ProfilePage {
         return wrapper;
     }
 
+    createTicketsSkeleton() {
+        let html = '<div class="w-100">';
+        for (let i = 0; i < 3; i++) {
+            html += `
+                <div class="profile-card mb-3" style="padding: 16px;">
+                    <div class="row g-3">
+                        <div class="col-auto">
+                            <div class="skeleton rounded-3" style="width: 90px; height: 130px;"></div>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex gap-2 mb-2">
+                                <div class="skeleton rounded" style="width: 50px; height: 20px;"></div>
+                                <div class="skeleton rounded" style="width: 50px; height: 20px;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="skeleton rounded" style="width: 40%; height: 24px;"></div>
+                                <div class="skeleton rounded" style="width: 80px; height: 24px;"></div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="skeleton rounded mb-2" style="width: 70%; height: 16px;"></div>
+                                <div class="skeleton rounded mb-2" style="width: 60%; height: 16px;"></div>
+                                <div class="skeleton rounded" style="width: 50%; height: 16px;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-3" style="border-color: #2a2a2a !important;">
+                                <div class="skeleton rounded" style="width: 100px; height: 20px;"></div>
+                                <div class="skeleton rounded" style="width: 110px; height: 32px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        return html;
+    }
+
+    createPointHistorySkeleton() {
+        return `
+            <tr>
+                <td><div class="profile-skeleton rounded" style="width: 80px; height: 16px;"></div></td>
+                <td><div class="profile-skeleton rounded" style="width: 150px; height: 16px;"></div></td>
+                <td class="text-end"><div class="profile-skeleton rounded ms-auto" style="width: 50px; height: 16px;"></div></td>
+            </tr>
+            <tr>
+                <td><div class="profile-skeleton rounded" style="width: 80px; height: 16px;"></div></td>
+                <td><div class="profile-skeleton rounded" style="width: 150px; height: 16px;"></div></td>
+                <td class="text-end"><div class="profile-skeleton rounded ms-auto" style="width: 50px; height: 16px;"></div></td>
+            </tr>
+            <tr>
+                <td><div class="profile-skeleton rounded" style="width: 80px; height: 16px;"></div></td>
+                <td><div class="profile-skeleton rounded" style="width: 150px; height: 16px;"></div></td>
+                <td class="text-end"><div class="profile-skeleton rounded ms-auto" style="width: 50px; height: 16px;"></div></td>
+            </tr>
+        `;
+    }
+
+    createVouchersSkeleton() {
+        let html = '<div class="row g-3 w-100 m-0">';
+        for (let i = 0; i < 2; i++) {
+            html += `
+                <div class="col-12 col-md-6">
+                    <div style="
+                        background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
+                        border: 1px solid #2a2a2a;
+                        border-left: 4px solid #2a2a2a;
+                        border-radius: 12px;
+                        padding: 20px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                    ">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="skeleton rounded-pill" style="width: 70px; height: 22px;"></div>
+                            <div class="skeleton rounded" style="width: 90px; height: 22px;"></div>
+                        </div>
+                        <div class="skeleton rounded" style="width: 60%; height: 20px;"></div>
+                        <div class="skeleton rounded" style="width: 80%; height: 16px;"></div>
+                        <div style="display:flex; gap:16px;">
+                            <div class="skeleton rounded" style="width: 100px; height: 14px;"></div>
+                            <div class="skeleton rounded" style="width: 120px; height: 14px;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        return html;
+    }
+
     createErrorAlert(message) {
-        const alert = document.createElement('div');
-        alert.className = 'alert alert-danger';
-        alert.textContent = message;
-        return alert;
+        return `<div class="alert alert-danger">${message}</div>`;
     }
 
     clearContainer(container) {
@@ -143,9 +229,23 @@ class ProfilePage {
         const points = Number(user.loyalty_points || 0);
         const progress = Math.min(100, Math.round((points / 1000) * 100));
 
-        this.setText(this.elements.displayName, user.name || 'Người dùng');
-        this.setText(this.elements.memberRank, `Thành viên Cinema từ ${memberSince}`);
-        this.setText(this.elements.xpValue, `${points.toLocaleString('vi-VN')} điểm`);
+        this.setText(this.elements.displayName, user.name || 'Ng\u01b0\u1eddi d\u00f9ng');
+        this.setText(this.elements.memberRank, `Th\u00e0nh vi\u00ean Cinema t\u1eeb ${memberSince}`);
+        this.setText(this.elements.xpValue, `${points.toLocaleString('vi-VN')} \u0111i\u1ec3m`);
+
+        // Populate sidebar user info
+        const sidebarName = document.getElementById('sidebarDisplayName');
+        const sidebarRank = document.getElementById('sidebarMemberRank');
+        if (sidebarName) sidebarName.textContent = user.name || 'Ng\u01b0\u1eddi d\u00f9ng';
+        if (sidebarRank) sidebarRank.textContent = `T\u1eeb ${memberSince}`;
+
+        // Populate member badge
+        const memberBadge = document.getElementById('profileMemberBadge');
+        if (memberBadge) memberBadge.textContent = 'Th\u00e0nh vi\u00ean';
+
+        // Populate cover stats
+        const coverStatPoints = document.getElementById('coverStatPoints');
+        if (coverStatPoints) coverStatPoints.textContent = points.toLocaleString('vi-VN');
 
         if (this.elements.xpProgress) {
             this.elements.xpProgress.style.width = `${progress}%`;
@@ -154,8 +254,8 @@ class ProfilePage {
         if (this.elements.xpMessage) {
             const remaining = Math.max(0, 1000 - points);
             this.elements.xpMessage.textContent = remaining > 0
-                ? `Còn ${remaining.toLocaleString('vi-VN')} điểm để đạt mốc ưu đãi tiếp theo.`
-                : 'Bạn đã đạt mốc ưu đãi Cinema. Tiếp tục đặt vé để duy trì quyền lợi.';
+                ? `C\u00f2n ${remaining.toLocaleString('vi-VN')} \u0111i\u1ec3m \u0111\u1ec3 \u0111\u1ea1t m\u1ed1c \u01b0u \u0111\u00e3i ti\u1ebfp theo.`
+                : 'B\u1ea1n \u0111\u00e3 \u0111\u1ea1t m\u1ed1c \u01b0u \u0111\u00e3i Cinema. Ti\u1ebfp t\u1ee5c \u0111\u1eb7t v\u00e9 \u0111\u1ec3 duy tr\u00ec quy\u1ec1n l\u1ee3i.';
         }
 
         this.renderAvatar(user.avatar_url, user.name);
@@ -212,6 +312,7 @@ class ProfilePage {
     renderAvatar(avatarUrl, name = 'U') {
         const fallbackText = (name || 'U').trim().charAt(0).toUpperCase() || 'U';
 
+        // Main cover avatar
         if (this.elements.avatarFallback) {
             this.elements.avatarFallback.textContent = fallbackText;
         }
@@ -230,6 +331,26 @@ class ProfilePage {
         } else {
             this.elements.avatar.classList.add('d-none');
             this.elements.avatarFallback.classList.remove('d-none');
+        }
+
+        // Sidebar avatar
+        const sidebarAvatarImg = document.getElementById('sidebarAvatar');
+        const sidebarAvatarFallback = document.getElementById('sidebarAvatarFallback');
+        if (sidebarAvatarFallback) sidebarAvatarFallback.textContent = fallbackText;
+
+        if (sidebarAvatarImg && sidebarAvatarFallback) {
+            if (avatarUrl) {
+                sidebarAvatarImg.src = avatarUrl;
+                sidebarAvatarImg.classList.remove('d-none');
+                sidebarAvatarFallback.classList.add('d-none');
+                sidebarAvatarImg.onerror = () => {
+                    sidebarAvatarImg.classList.add('d-none');
+                    sidebarAvatarFallback.classList.remove('d-none');
+                };
+            } else {
+                sidebarAvatarImg.classList.add('d-none');
+                sidebarAvatarFallback.classList.remove('d-none');
+            }
         }
     }
 
@@ -251,7 +372,7 @@ class ProfilePage {
         try {
             const response = await this.apiRequest('/auth/profile', {
                 method: 'PUT',
-                body: JSON.stringify(payload),
+                body: payload,
             });
 
             this.user = response.data?.user || response.data || response.user || { ...this.user, ...payload };
@@ -281,16 +402,33 @@ class ProfilePage {
         this.setButtonLoading(this.elements.passwordBtn, true);
 
         const newPassword = document.getElementById('newPassword')?.value || '';
+        const newPasswordConfirmation = document.getElementById('newPasswordConfirmation')?.value || '';
+
+        if (newPassword !== newPasswordConfirmation) {
+            this.handleFormError(
+                { message: 'Mật khẩu xác nhận không khớp.' },
+                this.elements.passwordAlert,
+                this.elements.passwordForm
+            );
+            const confirmationInput = document.getElementById('newPasswordConfirmation');
+            const feedback = confirmationInput?.closest('.profile-form-group')?.querySelector('.invalid-feedback');
+            confirmationInput?.classList.add('is-invalid');
+            if (feedback) feedback.textContent = 'Mật khẩu xác nhận không khớp.';
+            
+            this.setButtonLoading(this.elements.passwordBtn, false);
+            return;
+        }
+
         const payload = {
             current_password: document.getElementById('currentPassword')?.value || '',
             new_password: newPassword,
-            new_password_confirmation: document.getElementById('newPasswordConfirmation')?.value || newPassword,
+            new_password_confirmation: newPasswordConfirmation,
         };
 
         try {
             const response = await this.apiRequest('/auth/change-password', {
                 method: 'POST',
-                body: JSON.stringify(payload),
+                body: payload,
             });
 
             this.elements.passwordForm?.reset();
@@ -333,20 +471,29 @@ class ProfilePage {
             item.classList.toggle('active', item === button);
         });
 
+        // Hide all sections first
+        const sections = ['profileSection', 'ticketsSection', 'voucherSection', 'pointsSection'];
+        sections.forEach(sec => document.getElementById(sec)?.classList.add('d-none'));
+        
+        document.querySelector('#profileContent .profile-card-grid')?.classList.add('d-none');
+        document.querySelector('#profileContent .profile-cover-card')?.classList.add('d-none');
+
         // Show/hide sections based on nav
         if (nav === 'profile') {
             document.getElementById('profileSection')?.classList.remove('d-none');
-            document.getElementById('ticketsSection')?.classList.add('d-none');
-            document.querySelector('.profile-card-grid')?.classList.remove('d-none');
-            document.querySelector('.profile-cover-card')?.classList.remove('d-none');
+            document.querySelector('#profileContent .profile-card-grid')?.classList.remove('d-none');
+            document.querySelector('#profileContent .profile-cover-card')?.classList.remove('d-none');
         } else if (nav === 'tickets') {
-            document.getElementById('profileSection')?.classList.add('d-none');
             document.getElementById('ticketsSection')?.classList.remove('d-none');
-            document.querySelector('.profile-card-grid')?.classList.add('d-none');
-            document.querySelector('.profile-cover-card')?.classList.add('d-none');
             this.ticketFilter = 'all';
             this.ticketPage = 1;
             this.loadTickets();
+        } else if (nav === 'points') {
+            document.getElementById('pointsSection')?.classList.remove('d-none');
+            this.loadPointHistory();
+        } else if (nav === 'voucher') {
+            document.getElementById('voucherSection')?.classList.remove('d-none');
+            this.loadVouchers();
         } else {
             if (typeof Toast !== 'undefined') {
                 Toast.info('Chức năng đang phát triển', 'Tính năng này sẽ sớm được cập nhật.');
@@ -366,6 +513,202 @@ class ProfilePage {
         this.loadTickets();
     }
 
+    async loadVouchers() {
+        const voucherList = document.getElementById('voucherList');
+        const voucherEmpty = document.getElementById('voucherEmpty');
+        const voucherLoading = document.getElementById('voucherLoading');
+        if (!voucherList) return;
+
+        voucherLoading?.classList.add('d-none'); // Hide default spinner as we use skeleton
+        voucherEmpty?.classList.add('d-none');
+        voucherList.innerHTML = this.createVouchersSkeleton();
+
+        try {
+            const response = await this.apiRequest('/promotions/registered');
+            const vouchers = response.data || [];
+
+            if (vouchers.length === 0) {
+                voucherList.innerHTML = '';
+                voucherEmpty?.classList.remove('d-none');
+                return;
+            }
+
+            voucherList.innerHTML = vouchers.map(v => this.renderVoucherCard(v)).join('');
+            
+            // Attach event listeners
+            voucherList.querySelectorAll('.voucher-copy-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const code = e.currentTarget.dataset.code;
+                    try {
+                        await navigator.clipboard.writeText(code);
+                        Toast.success('Sao chép thành công', `Mã ${code} đã được sao chép.`);
+                    } catch {
+                        Toast.info('Mã voucher', code);
+                    }
+                });
+            });
+        } catch (error) {
+            console.error('Load vouchers error:', error);
+            voucherList.innerHTML = this.createErrorAlert('Không thể tải danh sách voucher.');
+        }
+    }
+
+    renderVoucherCard(v) {
+        const isPercent = v.discount_type === 'percentage';
+        const discountLabel = isPercent
+            ? `Giảm ${parseFloat(v.discount_value).toFixed(0)}%${ v.max_discount_amount > 0 ? ` (tối đa ${Number(v.max_discount_amount).toLocaleString('vi-VN')}đ)` : '' }`
+            : `Giảm ${Number(v.discount_value).toLocaleString('vi-VN')}đ`;
+
+        const minLabel = v.min_order_value > 0
+            ? `Đơn tối thiểu ${Number(v.min_order_value).toLocaleString('vi-VN')}đ`
+            : 'Áp dụng mọi đơn hàng';
+
+        const expiry = v.end_date
+            ? `HSD: ${new Date(v.end_date).toLocaleDateString('vi-VN')}`
+            : 'Không giới hạn';
+
+        return `
+            <div class="col-12 col-md-6">
+                <div style="
+                    background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
+                    border: 1px solid #2a2a2a;
+                    border-left: 4px solid var(--cinema-danger, #e50914);
+                    border-radius: 12px;
+                    padding: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                ">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="background:#e50914; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; letter-spacing:.5px;">VOUCHER</span>
+                        <code style="color:#e50914; font-size:16px; font-weight:700; letter-spacing:2px;">${v.code}</code>
+                    </div>
+                    <div style="color:#fff; font-size:15px; font-weight:600;">${v.name || discountLabel}</div>
+                    <div style="color:#ccc; font-size:13px;">${v.description || discountLabel}</div>
+                    <div style="display:flex; gap:16px; font-size:12px; color:#8d96a3;">
+                        <span><i class="bi bi-info-circle me-1"></i>${minLabel}</span>
+                        <span><i class="bi bi-calendar me-1"></i>${expiry}</span>
+                    </div>
+                    <div style="margin-top:4px;">
+                        <button class="voucher-copy-btn" data-code="${v.code}" style="
+                            background:transparent; border:1px solid #333; color:#ccc;
+                            border-radius:8px; padding:6px 14px; font-size:13px; cursor:pointer;
+                            transition:all .2s;
+                        "><i class="bi bi-clipboard me-1"></i>Sao chép mã</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    async loadPointHistory() {
+        const pointHistoryList = document.getElementById('pointHistoryList');
+        const pointHistoryEmpty = document.getElementById('pointHistoryEmpty');
+        if (!pointHistoryList || !pointHistoryEmpty) return;
+        
+        pointHistoryList.innerHTML = this.createPointHistorySkeleton();
+        pointHistoryEmpty.classList.add('d-none');
+
+        try {
+            // First load user points to update UI
+            let loyaltyPoints = 0;
+            try {
+                const userRes = await this.apiRequest('/auth/me');
+                if (userRes && userRes.data) {
+                    loyaltyPoints = Number(userRes.data.loyalty_points || 0);
+                }
+            } catch (e) {
+                console.warn('Cannot fetch user points');
+            }
+
+            // Update Membership Status UI
+            document.getElementById('pointsDashboardTotal').innerHTML = `${loyaltyPoints.toLocaleString('vi-VN')} <span class="fs-4 text-muted fw-normal">Points</span>`;
+            
+            let rank = 'Silver Member';
+            let nextTier = '1000 Points to Gold';
+            let progress = 0;
+            
+            if (loyaltyPoints >= 5000) {
+                rank = 'Platinum Member';
+                nextTier = 'You are at highest tier';
+                progress = 100;
+            } else if (loyaltyPoints >= 1000) {
+                rank = 'Gold Member';
+                nextTier = `${(5000 - loyaltyPoints).toLocaleString('vi-VN')} Points to Platinum`;
+                progress = (loyaltyPoints - 1000) / 4000 * 100;
+            } else {
+                nextTier = `${(1000 - loyaltyPoints).toLocaleString('vi-VN')} Points to Gold`;
+                progress = loyaltyPoints / 1000 * 100;
+            }
+
+            document.getElementById('pointsDashboardRank').textContent = rank;
+            document.getElementById('pointsDashboardNextTier').textContent = nextTier;
+            document.getElementById('pointsDashboardPercent').textContent = `${Math.round(progress)}%`;
+            document.getElementById('pointsDashboardProgress').style.width = `${progress}%`;
+
+            // Load Orders for history
+            const response = await this.apiRequest('/orders/user/me?per_page=50');
+            const orders = (response.data?.data || []).filter(o => o.status === 'completed');
+
+            let historyHTML = '';
+            
+            orders.forEach(order => {
+                const date = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const pointsUsed = parseInt(order.payload?.points_used || 0, 10);
+                // Assume final_amount was what was paid after discount. Earned points = final_amount / 10000
+                const amountPaid = parseFloat(order.total_amount || 0);
+                const pointsEarned = Math.floor(amountPaid / 10000);
+
+                let movieName = 'Ticket Booking';
+                if (order.showtime && order.showtime.movie) {
+                    movieName = order.showtime.movie.title;
+                }
+
+                if (pointsEarned > 0) {
+                    historyHTML += `
+                        <tr>
+                            <td class="text-white align-middle" style="font-size: 0.9rem;">${date}</td>
+                            <td class="align-middle">
+                                <div class="text-white fw-bold mb-1">${movieName}</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">Ticket Booking</div>
+                            </td>
+                            <td class="text-end align-middle">
+                                <span class="fs-5 fw-bold text-danger">+${pointsEarned}</span>
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                if (pointsUsed > 0) {
+                    historyHTML += `
+                        <tr>
+                            <td class="text-white align-middle" style="font-size: 0.9rem;">${date}</td>
+                            <td class="align-middle">
+                                <div class="text-white fw-bold mb-1">${movieName}</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">Point Redemption</div>
+                            </td>
+                            <td class="text-end align-middle">
+                                <span class="fs-5 fw-bold text-white">-${pointsUsed}</span>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            if (historyHTML === '') {
+                pointHistoryList.innerHTML = '';
+                pointHistoryEmpty.classList.remove('d-none');
+            } else {
+                pointHistoryList.innerHTML = historyHTML;
+            }
+        } catch (error) {
+            pointHistoryList.innerHTML = '';
+            pointHistoryEmpty.classList.remove('d-none');
+            if (typeof Toast !== 'undefined') {
+                Toast.error('Không thể tải lịch sử điểm');
+            }
+        }
+    }
+
     async loadMoreTickets() {
         this.ticketPage++;
         await this.loadTickets(true);
@@ -381,7 +724,7 @@ class ProfilePage {
         try {
             if (!append) {
                 this.clearContainer(ticketsList);
-                ticketsList.appendChild(this.createLoadingSpinner());
+                ticketsList.innerHTML = this.createTicketsSkeleton();
                 ticketsEmpty.classList.add('d-none');
                 if (loadMoreBtn) loadMoreBtn.style.display = 'none';
             } else {
@@ -402,6 +745,13 @@ class ProfilePage {
             const currentPage = data.current_page || 1;
             const lastPage = data.last_page || 1;
 
+            // Update cover stat ticket count (total from API)
+            if (!append) {
+                const totalTickets = data.total || orders.length;
+                const coverStatTickets = document.getElementById('coverStatTickets');
+                if (coverStatTickets) coverStatTickets.textContent = totalTickets.toLocaleString('vi-VN');
+            }
+
             if (!append) {
                 ticketsList.innerHTML = '';
             }
@@ -421,9 +771,12 @@ class ProfilePage {
                     });
                 }
 
+                if (!append) {
+                    ticketsList.innerHTML = '';
+                }
                 filteredOrders.forEach(order => {
-                    const card = this.createTicketCard(order);
-                    ticketsList.appendChild(card);
+                    const cardNode = this.createTicketCard(order);
+                    ticketsList.appendChild(cardNode);
                 });
 
                 // Show/hide load more button
@@ -441,7 +794,7 @@ class ProfilePage {
             console.error('Load tickets error:', error);
             if (!append) {
                 this.clearContainer(ticketsList);
-                ticketsList.appendChild(this.createErrorAlert('Không thể tải danh sách vé'));
+                ticketsList.innerHTML = this.createErrorAlert('Không thể tải danh sách vé');
             }
             if (loadMoreBtn) {
                 loadMoreBtn.disabled = false;
@@ -455,82 +808,91 @@ class ProfilePage {
         if (!template) return document.createElement('div');
 
         const card = template.content.cloneNode(true);
+        const cardEl = card.querySelector('.ticket-card');
 
-        // Poster
-        const poster = card.querySelector('.ticket-poster');
-        if (poster && order.showtime?.movie?.poster) {
-            poster.src = order.showtime.movie.poster;
-            poster.alt = order.showtime.movie.title;
+        // Status class
+        const status = order.status || 'pending';
+        if (cardEl) cardEl.dataset.status = status;
+
+        // Make whole card clickable
+        if (cardEl) {
+            cardEl.style.cursor = 'pointer';
+            cardEl.addEventListener('click', (e) => {
+                if (e.target.closest('.ticket-detail-btn')) return;
+                this.openOrderDetailModal(order);
+            });
         }
 
-        // Formats (IMAX, 4DX, Dolby Atmos, etc.)
+        // Poster + cancelled overlay
+        const poster = card.querySelector('.ticket-poster');
+        const overlay = card.querySelector('.ticket-cancelled-overlay');
+        if (poster) {
+            poster.src = order.poster_url || order.showtime?.movie?.poster_url || '/images/default-poster.jpg';
+            poster.alt = order.movie_title || order.showtime?.movie?.title || 'Poster';
+            poster.onerror = () => { poster.src = '/images/default-poster.jpg'; };
+        }
+        if (overlay) {
+            overlay.style.display = status === 'cancelled' ? 'flex' : 'none';
+        }
+
+        // Format badges (3D, IMAX, etc.)
         const formatsContainer = card.querySelector('.ticket-formats');
         if (formatsContainer) {
-            this.clearContainer(formatsContainer);
-            if (order.showtime?.format) {
-                const badge = document.createElement('span');
-                badge.className = 'badge bg-dark text-white me-1';
-                badge.textContent = order.showtime.format.name;
-                formatsContainer.appendChild(badge);
-            }
-            if (order.showtime?.sound) {
-                const badge = document.createElement('span');
-                badge.className = 'badge bg-dark text-white me-1';
-                badge.textContent = order.showtime.sound.name;
-                formatsContainer.appendChild(badge);
-            }
-            if (order.showtime?.subtitle) {
-                const badge = document.createElement('span');
-                badge.className = 'badge bg-dark text-white me-1';
-                badge.textContent = order.showtime.subtitle.name;
-                formatsContainer.appendChild(badge);
-            }
-        }
-
-        // Ticket ID
-        const ticketId = card.querySelector('.ticket-id');
-        if (ticketId) {
-            ticketId.textContent = `ID: #CP-${String(order.id).padStart(5, '0')}`;
+            const addBadge = (text) => {
+                if (!text) return;
+                const b = document.createElement('span');
+                b.className = 'ticket-format-badge';
+                b.textContent = text;
+                formatsContainer.appendChild(b);
+            };
+            addBadge(order.showtime?.format?.name);
+            addBadge(order.showtime?.sound?.name);
+            addBadge(order.showtime?.subtitle?.name);
         }
 
         // Title
         const title = card.querySelector('.ticket-title');
-        if (title) {
-            title.textContent = order.showtime?.movie?.title || 'N/A';
-        }
+        if (title) title.textContent = order.movie_title || order.showtime?.movie?.title || 'N/A';
+
+        // ID
+        const ticketId = card.querySelector('.ticket-id');
+        if (ticketId) ticketId.textContent = `ID: #CP-${String(order.id).padStart(5, '0')}`;
 
         // Showtime
         const showtime = card.querySelector('.ticket-showtime');
-        if (showtime && order.showtime?.show_date && order.showtime?.show_time) {
-            const date = new Date(order.showtime.show_date);
-            showtime.textContent = `${date.toLocaleDateString('vi-VN')} - ${order.showtime.show_time.slice(0, 5)}`;
+        if (showtime) {
+            const rawDate = order.show_date || order.showtime?.scheduled_at;
+            if (rawDate) {
+                const d = new Date(rawDate);
+                showtime.textContent = `${d.toLocaleDateString('vi-VN')} - ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+            } else {
+                showtime.textContent = 'N/A';
+            }
         }
 
         // Theater
         const theater = card.querySelector('.ticket-theater');
-        if (theater && order.showtime?.screen) {
-            theater.textContent = `${order.showtime.screen.theater?.branch?.name || ''} - ${order.showtime.screen.name || ''}`;
+        if (theater) {
+            const branch = order.branch_name || order.showtime?.screen?.theater?.branch?.name || '';
+            const screen = order.screen_name || order.showtime?.screen?.name || '';
+            theater.textContent = branch && screen ? `${branch} - ${screen}` : (branch || screen || 'N/A');
         }
 
         // Seats
         const seats = card.querySelector('.ticket-seats');
         if (seats && order.order_items) {
-            const seatNames = order.order_items.map(item => item.seat?.seat_number).filter(Boolean).join(', ');
-            seats.textContent = seatNames || 'N/A';
+            const names = order.order_items.map(i => i.metadata?.seat_label || i.seat?.seat_number).filter(Boolean).join(', ');
+            seats.textContent = names || 'N/A';
         }
 
-        // Status
-        const status = card.querySelector('.ticket-status');
-        if (status) {
-            this.renderTicketStatus(status, order.status);
-        }
+        // Status badge
+        const statusEl = card.querySelector('.ticket-status');
+        if (statusEl) this.renderTicketStatus(statusEl, status);
 
-        // Rebook button
-        const rebookBtn = card.querySelector('.ticket-rebook-btn');
-        if (rebookBtn && order.showtime?.movie?.slug) {
-            rebookBtn.addEventListener('click', () => {
-                window.location.href = `/movies/${order.showtime.movie.slug}`;
-            });
+        // Detail button
+        const detailBtn = card.querySelector('.ticket-detail-btn');
+        if (detailBtn) {
+            detailBtn.addEventListener('click', () => this.openOrderDetailModal(order));
         }
 
         return card;
@@ -538,41 +900,26 @@ class ProfilePage {
 
     renderTicketStatus(container, status) {
         if (!container) return;
+        container.innerHTML = '';
 
-        container.textContent = '';
+        const config = {
+            completed: { dot: '#22c55e', label: 'CONFIRMED', color: '#22c55e' },
+            confirmed: { dot: '#22c55e', label: 'CONFIRMED', color: '#22c55e' },
+            pending:   { dot: '#f59e0b', label: 'PENDING',   color: '#f59e0b' },
+            cancelled: { dot: '#ed0712', label: 'ĐÃ HỦY',    color: '#ed0712' },
+        }[status] || { dot: '#6b7280', label: String(status || 'Không rõ').toUpperCase(), color: '#6b7280' };
 
-        const statusConfig = {
-            completed: {
-                iconClass: 'bi-check-circle-fill',
-                textClass: 'text-success',
-                label: 'Đã hoàn thành',
-            },
-            pending: {
-                iconClass: 'bi-clock-fill',
-                textClass: 'text-warning',
-                label: 'Chờ thanh toán',
-            },
-            cancelled: {
-                iconClass: 'bi-x-circle-fill',
-                textClass: 'text-danger',
-                label: 'Đã hủy',
-            },
-        };
-
-        const config = statusConfig[status] || {
-            iconClass: 'bi-info-circle-fill',
-            textClass: 'text-secondary',
-            label: String(status || 'Không rõ'),
-        };
-
-        const icon = document.createElement('i');
-        icon.className = `bi ${config.iconClass} ${config.textClass} me-1`;
+        const dot = document.createElement('span');
+        dot.className = 'ticket-status-dot';
+        dot.style.background = config.dot;
+        dot.style.boxShadow = `0 0 6px ${config.dot}66`;
 
         const label = document.createElement('span');
-        label.className = config.textClass;
+        label.className = 'ticket-status-label';
         label.textContent = config.label;
+        label.style.color = config.color;
 
-        container.appendChild(icon);
+        container.appendChild(dot);
         container.appendChild(label);
     }
 
@@ -634,6 +981,202 @@ class ProfilePage {
         if (!value) return '2022';
         const date = new Date(value);
         return Number.isNaN(date.getTime()) ? '2022' : String(date.getFullYear());
+    }
+
+    openOrderDetailModal(order) {
+        const modalEl = document.getElementById('orderDetailModal');
+        if (!modalEl) return;
+        
+        // Populate modal data
+        const orderCode = order.code || order.id;
+        document.getElementById('odModalCode').textContent = `ORD-${orderCode}`;
+        
+        const posterUrl = order.poster_url || (order.showtime?.movie?.poster_url) || '/images/default-poster.jpg';
+        document.getElementById('odModalPoster').src = posterUrl;
+        
+        document.getElementById('odModalMovieTitle').textContent = order.movie_title || (order.showtime?.movie?.title) || 'N/A';
+        
+        const branch = order.branch_name || (order.showtime?.screen?.theater?.branch?.name) || '';
+        const screen = order.screen_name || (order.showtime?.screen?.name) || '';
+        document.getElementById('odModalTheater').textContent = branch ? `${branch}` : 'N/A';
+        document.getElementById('odModalRoom').textContent = screen || 'N/A';
+        
+        const rawDate = order.show_date || (order.showtime?.scheduled_at);
+        if (rawDate) {
+            const date = new Date(rawDate);
+            const dateString = date.toLocaleDateString('vi-VN');
+            const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('odModalShowtime').textContent = `${timeString}, ${dateString}`;
+        } else {
+            document.getElementById('odModalShowtime').textContent = 'N/A';
+        }
+        
+        // Seats
+        let seatsText = 'N/A';
+        let seatTypes = [];
+        const ticketsList = document.getElementById('odModalTicketsList');
+        const productsList = document.getElementById('odModalProductsList');
+        ticketsList.innerHTML = '';
+        productsList.innerHTML = '';
+        
+        if (order.order_items && order.order_items.length > 0) {
+            const tickets = order.order_items.filter(item => 
+                item.item_type.includes('Seat') || item.item_type === 'ticket'
+            );
+            const products = order.order_items.filter(item => 
+                item.item_type.includes('Product') || item.item_type === 'product'
+            );
+            
+            seatsText = tickets.map(t => t.metadata?.seat_label || t.seat?.seat_number).filter(Boolean).join(', ');
+            
+            // Collect unique seat types for badge
+            tickets.forEach(t => {
+                const type = t.metadata?.seat_type || 'THƯỜNG';
+                if (!seatTypes.includes(type)) seatTypes.push(type);
+            });
+            
+            // Render Tickets in invoice (grouped by seat type)
+            const ticketGroups = {};
+            tickets.forEach(t => {
+                const label = t.metadata?.seat_label || t.seat?.seat_number || '';
+                const type = t.metadata?.seat_type || 'Ghế Thường';
+                const price = parseFloat(t.unit_price || t.price || 0);
+                if (!ticketGroups[type]) {
+                    ticketGroups[type] = {
+                        type: type,
+                        quantity: 0,
+                        seats: [],
+                        totalPrice: 0
+                    };
+                }
+                ticketGroups[type].quantity++;
+                ticketGroups[type].seats.push(label);
+                ticketGroups[type].totalPrice += price;
+            });
+
+            ticketsList.innerHTML = Object.values(ticketGroups).map(group => {
+                return `
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <div class="text-white fw-semibold">Vé ${group.type} (x${group.quantity})</div>
+                            <div class="text-muted" style="font-size: 0.8rem;">Ghế ${group.seats.join(', ')}</div>
+                        </div>
+                        <div class="text-white">${group.totalPrice.toLocaleString('vi-VN')}đ</div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Render Products in invoice
+            productsList.innerHTML = products.map(p => {
+                const name = p.metadata?.product_name || p.product?.name || 'Combo / Bắp nước';
+                const qty = p.quantity || 1;
+                const price = p.unit_price || p.price || 0;
+                const total = p.total_price || (price * qty);
+                const description = p.metadata?.product_description || p.product?.description || '';
+                return `
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <div class="text-white fw-semibold">${name} (x${qty})</div>
+                            ${description ? `<div class="text-muted" style="font-size: 0.8rem;">${description}</div>` : ''}
+                        </div>
+                        <div class="text-white">${parseFloat(total).toLocaleString('vi-VN')}đ</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        document.getElementById('odModalSeats').textContent = seatsText || 'N/A';
+        document.getElementById('odModalSeatType').innerHTML = `<i class="bi bi-star-fill me-1 text-warning"></i> ${seatTypes.join(' & ')}`;
+        
+        // Status check - completed, confirmed, paid are successful
+        const statusBadge = document.getElementById('odModalStatus');
+        const orderStatus = String(order.status).toLowerCase();
+        if (orderStatus === 'completed' || orderStatus === 'confirmed' || orderStatus === 'paid' || order.status_code === 2) {
+            statusBadge.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> THANH TOÁN THÀNH CÔNG`;
+            statusBadge.style.backgroundColor = 'rgba(25, 135, 84, 0.15)';
+            statusBadge.style.color = '#198754';
+        } else if (orderStatus === 'pending' || order.status_code === 1) {
+            statusBadge.innerHTML = `<i class="bi bi-clock-fill me-2"></i> CHỜ THANH TOÁN`;
+            statusBadge.style.backgroundColor = 'rgba(255, 193, 7, 0.15)';
+            statusBadge.style.color = '#ffc107';
+        } else {
+            statusBadge.innerHTML = `<i class="bi bi-x-circle-fill me-2"></i> ĐÃ HỦY`;
+            statusBadge.style.backgroundColor = 'rgba(220, 53, 69, 0.15)';
+            statusBadge.style.color = '#dc3545';
+        }
+        
+        // Transaction/Payer Info
+        const payerName = this.user ? `${this.user.name} (${this.user.email})` : 'N/A';
+        document.getElementById('odModalPayerName').textContent = payerName;
+        
+        const method = order.payment_provider || order.payment?.method || 'Cổng thanh toán PayOS';
+        document.getElementById('odModalPaymentMethod').textContent = method;
+        
+        if (order.created_at) {
+            const date = new Date(order.created_at);
+            const dateString = date.toLocaleDateString('vi-VN');
+            const timeString = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('odModalTxDate').textContent = `${timeString} - ${dateString}`;
+        } else {
+            document.getElementById('odModalTxDate').textContent = 'N/A';
+        }
+        
+        // Generate Barcode SVG
+        const barcodeContainer = document.getElementById('odModalBarcodeContainer');
+        if (barcodeContainer) {
+            barcodeContainer.innerHTML = this.generateBarcodeSVG(orderCode);
+        }
+        
+        const promoCode = order.payload?.promotion?.code || order.payload?.voucher?.code;
+        const discountAmount = parseFloat(order.payload?.discount_amount || order.payload?.voucher_discount || 0);
+        const voucherList = document.getElementById('odModalVoucherList');
+        
+        if (promoCode && discountAmount > 0) {
+            voucherList.classList.remove('d-none');
+            document.getElementById('odModalVoucherCode').textContent = promoCode;
+            document.getElementById('odModalVoucherValue').textContent = `-${discountAmount.toLocaleString('vi-VN')}đ`;
+        } else {
+            voucherList.classList.add('d-none');
+        }
+        
+        document.getElementById('odModalTotal').textContent = `${parseFloat(order.total_amount || 0).toLocaleString('vi-VN')}đ`;
+        
+        // Open modal using bootstrap
+        const modal = new window.bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    generateBarcodeSVG(code) {
+        const width = 300;
+        const height = 70;
+        let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+        svg += `<rect width="${width}" height="${height}" fill="#ffffff"/>`;
+        
+        let x = 20;
+        // Deterministic hash based on code
+        const hash = String(code).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        
+        let rand = hash;
+        const getNextWidth = () => {
+            rand = (rand * 9301 + 49297) % 233280;
+            return (rand % 3) + 1; // 1, 2, or 3
+        };
+        const getNextGap = () => {
+            rand = (rand * 9301 + 49297) % 233280;
+            return (rand % 3) + 1; // 1, 2, or 3
+        };
+
+        // Draw vertical stripes
+        while (x < width - 20) {
+            const w = getNextWidth();
+            svg += `<rect x="${x}" y="8" width="${w}" height="40" fill="#000000"/>`;
+            x += w + getNextGap();
+        }
+        
+        // Add code text below barcode stripes
+        svg += `<text x="50%" y="60" font-family="monospace" font-size="11" fill="#000000" text-anchor="middle" letter-spacing="2">${code}</text>`;
+        svg += `</svg>`;
+        return svg;
     }
 }
 

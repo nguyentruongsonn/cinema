@@ -129,6 +129,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/dashboard-redesign.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')

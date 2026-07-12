@@ -34,10 +34,9 @@ class ShowtimeSeeder extends Seeder
         }
 
         // Get format IDs for variety
-        $format2D = 3;   // Standard 2D
-        $format3D = 4;   // 3D
-        $formatIMAX = 1; // IMAX
-        $format4DX = 2;  // 4DX
+        $format2D = \App\Models\Format::where('name', '2D')->value('id') ?? 2;
+        $format3D = \App\Models\Format::where('name', '3D')->value('id') ?? 3;
+        $formatIMAX = \App\Models\Format::where('name', 'IMAX')->value('id') ?? 1;
 
         // Get version type IDs
         $versionSubtitle = 1; // Phụ đề
@@ -54,10 +53,9 @@ class ShowtimeSeeder extends Seeder
                     $date = $now->copy()->addDays($day);
 
                     // Determine format based on screen index for variety
-                    // Screen 1: mostly 2D/3D, Screen 2: 3D/IMAX, Screen 3: IMAX/4DX
                     $morningFormat = $screenIndex == 0 ? $format2D : ($screenIndex == 1 ? $format3D : $format2D);
                     $lateFormat = $screenIndex == 0 ? $format3D : ($screenIndex == 1 ? $formatIMAX : $format3D);
-                    $premiumFormat = $screenIndex == 2 ? $format4DX : $formatIMAX;
+                    $premiumFormat = $formatIMAX;
 
                     // Morning showtimes mostly for families (dubbed), others subtitle
                     $morningVersion = $day % 3 == 0 ? $versionDubbed : $versionSubtitle;

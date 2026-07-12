@@ -111,12 +111,11 @@ class ShowtimeService
     }
 
     /**
-     * Get filtered showtimes (5 days, exclude past 20min)
+     * Get filtered showtimes (5 days, exclude past showtimes)
      */
     private function getFilteredShowtimes(int $movieId): Collection
     {
         $now = Carbon::now();
-        $cutoffTime = $now->copy()->subMinutes(20);
         $endDate = $now->copy()->addDays(5)->endOfDay();
 
         return Showtime::with([
@@ -128,7 +127,7 @@ class ShowtimeService
             ])
             ->where('movie_id', $movieId)
             ->where('status', 1)
-            ->where('scheduled_at', '>', $cutoffTime)
+            ->where('scheduled_at', '>', $now)
             ->where('scheduled_at', '<=', $endDate)
             ->orderBy('scheduled_at')
             ->get();

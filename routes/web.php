@@ -16,6 +16,9 @@ Route::get('/login', function () {
 Route::view('/movies', 'users.movies.index')->name('movies.index');
 Route::view('/movies/{idOrSlug}', 'users.movies.show')->name('movies.show');
 
+Route::view('/theaters', 'users.theaters.index')->name('theaters.index');
+Route::get('/prices', [\App\Http\Controllers\PricePageController::class, 'index'])->name('prices.index');
+
 Route::get('/booking/{encryptedShowtimeId}', [BookingController::class, 'show'])->name('booking.show');
 Route::get('/payment/{order}', [PaymentController::class, 'index'])->name('payment.index');
 

@@ -1,0 +1,326 @@
+/* ============================================
+   PRICING GUIDE STYLES
+   ============================================ */
+
+.pricing-header {
+    padding: 80px 0 40px;
+    background: linear-gradient(to bottom, rgba(26, 26, 31, 0.9), #111115);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.pricing-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, rgba(229, 9, 20, 0.15) 0%, rgba(17, 17, 21, 0) 70%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.pricing-header .container {
+    position: relative;
+    z-index: 1;
+}
+
+.pricing-badge {
+    display: inline-block;
+    background: rgba(229, 9, 20, 0.1);
+    color: #e50914;
+    border: 1px solid rgba(229, 9, 20, 0.3);
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+}
+
+.pricing-title {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 16px;
+}
+
+.pricing-desc {
+    color: #a1a1aa;
+    max-width: 600px;
+    margin: 0 auto;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+/* ============================================
+   TABS SECTION
+   ============================================ */
+.pricing-tabs-container {
+    padding: 20px 0 40px;
+}
+
+.pricing-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.p-tab-btn {
+    background: #18181b;
+    color: #a1a1aa;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.p-tab-btn:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.p-tab-btn.active {
+    background: rgba(229, 9, 20, 0.1);
+    color: #fff;
+    border-color: #e50914;
+}
+
+/* ============================================
+   PRICING TABLE (SYSTEM THEME ALIGNED)
+   ============================================ */
+.pricing-table-section {
+    padding-bottom: 60px;
+}
+
+.pricing-card {
+    border-radius: 12px;
+    padding: 0;
+}
+
+.galaxy-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--cinema-border);
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: var(--cinema-panel);
+}
+
+.galaxy-table th, .galaxy-table td {
+    border-bottom: 1px solid var(--cinema-border);
+    border-right: 1px solid var(--cinema-border);
+    text-align: center;
+    vertical-align: middle;
+}
+
+.galaxy-table th:last-child,
+.galaxy-table td:last-child {
+    border-right: none;
+}
+
+.galaxy-table tr:last-child td {
+    border-bottom: none;
+}
+
+.galaxy-table thead th {
+    background-color: var(--cinema-panel-soft);
+    color: var(--cinema-text);
+    padding: 16px 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.galaxy-table .col-room {
+    font-size: 1.1rem;
+    text-align: left;
+    padding-left: 24px;
+    background-color: var(--cinema-panel-soft);
+    color: var(--cinema-danger);
+}
+
+.galaxy-table .row-light {
+    background-color: transparent;
+    color: var(--cinema-text);
+    transition: background-color 0.2s ease;
+}
+
+.galaxy-table .row-light:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.galaxy-table .col-title {
+    text-align: left;
+    padding: 20px 24px;
+}
+
+.galaxy-table .title {
+    font-size: 1.15rem !important;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #ffffff;
+}
+
+.galaxy-table .desc {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--cinema-muted);
+}
+
+.galaxy-table .price-col {
+    font-size: 1.4rem !important;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.table-notes {
+    background: transparent;
+    padding-top: 16px;
+}
+
+/* ============================================
+   MEMBER BENEFITS
+   ============================================ */
+.benefits-section {
+    padding-bottom: 60px;
+}
+
+.section-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.benefit-card {
+    background: #18181b;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    height: 100%;
+}
+
+.b-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    margin-bottom: 16px;
+    font-size: 1.25rem;
+}
+
+.b-icon.red {
+    background: rgba(229, 9, 20, 0.1);
+    color: #e50914;
+}
+
+.benefit-card h4 {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.benefit-card p {
+    color: #a1a1aa;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.benefit-link {
+    color: #a1a1aa;
+    font-size: 0.85rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.benefit-link:hover {
+    color: #fff;
+}
+
+/* ============================================
+   NOTES SECTION
+   ============================================ */
+.notes-section {
+    padding-bottom: 80px;
+}
+
+.notes-card {
+    background: #18181b;
+    border-radius: 12px;
+    padding: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.notes-card h4 {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notes-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.notes-list li {
+    color: #a1a1aa;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 8px;
+    padding-left: 16px;
+    position: relative;
+}
+
+.notes-list li:last-child {
+    margin-bottom: 0;
+}
+
+.notes-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 4px;
+    height: 4px;
+    background: #e50914;
+    border-radius: 50%;
+}
+
+/* RESPONSIVE */
+@media (max-width: 991px) {
+    .p-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .pricing-card {
+        padding: 24px;
+    }
+}

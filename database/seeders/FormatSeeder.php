@@ -11,7 +11,6 @@ class FormatSeeder extends Seeder
     {
         $formats = [
             ['name' => 'IMAX', 'surcharge' => 50000],
-            ['name' => '4DX', 'surcharge' => 80000],
             ['name' => '2D', 'surcharge' => 0],
             ['name' => '3D', 'surcharge' => 30000],
         ];

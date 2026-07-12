@@ -55,6 +55,9 @@ Route::prefix('v1')->group(function () {
         Route::get('{slug}/showtimes', [ShowtimeController::class, 'getMovieShowtimes'])->name('api.movies.showtimes');
     });
 
+    // Public prices route
+    Route::get('prices', [\App\Http\Controllers\Api\V1\PriceController::class, 'index']);
+
     // Public theater routes
     Route::prefix('theaters')->group(function () {
         Route::get('/', [TheaterController::class, 'index']);

@@ -1,7 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * MOVIES LIST PAGE MODULE
- * Handles movie listing, filtering, sorting, search, and pagination
+ * MOVIES LIST PAGE MODULE (NEW UI)
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -9,17 +8,6 @@ import Toast from '../components/toast.js';
 
 (function() {
     'use strict';
-
-    let moviesData = [];
-    let categoriesData = [];
-    let currentPage = 1;
-    let totalPages = 1;
-    let filters = {
-        status: 'active',
-        category: '',
-        search: '',
-        sort: 'release_date-desc'
-    };
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
@@ -30,289 +18,175 @@ import Toast from '../components/toast.js';
 
     async function init() {
         try {
-            await loadCategories();
-            await loadMovies();
-            renderFilters();
-            renderMovies();
-            renderPagination();
-            setupEventListeners();
+            setupScrollControls();
+            
+            // Fetch all sections in parallel
+            await Promise.all([
+                loadSpecialScreenings(),
+                loadNowShowing(),
+                loadComingSoon()
+            ]);
         } catch (error) {
             console.error('Failed to initialize movies page:', error);
-            showError();
+            Toast.error('Lỗi tải dữ liệu', 'Vui lòng tải lại trang.');
         }
     }
 
-    async function loadCategories() {
+    // 1. Suất chiếu đặc biệt (is_hot = 1)
+    async function loadSpecialScreenings() {
         try {
-            const response = await fetch('/api/v1/categories');
-            if (response.ok) {
-                const data = await response.json();
-                categoriesData = data.data || data.categories || [];
-            }
-        } catch (error) {
-            console.error('Error loading categories:', error);
-            categoriesData = [];
-        }
-    }
-
-    async function loadMovies() {
-        try {
-            // Build query params
-            const params = new URLSearchParams({
-                page: currentPage,
-                per_page: 12
-            });
-
-            if (filters.status === 'now_showing') {
-                params.append('status', 'now_showing');
-            } else if (filters.status === 'upcoming') {
-                params.append('status', 'upcoming');
-            }
-
-            if (filters.category) {
-                params.append('category', filters.category);
-            }
-
-            if (filters.search) {
-                params.append('search', filters.search);
-            }
-
-            if (filters.sort) {
-                const [field, direction] = filters.sort.split('-');
-                params.append('sort', field);
-                params.append('direction', direction);
-            }
-
-            const response = await fetch(`/api/v1/movies?${params}`);
-            if (!response.ok) throw new Error('Failed to load movies');
-
+            const response = await fetch('/api/v1/movies?is_hot=1&per_page=4');
+            if (!response.ok) throw new Error('Failed to load special screenings');
             const data = await response.json();
-            moviesData = data.data || data.movies || [];
+            const movies = data.data || data.movies || [];
 
-            // Handle pagination
-            if (data.meta) {
-                currentPage = data.meta.current_page || 1;
-                totalPages = data.meta.last_page || 1;
-            } else if (data.pagination) {
-                currentPage = data.pagination.current_page || 1;
-                totalPages = data.pagination.total_pages || 1;
+            if (movies.length > 0) {
+                renderSpecialScreenings(movies);
             }
         } catch (error) {
-            console.error('Error loading movies:', error);
-            moviesData = [];
-            throw error;
+            console.error(error);
         }
     }
 
-    function renderFilters() {
-        const filtersSkeleton = document.getElementById('filtersSkeleton');
-        const filtersContent = document.getElementById('filtersContent');
-
-        // Populate category filter
-        const categoryFilter = document.getElementById('categoryFilter');
-        if (categoryFilter && categoriesData.length > 0) {
-            const currentValue = categoryFilter.value;
-            categoryFilter.innerHTML = '<option value="">All Categories</option>' +
-                categoriesData.map(cat =>
-                    `<option value="${cat.id}" ${cat.id == currentValue ? 'selected' : ''}>
-                        ${escapeHtml(cat.name)}
-                    </option>`
-                ).join('');
-        }
-
-        filtersSkeleton.style.display = 'none';
-        filtersContent.classList.remove('d-none');
-    }
-
-    function renderMovies() {
-        const moviesSkeleton = document.getElementById('moviesSkeleton');
-        const moviesGrid = document.getElementById('moviesGrid');
-        const emptyState = document.getElementById('emptyState');
-
-        if (!moviesData || moviesData.length === 0) {
-            moviesSkeleton.style.display = 'none';
-            moviesGrid.classList.add('d-none');
-            emptyState.classList.remove('d-none');
-            return;
-        }
-
-        moviesGrid.innerHTML = moviesData.map(movie => `
-            <a href="/movies/${movie.slug}" class="movie-card">
-                <div class="movie-poster">
-                    <img src="${escapeHtml(movie.poster_url || '/images/default-poster.jpg')}"
-                         alt="${escapeHtml(movie.title)}"
-                         loading="lazy">
-                    ${movie.is_hot ? '<span class="movie-badge-hot">HOT</span>' : ''}
-                    ${movie.status === 'upcoming' ? '<span class="movie-badge-upcoming">Coming Soon</span>' : ''}
+    function renderSpecialScreenings(movies) {
+        const section = document.getElementById('specialSection');
+        const grid = document.getElementById('specialMoviesGrid');
+        
+        grid.innerHTML = movies.map(movie => `
+            <div class="special-card" style="background-image: url('${escapeHtml(movie.banner_display_url || movie.poster_display_url || '/images/default-banner.jpg')}');">
+                <div class="special-card-overlay"></div>
+                
+                <div class="special-badge">
+                    <span class="badge bg-danger">EXCLUSIVE PREMIERE</span>
                 </div>
-                <div class="movie-info">
-                    <h3 class="movie-title">${escapeHtml(movie.title)}</h3>
-                    <div class="movie-meta">
-                        <span><i class="bi bi-clock"></i> ${movie.duration || 'N/A'} min</span>
-                        <span><i class="bi bi-star-fill"></i> ${movie.age_rating || 'N/A'}</span>
+                
+                <div class="special-card-content">
+                    <h3 class="special-title">${escapeHtml(movie.title)}</h3>
+                    <p class="special-desc">${escapeHtml(movie.description ? movie.description.substring(0, 100) + '...' : '')}</p>
+                    
+                    <div class="special-actions">
+                        <a href="/movies/${movie.slug}" class="btn btn-danger btn-book-early">
+                            <i class="bi bi-ticket-perforated"></i> Book Early Access
+                        </a>
+                        <a href="/movies/${movie.slug}" class="btn btn-outline-light btn-details">
+                            <i class="bi bi-info-circle"></i> Details
+                        </a>
                     </div>
-                    ${movie.categories && movie.categories.length > 0 ? `
-                        <div class="movie-categories">
-                            ${movie.categories.slice(0, 2).map(cat =>
-                                `<span class="category-tag">${escapeHtml(cat.name)}</span>`
-                            ).join('')}
-                        </div>
-                    ` : ''}
                 </div>
-            </a>
+            </div>
         `).join('');
 
-        moviesSkeleton.style.display = 'none';
-        moviesGrid.classList.remove('d-none');
-        emptyState.classList.add('d-none');
+        section.classList.remove('d-none');
     }
 
-    function renderPagination() {
-        const paginationContainer = document.getElementById('paginationContainer');
+    // 2. Phim đang chiếu (status = now_showing)
+    async function loadNowShowing() {
+        const skeleton = document.getElementById('nowShowingSkeleton');
+        const container = document.getElementById('nowShowingContainer');
+        const grid = document.getElementById('nowShowingGrid');
 
-        if (totalPages <= 1) {
-            paginationContainer.classList.add('d-none');
-            return;
-        }
-
-        let paginationHTML = '<ul class="pagination">';
-
-        // Previous button
-        paginationHTML += `
-            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <button class="page-link" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-            </li>
-        `;
-
-        // Page numbers (show max 7 pages)
-        let startPage = Math.max(1, currentPage - 3);
-        let endPage = Math.min(totalPages, startPage + 6);
-
-        if (endPage - startPage < 6) {
-            startPage = Math.max(1, endPage - 6);
-        }
-
-        if (startPage > 1) {
-            paginationHTML += `
-                <li class="page-item">
-                    <button class="page-link" data-page="1">1</button>
-                </li>
-            `;
-            if (startPage > 2) {
-                paginationHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
-            }
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            paginationHTML += `
-                <li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <button class="page-link" data-page="${i}">${i}</button>
-                </li>
-            `;
-        }
-
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                paginationHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
-            }
-            paginationHTML += `
-                <li class="page-item">
-                    <button class="page-link" data-page="${totalPages}">${totalPages}</button>
-                </li>
-            `;
-        }
-
-        // Next button
-        paginationHTML += `
-            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                <button class="page-link" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>
-                    <i class="bi bi-chevron-right"></i>
-                </button>
-            </li>
-        `;
-
-        paginationHTML += '</ul>';
-
-        paginationContainer.innerHTML = paginationHTML;
-        paginationContainer.classList.remove('d-none');
-    }
-
-    function setupEventListeners() {
-        // Status filter
-        const statusFilter = document.getElementById('statusFilter');
-        if (statusFilter) {
-            statusFilter.addEventListener('change', async (e) => {
-                filters.status = e.target.value;
-                currentPage = 1;
-                await reloadMovies();
-            });
-        }
-
-        // Category filter
-        const categoryFilter = document.getElementById('categoryFilter');
-        if (categoryFilter) {
-            categoryFilter.addEventListener('change', async (e) => {
-                filters.category = e.target.value;
-                currentPage = 1;
-                await reloadMovies();
-            });
-        }
-
-        // Sort filter
-        const sortFilter = document.getElementById('sortFilter');
-        if (sortFilter) {
-            sortFilter.addEventListener('change', async (e) => {
-                filters.sort = e.target.value;
-                currentPage = 1;
-                await reloadMovies();
-            });
-        }
-
-        // Search
-        const searchInput = document.getElementById('searchInput');
-        const searchBtn = document.getElementById('searchBtn');
-
-        if (searchBtn) {
-            searchBtn.addEventListener('click', async () => {
-                filters.search = searchInput.value.trim();
-                currentPage = 1;
-                await reloadMovies();
-            });
-        }
-
-        if (searchInput) {
-            searchInput.addEventListener('keypress', async (e) => {
-                if (e.key === 'Enter') {
-                    filters.search = searchInput.value.trim();
-                    currentPage = 1;
-                    await reloadMovies();
-                }
-            });
-        }
-
-        // Pagination
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('.page-link[data-page]')) {
-                const page = parseInt(e.target.closest('.page-link').dataset.page);
-                if (page && page !== currentPage && page >= 1 && page <= totalPages) {
-                    currentPage = page;
-                    await reloadMovies();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            }
-        });
-    }
-
-    async function reloadMovies() {
         try {
-            await loadMovies();
-            renderMovies();
-            renderPagination();
+            const response = await fetch('/api/v1/movies?status=now_showing&per_page=10');
+            if (!response.ok) throw new Error('Failed to load now showing');
+            const data = await response.json();
+            const movies = data.data || data.movies || [];
+
+            grid.innerHTML = movies.map(movie => renderNormalCard(movie, true)).join('');
+            
+            skeleton.classList.add('d-none');
+            container.classList.remove('d-none');
         } catch (error) {
-            console.error('Error reloading movies:', error);
-            showError();
+            console.error(error);
+            skeleton.classList.add('d-none');
+        }
+    }
+
+    // 3. Phim sắp chiếu (status = upcoming)
+    async function loadComingSoon() {
+        const skeleton = document.getElementById('comingSoonSkeleton');
+        const container = document.getElementById('comingSoonContainer');
+        const grid = document.getElementById('comingSoonGrid');
+
+        try {
+            const response = await fetch('/api/v1/movies?status=upcoming&per_page=10');
+            if (!response.ok) throw new Error('Failed to load coming soon');
+            const data = await response.json();
+            const movies = data.data || data.movies || [];
+
+            grid.innerHTML = movies.map(movie => renderNormalCard(movie, false)).join('');
+            
+            skeleton.classList.add('d-none');
+            container.classList.remove('d-none');
+        } catch (error) {
+            console.error(error);
+            skeleton.classList.add('d-none');
+        }
+    }
+
+    function renderNormalCard(movie, isNowShowing) {
+        const categories = movie.categories ? movie.categories.map(c => c.name).join(', ') : '';
+        const rating = movie.age_rating || 'N/A';
+        const poster = escapeHtml(movie.poster_display_url || '/images/default-poster.jpg');
+        
+        // Format release date for upcoming
+        let releaseText = '';
+        if (!isNowShowing && movie.release_date) {
+            const date = new Date(movie.release_date);
+            const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            releaseText = `RELEASING ${months[date.getMonth()]} ${date.getDate()}`;
+        }
+
+        if (isNowShowing) {
+            return `
+                <div class="movie-card-vertical">
+                    <a href="/movies/${movie.slug}" class="poster-container">
+                        <img src="${poster}" alt="${escapeHtml(movie.title)}">
+                    </a>
+                    <div class="movie-actions-overlay">
+                        <a href="/movies/${movie.slug}" class="btn btn-danger btn-sm w-100 mb-2">Book Now</a>
+                        <a href="${movie.trailer_url ? movie.trailer_url : '#'}" target="_blank" class="btn btn-dark btn-sm w-100">Trailer</a>
+                    </div>
+                    <div class="movie-info-bottom">
+                        <h4 class="m-title text-truncate">${escapeHtml(movie.title)}</h4>
+                        <div class="d-flex justify-content-between align-items-center m-meta">
+                            <span class="m-cat text-truncate">${escapeHtml(categories)}</span>
+                            <span class="m-rate"><i class="bi bi-star-fill text-warning me-1"></i> ${rating}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Coming soon layout
+            return `
+                <div class="movie-card-coming">
+                    <div class="coming-poster">
+                        <img src="${poster}" alt="${escapeHtml(movie.title)}">
+                    </div>
+                    <div class="coming-info">
+                        <div class="coming-date">${releaseText}</div>
+                        <h4 class="coming-title">${escapeHtml(movie.title)}</h4>
+                        <p class="coming-desc">${escapeHtml(movie.description ? movie.description.substring(0, 80) + '...' : '')}</p>
+                        <button class="btn btn-link btn-remind p-0 mt-auto">
+                            <i class="bi bi-bell"></i> Remind Me
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function setupScrollControls() {
+        const prevBtn = document.getElementById('scrollPrev');
+        const nextBtn = document.getElementById('scrollNext');
+        const container = document.getElementById('comingSoonContainer');
+
+        if (prevBtn && nextBtn && container) {
+            prevBtn.addEventListener('click', () => {
+                container.scrollBy({ left: -300, behavior: 'smooth' });
+            });
+            nextBtn.addEventListener('click', () => {
+                container.scrollBy({ left: 300, behavior: 'smooth' });
+            });
         }
     }
 
@@ -322,37 +196,4 @@ import Toast from '../components/toast.js';
         div.textContent = text;
         return div.innerHTML;
     }
-
-    function showError() {
-        const moviesSkeleton = document.getElementById('moviesSkeleton');
-        const moviesGrid = document.getElementById('moviesGrid');
-        const emptyState = document.getElementById('emptyState');
-
-        if (moviesSkeleton) moviesSkeleton.style.display = 'none';
-        if (moviesGrid) moviesGrid.classList.add('d-none');
-
-        // Use Toast notification for better UX
-        if (typeof Toast !== 'undefined') {
-            Toast.error(
-                'Unable to load movies',
-                'Please try refreshing the page or check your connection.'
-            );
-        }
-
-        // Still show empty state as visual fallback
-        if (emptyState) {
-            emptyState.innerHTML = `
-                <i class="bi bi-exclamation-circle"></i>
-                <h3>Unable to load movies</h3>
-                <p>Please try refreshing the page</p>
-            `;
-            emptyState.classList.remove('d-none');
-        }
-    }
-
-    // Expose for debugging
-    window.moviesPage = {
-        reload: reloadMovies,
-        data: () => ({ moviesData, filters, currentPage, totalPages })
-    };
 })();

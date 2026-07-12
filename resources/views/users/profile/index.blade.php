@@ -4,7 +4,8 @@
 @section('meta_description', 'Quản lý hồ sơ cá nhân, thông tin tài khoản và bảo mật tài khoản Cinema.')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/profile.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/users/pages/profile.css') }}?v={{ time() }}">
 @endpush
 
 @section('content')
@@ -20,12 +21,124 @@
             </div>
 
             <div id="profileLoading" class="profile-layout profile-loading">
-                <aside class="profile-sidebar profile-skeleton"></aside>
-                <section class="profile-main profile-skeleton"></section>
+                <!-- Sidebar Skeleton -->
+                <aside class="profile-sidebar">
+                    <div class="profile-sidebar-user" style="margin-bottom: 0;">
+                        <div class="skeleton skel-avatar rounded-circle"></div>
+                        <div class="profile-sidebar-info w-100">
+                            <div class="skeleton w-75 skel-subtitle mb-2 rounded"></div>
+                            <div class="skeleton w-50 skel-label rounded"></div>
+                        </div>
+                    </div>
+
+                    <div class="profile-menu-divider" style="margin: 16px 0 12px;"></div>
+
+                    <div class="d-flex flex-column gap-2 px-3 py-2">
+                        <div class="skeleton skel-input rounded"></div>
+                        <div class="skeleton skel-input rounded"></div>
+                        <div class="skeleton skel-input rounded"></div>
+                        <div class="skeleton skel-input rounded"></div>
+                        <div class="profile-menu-divider" style="margin: 8px 0;"></div>
+                        <div class="skeleton skel-input rounded"></div>
+                    </div>
+                </aside>
+                
+                <!-- Main Content Skeleton -->
+                <section class="profile-main">
+                    <!-- Cover Card Skeleton -->
+                    <div class="profile-cover-card mb-4">
+                        <div class="profile-cover-content">
+                            <div class="profile-avatar-box">
+                                <div class="skeleton skel-cover-avatar"></div>
+                            </div>
+                            <div class="profile-cover-text w-100">
+                                <div class="skeleton w-50 skel-title mb-3 rounded"></div>
+                                <div class="skeleton w-25 skel-subtitle rounded"></div>
+                            </div>
+                            <div class="profile-cover-stats w-100 d-flex justify-content-end">
+                                <div class="skeleton skel-card-stats rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Content Cards Skeleton -->
+                    <div class="profile-card-grid">
+                        <!-- Info Card Skeleton -->
+                        <section class="profile-card">
+                            <div class="d-flex align-items-center gap-2 mb-4">
+                                <div class="skeleton skel-icon rounded-circle"></div>
+                                <div class="skeleton w-50 skel-title rounded"></div>
+                            </div>
+                            
+                            <div class="profile-inline-grid mt-4">
+                                @for($i = 0; $i < 5; $i++)
+                                <div class="profile-form-group">
+                                    <div class="skeleton w-25 skel-label mb-2 rounded"></div>
+                                    <div class="skeleton skel-input rounded"></div>
+                                </div>
+                                @endfor
+                                <div class="profile-form-group profile-edit-full">
+                                    <div class="skeleton w-25 skel-label mb-2 rounded"></div>
+                                    <div class="skeleton skel-textarea rounded"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-3 mt-4">
+                                <div class="skeleton skel-btn rounded"></div>
+                                <div class="skeleton skel-btn rounded"></div>
+                            </div>
+                        </section>
+                        
+                        <!-- Password & Support Skeleton -->
+                        <div class="profile-right-column">
+                            <section class="profile-card mb-4">
+                                <div class="d-flex align-items-center gap-2 mb-4">
+                                    <div class="skeleton skel-icon rounded-circle"></div>
+                                    <div class="skeleton w-50 skel-title rounded"></div>
+                                </div>
+                                
+                                <div class="d-flex flex-column gap-3 mb-4">
+                                    @for($i = 0; $i < 3; $i++)
+                                    <div class="profile-form-group">
+                                        <div class="skeleton w-25 skel-label mb-2 rounded"></div>
+                                        <div class="skeleton skel-input rounded"></div>
+                                    </div>
+                                    @endfor
+                                </div>
+                                
+                                <div class="skeleton skel-input mt-4 rounded"></div>
+                            </section>
+
+                            <section class="profile-card">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="skeleton skel-icon rounded-circle"></div>
+                                    <div class="skeleton w-25 skel-title rounded"></div>
+                                </div>
+                                <div class="skeleton w-100 skel-label mb-2 rounded"></div>
+                                <div class="skeleton w-75 skel-label mb-4 rounded"></div>
+                                <div class="skeleton skel-box rounded"></div>
+                            </section>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             <div id="profileContent" class="profile-layout d-none">
                 <aside class="profile-sidebar" aria-label="Menu tài khoản">
+                    <!-- Sidebar User Info -->
+                    <div class="profile-sidebar-user">
+                        <div class="profile-sidebar-avatar">
+                            <img id="sidebarAvatar" class="d-none" src="" alt="Avatar">
+                            <div id="sidebarAvatarFallback" class="profile-sidebar-avatar-fallback">U</div>
+                        </div>
+                        <div class="profile-sidebar-info">
+                            <div id="sidebarDisplayName" class="profile-sidebar-name">Người dùng</div>
+                            <div id="sidebarMemberRank" class="profile-sidebar-rank">Thành viên</div>
+                        </div>
+                    </div>
+
+                    <div class="profile-menu-divider" style="margin: 16px 0 12px;"></div>
+
                     <nav class="profile-menu">
                         <button class="profile-menu-item active" type="button" data-profile-nav="profile">
                             <i class="bi bi-person"></i>
@@ -55,8 +168,6 @@
 
                 <section class="profile-main">
                     <section class="profile-cover-card">
-                        <div class="profile-cover-gradient"></div>
-
                         <div class="profile-cover-content">
                             <div class="profile-avatar-box">
                                 <img id="profileAvatar" class="profile-avatar d-none" src="" alt="Avatar người dùng">
@@ -64,8 +175,23 @@
                             </div>
 
                             <div class="profile-cover-text">
-                                <h1 id="profileDisplayName">Người dùng</h1>
-                                <p id="profileMemberRank">Thành viên Cinema</p>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <h1 id="profileDisplayName">Người dùng</h1>
+                                    <span id="profileMemberBadge" class="badge-member">Thành viên</span>
+                                </div>
+                                <p id="profileMemberRank" style="color: #a0a0a0; font-size: 13px; margin: 8px 0 0;">Chưa có thông tin</p>
+                            </div>
+
+                            <div class="profile-cover-stats">
+                                <div class="profile-cover-stat">
+                                    <span class="profile-cover-stat-value" id="coverStatTickets">0</span>
+                                    <span class="profile-cover-stat-label">Vé đã mua</span>
+                                </div>
+                                <div class="profile-cover-stat-divider"></div>
+                                <div class="profile-cover-stat">
+                                    <span class="profile-cover-stat-value" id="coverStatPoints">0</span>
+                                    <span class="profile-cover-stat-label">Điểm thưởng</span>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -75,9 +201,12 @@
 
                     <div class="profile-card-grid">
                         <section class="profile-card profile-info-card">
-                            <header class="profile-card-title">
-                                <i class="bi bi-info-circle"></i>
-                                <h2>Thông tin cá nhân</h2>
+                            <header class="profile-card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-info-circle"></i>
+                                    <h2>Thông tin cá nhân</h2>
+                                </div>
+                                <button type="button" style="background: none; border: none; color: #ed0712; font-size: 12px; font-weight: 600; padding: 0; cursor: pointer;">Chỉnh sửa tất cả</button>
                             </header>
 
                             <form id="profileUpdateForm" class="profile-inline-form" novalidate>
@@ -148,10 +277,13 @@
                             </form>
                         </section>
 
+                        <!-- Right column: password + support stacked -->
+                        <div class="profile-right-column">
+
                         <section class="profile-card profile-password-card">
                             <header class="profile-card-title">
-                                <i class="bi bi-arrow-clockwise"></i>
-                                <h2>Đổi mật khẩu</h2>
+                                <i class="bi bi-shield-lock"></i>
+                                <h2>Bảo mật</h2>
                             </header>
 
                             <form id="profilePasswordForm" class="profile-password-form" novalidate>
@@ -167,57 +299,152 @@
                                     <div class="invalid-feedback" id="newPasswordError"></div>
                                 </div>
 
-                                <input type="password" id="newPasswordConfirmation" name="new_password_confirmation" class="visually-hidden" tabindex="-1" autocomplete="new-password">
+                                <div class="profile-form-group">
+                                    <label for="newPasswordConfirmation">Xác nhận mật khẩu</label>
+                                    <input type="password" id="newPasswordConfirmation" name="new_password_confirmation" autocomplete="new-password" placeholder="••••••••" required>
+                                    <div class="invalid-feedback" id="newPasswordConfirmationError"></div>
+                                </div>
 
-                                <button type="submit" class="profile-password-submit" id="profilePasswordBtn">
+                                <button type="submit" class="profile-password-submit" id="profilePasswordBtn" style="margin-top: 20px; width: 100%;">
                                     <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
                                     <span class="btn-text">Cập nhật mật khẩu</span>
                                 </button>
                             </form>
                         </section>
-                    </div>
 
-                    <section class="profile-xp-card" id="profileSection">
-                        <div class="profile-xp-header">
-                            <h2>Điểm Cinema</h2>
-                            <strong id="profileXpValue">0 điểm</strong>
-                        </div>
-                        <div class="profile-xp-track" aria-hidden="true">
-                            <div id="profileXpProgress" class="profile-xp-progress" style="width: 0%"></div>
-                        </div>
-                        <p id="profileXpMessage">
-                            Tiếp tục đặt vé để tích điểm và nhận nhiều ưu đãi hơn.
-                        </p>
-                    </section>
+                        <!-- Support Card -->
+                        <section class="profile-card profile-support-card">
+                            <header class="d-flex align-items-center gap-2" style="margin-bottom: 12px;">
+                                <i class="bi bi-headset" style="color: #ed0712; font-size: 18px;"></i>
+                                <h3 style="font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; color: #ffffff; margin: 0;">Cần hỗ trợ?</h3>
+                            </header>
+                            <p style="font-size: 13px; color: #7a7a7a; line-height: 1.7; margin: 0 0 16px;">Liên hệ đội ngũ hỗ trợ VIP để được giải quyết nhanh nhất về vé và tài khoản.</p>
+                            <button type="button" class="profile-secondary-btn" style="width: 100%; font-size: 13px; padding: 10px;">Liên hệ ngay</button>
+                        </section>
+
+                        </div><!-- /.profile-right-column -->
+                    </div>
 
                     {{-- Tickets Section --}}
                     <section id="ticketsSection" class="d-none">
-                        <div class="d-flex justify-content-between align-items-start mb-4">
-                            <div>
-                                <h2 class="h3 mb-2">Lịch sử đặt vé</h2>
-                                <p class="text-muted mb-0">Xem lại các bộ phim bạn đã thưởng thức tại Cinema Premium.</p>
-                            </div>
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-outline-secondary active" data-ticket-filter="all">Tất cả</button>
-                                <button type="button" class="btn btn-outline-secondary" data-ticket-filter="year">Năm nay</button>
+                        <!-- Header -->
+                        <div class="tickets-header">
+                            <h2 class="tickets-title">Lịch sử đặt vé</h2>
+                            <div class="tickets-filter-group">
+                                <button type="button" class="ticket-filter-btn active" data-ticket-filter="all">Tất cả</button>
+                                <button type="button" class="ticket-filter-btn" data-ticket-filter="year">Năm nay</button>
                             </div>
                         </div>
 
-                        <div id="ticketsEmpty" class="text-center py-5 d-none">
-                            <i class="bi bi-ticket-detailed" style="font-size: 4rem; color: var(--bs-danger);"></i>
-                            <h3 class="mt-3">Chưa có vé nào</h3>
-                            <p class="text-muted">Bạn chưa đặt vé xem phim nào. Hãy khám phá các bộ phim đang chiếu!</p>
-                            <a href="{{ route('movies.index') }}" class="btn btn-danger mt-3">Xem phim</a>
+                        <div id="ticketsEmpty" class="tickets-empty d-none">
+                            <i class="bi bi-ticket-detailed"></i>
+                            <h3>Chưa có vé nào</h3>
+                            <p>Bạn chưa đặt vé xem phim nào. Hãy khám phá các bộ phim đang chiếu!</p>
+                            <a href="{{ route('movies.index') }}" class="ticket-filter-btn active">Xem phim</a>
                         </div>
 
-                        <div id="ticketsList" class="d-flex flex-column gap-3"></div>
+                        <div id="ticketsList" class="tickets-list"></div>
 
                         <div class="text-center mt-4">
-                            <button type="button" id="ticketsLoadMore" class="btn btn-outline-secondary" style="display: none;">
+                            <button type="button" id="ticketsLoadMore" class="ticket-filter-btn" style="display: none;">
                                 <i class="bi bi-chevron-down me-2"></i>
                                 Xem thêm lịch sử
                             </button>
                         </div>
+                    </section>
+
+                    {{-- Points Section --}}
+                    <section id="pointsSection" class="d-none">
+                        <div class="profile-card-grid">
+                            <!-- Left Column: Membership Status -->
+                            <section class="profile-card profile-info-card">
+                                <header class="profile-card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-star"></i>
+                                        <h2>Trạng thái thành viên</h2>
+                                    </div>
+                                </header>
+                                <div class="profile-form-container mt-3">
+                                    <div class="d-flex flex-column gap-4">
+                                        <div>
+                                            <h1 class="display-4 fw-bold mb-0 text-white" id="pointsDashboardTotal" style="font-family: 'Inter', sans-serif;">
+                                                0 <span class="fs-5 text-muted fw-normal" style="font-family: 'Inter', sans-serif;">Points</span>
+                                            </h1>
+                                            <div class="d-flex align-items-center mt-2">
+                                                <i class="bi bi-star-fill text-danger me-2"></i>
+                                                <span class="fs-5 fw-semibold text-white" id="pointsDashboardRank" style="font-family: 'Inter', sans-serif;">Thành viên</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-2">
+                                            <div class="d-flex justify-content-between text-muted mb-2" style="font-size: 13px; font-weight: 500;">
+                                                <span id="pointsDashboardNextTier">Loading...</span>
+                                                <span id="pointsDashboardPercent">0%</span>
+                                            </div>
+                                            <div class="progress" style="height: 6px; background-color: #2a2a2d; border-radius: 4px;">
+                                                <div id="pointsDashboardProgress" class="progress-bar bg-danger" role="progressbar" style="width: 0%; border-radius: 4px;"></div>
+                                            </div>
+                                            <p class="text-muted mt-3 mb-0" style="font-size: 13px; font-weight: 400; line-height: 1.5;" id="pointsDashboardBenefits">
+                                                Tiếp tục tích lũy điểm để mở khóa các đặc quyền cao cấp.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Right Column: Point History -->
+                            <div class="profile-right-column">
+                                <section class="profile-card">
+                                    <header class="profile-card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-clock-history"></i>
+                                            <h2>Lịch sử điểm thưởng</h2>
+                                        </div>
+                                        <a href="#" class="text-muted text-decoration-none" style="font-size: 12px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#7a7a7a'">Xem tất cả</a>
+                                    </header>
+                                    
+                                    <div class="mt-2" style="overflow-x: auto;">
+                                        <table class="table table-borderless mb-0 point-history-table">
+                                            <thead>
+                                                <tr>
+                                                    <th class="text-muted text-uppercase" style="font-size: 10px; letter-spacing: 0.6px; font-weight: 600; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); width: 30%;">Ngày</th>
+                                                    <th class="text-muted text-uppercase" style="font-size: 10px; letter-spacing: 0.6px; font-weight: 600; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Hoạt động</th>
+                                                    <th class="text-muted text-uppercase text-end" style="font-size: 10px; letter-spacing: 0.6px; font-weight: 600; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); width: 25%;">Điểm</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="pointHistoryList">
+                                                <!-- Dynamic rows -->
+                                            </tbody>
+                                        </table>
+                                        <div id="pointHistoryEmpty" class="text-center py-5 d-none">
+                                            <i class="bi bi-clock-history" style="font-size: 2.5rem; color: #444;"></i>
+                                            <p class="text-muted mt-2" style="font-size: 13px;">Chưa có giao dịch điểm nào.</p>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </section>
+
+                    {{-- Voucher Section --}}
+                    <section id="voucherSection" class="d-none">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div>
+                                <h2 class="h3 mb-2">Voucher của tôi</h2>
+                            </div>
+                        </div>
+
+                        <div id="voucherLoading" class="text-center py-5 d-none">
+                            <div class="spinner-border text-danger"></div>
+                        </div>
+
+                        <div id="voucherEmpty" class="text-center py-5 d-none">
+                            <i class="bi bi-ticket-perforated" style="font-size: 4rem; color: var(--cinema-danger);"></i>
+                            <h3 class="mt-3">Chưa có voucher nào</h3>
+                            <p class="text-muted">Bạn chưa đăng ký voucher nào. Nhập mã để nhận ưu đãi!</p>
+                        </div>
+
+                        <div id="voucherList" class="row g-3"></div>
                     </section>
                 </section>
             </div>
@@ -230,34 +457,174 @@
 
     {{-- Ticket Card Template --}}
     <template id="ticketCardTemplate">
-        <div class="card mb-3 bg-dark border-secondary">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-auto">
-                        <img class="ticket-poster" src="" alt="" style="width: 90px; height: 130px; object-fit: cover; border-radius: 6px;">
+        <div class="ticket-card">
+            <!-- Poster -->
+            <div class="ticket-poster-wrap">
+                <img class="ticket-poster" src="" alt="">
+                <div class="ticket-cancelled-overlay">CANCELLED</div>
+            </div>
+
+            <!-- Content -->
+            <div class="ticket-body">
+                <!-- Top row: title + formats + ID -->
+                <div class="ticket-top-row">
+                    <div class="ticket-title-row">
+                        <h3 class="ticket-title"></h3>
+                        <div class="ticket-formats"></div>
                     </div>
-                    <div class="col">
-                        <div class="ticket-formats mb-2"></div>
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="ticket-title mb-0 text-white"></h5>
-                            <span class="badge bg-secondary ticket-id ms-2"></span>
+                    <span class="ticket-id"></span>
+                </div>
+
+                <!-- Info grid: 2 columns -->
+                <div class="ticket-info-grid">
+                    <div class="ticket-info-item">
+                        <span class="ticket-info-label">NGÀY CHIẾU</span>
+                        <span class="ticket-showtime ticket-info-value"></span>
+                    </div>
+                    <div class="ticket-info-item">
+                        <span class="ticket-info-label">RẠP CHIẾU</span>
+                        <span class="ticket-theater ticket-info-value"></span>
+                    </div>
+                    <div class="ticket-info-item">
+                        <span class="ticket-info-label">GHẾ</span>
+                        <span class="ticket-seats ticket-info-value"></span>
+                    </div>
+                </div>
+
+                <!-- Bottom row: status + detail button -->
+                <div class="ticket-bottom-row">
+                    <span class="ticket-status"></span>
+                    <button type="button" class="ticket-detail-btn">Xem chi tiết</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    {{-- Order Detail Modal --}}
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl order-detail-modal-dialog">
+            <div class="modal-content border-0" style="background-color: #0f0f11; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase mb-1" style="font-size: 11px; font-weight: 600; letter-spacing: 1px;">MÃ ĐƠN HÀNG</h6>
+                        <h4 class="text-white fw-bold mb-0" id="odModalCode" style="font-family: 'Inter', sans-serif;">ORD-XXXXXXXX</h4>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge rounded-pill d-flex align-items-center px-3 py-2" id="odModalStatus" style="font-size: 12px; font-weight: 600;">
+                            <!-- Status dynamic -->
+                        </span>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.5;"></button>
+                    </div>
+                </div>
+                
+                <div class="modal-body p-4 pt-3">
+                    <div class="row g-4">
+                        <!-- Left Column: E-Ticket Design -->
+                        <div class="col-lg-5">
+                            <div class="e-ticket-card">
+                                <div class="e-ticket-top">
+                                    <img id="odModalPoster" src="" alt="Poster" class="e-ticket-poster">
+                                    <div class="e-ticket-title-overlay">
+                                        <h4 id="odModalMovieTitle" class="e-ticket-title">Tên Phim</h4>
+                                    </div>
+                                </div>
+                                <div class="e-ticket-body">
+                                    <div class="e-ticket-info-grid">
+                                        <div class="e-ticket-info-item">
+                                            <span class="e-ticket-label">RẠP CHIẾU</span>
+                                            <span id="odModalTheater" class="e-ticket-value">Tên Rạp</span>
+                                        </div>
+                                        <div class="e-ticket-info-item">
+                                            <span class="e-ticket-label">PHÒNG CHIẾU</span>
+                                            <span id="odModalRoom" class="e-ticket-value">Tên Phòng</span>
+                                        </div>
+                                        <div class="e-ticket-info-item full-width">
+                                            <span class="e-ticket-label">THỜI GIAN</span>
+                                            <span id="odModalShowtime" class="e-ticket-value">Giờ chiếu</span>
+                                        </div>
+                                    </div>
+                                    <div class="e-ticket-seats-section">
+                                        <span class="e-ticket-label">VỊ TRÍ GHẾ NGỒI CỦA BẠN</span>
+                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                            <h3 id="odModalSeats" class="e-ticket-seats-val text-truncate">J12, J13</h3>
+                                            <span id="odModalSeatType" class="e-ticket-seat-type-badge text-nowrap"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="e-ticket-barcode-section">
+                                    <div class="e-ticket-rip-line"></div>
+                                    <div id="odModalBarcodeContainer" class="e-ticket-barcode-container">
+                                        <!-- Dynamic Barcode SVG -->
+                                    </div>
+                                    <div class="e-ticket-barcode-hint">Vui lòng quét mã tại cửa phòng chiếu</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="ticket-info mb-3 text-muted small">
-                            <p class="mb-1"><strong>NGÀY CHIẾU</strong><br><span class="ticket-showtime"></span></p>
-                            <p class="mb-1"><strong>RẠP CHIẾU</strong><br><span class="ticket-theater"></span></p>
-                            <p class="mb-0"><strong>GHẾ</strong><br><span class="ticket-seats"></span></p>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="ticket-status"></span>
-                            <button class="btn btn-sm btn-danger ticket-rebook-btn" type="button">Đặt lại vé</button>
+
+                        <!-- Right Column: Invoice Details -->
+                        <div class="col-lg-7">
+                            <div class="invoice-detail-card h-100 d-flex flex-column">
+                                <h5 class="invoice-title">Chi tiết hóa đơn</h5>
+                                
+                                <div class="invoice-section border-bottom mb-4 pb-4">
+                                    <h6 class="invoice-section-title">Thông tin giao dịch</h6>
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <span class="invoice-label">Người thanh toán</span>
+                                            <span id="odModalPayerName" class="invoice-value"></span>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="invoice-label">Phương thức</span>
+                                            <span id="odModalPaymentMethod" class="invoice-value"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <span class="invoice-label">Ngày giao dịch</span>
+                                            <span id="odModalTxDate" class="invoice-value"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="odModalTicketsList" class="invoice-items-list mb-3"></div>
+                                <div id="odModalProductsList" class="invoice-items-list mb-4 pb-4 border-bottom"></div>
+
+                                <div class="invoice-totals mt-auto">
+                                    <div class="d-flex justify-content-between mb-2 d-none" id="odModalVoucherList">
+                                        <span class="invoice-label">
+                                            Voucher (<span id="odModalVoucherCode">CODE</span>)
+                                        </span>
+                                        <span class="invoice-discount-val" id="odModalVoucherValue">-0đ</span>
+                                    </div>
+                                    <div class="invoice-grand-total mt-3 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
+                                        <span>Tổng cộng</span>
+                                        <span id="odModalTotal">0đ</span>
+                                    </div>
+                                </div>
+
+                                <div class="invoice-actions mt-4">
+                                    <div class="d-flex gap-3 w-100">
+                                        <button class="invoice-action-btn w-50">
+                                            <i class="bi bi-wallet2"></i> Apple Wallet
+                                        </button>
+                                        <button class="invoice-action-btn w-50">
+                                            <i class="bi bi-google"></i> Google Wallet
+                                        </button>
+                                    </div>
+                                    <div class="text-center mt-3">
+                                        <button class="invoice-download-btn order-detail-download-btn">
+                                            <i class="bi bi-download"></i> Tải hóa đơn (PDF)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </template>
+    </div>
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/users/pages/profile.js') }}"></script>
+    <script type="module" src="{{ asset('js/users/pages/profile.js') }}"></script>
 @endpush
+

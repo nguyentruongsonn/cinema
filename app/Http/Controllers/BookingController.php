@@ -33,10 +33,9 @@ class BookingController extends Controller
         }
 
         $now = Carbon::now();
-        $cutoffTime = $now->copy()->subMinutes(20);
 
-        if ($showtime->scheduled_at <= $cutoffTime) {
-            abort(403, 'Suất chiếu này đã bắt đầu hoặc kết thúc.');
+        if ($showtime->scheduled_at <= $now) {
+            abort(403, 'Suất chiếu này đã bắt đầu hoặc kết thúc. Không thể đặt vé.');
         }
 
         return view('users.booking.index', [

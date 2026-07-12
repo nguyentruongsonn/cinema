@@ -29,31 +29,34 @@ class ScreenSeeder extends Seeder
         $standardType = $seatTypes->get('Standard') ?? $seatTypes->first();
         $vipType = $seatTypes->get('VIP') ?? $standardType;
         $coupleType = $seatTypes->get('Couple') ?? $vipType;
-        $sweetboxType = $seatTypes->get('Sweetbox') ?? $coupleType;
-        $premiumType = $seatTypes->get('Premium') ?? $vipType;
-        $accessibleType = $seatTypes->get('Accessible') ?? $standardType;
+
+        $templates = \App\Models\SeatLayoutTemplate::all();
+        $templateStandard = $templates->where('template_name', '2D Standard')->first();
 
         $screenLayouts = [
             [
-                'code' => 'S1',
-                'name' => 'Screen 1 - Standard',
+                'code' => 'P01',
+                'name' => 'Phòng 01',
                 'capacity' => 120,
                 'rows' => 10,
                 'columns' => 12,
+                'seat_layout_template_id' => $templateStandard?->id,
             ],
             [
-                'code' => 'S2',
-                'name' => 'Screen 2 - Premium',
-                'capacity' => 96,
-                'rows' => 8,
+                'code' => 'P02',
+                'name' => 'Phòng 02',
+                'capacity' => 120,
+                'rows' => 10,
                 'columns' => 12,
+                'seat_layout_template_id' => $templateStandard?->id,
             ],
             [
-                'code' => 'S3',
-                'name' => 'Screen 3 - Couple',
-                'capacity' => 88,
-                'rows' => 8,
-                'columns' => 11,
+                'code' => 'P03',
+                'name' => 'Phòng 03',
+                'capacity' => 120,
+                'rows' => 10,
+                'columns' => 12,
+                'seat_layout_template_id' => $templateStandard?->id,
             ],
         ];
 
@@ -70,6 +73,7 @@ class ScreenSeeder extends Seeder
                     [
                         'name' => $layout['name'],
                         'capacity' => $layout['capacity'],
+                        'seat_layout_template_id' => $layout['seat_layout_template_id'],
                         'status' => 1,
                     ]
                 );
@@ -90,10 +94,7 @@ class ScreenSeeder extends Seeder
                             $layout['columns'],
                             $standardType,
                             $vipType,
-                            $coupleType,
-                            $sweetboxType,
-                            $premiumType,
-                            $accessibleType
+                            $coupleType
                         );
 
                         Seat::create([
@@ -113,7 +114,7 @@ class ScreenSeeder extends Seeder
             }
         }
 
-        $this->command->info("Screens seeded successfully! Created/updated {$screensCreated} screens with {$seatsCreated} seats including Standard, VIP, Couple, Sweetbox, Premium, and Accessible.");
+        $this->command->info("Screens seeded successfully! Created/updated {$screensCreated} screens with {$seatsCreated} seats including Standard, VIP, and Couple.");
     }
 
     private function resolveSeatType(
@@ -123,39 +124,16 @@ class ScreenSeeder extends Seeder
         int $totalColumns,
         SeatType $standardType,
         SeatType $vipType,
-        SeatType $coupleType,
-        SeatType $sweetboxType,
-        SeatType $premiumType,
-        SeatType $accessibleType
+        SeatType $coupleType
     ): SeatType {
         $lastRowIndex = $totalRows - 1;
-        $secondLastRowIndex = $totalRows - 2;
 
-        // Accessible seats: first row, aisle-edge seats.
-        if ($rowIndex === 0 && in_array($columnIndex, [0, 1, $totalColumns - 2, $totalColumns - 1], true)) {
-            return $accessibleType;
-        }
-
-        // Couple/Sweetbox seats: back rows, paired seating area.
+        // Couple seats: back row
         if ($rowIndex === $lastRowIndex) {
             return $coupleType;
         }
 
-        if ($rowIndex === $secondLastRowIndex && $columnIndex >= 2 && $columnIndex <= $totalColumns - 3) {
-            return $sweetboxType;
-        }
-
-        // Premium seats: center block in middle rows.
-        if (
-            $rowIndex >= 2 &&
-            $rowIndex <= $totalRows - 4 &&
-            $columnIndex >= 2 &&
-            $columnIndex <= $totalColumns - 3
-        ) {
-            return $premiumType;
-        }
-
-        // VIP seats: remaining middle/back area.
+        // VIP seats: middle/back area.
         if ($rowIndex >= 2) {
             return $vipType;
         }

@@ -11,6 +11,11 @@
 
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     {{-- Bootstrap / Icons CDN fallback-friendly --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -22,7 +27,7 @@
     @stack('styles')
 </head>
 <body>
-    <div id="app" class="min-vh-100 d-flex flex-column">
+    <div id="app" class="min-vh-100 d-flex flex-column has-mobile-nav">
         @include('partials.header')
 
         <main class="flex-grow-1">
@@ -30,6 +35,22 @@
         </main>
 
         @include('partials.footer')
+
+        {{-- Mobile Bottom Navigation --}}
+        <nav class="mobile-bottom-nav d-lg-none" aria-label="Mobile navigation">
+            <a href="{{ route('home') }}" class="mobile-nav-item {{ request()->is('/') ? 'active' : '' }}">
+                <i class="bi bi-house-door"></i>
+                <span>Trang chủ</span>
+            </a>
+            <a href="{{ route('movies.index') }}" class="mobile-nav-item {{ request()->is('movies*') ? 'active' : '' }}">
+                <i class="bi bi-film"></i>
+                <span>Phim</span>
+            </a>
+            <a href="{{ route('profile.index') }}" class="mobile-nav-item {{ request()->is('profile*') ? 'active' : '' }}">
+                <i class="bi bi-person"></i>
+                <span>Tài khoản</span>
+            </a>
+        </nav>
     </div>
 
     {{-- Auth Modal --}}
@@ -49,9 +70,9 @@
         window.REVERB_CONFIG = {
             enabled:   @json((bool) env('REVERB_ENABLED', false)),
             key:       @json(config('broadcasting.connections.reverb.key')),
-            host:      @json(config('broadcasting.connections.reverb.host', 'localhost')),
-            port:      {{ config('broadcasting.connections.reverb.port', 8080) }},
-            scheme:    @json(config('broadcasting.connections.reverb.scheme', 'http')),
+            host:      @json(config('broadcasting.connections.reverb.options.host', 'localhost')),
+            port:      {{ config('broadcasting.connections.reverb.options.port', 8080) }},
+            scheme:    @json(config('broadcasting.connections.reverb.options.scheme', 'http')),
             authEndpoint: '/api/v1/broadcasting/auth',
             csrfToken: @json(csrf_token()),
         };
@@ -74,15 +95,17 @@
             function initEcho() {
                 const jwtToken = localStorage.getItem('auth_token');
                 const cfg = window.REVERB_CONFIG || {};
-                const EchoConstructor = window.Echo || (typeof Echo !== 'undefined' ? Echo : null);
+                // Always use the global Echo class, never the instance
+                const EchoClass = (typeof Echo !== 'undefined') ? Echo : null;
 
                 if (!cfg.enabled || !cfg.key) {
                     window.Echo = null;
+                    console.warn('[Echo] Reverb not enabled or key missing. cfg=', cfg);
                     return;
                 }
 
-                if (!EchoConstructor) {
-                    console.warn('Laravel Echo library was not loaded; realtime features are disabled.');
+                if (!EchoClass) {
+                    console.warn('[Echo] Laravel Echo library was not loaded; realtime features are disabled.');
                     window.Echo = null;
                     return;
                 }
@@ -91,15 +114,14 @@
                     window.Echo.disconnect();
                 }
 
-                window.Echo = new EchoConstructor({
+                window.Echo = new EchoClass({
                     broadcaster: 'reverb',
                     key: cfg.key,
                     wsHost: cfg.host,
-                    wsPort: cfg.port,
-                    wssPort: cfg.port,
+                    wsPort: parseInt(cfg.port),
+                    wssPort: parseInt(cfg.port),
                     forceTLS: cfg.scheme === 'https',
                     enabledTransports: ['ws', 'wss'],
-                    // Custom auth endpoint protected by JWT middleware
                     authEndpoint: cfg.authEndpoint,
                     auth: {
                         headers: {
@@ -109,6 +131,7 @@
                         }
                     },
                 });
+                console.log('[Echo] Initialized. host=' + cfg.host + ':' + cfg.port);
             }
 
             // Boot Echo immediately

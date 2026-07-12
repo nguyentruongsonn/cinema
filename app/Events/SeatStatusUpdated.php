@@ -4,20 +4,13 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class SeatStatusUpdated implements ShouldBroadcast
+class SeatStatusUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    /**
-     * Queue broadcasting instead of blocking the lock/unlock HTTP request.
-     * This keeps the "Tiếp tục" action responsive; realtime updates can arrive
-     * shortly after the API response instead of making the user wait for Reverb/Pusher.
-     */
-    public string $connection = 'database';
 
     public function __construct(
         public readonly int    $showtimeId,

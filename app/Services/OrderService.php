@@ -30,7 +30,13 @@ class OrderService
         return DB::transaction(function () use ($data, $user) {
             $this->orderExpirationService->expirePendingOrders((int) $data['showtime_id']);
 
-            $showtime = Showtime::with(['format', 'movie'])->lockForUpdate()->findOrFail($data['showtime_id']);
+            $showtime = Showtime::with(['format', 'movie', 'screen.theater'])->lockForUpdate()->findOrFail($data['showtime_id']);
+            
+            // Bảo mật: Không cho phép đặt vé nếu đã qua giờ chiếu
+            if ($showtime->scheduled_at <= now()) {
+                throw new \RuntimeException('Suất chiếu này đã bắt đầu hoặc kết thúc. Không thể đặt vé.');
+            }
+
             $seatIds = array_values(array_map('intval', $data['seat_ids']));
 
             $seatHold = $this->getValidSeatHold($showtime->id, $user->id, $data['seat_hold_id'] ?? null);
@@ -194,6 +200,7 @@ class OrderService
             'theater_name' => $order->showtime?->screen?->theater?->name,
             'screen_name' => $order->showtime?->screen?->name,
             'branch_name' => $order->showtime?->screen?->theater?->branch?->name,
+            'payload' => $order->payload,
         ];
     }
 
@@ -402,7 +409,11 @@ class OrderService
                 scheduledAt: $scheduledAt,
                 customerType: 'adult', // Online booking luôn tính giá adult
                 isDoubleSeat: $isDoubleSeat,
-                movieSurcharge: $movieSurcharge
+                movieSurcharge: $movieSurcharge,
+                extraHolidays: [],
+                formatSurcharge: (int) ($showtime->format?->surcharge ?? 0),
+                seatSurcharge: (int) ($seat->seatType?->surcharge ?? 0),
+                theaterPricing: $showtime->screen?->theater?->pricing_profile
             );
 
             $unitPrice = $pricingResult['total_price'];

@@ -28,7 +28,7 @@ class SeatService
     {
         $this->cleanupExpiredReservations($showtimeId);
 
-        $showtime = Showtime::with(['screen', 'format', 'movie'])->findOrFail($showtimeId);
+        $showtime = Showtime::with(['screen.theater', 'format', 'movie'])->findOrFail($showtimeId);
 
         $seats = Seat::with('seatType')
             ->where('screen_id', $showtime->screen_id)
@@ -92,7 +92,11 @@ class SeatService
                 scheduledAt: $showtime->scheduled_at,
                 customerType: 'adult',
                 isDoubleSeat: $isDoubleSeat,
-                movieSurcharge: (int)($showtime->movie?->surcharge ?? 0)
+                movieSurcharge: (int)($showtime->movie?->surcharge ?? 0),
+                extraHolidays: [],
+                formatSurcharge: (int)($showtime->format?->surcharge ?? 0),
+                seatSurcharge: (int)($seat->seatType?->surcharge ?? 0),
+                theaterPricing: $showtime->screen?->theater?->pricing_profile
             );
 
             return [

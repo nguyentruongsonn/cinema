@@ -268,3 +268,6 @@ class Modal {
 if (typeof window !== 'undefined') {
     window.Modal = Modal;
 }
+
+// ES6 Module Export
+export default Modal;

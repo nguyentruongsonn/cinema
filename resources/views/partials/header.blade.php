@@ -13,19 +13,22 @@
             <div id="mainNavbar" class="collapse navbar-collapse">
                 <ul class="navbar-nav mx-auto cinema-nav gap-lg-4">
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->is('movies*') ? 'active' : '' }}" href="{{ route('movies.index') }}">Movies</a>
+                        <a class="nav-link {{ request()->is('movies*') ? 'active' : '' }}" href="{{ route('movies.index') }}">Phim</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#venues">Venues</a>
+                        <a class="nav-link {{ request()->is('theaters*') ? 'active' : '' }}" href="{{ route('theaters.index') }}">Rạp</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#offers">Offers</a>
+                        <a class="nav-link {{ request()->is('prices*') ? 'active' : '' }}" href="{{ route('prices.index') }}">Giá vé</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#food">Food</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('profile.index') }}#tickets">My Tickets</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="eventsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Sự kiện
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark border-0 shadow" aria-labelledby="eventsDropdown">
+                            <li><a class="dropdown-item" href="#">Ưu đãi</a></li>
+                            <li><a class="dropdown-item" href="#">Phim hay tháng</a></li>
+                        </ul>
                     </li>
                 </ul>
 

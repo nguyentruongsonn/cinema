@@ -34,10 +34,7 @@ import Modal from '../components/modal.js';
 
     async function loadHomeData() {
         try {
-            const response = await fetch('/api/v1/home');
-            if (!response.ok) throw new Error('Failed to load home data');
-
-            const data = await response.json();
+            const data = await window.apiClient.get('/home');
             homeData = data.data || data;
         } catch (error) {
             console.error('Error loading home data:', error);
@@ -48,101 +45,262 @@ import Modal from '../components/modal.js';
     function renderHero() {
         const heroSkeleton = document.getElementById('heroSkeleton');
         const heroContent = document.getElementById('heroContent');
+        const heroBackdrop = document.getElementById('heroBackdrop');
 
         if (!homeData || !homeData.featured_movie) {
-            heroSkeleton.style.display = 'none';
+            if (heroSkeleton) heroSkeleton.style.display = 'none';
             return;
         }
 
         const movie = homeData.featured_movie;
         const bannerUrl = movie.backdrop_url || movie.poster_url || '/images/default-banner.jpg';
 
-        heroContent.innerHTML = `
-            <div class="hero-backdrop" style="background-image: url('${escapeHtml(bannerUrl)}')">
-                <div class="hero-overlay"></div>
+        // Set backdrop image
+        if (heroBackdrop) {
+            heroBackdrop.style.backgroundImage = `url('${escapeHtml(bannerUrl)}')`;
+        }
+
+        // Build genre text
+        const genreText = movie.genres && movie.genres.length > 0
+            ? movie.genres.slice(0, 2).join(' / ').toUpperCase()
+            : '';
+
+        // Generate rating stars
+        const rating = movie.rating || 0;
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+        let starsHtml = '';
+        for (let i = 0; i < fullStars; i++) {
+            starsHtml += '<i class="bi bi-star-fill"></i>';
+        }
+        if (hasHalfStar) {
+            starsHtml += '<i class="bi bi-star-half"></i>';
+        }
+        for (let i = 0; i < emptyStars; i++) {
+            starsHtml += '<i class="bi bi-star"></i>';
+        }
+
+        // Build the hero inner HTML
+        const heroInner = heroContent.querySelector('.hero-inner');
+        if (!heroInner) return;
+
+        heroInner.innerHTML = `
+            <div class="hero-meta-row">
+                ${movie.age_rating ? `<span class="hero-age-badge">${escapeHtml(movie.age_rating)}</span>` : ''}
+                ${genreText ? `<span class="hero-genre">${escapeHtml(genreText)}</span>` : ''}
             </div>
-            <div class="container">
-                <div class="hero-copy">
-                    <span class="hero-badge">NOW SHOWING</span>
-                    <h1 class="hero-title">${escapeHtml(movie.title)}</h1>
-                    <p class="hero-description">${escapeHtml(movie.synopsis || '')}</p>
-                    <div class="hero-meta">
-                        <span><i class="bi bi-clock"></i> ${movie.duration || 'N/A'} min</span>
-                        <span><i class="bi bi-star-fill"></i> ${movie.age_rating || 'N/A'}</span>
-                    </div>
-                    <div class="hero-actions">
-                        <button class="btn-book-now" type="button" onclick="document.getElementById('bookingForm')?.scrollIntoView({behavior:'smooth', block:'center'})">
-                            <i class="bi bi-ticket-perforated-fill"></i>
-                            Book Now
-                        </button>
-                        ${movie.trailer_url ? `
-                            <a class="btn-trailer" href="${escapeHtml(movie.trailer_url)}" target="_blank" rel="noopener">
-                                <i class="bi bi-play-circle"></i>
-                                Watch Trailer
-                            </a>
-                        ` : `
-                            <button class="btn-trailer" type="button">
-                                <i class="bi bi-play-circle"></i>
-                                Watch Trailer
-                            </button>
-                        `}
-                    </div>
+
+            <h1 id="heroTitle" class="hero-title">${escapeHtml(movie.title)}</h1>
+
+            ${rating > 0 ? `
+                <div class="hero-rating">
+                    <div class="hero-rating-stars">${starsHtml}</div>
+                    <span class="hero-rating-value">${rating.toFixed(1)}/5</span>
                 </div>
+            ` : ''}
+
+            <p class="hero-description">${escapeHtml(movie.synopsis || movie.description || '')}</p>
+
+            <div class="hero-actions">
+                <button class="btn-book-now" type="button" onclick="document.querySelector('.quick-booking-section')?.scrollIntoView({behavior:'smooth', block:'center'})">
+                    <i class="bi bi-ticket-perforated-fill"></i>
+                    Book Now
+                </button>
+                ${movie.trailer_url ? `
+                    <a class="btn-trailer" href="${escapeHtml(movie.trailer_url)}" target="_blank" rel="noopener">
+                        <i class="bi bi-play-circle"></i>
+                        Watch Trailer
+                    </a>
+                ` : `
+                    <button class="btn-trailer" type="button" disabled style="opacity:0.5;cursor:default">
+                        <i class="bi bi-play-circle"></i>
+                        Watch Trailer
+                    </button>
+                `}
             </div>
         `;
 
-        heroSkeleton.style.display = 'none';
+        if (heroSkeleton) heroSkeleton.style.display = 'none';
         heroContent.classList.remove('d-none');
     }
 
     function renderBookingForm() {
         const bookingSkeleton = document.getElementById('bookingSkeleton');
-        const bookingForm = document.getElementById('bookingForm');
+        const bookingWidget = document.getElementById('bookingWidget');
 
         if (!homeData) {
-            bookingSkeleton.style.display = 'none';
+            if (bookingSkeleton) bookingSkeleton.style.display = 'none';
             return;
         }
 
-        // Populate movies dropdown
-        const movieSelect = document.getElementById('movie');
-        if (movieSelect && homeData.movie_options) {
-            movieSelect.innerHTML = '<option value="">Select a movie</option>';
-            homeData.movie_options.forEach(movie => {
-                const option = document.createElement('option');
-                option.value = movie.id;
-                option.textContent = movie.title;
-                movieSelect.appendChild(option);
-            });
+        // Populate movies custom dropdown
+        populateCustomSelect('movie', homeData.movie_options || [], (movie) => ({
+            value: movie.id,
+            label: movie.title,
+            searchText: movie.title.toLowerCase()
+        }), true); // Has search
+
+        // Populate cinemas custom dropdown
+        populateCustomSelect('cinema', homeData.cinema_options || [], (theater) => ({
+            value: theater.id,
+            label: theater.city ? `${theater.name} - ${theater.city}` : theater.name,
+            searchText: `${theater.name} ${theater.city || ''}`.toLowerCase()
+        }), false);
+
+        // Populate dates custom dropdown
+        populateCustomSelect('date', homeData.available_dates || [], (date) => ({
+            value: date.value,
+            label: date.label,
+            searchText: date.label.toLowerCase()
+        }), false);
+
+        // Initialize custom dropdown interactions
+        initializeCustomDropdowns();
+
+        // Setup Find Seats button
+        const findSeatsBtn = document.getElementById('btnFindSeats');
+        if (findSeatsBtn) {
+            findSeatsBtn.addEventListener('click', handleFindSeats);
         }
 
-        // Populate dates dropdown
-        const dateSelect = document.getElementById('date');
-        if (dateSelect && homeData.available_dates) {
-            dateSelect.innerHTML = '<option value="">Select a date</option>';
-            homeData.available_dates.forEach(date => {
-                const option = document.createElement('option');
-                option.value = date.value;
-                option.textContent = date.label;
-                dateSelect.appendChild(option);
-            });
+        if (bookingSkeleton) bookingSkeleton.style.display = 'none';
+        if (bookingWidget) bookingWidget.classList.remove('d-none');
+    }
+
+    function handleFindSeats() {
+        const movieId = document.getElementById('movieInput')?.value;
+        const dateVal = document.getElementById('dateInput')?.value;
+        const cinemaId = document.getElementById('cinemaInput')?.value;
+
+        if (!movieId) {
+            if (typeof Toast !== 'undefined') {
+                Toast.warning('Please select a movie', 'Select a movie to find available seats.');
+            }
+            return;
         }
 
-        // Populate cinemas dropdown
-        const cinemaSelect = document.getElementById('cinema');
-        if (cinemaSelect && homeData.cinema_options) {
-            cinemaSelect.innerHTML = '<option value="">Select a cinema</option>';
-            homeData.cinema_options.forEach(theater => {
-                const option = document.createElement('option');
-                option.value = theater.id;
-                const displayName = theater.city ? `${theater.name} - ${theater.city}` : theater.name;
-                option.textContent = displayName;
-                cinemaSelect.appendChild(option);
-            });
+        // Navigate to movie detail or booking page
+        const movie = homeData?.movie_options?.find(m => String(m.id) === String(movieId));
+        if (movie && movie.slug) {
+            window.location.href = `/movies/${movie.slug}`;
+        } else {
+            window.location.href = `/movies`;
         }
+    }
 
-        bookingSkeleton.style.display = 'none';
-        bookingForm.classList.remove('d-none');
+    function populateCustomSelect(selectName, options, mapFn, hasSearch) {
+        const customSelect = document.querySelector(`.custom-select[data-select="${selectName}"]`);
+        if (!customSelect) return;
+
+        const optionsContainer = customSelect.querySelector('.select-options');
+        if (!optionsContainer) return;
+
+        // Add options
+        optionsContainer.innerHTML = options.map(item => {
+            const mapped = mapFn(item);
+            return `<div class="select-option" data-value="${mapped.value}" data-label="${mapped.label}" ${hasSearch ? `data-search="${mapped.searchText}"` : ''}>${mapped.label}</div>`;
+        }).join('');
+    }
+
+    function initializeCustomDropdowns() {
+        const customSelects = document.querySelectorAll('.custom-select');
+
+        customSelects.forEach(select => {
+            const trigger = select.querySelector('.select-trigger');
+            const dropdown = select.querySelector('.select-dropdown');
+            const valueSpan = select.querySelector('.select-value');
+            const hiddenInput = select.parentElement.querySelector('input[type="hidden"]');
+            const searchInput = select.querySelector('.select-search input');
+            const options = select.querySelectorAll('.select-option');
+
+            if (!trigger || !dropdown) return;
+
+            // Toggle dropdown
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAllDropdowns();
+                select.classList.toggle('active');
+                trigger.classList.toggle('active');
+
+                // Focus search input if present
+                if (select.classList.contains('active') && searchInput) {
+                    setTimeout(() => searchInput.focus(), 100);
+                }
+            });
+
+            // Handle option selection
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    const value = option.dataset.value;
+                    const label = option.dataset.label;
+
+                    // Update UI
+                    if (valueSpan) {
+                        valueSpan.textContent = label;
+                        valueSpan.classList.remove('placeholder');
+                    }
+
+                    // Update hidden input
+                    if (hiddenInput) {
+                        hiddenInput.value = value;
+                    }
+
+                    // Mark as selected
+                    options.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+
+                    // Close dropdown
+                    select.classList.remove('active');
+                    trigger.classList.remove('active');
+
+                    // Handle cascading selections
+                    handleCascadingSelection(select.dataset.select, value);
+                });
+            });
+
+            // Handle search if present
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    options.forEach(option => {
+                        const searchText = option.dataset.search || option.textContent.toLowerCase();
+                        option.style.display = searchText.includes(searchTerm) ? 'block' : 'none';
+                    });
+                });
+
+                // Reset search when dropdown opens
+                trigger.addEventListener('click', () => {
+                    searchInput.value = '';
+                    options.forEach(option => option.style.display = 'block');
+                });
+            }
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.custom-select')) {
+                closeAllDropdowns();
+            }
+        });
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.custom-select.active').forEach(select => {
+            select.classList.remove('active');
+            const trigger = select.querySelector('.select-trigger');
+            if (trigger) trigger.classList.remove('active');
+        });
+    }
+
+    function handleCascadingSelection(selectName, value) {
+        // If movie or cinema is selected, could trigger showtime loading
+        // For now, just a placeholder for future enhancement
+        if (selectName === 'movie' || selectName === 'cinema' || selectName === 'date') {
+            // TODO: Load showtimes based on selections
+            console.log(`${selectName} selected:`, value);
+        }
     }
 
     function renderMoviesGrid() {
@@ -150,31 +308,41 @@ import Modal from '../components/modal.js';
         const moviesGrid = document.getElementById('moviesGrid');
 
         if (!homeData || !homeData.now_showing_movies || homeData.now_showing_movies.length === 0) {
-            moviesSkeleton.style.display = 'none';
+            if (moviesSkeleton) moviesSkeleton.style.display = 'none';
             moviesGrid.innerHTML = '<p class="text-center text-muted">No movies available</p>';
             moviesGrid.classList.remove('d-none');
             return;
         }
 
-        moviesGrid.innerHTML = homeData.now_showing_movies.map(movie => `
-            <a href="/movies/${movie.slug}" class="movie-card">
-                <div class="movie-poster">
-                    <img src="${escapeHtml(movie.poster_url || '/images/default-poster.jpg')}"
-                         alt="${escapeHtml(movie.title)}"
-                         loading="lazy">
-                    ${movie.is_hot ? '<span class="movie-badge-hot">HOT</span>' : ''}
-                </div>
-                <div class="movie-info">
-                    <h3 class="movie-title">${escapeHtml(movie.title)}</h3>
-                    <div class="movie-meta">
-                        <span><i class="bi bi-clock"></i> ${movie.duration || 'N/A'} min</span>
-                        <span><i class="bi bi-star-fill"></i> ${movie.age_rating || 'N/A'}</span>
-                    </div>
-                </div>
-            </a>
-        `).join('');
+        moviesGrid.innerHTML = homeData.now_showing_movies.map(movie => {
+            // Build genre + duration meta text
+            const genreTag = movie.genres && movie.genres.length > 0
+                ? movie.genres[0].toUpperCase()
+                : '';
+            const durationTag = movie.duration
+                ? `${Math.floor(movie.duration / 60)}H ${movie.duration % 60 > 0 ? (movie.duration % 60 + 'M') : ''}`
+                : '';
+            const metaText = [genreTag, durationTag].filter(Boolean).join(' • ');
 
-        moviesSkeleton.style.display = 'none';
+            return `
+                <a href="/movies/${movie.slug}" class="movie-card">
+                    <div class="movie-poster">
+                        <img src="${escapeHtml(movie.poster_url || '/images/default-poster.jpg')}"
+                             alt="${escapeHtml(movie.title)}"
+                             loading="lazy">
+                        ${movie.is_hot ? '<span class="movie-badge-hot">HOT</span>' : ''}
+                    </div>
+                    <div class="movie-info">
+                        <h3 class="movie-title">${escapeHtml(movie.title)}</h3>
+                        <p class="movie-meta">
+                            ${metaText ? `<span>${escapeHtml(metaText)}</span>` : ''}
+                        </p>
+                    </div>
+                </a>
+            `;
+        }).join('');
+
+        if (moviesSkeleton) moviesSkeleton.style.display = 'none';
         moviesGrid.classList.remove('d-none');
     }
 

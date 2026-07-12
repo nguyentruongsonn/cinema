@@ -26,8 +26,8 @@ class DatabaseSeeder extends Seeder
             TheaterSeeder::class,
 
             // Screens and Seats (depends on Theater and SeatType)
-            ScreenSeeder::class,
             SeatLayoutTemplateSeeder::class,
+            ScreenSeeder::class,
 
             // Promotions and concessions
             PromotionSeeder::class,

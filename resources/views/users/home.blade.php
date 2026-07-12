@@ -9,7 +9,7 @@
 @endpush
 
 @section('content')
-    {{-- Hero Section with Featured Movie --}}
+    {{-- Hero Section - Full Bleed Cinematic --}}
     <section class="hero-section" aria-labelledby="heroTitle">
         {{-- Skeleton Loading --}}
         <div id="heroSkeleton" class="skeleton-hero">
@@ -27,47 +27,83 @@
             </div>
         </div>
 
-        {{-- Actual Hero Content (hidden until loaded) --}}
-        <div id="heroContent" class="hero-content d-none"></div>
+        {{-- Hero Backdrop (background image set by JS) --}}
+        <div id="heroBackdrop" class="hero-backdrop"></div>
 
-        {{-- Quick Booking Widget --}}
+        {{-- Gradient overlays --}}
+        <div class="hero-gradient-overlay"></div>
+
+        {{-- Actual Hero Content (hidden until loaded) --}}
+        <div id="heroContent" class="hero-content d-none">
+            <div class="container">
+                <div class="hero-inner"></div>
+            </div>
+        </div>
+    </section>
+
+    {{-- Quick Booking Widget --}}
+    <section class="quick-booking-section">
         <div class="container">
             <div class="quick-booking-widget">
                 {{-- Skeleton --}}
                 <div id="bookingSkeleton" class="skeleton skeleton-booking"></div>
 
                 {{-- Actual Booking Form (hidden until loaded) --}}
-                <form id="bookingForm" class="booking-form d-none" action="/showtimes" method="GET">
+                <div id="bookingWidget" class="booking-form d-none">
                     <div class="booking-controls">
                         <div class="booking-control">
-                            <label for="movie" class="booking-label">SELECT MOVIE</label>
-                            <select id="movie" name="movie" class="booking-select" required>
-                                <option value="">Loading movies...</option>
-                            </select>
+                            <label class="booking-label">SELECT MOVIE</label>
+                            <input type="hidden" name="movie" id="movieInput">
+                            <div class="custom-select" data-select="movie">
+                                <div class="select-trigger">
+                                    <span class="select-value placeholder">Choose movie</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </div>
+                                <div class="select-dropdown">
+                                    <div class="select-search">
+                                        <input type="text" placeholder="Search..." autocomplete="off">
+                                    </div>
+                                    <div class="select-options"></div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="booking-control">
-                            <label for="date" class="booking-label">DATE</label>
-                            <select id="date" name="date" class="booking-select" required>
-                                <option value="">Loading dates...</option>
-                            </select>
+                            <label class="booking-label">DATE</label>
+                            <input type="hidden" name="date" id="dateInput">
+                            <div class="custom-select" data-select="date">
+                                <div class="select-trigger">
+                                    <span class="select-value placeholder">Choose date</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </div>
+                                <div class="select-dropdown">
+                                    <div class="select-options"></div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="booking-control">
-                            <label for="cinema" class="booking-label">CINEMA</label>
-                            <select id="cinema" name="cinema" class="booking-select" required>
-                                <option value="">Loading cinemas...</option>
-                            </select>
+                            <label class="booking-label">CINEMA</label>
+                            <input type="hidden" name="cinema" id="cinemaInput">
+                            <div class="custom-select" data-select="cinema">
+                                <div class="select-trigger">
+                                    <span class="select-value placeholder">Choose cinema</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </div>
+                                <div class="select-dropdown">
+                                    <div class="select-options"></div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="booking-control-btn">
-                            <button type="submit" class="btn-find-seats">
+                            <button type="button" class="btn-find-seats" id="btnFindSeats">
                                 <i class="bi bi-search"></i>
-                                Find Seats
+                                <span>Find Seats</span>
                             </button>
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </section>
@@ -78,12 +114,13 @@
             <div class="section-header">
                 <h2 id="moviesTitle" class="section-title">Now Showing</h2>
                 <a href="/movies" class="view-all-link">
-                    View All <i class="bi bi-arrow-right ms-2"></i>
+                    View All <i class="bi bi-plus"></i>
                 </a>
             </div>
 
             {{-- Skeleton Grid --}}
             <div id="moviesSkeleton" class="skeleton-grid">
+                @for ($i = 0; $i < 4; $i++)
                 <div class="skeleton-movie-card">
                     <div class="skeleton skeleton-movie-poster"></div>
                     <div class="skeleton-movie-info">
@@ -91,27 +128,7 @@
                         <div class="skeleton skeleton-movie-meta"></div>
                     </div>
                 </div>
-                <div class="skeleton-movie-card">
-                    <div class="skeleton skeleton-movie-poster"></div>
-                    <div class="skeleton-movie-info">
-                        <div class="skeleton skeleton-movie-title"></div>
-                        <div class="skeleton skeleton-movie-meta"></div>
-                    </div>
-                </div>
-                <div class="skeleton-movie-card">
-                    <div class="skeleton skeleton-movie-poster"></div>
-                    <div class="skeleton-movie-info">
-                        <div class="skeleton skeleton-movie-title"></div>
-                        <div class="skeleton skeleton-movie-meta"></div>
-                    </div>
-                </div>
-                <div class="skeleton-movie-card">
-                    <div class="skeleton skeleton-movie-poster"></div>
-                    <div class="skeleton-movie-info">
-                        <div class="skeleton skeleton-movie-title"></div>
-                        <div class="skeleton skeleton-movie-meta"></div>
-                    </div>
-                </div>
+                @endfor
             </div>
 
             {{-- Actual Movies Grid (hidden until loaded) --}}
@@ -121,5 +138,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/users/pages/home.js') }}"></script>
+    <script src="{{ asset('js/users/pages/home.js') }}" type="module"></script>
 @endpush

@@ -98,8 +98,24 @@
             </div>
         </div>
     </section>
-@endsection
 
+    {{-- Trailer Modal --}}
+    <div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-white" id="trailerModalLabel">Watch Trailer</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="ratio ratio-16x9">
+                        <iframe id="trailerIframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
 @push('scripts')
-    <script src="{{ asset('js/users/pages/movie-detail.js') }}"></script>
+    <script type="module" src="{{ asset('js/users/pages/movie-detail.js') }}"></script>
 @endpush

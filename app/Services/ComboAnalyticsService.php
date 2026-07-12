@@ -24,7 +24,28 @@ class ComboAnalyticsService
             'top_combos'        => $this->getTopCombos($start, $end),
             'revenue_by_theater'=> $this->getRevenueByTheater($start, $end),
             'by_theater_combo'  => $this->getByTheaterCombo($start, $end),
+            'trend'             => $this->getTrend($start, $end),
         ];
+    }
+
+    private function getTrend(Carbon $start, Carbon $end): array
+    {
+        $rows = DB::table('order_items')
+            ->join('orders',   'orders.id',   '=', 'order_items.order_id')
+            ->join('products', 'products.id', '=', 'order_items.item_id')
+            ->where('order_items.item_type', self::PRODUCT_TYPE)
+            ->where('products.type',         self::COMBO_TYPE)
+            ->where('orders.status',         self::ORDER_PAID)
+            ->whereBetween('orders.paid_at', [$start, $end])
+            ->selectRaw('DATE(orders.paid_at) as date, SUM(order_items.quantity) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        return $rows->map(fn($r) => [
+            'date'  => $r->date,
+            'count' => (int) $r->count,
+        ])->toArray();
     }
 
     /* ── Summary Cards ─────────────────────────────────────────────── */

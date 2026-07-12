@@ -43,10 +43,7 @@ import Toast from '../components/toast.js';
 
     async function loadMovieData() {
         try {
-            const response = await fetch(`/api/v1/movies/${movieSlug}`);
-            if (!response.ok) throw new Error('Failed to load movie');
-
-            const data = await response.json();
+            const data = await window.apiClient.get(`/movies/${movieSlug}`);
             movieData = data.data || data.movie || data;
         } catch (error) {
             console.error('Error loading movie:', error);
@@ -56,10 +53,7 @@ import Toast from '../components/toast.js';
 
     async function loadShowtimes() {
         try {
-            const response = await fetch(`/api/v1/movies/${movieSlug}/showtimes`);
-            if (!response.ok) throw new Error('Failed to load showtimes');
-
-            const data = await response.json();
+            const data = await window.apiClient.get(`/movies/${movieSlug}/showtimes`);
             console.log('API Response:', data);
 
             if (data.success && data.data && data.data.showtimes_grouped) {
@@ -120,10 +114,7 @@ import Toast from '../components/toast.js';
 
     async function loadTrendingMovies() {
         try {
-            const response = await fetch('/api/v1/movies?status=now_showing&limit=5');
-            if (!response.ok) return;
-
-            const data = await response.json();
+            const data = await window.apiClient.get('/movies?status=now_showing&limit=5');
             const movies = data.data || data.movies || [];
 
             renderTrendingMovies(movies.slice(0, 5));
@@ -141,6 +132,44 @@ import Toast from '../components/toast.js';
         const backdropUrl = movieData.backdrop_path || movieData.poster_path || '';
         const posterUrl = movieData.poster_path || 'https://via.placeholder.com/280x420/1a1a2e/ffffff?text=No+Poster';
 
+        const metaItems = [];
+        if (movieData.duration) metaItems.push(`${movieData.duration} min`);
+        if (movieData.genres && movieData.genres.length > 0) {
+            metaItems.push(movieData.genres.map(g => escapeHtml(g.name || g)).join(' / '));
+        }
+        if (movieData.age_rating) {
+            metaItems.push(`<span class="movie-detail-badge">${escapeHtml(movieData.age_rating)}</span>`);
+        }
+        if (movieData.rating) {
+            metaItems.push(`<span style="color: #ffd21f;"><i class="bi bi-star"></i> ${movieData.rating}/10</span>`);
+        }
+
+        const metaText = metaItems.join('<span class="meta-separator">•</span>');
+
+        // Cast and Crew Mock Data (Since API might not return this structured data yet, we parse it or use mock for visual design)
+        let castHtml = '';
+        if (movieData.cast) {
+            const castList = typeof movieData.cast === 'string' ? movieData.cast.split(',').slice(0, 3) : movieData.cast;
+            castHtml = castList.map(actor => `
+                <div class="cast-member">
+                    <div class="cast-avatar">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <span class="cast-name">${escapeHtml(actor.trim())}</span>
+                </div>
+            `).join('');
+        }
+        if (movieData.director) {
+            castHtml += `
+                <div class="cast-member">
+                    <div class="cast-avatar">
+                        <i class="bi bi-camera-reels"></i>
+                    </div>
+                    <span class="cast-name">Director<br>${escapeHtml(movieData.director)}</span>
+                </div>
+            `;
+        }
+
         heroContent.innerHTML = `
             <div class="movie-detail-backdrop">
                 ${backdropUrl ? `<img src="${escapeHtml(backdropUrl)}" alt="">` : ''}
@@ -150,50 +179,38 @@ import Toast from '../components/toast.js';
                 <div class="container">
                     <div class="movie-detail-layout">
                         <div class="movie-detail-poster-col">
-                            <img src="${escapeHtml(posterUrl)}"
-                                 alt="${escapeHtml(movieData.title)}"
-                                 class="movie-detail-poster">
+                            <img src="${escapeHtml(posterUrl)}" alt="${escapeHtml(movieData.title)}" class="movie-detail-poster">
                         </div>
                         <div class="movie-detail-info">
                             <h1 class="movie-detail-title">${escapeHtml(movieData.title)}</h1>
-                            ${movieData.original_title && movieData.original_title !== movieData.title ?
-                                `<p class="movie-detail-original-title">${escapeHtml(movieData.original_title)}</p>` : ''}
-
-                            <div class="movie-detail-meta">
-                                ${movieData.release_date ? `
-                                    <span class="movie-detail-badge">
-                                        <i class="bi bi-calendar-event"></i>
-                                        ${escapeHtml(movieData.release_date)}
-                                    </span>` : ''}
-                                ${movieData.duration ? `
-                                    <span class="movie-detail-badge">
-                                        <i class="bi bi-clock"></i>
-                                        ${movieData.duration} min
-                                    </span>` : ''}
-                                ${movieData.age_rating ? `
-                                    <span class="movie-detail-badge">
-                                        <i class="bi bi-shield-check"></i>
-                                        ${escapeHtml(movieData.age_rating)}
-                                    </span>` : ''}
+                            
+                            <div class="movie-detail-meta-row">
+                                ${metaText}
                             </div>
-
-                            ${movieData.genres && movieData.genres.length > 0 ? `
-                                <div class="movie-detail-genres">
-                                    ${movieData.genres.map(g => `
-                                        <span class="movie-detail-genre">${escapeHtml(g.name || g)}</span>
-                                    `).join('')}
-                                </div>` : ''}
 
                             ${movieData.description ? `
                                 <p class="movie-detail-description">${escapeHtml(movieData.description)}</p>` : ''}
 
-                            ${renderExtraInfo()}
+                            ${castHtml ? `
+                                <div class="cast-crew-section">
+                                    <h3>Cast & Crew</h3>
+                                    <div class="cast-list">
+                                        ${castHtml}
+                                    </div>
+                                </div>
+                            ` : ''}
 
                             <div class="movie-detail-actions">
                                 <a href="#showtimes" class="btn-book-tickets">
-                                    <i class="bi bi-ticket-perforated"></i>
+                                    <i class="bi bi-ticket-perforated-fill"></i>
                                     Book Tickets
                                 </a>
+                                ${movieData.trailer_url ? `
+                                    <button class="btn-watch-trailer" data-bs-toggle="modal" data-bs-target="#trailerModal" data-trailer-url="${escapeHtml(movieData.trailer_url)}">
+                                        <i class="bi bi-play-circle"></i>
+                                        Watch Trailer
+                                    </button>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
@@ -263,16 +280,21 @@ import Toast from '../components/toast.js';
     function renderDateTab(date) {
         const d = new Date(date + 'T00:00:00');
         const day = d.getDate();
-        const month = d.toLocaleDateString('en-US', { month: 'short' });
-        const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+        let weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+        
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        if (d.getTime() === today.getTime()) {
+            weekday = 'TODAY';
+        }
+        
         const isActive = date === selectedDate;
 
         return `
             <button class="showtime-date-btn ${isActive ? 'active' : ''}"
                     data-date="${date}">
-                <span class="date-day">${day}</span>
-                <span class="date-month">${month}</span>
                 <span class="date-weekday">${weekday}</span>
+                <span class="date-day">${day}</span>
             </button>
         `;
     }
@@ -309,14 +331,12 @@ import Toast from '../components/toast.js';
 
     function renderShowtimeCard(showtime) {
         const time = showtime.time || showtime.start_time || showtime.showtime_time || '';
-        const screenName = showtime.screen?.name || showtime.screen_name || '';
         const showtimeId = showtime.id || showtime.showtime_id || '';
         const bookingUrl = `/booking/${showtime.encrypted_id || showtimeId}`;
 
         return `
             <a href="${bookingUrl}" class="showtime-time-card">
                 <span class="time-value">${escapeHtml(time)}</span>
-                ${screenName ? `<span class="time-extra">${escapeHtml(screenName)}</span>` : ''}
             </a>
         `;
     }
@@ -329,7 +349,7 @@ import Toast from '../components/toast.js';
 
         const theaters = showtimeGroups.map(g => g.theater);
 
-        if (theaters.length > 1) {
+        if (theaters.length > 0) {
             filterSelect.innerHTML = `
                 <option value="">All Cinemas</option>
                 ${theaters.map(t => `
@@ -357,14 +377,45 @@ import Toast from '../components/toast.js';
                 <div class="trending-info">
                     <h4 class="trending-title">${escapeHtml(movie.title)}</h4>
                     ${movie.genres ? `
-                        <p class="trending-genre">${escapeHtml(movie.genres.slice(0, 2).map(g => g.name || g).join(', '))}</p>
+                        <p class="trending-meta">${escapeHtml(movie.genres.slice(0, 2).map(g => g.name || g).join(' / '))}</p>
                     ` : ''}
+                    ${movie.rating ? `
+                        <div class="trending-rating">
+                            <i class="bi bi-star-fill"></i> ${movie.rating}
+                        </div>
+                    ` : `<div class="trending-rating"><i class="bi bi-star-fill"></i> 8.5</div>`}
                 </div>
             </a>
         `).join('');
     }
 
     function setupEventListeners() {
+        // Trailer Modal Logic
+        const trailerModal = document.getElementById('trailerModal');
+        if (trailerModal) {
+            trailerModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                let trailerUrl = button.getAttribute('data-trailer-url');
+                
+                // Convert youtube watch URL to embed URL if necessary
+                if (trailerUrl && trailerUrl.includes('watch?v=')) {
+                    trailerUrl = trailerUrl.replace('watch?v=', 'embed/');
+                }
+                
+                const iframe = document.getElementById('trailerIframe');
+                if (iframe && trailerUrl) {
+                    iframe.src = trailerUrl + '?autoplay=1';
+                }
+            });
+
+            trailerModal.addEventListener('hidden.bs.modal', function () {
+                const iframe = document.getElementById('trailerIframe');
+                if (iframe) {
+                    iframe.src = '';
+                }
+            });
+        }
+
         // Date tab clicks
         document.addEventListener('click', (e) => {
             const dateBtn = e.target.closest('.showtime-date-btn');

@@ -59,6 +59,7 @@
 /* Keep existing files temporarily for backward compatibility */
 @import './admin-common.css';
 @import './admin-modals.css';
+@import './style.css';
 /* Individual page CSS will be refactored later:
 - branches.css
 - combos.css
@@ -106,3 +107,4 @@
    - Remove legacy CSS after full migration
 
    ═══════════════════════════════════════════════════════════════════════════ */
+@import './dashboard-redesign.css';

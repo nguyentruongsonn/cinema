@@ -124,6 +124,7 @@
 @endsection
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
 <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
 @endpush
 

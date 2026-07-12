@@ -16,86 +16,78 @@
         </div>
     </section>
 
-    {{-- Filters Section --}}
-    <section class="movies-filters-section">
+    {{-- Main Movies Content --}}
+    <div class="movies-content-wrapper">
         <div class="container">
-            {{-- Skeleton --}}
-            <div id="filtersSkeleton" class="skeleton skeleton-filters"></div>
-
-            {{-- Actual Filters (hidden until loaded) --}}
-            <div id="filtersContent" class="filters-content d-none">
-                <div class="filters-row">
-                    <div class="filter-group">
-                        <label for="statusFilter" class="filter-label">Status</label>
-                        <select id="statusFilter" class="filter-select">
-                            <option value="active">All Active</option>
-                            <option value="now_showing">Now Showing</option>
-                            <option value="upcoming">Coming Soon</option>
-                        </select>
+            
+            {{-- Section 1: Suất chiếu đặc biệt (Special Screenings) --}}
+            <section class="movie-section special-screenings-section mb-5 d-none" id="specialSection">
+                <h2 class="section-title"><i class="bi bi-star-fill text-danger me-2"></i> Suất chiếu đặc biệt</h2>
+                <div class="horizontal-scroll-container">
+                    <div id="specialMoviesGrid" class="special-movies-grid">
+                        {{-- Injected via JS --}}
                     </div>
+                </div>
+            </section>
 
-                    <div class="filter-group">
-                        <label for="categoryFilter" class="filter-label">Category</label>
-                        <select id="categoryFilter" class="filter-select">
-                            <option value="">All Categories</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="sortFilter" class="filter-label">Sort By</label>
-                        <select id="sortFilter" class="filter-select">
-                            <option value="release_date-desc">Latest Release</option>
-                            <option value="release_date-asc">Oldest Release</option>
-                            <option value="title-asc">Title A-Z</option>
-                            <option value="title-desc">Title Z-A</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <div class="search-box">
-                            <input type="text" id="searchInput" class="search-input" placeholder="Search movies...">
-                            <button type="button" id="searchBtn" class="search-btn">
-                                <i class="bi bi-search"></i>
-                            </button>
+            {{-- Section 2: Phim đang chiếu (Now Showing) --}}
+            <section class="movie-section now-showing-section mb-5">
+                <div class="d-flex justify-content-between align-items-end mb-3">
+                    <h2 class="section-title mb-0">Phim đang chiếu</h2>
+                    <a href="#" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
+                </div>
+                
+                {{-- Skeleton --}}
+                <div id="nowShowingSkeleton" class="horizontal-scroll-container">
+                    <div class="movies-grid-horizontal">
+                        @for ($i = 0; $i < 5; $i++)
+                        <div class="skeleton-movie-card">
+                            <div class="skeleton skeleton-poster"></div>
                         </div>
+                        @endfor
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    {{-- Movies Grid Section --}}
-    <section class="movies-listing-section">
-        <div class="container">
-            {{-- Skeleton Grid --}}
-            <div id="moviesSkeleton" class="skeleton-grid">
-                @for ($i = 0; $i < 12; $i++)
-                <div class="skeleton-movie-card">
-                    <div class="skeleton skeleton-movie-poster"></div>
-                    <div class="skeleton-movie-info">
-                        <div class="skeleton skeleton-movie-title"></div>
-                        <div class="skeleton skeleton-movie-meta"></div>
+                {{-- Actual Content --}}
+                <div class="horizontal-scroll-container d-none" id="nowShowingContainer">
+                    <div id="nowShowingGrid" class="movies-grid-horizontal">
+                        {{-- Injected via JS --}}
                     </div>
                 </div>
-                @endfor
-            </div>
+            </section>
 
-            {{-- Actual Movies Grid (hidden until loaded) --}}
-            <div id="moviesGrid" class="movies-grid d-none"></div>
+            {{-- Section 3: Phim sắp chiếu (Coming Soon) --}}
+            <section class="movie-section coming-soon-section mb-5">
+                <div class="d-flex justify-content-between align-items-end mb-3">
+                    <h2 class="section-title mb-0">Phim sắp chiếu</h2>
+                    <div class="scroll-controls">
+                        <button class="btn-scroll" id="scrollPrev"><i class="bi bi-chevron-left"></i></button>
+                        <button class="btn-scroll" id="scrollNext"><i class="bi bi-chevron-right"></i></button>
+                    </div>
+                </div>
 
-            {{-- Empty State --}}
-            <div id="emptyState" class="empty-state d-none">
-                <i class="bi bi-film"></i>
-                <h3>No movies found</h3>
-                <p>Try adjusting your filters or search query</p>
-            </div>
+                {{-- Skeleton --}}
+                <div id="comingSoonSkeleton" class="horizontal-scroll-container">
+                    <div class="movies-grid-horizontal coming-soon-grid">
+                        @for ($i = 0; $i < 3; $i++)
+                        <div class="skeleton-movie-card-wide">
+                            <div class="skeleton skeleton-poster-wide"></div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
 
-            {{-- Pagination --}}
-            <div id="paginationContainer" class="pagination-container d-none"></div>
+                {{-- Actual Content --}}
+                <div class="horizontal-scroll-container d-none" id="comingSoonContainer">
+                    <div id="comingSoonGrid" class="movies-grid-horizontal coming-soon-grid">
+                        {{-- Injected via JS --}}
+                    </div>
+                </div>
+            </section>
         </div>
-    </section>
+    </div>
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/users/pages/movies.js') }}"></script>
+    <script type="module" src="{{ asset('js/users/pages/movies.js') }}"></script>
 @endpush
