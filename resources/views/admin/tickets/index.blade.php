@@ -40,8 +40,9 @@
                 <div class="stat-icon"><i class="bi bi-ticket-perforated"></i></div>
             </div>
             <div class="stat-value" id="cardTotalTickets">—</div>
-            <div class="stat-trend mt-2">
-                <span class="text-secondary small">vé</span>
+            <div class="stat-trend">
+                <span id="cardTotalTicketsTrend"><i class="bi bi-dash"></i> 0%</span>
+                <span class="trend-text">vs kỳ trước</span>
             </div>
         </div>
     </div>
@@ -54,8 +55,9 @@
                 <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
             </div>
             <div class="stat-value" id="cardAvgPerDay">—</div>
-            <div class="stat-trend mt-2">
-                <span class="text-secondary small">vé/ngày</span>
+            <div class="stat-trend">
+                <span id="cardAvgPerDayTrend"><i class="bi bi-dash"></i> 0%</span>
+                <span class="trend-text">vs kỳ trước</span>
             </div>
         </div>
     </div>
@@ -82,8 +84,9 @@
                 <div class="stat-icon"><i class="bi bi-people"></i></div>
             </div>
             <div class="stat-value" id="cardOccupancyRate" style="font-size:1.5rem">—</div>
-            <div class="stat-trend mt-2">
-                <span class="trend-text">% trên tổng số ghế</span>
+            <div class="stat-trend">
+                <span id="cardOccupancyRateTrend"><i class="bi bi-dash"></i> 0%</span>
+                <span class="trend-text">vs kỳ trước</span>
             </div>
         </div>
     </div>

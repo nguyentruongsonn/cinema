@@ -14,7 +14,7 @@ class ComboStatController extends Controller
     public function __construct(private readonly ComboAnalyticsService $comboAnalyticsService) {}
 
     /**
-     * Return combo statistics for the given date range.
+     * Return combo package statistics for the given date range.
      * GET /api/v1/admin/combos/stats?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
      */
     public function stats(StatFilterRequest $request)
@@ -23,9 +23,9 @@ class ComboStatController extends Controller
             $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
             $endDate   = $request->input('end_date', now()->toDateString());
 
-            $stats = $this->comboAnalyticsService->getStats($startDate, $endDate);
+            $stats = $this->comboAnalyticsService->getStats($startDate, $endDate, 'combo');
 
-            return $this->successResponse($stats, 'Combo stats retrieved successfully');
+            return $this->successResponse($stats, 'Combo package stats retrieved successfully');
         } catch (\Throwable $e) {
             return $this->errorResponse('Failed to retrieve combo stats: ' . $e->getMessage(), 500);
         }

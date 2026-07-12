@@ -5,8 +5,11 @@
 (function () {
     'use strict';
 
-    const API = '/admin/combos/stats';
+    const API_COMBO = '/admin/combos/stats';
+    const API_FOOD = '/admin/food/stats';
     const PALETTE = ['#e50914','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#a3e635','#06b6d4'];
+
+    let currentType = 'combo'; // Track current tab
 
     /* ── State ─────────────────────────────────────────────────────── */
     let state = { pollInterval: null };
@@ -260,7 +263,8 @@
 
         showLoading();
         try {
-            const url = `${API}?start_date=${start}&end_date=${end}`;
+            const api = currentType === 'combo' ? API_COMBO : API_FOOD;
+            const url = `${api}?start_date=${start}&end_date=${end}`;
             const res = await authManager.fetchAPI(url, { silentAuth: true });
 
             if (res?.success) {
@@ -292,6 +296,17 @@
 
         [els.filterStart, els.filterEnd].forEach(inp => {
             inp?.addEventListener('change', loadStats);
+        });
+
+        // Tab switching
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', (e) => {
+                const type = e.target.dataset.type;
+                if (type) {
+                    currentType = type;
+                    loadStats();
+                }
+            });
         });
     }
 

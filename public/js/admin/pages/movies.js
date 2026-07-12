@@ -124,9 +124,11 @@
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td class="text-center">
-                    ${posterSrc 
-                        ? `<img src="${posterSrc}" alt="Poster" style="width: 50px; height: 75px; object-fit: cover; border-radius: 4px;">` 
-                        : `<div style="width: 50px; height: 75px; background: rgba(255,255,255,0.1); border-radius: 4px; display:flex; align-items:center; justify-content:center;"><i class="bi bi-image text-white-50"></i></div>`}
+                    <div class="movie-poster-container">
+                        ${posterSrc 
+                            ? `<img src="${posterSrc}" alt="Poster" loading="lazy">` 
+                            : `<i class="bi bi-image text-white-50 fs-3"></i>`}
+                    </div>
                 </td>
                 <td>
                     <div class="fw-medium text-white fs-6">${movie.title}</div>

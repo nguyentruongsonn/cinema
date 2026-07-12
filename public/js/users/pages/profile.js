@@ -829,7 +829,11 @@ class ProfilePage {
         if (poster) {
             poster.src = order.poster_url || order.showtime?.movie?.poster_url || '/images/default-poster.jpg';
             poster.alt = order.movie_title || order.showtime?.movie?.title || 'Poster';
-            poster.onerror = () => { poster.src = '/images/default-poster.jpg'; };
+            // Prevent infinite loop: remove handler after first error
+            poster.onerror = function() {
+                this.onerror = null;
+                this.src = '/images/default-poster.jpg';
+            };
         }
         if (overlay) {
             overlay.style.display = status === 'cancelled' ? 'flex' : 'none';
@@ -992,7 +996,13 @@ class ProfilePage {
         document.getElementById('odModalCode').textContent = `ORD-${orderCode}`;
         
         const posterUrl = order.poster_url || (order.showtime?.movie?.poster_url) || '/images/default-poster.jpg';
-        document.getElementById('odModalPoster').src = posterUrl;
+        const modalPoster = document.getElementById('odModalPoster');
+        modalPoster.src = posterUrl;
+        // Prevent infinite loop: remove handler after first error
+        modalPoster.onerror = function() {
+            this.onerror = null;
+            this.src = '/images/default-poster.jpg';
+        };
         
         document.getElementById('odModalMovieTitle').textContent = order.movie_title || (order.showtime?.movie?.title) || 'N/A';
         
@@ -1019,70 +1029,181 @@ class ProfilePage {
         ticketsList.innerHTML = '';
         productsList.innerHTML = '';
         
+        // Try to get items from order_items OR fallback to multiple sources
+        let tickets = [];
+        let products = [];
+        
         if (order.order_items && order.order_items.length > 0) {
-            const tickets = order.order_items.filter(item => 
+            // Primary path: use order_items for completed orders
+            tickets = order.order_items.filter(item => 
                 item.item_type.includes('Seat') || item.item_type === 'ticket'
             );
-            const products = order.order_items.filter(item => 
+            products = order.order_items.filter(item => 
                 item.item_type.includes('Product') || item.item_type === 'product'
             );
+        } else {
+            // Fallback paths for failed/cancelled orders - check multiple sources
             
+            // PRIORITY 1: Check payload.seats and payload.products (most common for failed orders)
+            if (order.payload?.seats && Array.isArray(order.payload.seats) && order.payload.seats.length > 0) {
+                tickets = order.payload.seats.map(seat => ({
+                    item_type: 'ticket',
+                    metadata: {
+                        seat_label: seat.name || seat.seat_number || seat.label || `${seat.row}${seat.number}`,
+                        seat_type: seat.type || seat.seat_type || 'Ghế Thường'
+                    },
+                    seat: seat,
+                    unit_price: seat.price || 0,
+                    price: seat.price || 0,
+                    quantity: seat.quantity || 1
+                }));
+            }
+            
+            if (order.payload?.products && Array.isArray(order.payload.products) && order.payload.products.length > 0) {
+                products = order.payload.products.map(product => ({
+                    item_type: 'product',
+                    metadata: {
+                        product_name: product.name,
+                        product_description: product.description || ''
+                    },
+                    product: product,
+                    quantity: product.quantity || 1,
+                    unit_price: product.price || 0,
+                    price: product.price || 0,
+                    total_price: product.total_price || (product.quantity * product.price)
+                }));
+            }
+            
+            // PRIORITY 2: Try order.tickets array (alternative structure)
+            if (tickets.length === 0) {
+                const ticketSource = order.tickets || order.payload?.tickets || order.payload?.items?.tickets || [];
+                if (ticketSource.length > 0) {
+                    tickets = ticketSource.map(ticket => ({
+                        item_type: 'ticket',
+                        metadata: {
+                            seat_label: ticket.seat?.seat_number || ticket.seat_number || ticket.name || ticket.metadata?.seat_label,
+                            seat_type: ticket.seat?.seat_type?.name || ticket.seat_type || ticket.type || ticket.metadata?.seat_type || 'Ghế Thường'
+                        },
+                        seat: ticket.seat || ticket,
+                        unit_price: ticket.price || ticket.unit_price || ticket.seat?.price || 0,
+                        price: ticket.price || ticket.unit_price || ticket.seat?.price || 0,
+                        quantity: ticket.quantity || 1
+                    }));
+                }
+            }
+            
+            // PRIORITY 3: Try order.products array (alternative structure)
+            if (products.length === 0) {
+                const productSource = order.products || order.payload?.items?.products || [];
+                if (productSource.length > 0) {
+                    products = productSource.map(product => ({
+                        item_type: 'product',
+                        metadata: {
+                            product_name: product.product?.name || product.name || product.metadata?.product_name,
+                            product_description: product.product?.description || product.description || product.metadata?.product_description || ''
+                        },
+                        product: product.product || product,
+                        quantity: product.quantity || 1,
+                        unit_price: product.price || product.unit_price || product.product?.price || 0,
+                        price: product.price || product.unit_price || product.product?.price || 0,
+                        total_price: product.total_price || (product.quantity * (product.price || product.unit_price || 0))
+                    }));
+                }
+            }
+            
+            // PRIORITY 4: Try cart_data or order_data (legacy structure)
+            if (tickets.length === 0 && products.length === 0 && order.payload) {
+                const cartData = order.payload.cart_data || order.payload.order_data;
+                if (cartData) {
+                    if (cartData.seats && Array.isArray(cartData.seats)) {
+                        tickets = cartData.seats.map(seat => ({
+                            item_type: 'ticket',
+                            metadata: {
+                                seat_label: seat.name || seat.seat_number || seat.label,
+                                seat_type: seat.type || seat.seat_type || 'Ghế Thường'
+                            },
+                            seat: seat,
+                            unit_price: seat.price || 0,
+                            price: seat.price || 0,
+                            quantity: 1
+                        }));
+                    }
+                    if (cartData.products && Array.isArray(cartData.products)) {
+                        products = cartData.products.map(p => ({
+                            item_type: 'product',
+                            metadata: {
+                                product_name: p.name,
+                                product_description: p.description || ''
+                            },
+                            product: p,
+                            quantity: p.quantity || 1,
+                            unit_price: p.price || 0,
+                            price: p.price || 0,
+                            total_price: p.total || (p.quantity * p.price)
+                        }));
+                    }
+                }
+            }
+        }
+        
+        // Extract seat information
+        if (tickets.length > 0) {
             seatsText = tickets.map(t => t.metadata?.seat_label || t.seat?.seat_number).filter(Boolean).join(', ');
             
-            // Collect unique seat types for badge
-            tickets.forEach(t => {
-                const type = t.metadata?.seat_type || 'THƯỜNG';
-                if (!seatTypes.includes(type)) seatTypes.push(type);
-            });
-            
-            // Render Tickets in invoice (grouped by seat type)
-            const ticketGroups = {};
-            tickets.forEach(t => {
-                const label = t.metadata?.seat_label || t.seat?.seat_number || '';
-                const type = t.metadata?.seat_type || 'Ghế Thường';
-                const price = parseFloat(t.unit_price || t.price || 0);
-                if (!ticketGroups[type]) {
-                    ticketGroups[type] = {
-                        type: type,
-                        quantity: 0,
-                        seats: [],
-                        totalPrice: 0
-                    };
-                }
-                ticketGroups[type].quantity++;
-                ticketGroups[type].seats.push(label);
-                ticketGroups[type].totalPrice += price;
-            });
+        // Collect unique seat types for badge
+        tickets.forEach(t => {
+            const type = t.metadata?.seat_type || 'THƯỜNG';
+            if (!seatTypes.includes(type)) seatTypes.push(type);
+        });
+        
+        // Render Tickets in invoice (grouped by seat type)
+        const ticketGroups = {};
+        tickets.forEach(t => {
+            const label = t.metadata?.seat_label || t.seat?.seat_number || '';
+            const type = t.metadata?.seat_type || 'Ghế Thường';
+            const price = parseFloat(t.unit_price || t.price || 0);
+            if (!ticketGroups[type]) {
+                ticketGroups[type] = {
+                    type: type,
+                    quantity: 0,
+                    seats: [],
+                    totalPrice: 0
+                };
+            }
+            ticketGroups[type].quantity++;
+            ticketGroups[type].seats.push(label);
+            ticketGroups[type].totalPrice += price;
+        });
 
-            ticketsList.innerHTML = Object.values(ticketGroups).map(group => {
-                return `
-                    <div class="d-flex justify-content-between mb-2">
-                        <div>
-                            <div class="text-white fw-semibold">Vé ${group.type} (x${group.quantity})</div>
-                            <div class="text-muted" style="font-size: 0.8rem;">Ghế ${group.seats.join(', ')}</div>
-                        </div>
-                        <div class="text-white">${group.totalPrice.toLocaleString('vi-VN')}đ</div>
+        ticketsList.innerHTML = Object.values(ticketGroups).map(group => {
+            return `
+                <div class="d-flex justify-content-between mb-2">
+                    <div>
+                        <div class="text-white fw-semibold">Vé ${group.type} (x${group.quantity})</div>
+                        <div class="text-muted" style="font-size: 0.8rem;">Ghế ${group.seats.join(', ')}</div>
                     </div>
-                `;
-            }).join('');
-            
-            // Render Products in invoice
-            productsList.innerHTML = products.map(p => {
-                const name = p.metadata?.product_name || p.product?.name || 'Combo / Bắp nước';
-                const qty = p.quantity || 1;
-                const price = p.unit_price || p.price || 0;
-                const total = p.total_price || (price * qty);
-                const description = p.metadata?.product_description || p.product?.description || '';
-                return `
-                    <div class="d-flex justify-content-between mb-2">
-                        <div>
-                            <div class="text-white fw-semibold">${name} (x${qty})</div>
-                            ${description ? `<div class="text-muted" style="font-size: 0.8rem;">${description}</div>` : ''}
-                        </div>
-                        <div class="text-white">${parseFloat(total).toLocaleString('vi-VN')}đ</div>
+                    <div class="text-white">${group.totalPrice.toLocaleString('vi-VN')}đ</div>
+                </div>
+            `;
+        }).join('');
+        
+        // Render Products in invoice
+        productsList.innerHTML = products.map(p => {
+            const name = p.metadata?.product_name || p.product?.name || 'Combo / Bắp nước';
+            const qty = p.quantity || 1;
+            const price = p.unit_price || p.price || 0;
+            const total = p.total_price || (price * qty);
+            const description = p.metadata?.product_description || p.product?.description || '';
+            return `
+                <div class="d-flex justify-content-between mb-2">
+                    <div>
+                        <div class="text-white fw-semibold">${name} (x${qty})</div>
+                        ${description ? `<div class="text-muted" style="font-size: 0.8rem;">${description}</div>` : ''}
                     </div>
-                `;
-            }).join('');
+                    <div class="text-white">${parseFloat(total).toLocaleString('vi-VN')}đ</div>
+                </div>
+            `;
+        }).join('');
         }
         
         document.getElementById('odModalSeats').textContent = seatsText || 'N/A';

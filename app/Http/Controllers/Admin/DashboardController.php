@@ -20,8 +20,16 @@ class DashboardController extends Controller
     public function stats(\Illuminate\Http\Request $request)
     {
         try {
-            $range = $request->input('range', 'month');
-            $stats = $this->dashboardService->getStats($range);
+            $start = $request->input('start');
+            $end = $request->input('end');
+            
+            // If no dates provided, default to current month
+            if (!$start || !$end) {
+                $start = now()->startOfMonth()->toDateString();
+                $end = now()->toDateString();
+            }
+            
+            $stats = $this->dashboardService->getStats($start, $end);
 
             return $this->successResponse(
                 $stats,

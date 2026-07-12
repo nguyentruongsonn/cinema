@@ -196,9 +196,6 @@
                         </div>
                     </section>
 
-                    <div id="profileUpdateAlert" class="alert d-none profile-alert" role="alert"></div>
-                    <div id="profilePasswordAlert" class="alert d-none profile-alert" role="alert"></div>
-
                     <div class="profile-card-grid">
                         <section class="profile-card profile-info-card">
                             <header class="profile-card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">

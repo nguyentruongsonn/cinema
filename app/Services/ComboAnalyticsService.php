@@ -8,14 +8,20 @@ use Illuminate\Support\Facades\DB;
 class ComboAnalyticsService
 {
     private const PRODUCT_TYPE  = 'App\Models\Product';
-    private const COMBO_TYPE    = 'combo';
+    private const COMBO_TYPE    = 'App\Models\Combo';
+    private const FOOD_TYPES    = ['food', 'drink'];
     private const ORDER_PAID    = 2;
 
+    private string $currentType = 'food';
+
     /**
-     * Get all combo analytics for the given date range.
+     * Get analytics for the given date range and type.
+     * 
+     * @param string $type 'combo' for combo packages, 'food' for individual food/drinks
      */
-    public function getStats(string $startDate, string $endDate): array
+    public function getStats(string $startDate, string $endDate, string $type = 'food'): array
     {
+        $this->currentType = $type;
         $start = Carbon::parse($startDate)->startOfDay();
         $end   = Carbon::parse($endDate)->endOfDay();
 
@@ -30,13 +36,7 @@ class ComboAnalyticsService
 
     private function getTrend(Carbon $start, Carbon $end): array
     {
-        $rows = DB::table('order_items')
-            ->join('orders',   'orders.id',   '=', 'order_items.order_id')
-            ->join('products', 'products.id', '=', 'order_items.item_id')
-            ->where('order_items.item_type', self::PRODUCT_TYPE)
-            ->where('products.type',         self::COMBO_TYPE)
-            ->where('orders.status',         self::ORDER_PAID)
-            ->whereBetween('orders.paid_at', [$start, $end])
+        $rows = $this->baseComboQuery($start, $end)
             ->selectRaw('DATE(orders.paid_at) as date, SUM(order_items.quantity) as count')
             ->groupBy('date')
             ->orderBy('date')
@@ -58,9 +58,10 @@ class ComboAnalyticsService
             ->first();
 
         // Best-selling combo
+        $table = $this->getTableAlias();
         $bestCombo = (clone $base)
-            ->selectRaw('products.name, SUM(order_items.quantity) as qty')
-            ->groupBy('products.id', 'products.name')
+            ->selectRaw("{$table}.name, SUM(order_items.quantity) as qty")
+            ->groupBy("{$table}.id", "{$table}.name")
             ->orderByDesc('qty')
             ->first();
 
@@ -75,9 +76,10 @@ class ComboAnalyticsService
     /* ── Top Combos (by revenue) ────────────────────────────────────── */
     private function getTopCombos(Carbon $start, Carbon $end): array
     {
+        $table = $this->getTableAlias();
         return (array) $this->baseComboQuery($start, $end)
-            ->selectRaw('products.id, products.name, SUM(order_items.quantity) as total_qty, SUM(order_items.total_price) as total_revenue')
-            ->groupBy('products.id', 'products.name')
+            ->selectRaw("{$table}.id, {$table}.name, SUM(order_items.quantity) as total_qty, SUM(order_items.total_price) as total_revenue")
+            ->groupBy("{$table}.id", "{$table}.name")
             ->orderByDesc('total_revenue')
             ->get()
             ->map(fn($r) => [
@@ -105,9 +107,10 @@ class ComboAnalyticsService
     /* ── Per-theater breakdown by combo (for grouped bar charts) ────── */
     private function getByTheaterCombo(Carbon $start, Carbon $end): array
     {
+        $table = $this->getTableAlias();
         $rows = $this->baseComboWithTheaterQuery($start, $end)
-            ->selectRaw('theaters.name as theater_name, products.name as combo_name, SUM(order_items.total_price) as total_revenue, SUM(order_items.quantity) as total_qty')
-            ->groupBy('theaters.id', 'theaters.name', 'products.id', 'products.name')
+            ->selectRaw("theaters.name as theater_name, {$table}.name as combo_name, SUM(order_items.total_price) as total_revenue, SUM(order_items.quantity) as total_qty")
+            ->groupBy('theaters.id', 'theaters.name', "{$table}.id", "{$table}.name")
             ->orderBy('theaters.name')
             ->get();
 
@@ -153,13 +156,27 @@ class ComboAnalyticsService
     /* ── Query Builders ─────────────────────────────────────────────── */
     private function baseComboQuery(Carbon $start, Carbon $end)
     {
-        return DB::table('order_items')
-            ->join('orders',   'orders.id',   '=', 'order_items.order_id')
-            ->join('products', 'products.id', '=', 'order_items.item_id')
-            ->where('order_items.item_type', self::PRODUCT_TYPE)
-            ->where('products.type',         self::COMBO_TYPE)
-            ->where('orders.status',         self::ORDER_PAID)
-            ->whereBetween('orders.paid_at', [$start, $end]);
+        $query = DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id');
+
+        if ($this->currentType === 'combo') {
+            // Query actual combo packages
+            $query->join('combos', 'combos.id', '=', 'order_items.item_id')
+                  ->where('order_items.item_type', self::COMBO_TYPE);
+        } else {
+            // Query individual food/drink products
+            $query->join('products', 'products.id', '=', 'order_items.item_id')
+                  ->where('order_items.item_type', self::PRODUCT_TYPE)
+                  ->whereIn('products.type', self::FOOD_TYPES);
+        }
+
+        return $query->where('orders.status', self::ORDER_PAID)
+                     ->whereBetween('orders.paid_at', [$start, $end]);
+    }
+
+    private function getTableAlias(): string
+    {
+        return $this->currentType === 'combo' ? 'combos' : 'products';
     }
 
     private function baseComboWithTheaterQuery(Carbon $start, Carbon $end)

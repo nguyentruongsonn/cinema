@@ -29,6 +29,13 @@
 
     function cacheDoms() {
         els = {
+            // Filter elements
+            dashboardFilterStart: document.getElementById('dashboardFilterStart'),
+            dashboardFilterEnd: document.getElementById('dashboardFilterEnd'),
+            dashboardBtnApply: document.getElementById('dashboardBtnApply'),
+            dashboardShortcuts: document.querySelectorAll('.btn-shortcut'),
+            
+            // Stats cards
             statRevenue: document.getElementById('statRevenue'),
             statRevenueTrend: document.getElementById('statRevenueTrend'),
             statTickets: document.getElementById('statTickets'),
@@ -38,6 +45,7 @@
             statRetention: document.getElementById('statRetention'),
             statRetentionProgress: document.getElementById('statRetentionProgress'),
             
+            // Charts
             revenueChart: document.getElementById('revenueChart'),
             revenueFilter: document.getElementById('revenueFilter'),
             
@@ -71,6 +79,40 @@
 
     function formatCurrency(amount) {
         return window.formatCurrency ? window.formatCurrency(amount) : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    }
+
+    function toDateStr(d) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function setDateRange(range) {
+        const now = new Date();
+        let start;
+        switch (range) {
+            case 'week':
+                start = new Date(now);
+                const day = now.getDay();
+                const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                start.setDate(diff);
+                break;
+            case 'month':
+                start = new Date(now.getFullYear(), now.getMonth(), 1);
+                break;
+            case 'quarter':
+                const q = Math.floor(now.getMonth() / 3);
+                start = new Date(now.getFullYear(), q * 3, 1);
+                break;
+            case 'year':
+                start = new Date(now.getFullYear(), 0, 1);
+                break;
+            default:
+                start = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+        if (els.dashboardFilterStart) els.dashboardFilterStart.value = toDateStr(start);
+        if (els.dashboardFilterEnd) els.dashboardFilterEnd.value = toDateStr(now);
     }
 
     function escapeHtml(unsafe) {
@@ -345,10 +387,23 @@
         if (typeof authManager === 'undefined') return;
         
         try {
-            // For real production, you might want to separate APIs so filter doesn't reload everything
-            // But for simplicity, we pass ranges and update what's needed
             if (target === 'all' || target === 'cards') showStatsSkeleton();
-            const url = `${API_ENDPOINTS.stats}?range=${state.revenueFilter}`;
+            
+            // Build URL with date range filters
+            let url = API_ENDPOINTS.stats;
+            const params = new URLSearchParams();
+            
+            if (els.dashboardFilterStart && els.dashboardFilterStart.value) {
+                params.append('start', els.dashboardFilterStart.value);
+            }
+            if (els.dashboardFilterEnd && els.dashboardFilterEnd.value) {
+                params.append('end', els.dashboardFilterEnd.value);
+            }
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
             const response = await authManager.fetchAPI(url, { silentAuth: true });
             
             if (response && response.success) {
@@ -366,7 +421,21 @@
     async function fetchTopMovies() {
         if (typeof authManager === 'undefined') return;
         try {
-            const url = `${API_ENDPOINTS.stats}?range=${state.topMoviesFilter}`;
+            // Build URL with date range filters
+            let url = API_ENDPOINTS.stats;
+            const params = new URLSearchParams();
+            
+            if (els.dashboardFilterStart && els.dashboardFilterStart.value) {
+                params.append('start', els.dashboardFilterStart.value);
+            }
+            if (els.dashboardFilterEnd && els.dashboardFilterEnd.value) {
+                params.append('end', els.dashboardFilterEnd.value);
+            }
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
             const response = await authManager.fetchAPI(url, { silentAuth: true });
             if (response && response.success) {
                 renderTopMovies(response.data.top_movies);
@@ -380,6 +449,36 @@
     /*  Events & Lifecycle                                                 */
     /* ------------------------------------------------------------------ */
     function bindEvents() {
+        // Date filter shortcuts
+        if (els.dashboardShortcuts) {
+            els.dashboardShortcuts.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active from all, add to clicked
+                    els.dashboardShortcuts.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Set date range and fetch
+                    setDateRange(btn.dataset.range);
+                    fetchStats('all');
+                    fetchTopMovies();
+                });
+            });
+        }
+        
+        // Apply button
+        if (els.dashboardBtnApply) {
+            els.dashboardBtnApply.addEventListener('click', () => {
+                // Remove active from all shortcuts (custom range)
+                if (els.dashboardShortcuts) {
+                    els.dashboardShortcuts.forEach(b => b.classList.remove('active'));
+                }
+                
+                fetchStats('all');
+                fetchTopMovies();
+            });
+        }
+        
+        // Legacy chart filters (keep for backward compatibility)
         if (els.revenueFilter) {
             els.revenueFilter.addEventListener('change', (e) => {
                 state.revenueFilter = e.target.value;
@@ -390,14 +489,14 @@
         if (els.topMoviesFilter) {
             els.topMoviesFilter.addEventListener('change', (e) => {
                 state.topMoviesFilter = e.target.value;
-                        let skeletonHtml = '';
-        for(let i=0; i<6; i++) {
-            skeletonHtml += `
+                let skeletonHtml = '';
+                for(let i=0; i<6; i++) {
+                    skeletonHtml += `
             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                 <div class="movie-card admin-skeleton" style="background: var(--admin-surface); border-color: transparent;"></div>
             </div>`;
-        }
-        els.topMoviesContainer.innerHTML = skeletonHtml;
+                }
+                els.topMoviesContainer.innerHTML = skeletonHtml;
                 fetchTopMovies();
             });
         }
@@ -407,6 +506,9 @@
         initRevenueChart();
         initHeatmapChart();
         bindEvents();
+        
+        // Set default date range (week)
+        setDateRange('week');
         
         // Initial load
         fetchStats('all');

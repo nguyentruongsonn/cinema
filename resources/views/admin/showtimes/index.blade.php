@@ -60,31 +60,71 @@
                 <!-- Skeleton Loading Rows -->
                 <tr class="skeleton-row">
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div style="flex: 1;">
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 75%; margin-bottom: 0.5rem;"></div>
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 50%;"></div>
+                            </div>
+                        </div>
+                    </td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
                     <td><div class="admin-skeleton admin-skeleton-text" style="width: 60%;"></div></td>
                 </tr>
                 <tr class="skeleton-row">
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div style="flex: 1;">
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 80%; margin-bottom: 0.5rem;"></div>
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 45%;"></div>
+                            </div>
+                        </div>
+                    </td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
                     <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
                 </tr>
                 <tr class="skeleton-row">
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div style="flex: 1;">
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 65%; margin-bottom: 0.5rem;"></div>
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 55%;"></div>
+                            </div>
+                        </div>
+                    </td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
                     <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
                 </tr>
                 <tr class="skeleton-row">
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div style="flex: 1;">
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 70%; margin-bottom: 0.5rem;"></div>
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 48%;"></div>
+                            </div>
+                        </div>
+                    </td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
                     <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
                 </tr>
                 <tr class="skeleton-row">
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div style="flex: 1;">
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 85%; margin-bottom: 0.5rem;"></div>
+                                <div class="admin-skeleton admin-skeleton-text" style="width: 42%;"></div>
+                            </div>
+                        </div>
+                    </td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
                     <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
                 </tr>

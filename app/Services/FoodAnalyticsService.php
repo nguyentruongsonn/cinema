@@ -22,6 +22,7 @@ class FoodAnalyticsService
 
     /**
      * Get all food analytics for the given date range and optional type filter.
+     * Returns same structure as ComboAnalyticsService for frontend compatibility.
      */
     public function getStats(string $startDate, string $endDate, ?string $type = null): array
     {
@@ -34,14 +35,54 @@ class FoodAnalyticsService
             : self::FOOD_TYPES;
 
         return [
-            'summary'      => $this->getSummary($start, $end, $types),
-            'type_ratio'   => $this->getTypeRatio($start, $end),       // always all types for pie
-            'top_products' => $this->getTopProducts($start, $end, $types),
-            'revenue_trend'=> $this->getRevenueTrend($start, $end, $types),
+            'summary'           => $this->getSummaryCompatible($start, $end, $types),
+            'top_combos'        => $this->getTopProducts($start, $end, $types), // Renamed for compatibility
+            'revenue_by_theater'=> [], // Food stats don't have theater breakdown
+            'by_theater_combo'  => ['theater_names' => [], 'combo_names' => [], 'revenue_series' => [], 'qty_series' => []],
+            'trend'             => $this->getTrend($start, $end, $types), // New method for daily trend
         ];
     }
 
-    /* ── Summary Cards ─────────────────────────────────────────────── */
+    /* ── Summary Cards (Compatible with ComboAnalyticsService) ──────── */
+    private function getSummaryCompatible(Carbon $start, Carbon $end, array $types): array
+    {
+        $base = $this->baseQuery($start, $end, $types);
+
+        $totals = (clone $base)
+            ->selectRaw('SUM(order_items.total_price) as total_revenue, SUM(order_items.quantity) as total_qty')
+            ->first();
+
+        // Best-selling product
+        $best = (clone $base)
+            ->selectRaw('products.name, SUM(order_items.quantity) as qty')
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('qty')
+            ->first();
+
+        return [
+            'total_revenue'   => (float) ($totals->total_revenue ?? 0),
+            'total_quantity'  => (int)   ($totals->total_qty ?? 0),
+            'best_combo_name' => $best?->name ?? '—',  // "combo" for compatibility
+            'best_combo_qty'  => (int) ($best?->qty ?? 0),
+        ];
+    }
+
+    /* ── Daily Trend (Compatible with ComboAnalyticsService) ──────────── */
+    private function getTrend(Carbon $start, Carbon $end, array $types): array
+    {
+        $rows = $this->baseQuery($start, $end, $types)
+            ->selectRaw('DATE(orders.paid_at) as date, SUM(order_items.quantity) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        return $rows->map(fn($r) => [
+            'date'  => $r->date,
+            'count' => (int) $r->count,
+        ])->toArray();
+    }
+
+    /* ── Summary Cards (Original structure - kept for backward compatibility) ──────── */
     private function getSummary(Carbon $start, Carbon $end, array $types): array
     {
         $base = $this->baseQuery($start, $end, $types);

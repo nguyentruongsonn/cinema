@@ -16,14 +16,14 @@ class DashboardService
     /**
      * Get all dashboard statistics with time range filter.
      */
-    public function getStats(string $range = 'month'): array
+    public function getStats(string $start, string $end): array
     {
-        $cacheKey = "admin:dashboard:stats:{$range}";
+        $cacheKey = "admin:dashboard:stats:{$start}:{$end}";
         // Short cache for near real-time, but prevents DB overload from spam clicks
         return Cache::remember($cacheKey, now()->addSeconds(30), fn () => [
-            'cards' => $this->getCardStats(),
-            'revenue_by_day' => $this->getRevenueByDay($range),
-            'top_movies' => $this->getTopMovies($range),
+            'cards' => $this->getCardStats($start, $end),
+            'revenue_by_day' => $this->getRevenueByDay($start, $end),
+            'top_movies' => $this->getTopMovies($start, $end),
             'traffic_heatmap' => $this->getTrafficHeatmap(),
             'recent_orders' => $this->getRecentOrders(),
         ]);
@@ -39,24 +39,28 @@ class DashboardService
     }
 
     /**
-     * Get card statistics with comparisons and retention rate.
+     * Get card statistics with smart comparison logic.
+     * Compares current period with previous period of same length.
      */
-    private function getCardStats(): array
+    private function getCardStats(string $start, string $end): array
     {
-        $now = now();
-        $thisMonthStart = $now->copy()->startOfMonth();
-        $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
-        $lastMonthEnd = $now->copy()->subMonth()->endOfMonth();
+        $currentStart = Carbon::parse($start)->startOfDay();
+        $currentEnd = Carbon::parse($end)->endOfDay();
+        
+        // Calculate comparison period (same length, immediately before current period)
+        $days = $currentStart->diffInDays($currentEnd);
+        $compareEnd = $currentStart->copy()->subDay()->endOfDay();
+        $compareStart = $compareEnd->copy()->subDays($days)->startOfDay();
 
         // 1. Revenue
         $currentRevenue = DB::table('orders')
             ->where('status', self::STATUS_CONFIRMED)
-            ->where('paid_at', '>=', $thisMonthStart)
+            ->whereBetween('paid_at', [$currentStart, $currentEnd])
             ->sum('total_amount');
             
         $lastRevenue = DB::table('orders')
             ->where('status', self::STATUS_CONFIRMED)
-            ->whereBetween('paid_at', [$lastMonthStart, $lastMonthEnd])
+            ->whereBetween('paid_at', [$compareStart, $compareEnd])
             ->sum('total_amount');
             
         $revenueTrend = $this->calculateTrend($currentRevenue, $lastRevenue);
@@ -64,23 +68,23 @@ class DashboardService
         // 2. Tickets (Orders count for simplicity as 'tickets sold')
         $currentTickets = DB::table('orders')
             ->where('status', self::STATUS_CONFIRMED)
-            ->where('paid_at', '>=', $thisMonthStart)
+            ->whereBetween('paid_at', [$currentStart, $currentEnd])
             ->count();
             
         $lastTickets = DB::table('orders')
             ->where('status', self::STATUS_CONFIRMED)
-            ->whereBetween('paid_at', [$lastMonthStart, $lastMonthEnd])
+            ->whereBetween('paid_at', [$compareStart, $compareEnd])
             ->count();
             
         $ticketsTrend = $this->calculateTrend($currentTickets, $lastTickets);
 
         // 3. New Users
         $currentUsers = DB::table('users')
-            ->where('created_at', '>=', $thisMonthStart)
+            ->whereBetween('created_at', [$currentStart, $currentEnd])
             ->count();
             
         $lastUsers = DB::table('users')
-            ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
+            ->whereBetween('created_at', [$compareStart, $compareEnd])
             ->count();
             
         $usersTrend = $this->calculateTrend($currentUsers, $lastUsers);
@@ -127,21 +131,18 @@ class DashboardService
     }
 
     /**
-     * Get revenue line chart data based on filter range.
+     * Get revenue line chart data for specified date range.
      */
-    private function getRevenueByDay(string $range)
+    private function getRevenueByDay(string $start, string $end)
     {
-        $startDate = match ($range) {
-            'week' => now()->startOfWeek(),
-            'year' => now()->startOfYear(),
-            default => now()->startOfMonth(), // 'month'
-        };
+        $startDate = Carbon::parse($start)->startOfDay();
+        $endDate = Carbon::parse($end)->endOfDay();
 
         return DB::table('orders')
             ->selectRaw('DATE(paid_at) as date, SUM(total_amount) as revenue')
             ->where('status', self::STATUS_CONFIRMED)
             ->whereNotNull('paid_at')
-            ->where('paid_at', '>=', $startDate)
+            ->whereBetween('paid_at', [$startDate, $endDate])
             ->groupBy(DB::raw('DATE(paid_at)'))
             ->orderBy('date')
             ->get();
@@ -168,22 +169,19 @@ class DashboardService
     }
 
     /**
-     * Get top movies by revenue.
+     * Get top movies by revenue for specified date range.
      */
-    private function getTopMovies(string $range)
+    private function getTopMovies(string $start, string $end)
     {
-        $startDate = match ($range) {
-            'week' => now()->subDays(7)->startOfDay(),
-            'year' => now()->startOfYear(),
-            default => now()->startOfMonth(), // 'month'
-        };
+        $startDate = Carbon::parse($start)->startOfDay();
+        $endDate = Carbon::parse($end)->endOfDay();
 
         return DB::table('orders')
             ->selectRaw('movies.id, movies.title, movies.poster_url, COUNT(orders.id) as tickets_sold, SUM(orders.total_amount) as revenue')
             ->join('showtimes', 'showtimes.id', '=', 'orders.showtime_id')
             ->join('movies', 'movies.id', '=', 'showtimes.movie_id')
             ->where('orders.status', self::STATUS_CONFIRMED)
-            ->where('orders.paid_at', '>=', $startDate)
+            ->whereBetween('orders.paid_at', [$startDate, $endDate])
             ->groupBy('movies.id', 'movies.title', 'movies.poster_url')
             ->orderByDesc('revenue')
             ->limit(6)

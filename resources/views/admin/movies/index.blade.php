@@ -59,7 +59,7 @@
                 <!-- Skeleton Loading Rows -->
                 <tr class="skeleton-row">
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
                     <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
@@ -68,7 +68,7 @@
                 </tr>
                 <tr class="skeleton-row">
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
                     <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
@@ -77,7 +77,7 @@
                 </tr>
                 <tr class="skeleton-row">
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
                     <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
@@ -85,22 +85,22 @@
                     <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
                 </tr>
                 <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-avatar" style="width: 50px; height: 70px; border-radius: 4px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
                 </tr>
                 <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-avatar" style="width: 50px; height: 70px; border-radius: 4px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
                 </tr>
             </tbody>
         </table>

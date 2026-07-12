@@ -10,6 +10,30 @@
 @endsection
 
 @section('content')
+
+{{-- Date Range Filter --}}
+<div class="filter-bar mb-4">
+    <div class="filter-bar-inner">
+        <div class="filter-group">
+            <label for="dashboardFilterStart" class="filter-label">Từ ngày</label>
+            <input type="date" id="dashboardFilterStart" class="filter-input" />
+        </div>
+        <div class="filter-group">
+            <label for="dashboardFilterEnd" class="filter-label">Đến ngày</label>
+            <input type="date" id="dashboardFilterEnd" class="filter-input" />
+        </div>
+        <div class="filter-shortcuts d-flex gap-2">
+            <button class="btn-shortcut active" data-range="week">Tuần này</button>
+            <button class="btn-shortcut" data-range="month">Tháng này</button>
+            <button class="btn-shortcut" data-range="quarter">Quý này</button>
+            <button class="btn-shortcut" data-range="year">Năm nay</button>
+        </div>
+        <button id="dashboardBtnApply" class="btn-primary-custom ms-auto">
+            <i class="bi bi-arrow-clockwise"></i> Cập nhật
+        </button>
+    </div>
+</div>
+
 <!-- Stats Cards Row -->
 <div class="row g-4 mb-4">
     <!-- TOTAL REVENUE -->
@@ -22,7 +46,7 @@
             <div class="stat-value" id="statRevenue">0₫</div>
             <div class="stat-trend">
                 <span id="statRevenueTrend"><i class="bi bi-dash"></i> 0%</span>
-                <span class="trend-text">vs tháng trước</span>
+                <span class="trend-text">vs kỳ trước</span>
             </div>
         </div>
     </div>
@@ -37,7 +61,7 @@
             <div class="stat-value" id="statTickets">0</div>
             <div class="stat-trend">
                 <span id="statTicketsTrend"><i class="bi bi-dash"></i> 0%</span>
-                <span class="trend-text">vs tháng trước</span>
+                <span class="trend-text">vs kỳ trước</span>
             </div>
         </div>
     </div>
@@ -52,7 +76,7 @@
             <div class="stat-value" id="statNewUsers">0</div>
             <div class="stat-trend">
                 <span id="statUsersTrend"><i class="bi bi-dash"></i> 0%</span>
-                <span class="trend-text">vs tháng trước</span>
+                <span class="trend-text">vs kỳ trước</span>
             </div>
         </div>
     </div>
@@ -129,6 +153,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('css/admin/dashboard-redesign.css') }}?v={{ time() }}">
 @endpush
 
