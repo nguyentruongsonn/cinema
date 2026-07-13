@@ -7,16 +7,16 @@
 @section('content')
 
 {{-- ── Tab Navigation ─────────────────────────────────────────────────── --}}
-<ul class="nav nav-tabs mb-4" role="tablist">
+<ul class="nav nav-tabs combo-tabs mb-4" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="food-tab" data-bs-toggle="tab" data-bs-target="#food-panel" 
+        <button class="nav-link" id="food-tab" data-bs-toggle="tab" data-bs-target="#food-panel"
                 type="button" role="tab" aria-controls="food-panel" aria-selected="true"
                 data-type="food">
             <i class="bi bi-cup-straw me-2"></i>Đồ ăn & Nước uống
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="combo-tab" data-bs-toggle="tab" data-bs-target="#combo-panel" 
+        <button class="nav-link active" id="combo-tab" data-bs-toggle="tab" data-bs-target="#combo-panel"
                 type="button" role="tab" aria-controls="combo-panel" aria-selected="false"
                 data-type="combo">
             <i class="bi bi-box-seam me-2"></i>Combo
