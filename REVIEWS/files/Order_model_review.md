@@ -1,444 +1,591 @@
-# File Review: Order.php (Model)
+====================================================
 
-**Review Date:** 2026-07-14  
-**Reviewer:** Senior Software Engineer + Security Reviewer  
-**File:** app/Models/Order.php  
-**Lines:** 84  
-**Type:** Eloquent Model - Order Records
+File:
+app/Models/Order.php
 
----
+Overall Score:
+4.6/10
 
-## File Information
+Decision:
+REQUEST CHANGES
 
-**Path:** `app/Models/Order.php`  
-**Type:** Eloquent Model  
-**Lines:** 84  
-**Complexity:** Low  
+----------------------------------------------------
 
-**Purpose:**  
-Core order model representing customer orders:
-- Order status tracking
-- Payment integration
-- Showtime booking records
-- Order items relationship
-- User and promotion linking
+Strengths
 
-**Database Table:** `orders`
+- Defines explicit status constants for cancelled, pending, and confirmed/paid states.
+- Uses typed relationship return types for user, showtime, promotion, order items, and payment.
+- Casts monetary, JSON, integer, and datetime fields.
+- Provides basic query scopes for status, order code, and user filtering.
 
----
+----------------------------------------------------
 
-## Overall Score
+Issues
 
-**Code Quality:** 6.0/10  
-**Security:** 5.5/10 ⚠️  
-**Performance:** 7.0/10  
-**Maintainability:** 5.5/10  
-**Laravel Best Practice:** 6.5/10  
+### Issue #1
 
-**Overall Score:** 6.1/10
+Severity:
+Critical
 
-**Decision:** ⚠️ **APPROVE WITH CRITICAL FIXES REQUIRED**
+Category:
+Business Logic / Payment Correctness
 
----
+Location:
+app/Models/Order.php:17-18
 
-## Strengths
+Problem
 
-1. ✅ **Proper Relationships** - Clear relationships to User, Showtime, Payment, OrderItems
-2. ✅ **Proper Casts** - JSON payload, datetime fields, decimal amount properly cast
-3. ✅ **Query Scopes** - Helpful scopes for common queries (Lines 70-83)
-4. ✅ **Factory Support** - HasFactory trait for testing
+`STATUS_CONFIRMED` and `STATUS_PAID` are both assigned the same value:
 
----
-
-## Issues Found
-
-### Issue #1: Mass Assignment Security Risk - Status Field
-
-**Severity:** 🟠 HIGH  
-**Category:** Security - Authorization Bypass  
-**Location:** Lines 19-33
-
-**Evidence:**
 ```php
-protected $fillable = [
-    'code',
-    'gateway_order_code',
-    'user_id',
-    'showtime_id',
-    'total_amount',
-    'payload',
-    'status',  // ← CRITICAL: Status is mass-assignable!
-    'payment_provider',
-    'payment_status',
-    'checkout_url',
-    'paid_at',  // ← Also mass-assignable!
-    'cancelled_at',
-    'expired_at',
-];
-```
-
-**Problem:**
-Critical fields are mass-assignable. Same issue as Payment model. Attackers could:
-- Mark pending orders as paid/confirmed without payment
-- Change paid orders to cancelled (fraud)
-- Manipulate timestamps (paid_at, cancelled_at)
-- Bypass business logic entirely
-
-**Attack Scenario:**
-```php
-// Attacker sends:
-PATCH /api/orders/123
-{
-  "status": 2,  // ← Mark as PAID/CONFIRMED without payment!
-  "paid_at": "2026-07-14 03:00:00"
-}
-
-// If using $order->update($request->all()):
-// Order marked as paid WITHOUT actual payment!
-```
-
-**Impact:**
-- Free orders (financial loss)
-- Order fraud
-- Payment bypass
-- Data corruption
-
-**Recommended Fix:**
-```php
-protected $fillable = [
-    'code',
-    'gateway_order_code',
-    'user_id',
-    'showtime_id',
-    'total_amount',
-    'payload',
-    'payment_provider',
-    'checkout_url',
-    // Remove: 'status', 'payment_status', 'paid_at', 'cancelled_at', 'expired_at'
-];
-
-protected $guarded = [
-    'status',
-    'payment_status',
-    'paid_at',
-    'cancelled_at',
-    'expired_at',
-];
-```
-
-**Better Approach - Controlled State Changes:**
-```php
-public function markAsPending(): void
-{
-    $this->update(['status' => self::STATUS_PENDING]);
-}
-
-public function markAsConfirmed(): void
-{
-    if ($this->status !== self::STATUS_PENDING) {
-        throw new \DomainException('Can only confirm pending orders');
-    }
-    
-    $this->update([
-        'status' => self::STATUS_CONFIRMED,
-        'paid_at' => now(),
-    ]);
-}
-
-public function markAsCancelled(?string $reason = null): void
-{
-    if ($this->status === self::STATUS_CONFIRMED) {
-        throw new \DomainException('Cannot cancel confirmed orders. Use refund instead.');
-    }
-    
-    $this->update([
-        'status' => self::STATUS_CANCELLED,
-        'cancelled_at' => now(),
-        'payload' => array_merge($this->payload ?? [], ['cancellation_reason' => $reason]),
-    ]);
-}
-```
-
----
-
-### Issue #2: Confusing Status Alias - PAID vs CONFIRMED
-
-**Severity:** 🟡 MEDIUM  
-**Category:** Code Clarity & Maintainability  
-**Location:** Lines 15-18
-
-**Evidence:**
-```php
-public const STATUS_CANCELLED = 0;
-public const STATUS_PENDING = 1;
 public const STATUS_CONFIRMED = 2;
 public const STATUS_PAID = 2; // Alias for confirmed in this context
 ```
 
-**Problem:**
-Two constants (STATUS_CONFIRMED and STATUS_PAID) have the same value (2). This causes:
-- Confusion about which to use
-- Inconsistent code (`if ($order->status === self::STATUS_PAID)` vs `self::STATUS_CONFIRMED`)
-- Debugging difficulties
-- Maintenance issues
+Why this matters
 
-**Why This Matters:**
-```php
-// Which is correct?
-if ($order->status === self::STATUS_PAID) { ... }
-if ($order->status === self::STATUS_CONFIRMED) { ... }
+Confirmed and paid are not always equivalent in a cinema booking system. An order can be confirmed before payment capture, paid after gateway confirmation, refunded after payment, or partially failed depending on provider flow. Collapsing confirmed and paid into the same integer makes state transitions ambiguous and can cause duplicate fulfillment, premature ticket issuance, incorrect revenue reporting, or inability to distinguish unpaid reservations from paid orders.
 
-// Both work, but which represents the business logic?
-// Are "paid" and "confirmed" really the same state?
-```
+How to fix
 
-**Recommended Fix - Remove Alias:**
+Use a strict order state machine with distinct states, or separate order fulfillment status from payment status.
+
+Example
+
 ```php
 public const STATUS_CANCELLED = 0;
 public const STATUS_PENDING = 1;
-public const STATUS_CONFIRMED = 2; // Order is confirmed AND paid
-
-// Remove: STATUS_PAID alias
+public const STATUS_CONFIRMED = 2;
+public const STATUS_PAID = 3;
+public const STATUS_EXPIRED = 4;
+public const STATUS_REFUNDED = 5;
 ```
 
-**Better Approach - Separate States:**
+Better: use PHP enums and explicit transition methods.
+
+----------------------------------------------------
+
+### Issue #2
+
+Severity:
+Critical
+
+Category:
+Authorization / Mass Assignment
+
+Location:
+app/Models/Order.php:19-33
+
+Problem
+
+Payment and lifecycle fields are mass assignable:
+
 ```php
-public const STATUS_CANCELLED = 0;
-public const STATUS_PENDING = 1;
-public const STATUS_PROCESSING = 2; // Payment being processed
-public const STATUS_CONFIRMED = 3; // Payment confirmed
-public const STATUS_FULFILLED = 4; // Order fulfilled (seats assigned)
-
-// Clear state progression:
-// pending → processing → confirmed → fulfilled
-//     ↓
-// cancelled
+'status',
+'payment_provider',
+'payment_status',
+'checkout_url',
+'paid_at',
+'cancelled_at',
+'expired_at',
+'total_amount',
+'gateway_order_code',
 ```
 
----
+Why this matters
 
-### Issue #3: Payment Status Duplication Risk
+These are privileged financial and lifecycle fields. If any controller or service uses request-driven mass assignment, a caller could mark an order as paid, alter totals, change gateway identifiers, set cancellation/expiration timestamps, or inject a checkout URL. In a booking system, this can directly cause revenue loss and unauthorized ticket issuance.
 
-**Severity:** 🟡 MEDIUM  
-**Category:** Data Consistency  
-**Location:** Line 28 + Line 65
+How to fix
 
-**Evidence:**
+Do not expose financial/lifecycle fields to generic mass assignment. Update them only through dedicated service methods after authorization and gateway verification.
+
+Example
+
 ```php
 protected $fillable = [
-    // ...
-    'payment_status',  // ← Order has payment_status field
+    'code',
+    'user_id',
+    'showtime_id',
+    'payload',
 ];
+```
 
-public function payment(): HasOne
+Then use explicit domain methods:
+
+```php
+public function markPaid(string $provider, int $gatewayCode): void
 {
-    return $this->hasOne(Payment::class);  // ← Also has Payment relationship
+    $this->forceFill([
+        'status' => self::STATUS_PAID,
+        'payment_provider' => $provider,
+        'gateway_order_code' => $gatewayCode,
+        'paid_at' => now(),
+    ])->save();
 }
 ```
 
-**Problem:**
-Order has BOTH:
-1. `payment_status` field (denormalized)
-2. `payment()` relationship to Payment model
+----------------------------------------------------
 
-This can lead to inconsistency:
-- Order.payment_status = 'success'
-- But Payment.status = 'failed'
-- Which is the source of truth?
+### Issue #3
 
-**Impact:**
-- Data inconsistency
-- Sync issues
-- Confusing logic
-- Difficult debugging
+Severity:
+Critical
 
-**Recommended Fix - Choose ONE Source of Truth:**
+Category:
+Concurrency / Duplicate Payment
 
-**Option 1: Remove denormalized field (preferred)**
+Location:
+app/Models/Order.php:15-33
+
+Problem
+
+The model exposes mutable payment status fields but provides no idempotent state transition method:
+
 ```php
-// Remove payment_status from order
-// Always check: $order->payment->status
-
-public function isPaid(): bool
-{
-    return $this->payment && $this->payment->isSuccessful();
-}
+'status',
+'payment_status',
+'paid_at',
+'gateway_order_code',
 ```
 
-**Option 2: Keep denormalized but sync automatically**
+Why this matters
+
+Payment webhooks and client return callbacks are commonly delivered multiple times or concurrently. Without an atomic transition method such as "mark paid only if currently pending", multiple workers can process the same order, create duplicate tickets, duplicate booking fulfillment, or double-count revenue.
+
+How to fix
+
+Implement idempotent, atomic state transitions in a service using a transaction and row lock.
+
+Example
+
 ```php
-// In Payment model - Observer or Event
-public static function boot()
-{
-    parent::boot();
-    
-    static::saved(function ($payment) {
-        $payment->order->update([
-            'payment_status' => $payment->status
-        ]);
-    });
-}
+DB::transaction(function () use ($orderId) {
+    $order = Order::whereKey($orderId)->lockForUpdate()->firstOrFail();
 
-// Add accessor to Order
-public function isPaid(): bool
-{
-    // Use denormalized for performance
-    return $this->payment_status === 'success';
-}
-```
-
----
-
-### Issue #4: No State Transition Validation
-
-**Severity:** 🟠 HIGH  
-**Category:** Data Integrity  
-**Location:** Model-wide
-
-**Evidence:**
-```php
-// Currently possible:
-$order = Order::find(1);
-$order->status = self::STATUS_CONFIRMED;
-$order->save();
-
-$order->status = self::STATUS_PENDING; // ← Can downgrade confirmed to pending!
-$order->save();
-
-$order->status = 999; // ← Can set invalid status!
-$order->save();
-```
-
-**Problem:**
-No validation of:
-- Valid status values
-- Valid state transitions
-- Business rules
-
-Valid transitions should be:
-- pending → confirmed ✅
-- pending → cancelled ✅
-- confirmed → cancelled ❌ (should require refund)
-- confirmed → pending ❌ (impossible in real world)
-
-**Impact:**
-- Data corruption
-- Invalid order states
-- Business logic violations
-
-**Recommended Fix:**
-```php
-use Illuminate\Database\Eloquent\Casts\Attribute;
-
-protected function status(): Attribute
-{
-    return Attribute::make(
-        set: function (int $value) {
-            // Validate status value
-            $validStatuses = [
-                self::STATUS_CANCELLED,
-                self::STATUS_PENDING,
-                self::STATUS_CONFIRMED,
-            ];
-            
-            if (!in_array($value, $validStatuses, true)) {
-                throw new \InvalidArgumentException("Invalid order status: $value");
-            }
-            
-            // Validate state transition
-            if ($this->exists) {
-                $this->validateStatusTransition($this->status, $value);
-            }
-            
-            return $value;
-        }
-    );
-}
-
-private function validateStatusTransition(int $from, int $to): void
-{
-    $allowedTransitions = [
-        self::STATUS_PENDING => [self::STATUS_CONFIRMED, self::STATUS_CANCELLED],
-        self::STATUS_CONFIRMED => [], // Terminal state - requires special refund process
-        self::STATUS_CANCELLED => [], // Terminal state
-    ];
-    
-    if (!in_array($to, $allowedTransitions[$from] ?? [])) {
-        throw new \DomainException("Invalid order state transition: $from -> $to");
+    if ($order->status === Order::STATUS_PAID) {
+        return;
     }
+
+    if ($order->status !== Order::STATUS_PENDING) {
+        throw new DomainException('Order cannot be paid from current state.');
+    }
+
+    $order->forceFill([
+        'status' => Order::STATUS_PAID,
+        'paid_at' => now(),
+    ])->save();
+
+    // fulfill seats/tickets exactly once inside the same transaction
+});
+```
+
+----------------------------------------------------
+
+### Issue #4
+
+Severity:
+High
+
+Category:
+Database Correctness / Unique Constraints
+
+Location:
+app/Models/Order.php:20-21, 75-78
+
+Problem
+
+The model relies on order code lookup:
+
+```php
+'code',
+'gateway_order_code',
+```
+
+```php
+public function scopeByOrderCode($query, $code)
+{
+    return $query->where('code', $code);
 }
 ```
 
----
+There is no model-level indication that `code` or `gateway_order_code` is unique.
 
-### Issue #5: Missing Audit Trail Fields
+Why this matters
 
-**Severity:** 🟡 MEDIUM  
-**Category:** Compliance & Audit  
-**Location:** Model structure
+Order codes and gateway order codes are identifiers. Duplicate values can cause wrong-order lookup, payment reconciliation errors, data exposure, or payment confirmation being applied to the wrong order.
 
-**Evidence:**
+How to fix
+
+Enforce uniqueness at the database level.
+
+Example
+
 ```php
-// No audit fields:
-// - created_by
-// - updated_by
-// - cancelled_by
-// - ip_address
+$table->string('code')->unique();
+$table->unsignedBigInteger('gateway_order_code')->nullable()->unique();
 ```
 
-**Problem:**
-Order records lack audit trail:
-- Who created the order?
-- Who cancelled it?
-- From which IP?
+If gateway codes are unique only per provider:
 
-Critical for:
-- Fraud investigation
-- Dispute resolution
-- Customer service
-- Security auditing
-
-**Recommended Fix:**
 ```php
-// In migration:
-$table->unsignedBigInteger('created_by')->nullable();
-$table->unsignedBigInteger('updated_by')->nullable();
-$table->unsignedBigInteger('cancelled_by')->nullable();
-$table->string('ip_address')->nullable();
+$table->unique(['payment_provider', 'gateway_order_code']);
+```
 
-// In model:
+----------------------------------------------------
+
+### Issue #5
+
+Severity:
+High
+
+Category:
+Database Correctness / Relationship Mapping
+
+Location:
+app/Models/Order.php:55-58
+
+Problem
+
+The model defines a promotion relationship:
+
+```php
+public function promotion(): BelongsTo
+{
+    return $this->belongsTo(Promotion::class);
+}
+```
+
+but `promotion_id` is not present in `$fillable`:
+
+```php
 protected $fillable = [
-    // ... existing fields ...
-    'created_by',
-    'cancelled_by',
-    'ip_address',
-];
-
-protected $guarded = [
-    'updated_by', // Auto-tracked
+    'code',
+    'gateway_order_code',
+    'user_id',
+    'showtime_id',
+    ...
 ];
 ```
 
----
+Why this matters
 
-### Issue #6: Scope Methods Missing Return Types
+This is inconsistent model design. Either the order has a `promotion_id` foreign key and it should be deliberately managed, or the relationship is stale/dead code. Inconsistent relationships create confusion in services and resources and can hide bugs in promotion/revenue calculations.
 
-**Severity:** 🔵 LOW  
-**Category:** Type Safety  
-**Location:** Lines 70-83
+How to fix
 
-**Evidence:**
+If orders store a promotion foreign key, add a controlled assignment path and database foreign key. If not, remove the relationship.
+
+Example
+
+```php
+'promotion_id',
+```
+
+with:
+
+```php
+$table->foreignId('promotion_id')->nullable()->constrained()->nullOnDelete();
+```
+
+----------------------------------------------------
+
+### Issue #6
+
+Severity:
+High
+
+Category:
+Business Logic / Monetary Correctness
+
+Location:
+app/Models/Order.php:24, 35-38
+
+Problem
+
+`total_amount` is mass assignable and only cast to decimal:
+
+```php
+'total_amount',
+```
+
+```php
+'total_amount' => 'decimal:2',
+```
+
+There is no invariant preventing negative totals or ensuring the total matches order items, seats, combos, fees, discounts, and promotions.
+
+Why this matters
+
+Order totals are financial data. If invalid totals are persisted, the system can undercharge, overcharge, misreport revenue, or fail payment gateway reconciliation.
+
+How to fix
+
+Calculate totals server-side from authoritative pricing data and enforce database constraints.
+
+Example
+
+```php
+$table->decimal('total_amount', 12, 2);
+$table->check('total_amount >= 0');
+```
+
+Do not trust request payload totals. Compute through pricing services inside the order transaction.
+
+----------------------------------------------------
+
+### Issue #7
+
+Severity:
+High
+
+Category:
+Security / Sensitive Data Exposure
+
+Location:
+app/Models/Order.php:25, 35-39
+
+Problem
+
+The model stores arbitrary JSON payload:
+
+```php
+'payload',
+```
+
+```php
+'payload' => 'json',
+```
+
+Why this matters
+
+A generic order payload can accidentally persist PII, payment gateway data, signed callback payloads, customer contact details, seat details, internal pricing logic, or tokens. If returned by API resources or logs, this can leak sensitive data.
+
+How to fix
+
+Replace generic `payload` storage with explicit columns or a strict value object schema. Never store raw payment secrets or unbounded request payloads.
+
+Example
+
+```php
+'payload' => [
+    'selected_seats' => [...],
+    'pricing_snapshot' => [...],
+]
+```
+
+Validate and redact before persistence.
+
+----------------------------------------------------
+
+### Issue #8
+
+Severity:
+High
+
+Category:
+State Machine / Correctness
+
+Location:
+app/Models/Order.php:15-18, 26-32
+
+Problem
+
+The model defines only three order states and timestamp fields:
+
+```php
+public const STATUS_CANCELLED = 0;
+public const STATUS_PENDING = 1;
+public const STATUS_CONFIRMED = 2;
+```
+
+```php
+'paid_at',
+'cancelled_at',
+'expired_at',
+```
+
+There are no domain methods ensuring timestamps match status.
+
+Why this matters
+
+The model allows impossible states such as:
+- `status = pending` with `paid_at` set.
+- `status = paid` with `cancelled_at` set.
+- `status = cancelled` with no `cancelled_at`.
+- `status = paid` and `expired_at` set.
+
+Impossible states break booking cleanup, revenue reports, user order history, seat release logic, and customer support workflows.
+
+How to fix
+
+Add explicit transition methods and validate transitions in services.
+
+Example
+
+```php
+public function cancel(): void
+{
+    if ($this->status === self::STATUS_PAID) {
+        throw new DomainException('Paid orders cannot be cancelled without refund.');
+    }
+
+    $this->forceFill([
+        'status' => self::STATUS_CANCELLED,
+        'cancelled_at' => now(),
+    ])->save();
+}
+```
+
+----------------------------------------------------
+
+### Issue #9
+
+Severity:
+Medium
+
+Category:
+Database Correctness / Referential Integrity
+
+Location:
+app/Models/Order.php:45-68
+
+Problem
+
+The model defines critical relationships:
+
+```php
+public function user(): BelongsTo
+public function showtime(): BelongsTo
+public function orderItems(): HasMany
+public function payment(): HasOne
+```
+
+The model does not document deletion behavior or lifecycle policy for related rows.
+
+Why this matters
+
+Orders are financial/audit records. Deleting users, showtimes, order items, or payments without a clear policy can destroy auditability or leave orphaned financial data. In production, orders should generally be immutable records with explicit retention rules.
+
+How to fix
+
+Define database foreign key behavior intentionally:
+- user deletion should likely `restrict` or `nullOnDelete` with immutable customer snapshot;
+- showtime deletion should likely be restricted if orders exist;
+- payment deletion should be restricted;
+- order items should cascade only if deleting draft orders is allowed.
+
+----------------------------------------------------
+
+### Issue #10
+
+Severity:
+Medium
+
+Category:
+Performance / Database Indexing
+
+Location:
+app/Models/Order.php:70-83
+
+Problem
+
+The model exposes scopes filtering by status, code, and user:
+
 ```php
 public function scopeByStatus($query, $status)
-{
-    return $query->where('status', $status);
+public function scopeByOrderCode($query, $code)
+public function scopeByUser($query, $userId)
+```
+
+There is no indication of supporting indexes.
+
+Why this matters
+
+Orders grow quickly in a cinema booking platform. Admin dashboards, user order history, cleanup jobs, and payment reconciliation will frequently filter by status, user, code, gateway code, and expiration time. Missing indexes will create slow queries and table scans.
+
+How to fix
+
+Add indexes aligned with query patterns.
+
+Example
+
+```php
+$table->index(['user_id', 'created_at']);
+$table->index(['status', 'expired_at']);
+$table->index(['payment_status', 'created_at']);
+$table->unique('code');
+$table->unique(['payment_provider', 'gateway_order_code']);
+```
+
+----------------------------------------------------
+
+### Issue #11
+
+Severity:
+Medium
+
+Category:
+API / Security
+
+Location:
+app/Models/Order.php:29
+
+Problem
+
+`checkout_url` is mass assignable:
+
+```php
+'checkout_url',
+```
+
+Why this matters
+
+Checkout URLs redirect users into payment flow. If this value can be influenced by input or compromised internal code, users can be redirected to phishing or attacker-controlled payment pages.
+
+How to fix
+
+Only set checkout URLs from trusted payment gateway responses after verifying the provider and expected host.
+
+Example
+
+```php
+if (! str_starts_with($checkoutUrl, config('payments.payos.checkout_host'))) {
+    throw new UnexpectedValueException('Untrusted checkout URL.');
 }
 ```
 
-**Problem:**
-Missing parameter and return type declarations.
+----------------------------------------------------
 
-**Recommended Fix:**
+### Issue #12
+
+Severity:
+Medium
+
+Category:
+Laravel Best Practices / Type Safety
+
+Location:
+app/Models/Order.php:70-83
+
+Problem
+
+Query scopes do not type-hint their query parameter or return type:
+
+```php
+public function scopeByStatus($query, $status)
+```
+
+Why this matters
+
+Untyped scopes reduce static analysis support and make query composition easier to misuse.
+
+How to fix
+
+Use `Builder` type hints and stricter parameter types.
+
+Example
+
 ```php
 use Illuminate\Database\Eloquent\Builder;
 
@@ -446,166 +593,123 @@ public function scopeByStatus(Builder $query, int $status): Builder
 {
     return $query->where('status', $status);
 }
+```
 
-public function scopeByOrderCode(Builder $query, string $code): Builder
-{
-    return $query->where('code', $code);
-}
+----------------------------------------------------
 
+### Issue #13
+
+Severity:
+Medium
+
+Category:
+Validation / Input Correctness
+
+Location:
+app/Models/Order.php:70-83
+
+Problem
+
+Scopes accept untyped arbitrary inputs:
+
+```php
+public function scopeByStatus($query, $status)
+public function scopeByOrderCode($query, $code)
+public function scopeByUser($query, $userId)
+```
+
+Why this matters
+
+Although Eloquent parameter binding prevents SQL injection here, arbitrary values can still cause invalid queries, inconsistent API behavior, and hard-to-debug bugs. For example, non-integer user IDs or invalid status values should be rejected at validation boundaries.
+
+How to fix
+
+Validate before calling scopes and use stricter parameter types.
+
+Example
+
+```php
 public function scopeByUser(Builder $query, int $userId): Builder
 {
     return $query->where('user_id', $userId);
 }
 ```
 
----
+----------------------------------------------------
 
-### Issue #7: No Expired Order Handling
+### Issue #14
 
-**Severity:** 🔵 LOW  
-**Category:** Business Logic  
-**Location:** Missing functionality
+Severity:
+Low
 
-**Evidence:**
+Category:
+Clean Code / Naming
+
+Location:
+app/Models/Order.php:18
+
+Problem
+
+The comment explains that paid is an alias for confirmed:
+
 ```php
-'expired_at' => 'datetime',  // ← Field exists but no logic
+public const STATUS_PAID = 2; // Alias for confirmed in this context
 ```
 
-**Problem:**
-Has expired_at field but no:
-- Scope to find expired orders
-- Automatic cleanup
-- Business logic to handle expiration
+Why this matters
 
-**Recommended Fix:**
-```php
-// Add scopes
-public function scopeExpired(Builder $query): Builder
-{
-    return $query->where('expired_at', '<=', now())
-                 ->where('status', self::STATUS_PENDING);
-}
+This comment documents a dangerous domain shortcut rather than fixing it. Payment and confirmation are separate business concepts. Comments should not normalize ambiguous state modeling in financial code.
 
-public function scopeNotExpired(Builder $query): Builder
-{
-    return $query->where(function ($q) {
-        $q->whereNull('expired_at')
-          ->orWhere('expired_at', '>', now());
-    });
-}
+How to fix
 
-// Add helper
-public function isExpired(): bool
-{
-    return $this->expired_at && $this->expired_at->isPast();
-}
+Remove the alias and model payment status explicitly.
 
-// Add scheduled job to cancel expired orders
-// In App\Console\Kernel or separate job
-Order::expired()->chunk(100, function ($orders) {
-    foreach ($orders as $order) {
-        $order->markAsCancelled('Expired');
-    }
-});
-```
+----------------------------------------------------
 
----
+### Issue #15
 
-## Recommendations
+Severity:
+Low
 
-### Immediate (High Priority)
+Category:
+Maintainability / Type Documentation
 
-1. **Remove status from $fillable** - Prevent mass assignment attacks
-2. **Add State Transition Validation** - Prevent invalid status changes
-3. **Remove STATUS_PAID Alias** - Use STATUS_CONFIRMED consistently
-4. **Resolve Payment Status Duplication** - Choose single source of truth
+Location:
+app/Models/Order.php:11-84
 
-### Short Term
+Problem
 
-5. **Add Audit Trail Fields** - Track who/when/where
-6. **Add Return Types to Scopes** - Better type safety
-7. **Implement Expired Order Logic** - Auto-cancel expired orders
-8. **Add Soft Deletes** - Protect order records
+The model has no PHPDoc annotations for financial fields and relationships.
 
-### Long Term
+Why this matters
 
-9. **Create Order State Machine** - Formal state pattern
-10. **Add Order History Table** - Track all status changes
-11. **Implement Immutability** - Once confirmed, minimal changes allowed
-12. **Add Business Rule Validation** - Enforce complex constraints
+Orders are central financial records. Static analysis should understand dynamic fields such as `total_amount`, `status`, `payment_status`, `paid_at`, `expired_at`, and relationships to reduce accidental misuse.
 
----
+How to fix
 
-## Test Requirements
+Add PHPDoc or use Laravel IDE Helper/static analysis conventions.
+
+Example
 
 ```php
-// Test 1: Mass assignment protection
-public function test_status_cannot_be_mass_assigned()
+/**
+ * @property int $id
+ * @property string $code
+ * @property int $user_id
+ * @property int $showtime_id
+ * @property string $total_amount
+ * @property int $status
+ * @property string|null $payment_status
+ * @property \Illuminate\Support\Carbon|null $paid_at
+ */
+class Order extends Model
 {
-    $order = Order::factory()->create(['status' => Order::STATUS_PENDING]);
-    
-    $order->update(['status' => Order::STATUS_CONFIRMED]);
-    
-    $this->assertEquals(Order::STATUS_PENDING, $order->fresh()->status);
-}
-
-// Test 2: State transition validation
-public function test_cannot_downgrade_confirmed_to_pending()
-{
-    $order = Order::factory()->create(['status' => Order::STATUS_CONFIRMED]);
-    
-    $this->expectException(\DomainException::class);
-    $order->status = Order::STATUS_PENDING;
-    $order->save();
-}
-
-// Test 3: Expired orders detected
-public function test_expired_orders_are_detected()
-{
-    $order = Order::factory()->create([
-        'expired_at' => now()->subHour(),
-        'status' => Order::STATUS_PENDING
-    ]);
-    
-    $this->assertTrue($order->isExpired());
-    $this->assertEquals(1, Order::expired()->count());
-}
-
-// Test 4: Payment status consistency
-public function test_order_payment_status_syncs_with_payment_model()
-{
-    $order = Order::factory()->create();
-    $payment = Payment::factory()->create([
-        'order_id' => $order->id,
-        'status' => 'success'
-    ]);
-    
-    $this->assertTrue($order->isPaid());
+    // ...
 }
 ```
 
----
+----------------------------------------------------
 
-## Summary
+Final Assessment
 
-Order model is a simple Eloquent model with basic functionality, but shares critical issues with Payment model:
-
-**Critical Issues:**
-1. **Status field is mass-assignable** - allows order manipulation
-2. **No state transition validation** - data corruption risk
-3. **Confusing status alias (PAID = CONFIRMED)** - maintainability issue
-4. **Payment status duplication** - consistency risk
-
-The model needs the same fixes as Payment:
-- Remove status from fillable
-- Add state machine validation
-- Controlled state change methods
-- Comprehensive audit trail
-
-Additionally, the confusing STATUS_PAID alias should be removed, and payment_status duplication resolved.
-
-**Status:** ⚠️ Critical fixes required before production
-
----
-
-*Review completed: 2026-07-14 03:07 AM*
+`Order` is under-modeled for a production cinema booking/payment domain. The current model exposes critical financial and lifecycle fields through mass assignment, conflates confirmed and paid states, lacks atomic/idempotent state transitions, and does not express invariants required to prevent duplicate payment fulfillment or inconsistent order states. This should be redesigned around explicit state transitions, database constraints, and payment-safe service methods before production use.
