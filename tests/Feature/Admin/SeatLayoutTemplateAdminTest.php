@@ -18,7 +18,7 @@ class SeatLayoutTemplateAdminTest extends TestCase
             ['slug' => 'admin'],
             ['name' => 'Admin', 'description' => 'Administrator']
         );
-        $user->roles()->attach($role->id);
+        $user->update(['role_id' => $role->id]);
 
         $this->actingAs($user);
 

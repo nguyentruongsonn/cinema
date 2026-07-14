@@ -11,12 +11,14 @@ return new class extends Migration
         Schema::create('price_rules', function (Blueprint $table) {
             $table->id();
             $table->string('rule_name');
-            $table->string('day_type');
+            $table->string('day_type')
+                ->comment('weekday: Ngày thường | weekend: Cuối tuần | holiday: Ngày lễ | special: Ngày đặc biệt');
             $table->string('time_slot');
             $table->dateTime('start_time');
             $table->dateTime('end_time');
             $table->decimal('price_multiplier', 10, 2);
-            $table->tinyInteger('status')->default(1);
+            $table->tinyInteger('status')->default(1)
+                ->comment('0: Vô hiệu hóa | 1: Đang áp dụng');
             $table->timestamps();
         });
     }

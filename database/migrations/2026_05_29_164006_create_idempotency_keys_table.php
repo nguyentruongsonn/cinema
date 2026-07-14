@@ -14,7 +14,8 @@ return new class extends Migration
             $table->bigInteger('user_id')->unsigned()->nullable()->index();
             $table->longText('request_data')->nullable();
             $table->longText('response_data')->nullable();
-            $table->string('status')->default('pending');
+            $table->string('status')->default('pending')
+                ->comment('pending: Đang xử lý | completed: Hoàn thành | failed: Thất bại');
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
         });

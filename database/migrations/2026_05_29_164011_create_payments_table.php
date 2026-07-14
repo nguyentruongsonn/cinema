@@ -1,4 +1,4 @@
-<?php
+    <?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -11,12 +11,17 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('order_id')->unsigned()->index();
-            $table->string('method');
+            $table->bigInteger('user_id')->unsigned()->nullable()->index();
+            $table->string('method')
+                ->comment('payos: PayOS Gateway | cash: Tiền mặt | momo: MoMo | vnpay: VNPay');
             $table->string('transaction_code')->nullable();
+            $table->string('gateway_order_code')->nullable();
             $table->decimal('amount', 15, 2);
-            $table->tinyInteger('status')->default(1);
+            $table->string('status')->default('pending')
+                ->comment('pending: Đang chờ | completed: Hoàn thành | failed: Thất bại | refunded: Đã hoàn tiền | cancelled: Đã hủy');
             $table->longText('payload')->nullable();
             $table->timestamp('paid_at')->nullable();
+            $table->timestamp('failed_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

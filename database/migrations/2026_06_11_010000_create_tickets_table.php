@@ -21,7 +21,8 @@ return new class extends Migration
             $table->bigInteger('seat_id')->unsigned()->index();
             $table->string('ticket_code', 50)->unique();
             $table->text('qr_code')->nullable();
-            $table->string('status', 20)->default('valid')->index();
+            $table->string('status', 20)->default('valid')->index()
+                ->comment('valid: Có hiệu lực | used: Đã sử dụng | expired: Hết hạn | cancelled: Đã hủy | refunded: Đã hoàn tiền');
             $table->timestamp('checked_in_at')->nullable();
             $table->timestamps();
             $table->softDeletes();

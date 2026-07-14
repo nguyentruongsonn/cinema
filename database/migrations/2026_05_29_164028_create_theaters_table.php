@@ -10,12 +10,13 @@ return new class extends Migration
     {
         Schema::create('theaters', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')->nullable()->constrained('branches')->onDelete('restrict')->onUpdate('cascade');
             $table->string('name');
             $table->string('address');
-            $table->string('city')->nullable();
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
-            $table->tinyInteger('status')->default(1);
+            $table->tinyInteger('status')->default(1)
+                ->comment('0: Ngừng hoạt động | 1: Đang hoạt động | 2: Đang bảo trì');
             $table->longText('pricing_profile')->nullable();
             $table->timestamps();
             $table->softDeletes();

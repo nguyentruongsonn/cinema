@@ -78,8 +78,7 @@ class UserController extends Controller
             'birthday' => 'nullable|date',
             'gender' => 'nullable|in:male,female,other',
             'address' => 'nullable|string',
-            'roles' => 'nullable|array',
-            'roles.*' => 'exists:roles,id',
+            'role_id' => 'nullable|exists:roles,id',
             'status' => 'nullable|boolean',
         ]);
 
@@ -113,7 +112,7 @@ class UserController extends Controller
     public function show(User $user)
     {
         try {
-            $user->load(['roles', 'orders' => function ($query) {
+            $user->load(['role', 'orders' => function ($query) {
                 $query->latest()->limit(10);
             }]);
 
@@ -145,8 +144,7 @@ class UserController extends Controller
             'gender' => 'nullable|in:male,female,other',
             'address' => 'nullable|string',
             'loyalty_points' => 'nullable|integer|min:0',
-            'roles' => 'nullable|array',
-            'roles.*' => 'exists:roles,id',
+            'role_id' => 'nullable|exists:roles,id',
             'status' => 'nullable|boolean',
         ]);
 

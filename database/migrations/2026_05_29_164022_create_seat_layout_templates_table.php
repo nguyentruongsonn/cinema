@@ -17,6 +17,8 @@ return new class extends Migration
             $table->integer('couple_seat_rows')->default(0);
             $table->longText('custom_matrix')->nullable();
             $table->text('description')->nullable();
+            $table->boolean('status')->default(true)
+                ->comment('false: Vô hiệu hóa | true: Sử dụng được');
             $table->timestamps();
         });
     }

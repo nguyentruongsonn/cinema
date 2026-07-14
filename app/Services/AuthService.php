@@ -42,7 +42,7 @@ class AuthService
             $userAgent
         );
 
-        $user->load('roles.permissions');
+        $user->load('role.permissions');
 
         Log::info('User registered successfully', ['user_id' => $user->id]);
 
@@ -115,7 +115,7 @@ class AuthService
             $userAgent
         );
 
-        $user->load('roles.permissions');
+        $user->load('role.permissions');
 
         Log::info('User logged in successfully', ['user_id' => $user->id]);
 
@@ -171,19 +171,19 @@ class AuthService
             $userAgent
         );
 
-        $user->load('roles.permissions');
+        $user->load('role.permissions');
 
         return $this->dualTokenPayload($user, $accessToken, $refreshTokenData['plain_token']);
     }
 
     public function getAuthenticatedUser(): User
     {
-        return auth()->user()->load('roles.permissions');
+        return auth()->user()->load('role.permissions');
     }
 
     public function getUserProfile(): User
     {
-        return auth()->user()->load('roles.permissions', 'orders', 'loginHistories');
+        return auth()->user()->load('role.permissions', 'orders', 'loginHistories');
     }
 
     public function updateProfile(array $data): User
@@ -193,7 +193,7 @@ class AuthService
 
         Log::info('User profile updated', ['user_id' => $user->id]);
 
-        return $user->fresh()->load('roles.permissions');
+        return $user->fresh()->load('role.permissions');
     }
 
     public function changePassword(string $currentPassword, string $newPassword): bool
@@ -328,7 +328,7 @@ class AuthService
             $userAgent ?? $refreshToken->user_agent
         );
 
-        $user->load('roles.permissions');
+        $user->load('role.permissions');
 
         Log::info('Access token refreshed with refresh token rotation', ['user_id' => $user->id]);
 
@@ -337,13 +337,13 @@ class AuthService
 
     private function assignDefaultRole(User $user): void
     {
-        $customerRole = Role::where('slug', 'customer')->first();
+        $userRole = Role::where('slug', 'user')->first();
 
-        if ($customerRole) {
-            $user->roles()->syncWithoutDetaching([$customerRole->id]);
+        if ($userRole) {
+            $user->role()->associate($userRole);
+            $user->save();
         }
     }
-
     private function updateLastLogin(User $user, string $ipAddress): void
     {
         $user->update([

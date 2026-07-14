@@ -19,12 +19,13 @@ return new class extends Migration
             $table->string('link_url')->nullable();
             $table->enum('position', ['home_slider', 'sidebar', 'popup', 'top_bar', 'footer'])->default('home_slider');
             $table->integer('display_order')->default(0);
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(true)
+                ->comment('false: Ẩn | true: Hiển thị');
             $table->timestamp('start_date')->nullable();
             $table->timestamp('end_date')->nullable();
             $table->integer('click_count')->default(0);
             $table->timestamps();
-            
+
             $table->index('position');
             $table->index('is_active');
             $table->index('display_order');

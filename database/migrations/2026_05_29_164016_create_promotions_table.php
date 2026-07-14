@@ -23,8 +23,14 @@ return new class extends Migration
             $table->integer('usage_limit')->nullable();
             $table->integer('usage_count')->default(0);
             $table->integer('daily_usage_limit')->nullable();
-            $table->tinyInteger('status')->default(1);
+            $table->tinyInteger('status')->default(1)
+                ->comment('0: Vô hiệu hóa | 1: Đang hoạt động | 2: Hết hạn');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('code', 'idx_promotions_code');
+            $table->index('status', 'idx_promotions_status');
+            $table->index(['status', 'start_date', 'end_date'], 'idx_promotions_active');
         });
     }
 

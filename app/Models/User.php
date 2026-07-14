@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Tymon\JWTAuth\Contracts\JWTSubject;
@@ -42,10 +43,9 @@ class User extends Authenticatable implements JWTSubject
         'status' => 'boolean',
     ];
 
-    public function roles(): BelongsToMany
+    public function role(): BelongsTo
     {
-        return $this->belongsToMany(Role::class, 'role_user')
-            ->withTimestamps();
+        return $this->belongsTo(Role::class);
     }
 
     public function orders(): HasMany
@@ -84,21 +84,19 @@ class User extends Authenticatable implements JWTSubject
     // Helper: check role
     public function hasRole(string $slug): bool
     {
-        return $this->roles()->where('slug', $slug)->exists();
+        return $this->role?->slug === $slug;
     }
 
     // Helper: check any of roles
     public function hasAnyRole(array $slugs): bool
     {
-        return $this->roles()->whereIn('slug', $slugs)->exists();
+        return $this->role && in_array($this->role->slug, $slugs);
     }
 
-    // Helper: check permission via roles
+    // Helper: check permission via role
     public function hasPermission(string $permissionSlug): bool
     {
-        return $this->roles()->whereHas('permissions', function ($q) use ($permissionSlug) {
-            $q->where('slug', $permissionSlug);
-        })->exists();
+        return $this->role?->permissions()->where('slug', $permissionSlug)->exists() ?? false;
     }
 
     public function scopeActive($query)

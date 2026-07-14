@@ -16,7 +16,7 @@ class UserService
      */
     public function getPaginatedUsers(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = User::with('roles');
+        $query = User::with('role');
 
         // Search by name or email
         if (!empty($filters['search'])) {
@@ -31,9 +31,10 @@ class UserService
 
         // Filter by role
         if (!empty($filters['role'])) {
-            $query->whereHas('roles', function ($q) use ($filters) {
-                $q->where('slug', $filters['role']);
-            });
+            $roleId = Role::where('slug', $filters['role'])->value('id');
+            if ($roleId) {
+                $query->where('role_id', $roleId);
+            }
         }
 
         // Filter by status
@@ -78,17 +79,22 @@ class UserService
             // Create user
             $user = User::create($data);
 
-            // Assign roles if provided
-            if (!empty($data['roles'])) {
-                $roleIds = is_array($data['roles']) ? $data['roles'] : [$data['roles']];
-                $user->roles()->sync($roleIds);
+            // Assign role if provided (now single role, not multiple)
+            if (!empty($data['role_id'])) {
+                $user->role_id = $data['role_id'];
+                $user->save();
+            } elseif (!empty($data['roles'])) {
+                // Backward compatibility: if 'roles' is provided, take first one
+                $roleId = is_array($data['roles']) ? $data['roles'][0] : $data['roles'];
+                $user->role_id = $roleId;
+                $user->save();
             }
 
             DB::commit();
 
             Log::info('User created', ['user_id' => $user->id, 'email' => $user->email]);
 
-            return $user->load('roles');
+            return $user->load('role');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to create user', ['error' => $e->getMessage()]);
@@ -114,17 +120,22 @@ class UserService
             // Update user
             $user->update($data);
 
-            // Update roles if provided
-            if (isset($data['roles'])) {
-                $roleIds = is_array($data['roles']) ? $data['roles'] : [$data['roles']];
-                $user->roles()->sync($roleIds);
+            // Update role if provided (now single role, not multiple)
+            if (isset($data['role_id'])) {
+                $user->role_id = $data['role_id'];
+                $user->save();
+            } elseif (isset($data['roles'])) {
+                // Backward compatibility: if 'roles' is provided, take first one
+                $roleId = is_array($data['roles']) ? $data['roles'][0] : $data['roles'];
+                $user->role_id = $roleId;
+                $user->save();
             }
 
             DB::commit();
 
             Log::info('User updated', ['user_id' => $user->id]);
 
-            return $user->fresh('roles');
+            return $user->fresh('role');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to update user', ['user_id' => $user->id, 'error' => $e->getMessage()]);
@@ -165,7 +176,7 @@ class UserService
     public function toggleStatus(User $user): User
     {
         $user->update(['status' => !$user->status]);
-        
+
         Log::info('User status toggled', [
             'user_id' => $user->id,
             'new_status' => $user->status

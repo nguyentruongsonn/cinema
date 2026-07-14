@@ -13,7 +13,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug');
             $table->text('description')->nullable();
-            $table->tinyInteger('status')->default(1);
+            $table->tinyInteger('status')->default(1)
+                ->comment('0: Vô hiệu hóa | 1: Hoạt động');
             $table->timestamps();
             $table->softDeletes();
         });

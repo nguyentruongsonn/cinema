@@ -31,7 +31,7 @@ class OrderService
             $this->orderExpirationService->expirePendingOrders((int) $data['showtime_id']);
 
             $showtime = Showtime::with(['format', 'movie', 'screen.theater'])->lockForUpdate()->findOrFail($data['showtime_id']);
-            
+
             // Bảo mật: Không cho phép đặt vé nếu đã qua giờ chiếu
             if ($showtime->scheduled_at <= now()) {
                 throw new \RuntimeException('Suất chiếu này đã bắt đầu hoặc kết thúc. Không thể đặt vé.');
@@ -474,9 +474,8 @@ class OrderService
 
     private function isStaffUser($user): bool
     {
-        return method_exists($user, 'roles')
-            && $user->roles()
-                ->whereIn('name', ['admin', 'manager', 'staff'])
-                ->exists();
+        return method_exists($user, 'role')
+            && $user->role
+            && in_array($user->role->slug, ['admin', 'manager', 'staff']);
     }
 }

@@ -17,8 +17,22 @@ return new class extends Migration
             $table->integer('row_index')->default(0);
             $table->integer('column_index')->default(0);
             $table->string('label')->nullable();
-            $table->tinyInteger('status')->default(1);
+            $table->tinyInteger('status')->default(1)
+                ->comment('0: Hỏng/không sử dụng | 1: Sẵn sàng | 2: Bảo trì');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('screen_id', 'idx_seats_screen_id');
+            $table->index('seat_type_id', 'idx_seats_seat_type_id');
+            $table->index(['screen_id', 'row', 'number'], 'idx_seats_location');
+
+            // Foreign keys
+            $table->foreign('screen_id')
+                ->references('id')->on('screens')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
+
+            // Note: FK to seat_types will be added in separate migration after seat_types is created
         });
     }
 

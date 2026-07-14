@@ -13,13 +13,27 @@ return new class extends Migration
             $table->bigInteger('movie_id')->unsigned()->index();
             $table->bigInteger('screen_id')->unsigned()->index();
             $table->bigInteger('format_id')->unsigned()->nullable()->index();
-            $table->bigInteger('subtitle_id')->unsigned()->nullable()->index();
+            $table->bigInteger('version_type_id')->unsigned()->nullable()->index();
             $table->timestamp('scheduled_at');
-            $table->decimal('price', 15, 2);
             $table->longText('pricing_snapshot')->nullable();
-            $table->tinyInteger('status')->default(1);
+            $table->tinyInteger('status')->default(1)
+                ->comment('0: Đã hủy | 1: Sẵn sàng bán vé | 2: Hết vé | 3: Đã chiếu');
             $table->timestamps();
             $table->softDeletes();
+
+            // Foreign keys
+            $table->foreign('movie_id')
+                ->references('id')->on('movies')
+                ->onDelete('restrict')
+                ->onUpdate('cascade');
+
+            $table->foreign('screen_id')
+                ->references('id')->on('screens')
+                ->onDelete('restrict')
+                ->onUpdate('cascade');
+
+            // Note: FK to version_types needs version_types table to be created first
+            // Will be added in a separate migration after version_types exists
         });
     }
 
