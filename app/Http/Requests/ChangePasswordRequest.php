@@ -7,9 +7,14 @@ use Illuminate\Validation\Rules\Password;
 
 class ChangePasswordRequest extends FormRequest
 {
+    /**
+     * Authorize password change.
+     *
+     * Users can only change the password of their own authenticated account.
+     */
     public function authorize(): bool
     {
-        return true;
+        return $this->user() !== null;
     }
 
     /**

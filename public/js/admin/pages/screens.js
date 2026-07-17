@@ -6,6 +6,15 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     /* ── DOM cache ──────────────────────────────────────────────────── */
     const els = {
         // Tables
@@ -107,8 +116,8 @@
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td>
-                    <div class="fw-medium text-white">${screen.name}</div>
-                    <span class="small text-white-50">Mã: ${screen.code}</span>
+                    <div class="fw-medium text-white">${escapeHtml(screen.name)}</div>
+                    <span class="small text-white-50">Mã: ${escapeHtml(screen.code)}</span>
                     <div class="mt-1">
                         <a href="/admin/screens/${screen.id}/seats"
                             class="small fw-semibold text-decoration-none d-inline-flex align-items-center gap-1"
@@ -117,9 +126,9 @@
                         </a>
                     </div>
                 </td>
-                <td class="text-white-50 small">${theaterName}</td>
+                <td class="text-white-50 small">${escapeHtml(theaterName)}</td>
                 <td>
-                    <span class="badge" style="background: rgba(96,165,250,0.12); color:#60a5fa;">${formatName}</span>
+                    <span class="badge" style="background: rgba(96,165,250,0.12); color:#60a5fa;">${escapeHtml(formatName)}</span>
                 </td>
                 <td class="text-white-50 small">${screen.capacity} chỗ</td>
                 <td>
@@ -136,8 +145,8 @@
                         <button type="button" class="btn btn-sm btn-edit-screen"
                             style="color: var(--text-secondary); background: rgba(255,255,255,0.05);"
                             data-id="${screen.id}"
-                            data-name="${screen.name}"
-                            data-code="${screen.code}"
+                            data-name="${escapeHtml(screen.name)}"
+                            data-code="${escapeHtml(screen.code)}"
                             data-theater-id="${screen.theater_id}"
                             data-format-id="${screen.format_id}"
                             data-template-id="${screen.seat_layout_template_id}"
@@ -167,13 +176,13 @@
             els.formatsTableBody.innerHTML += `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                     <td class="text-center text-white-50">${i + 1}</td>
-                    <td class="fw-medium text-white">${f.name}</td>
+                    <td class="fw-medium text-white">${escapeHtml(f.name)}</td>
                     <td class="text-white-50 small">+${parseInt(f.surcharge).toLocaleString('vi-VN')} đ</td>
                     <td class="text-center">
                         <div class="btn-group" role="group">
                             <button type="button" class="btn btn-sm btn-edit-format"
                                 style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
-                                data-id="${f.id}" data-name="${f.name}" data-surcharge="${f.surcharge}">
+                                data-id="${f.id}" data-name="${escapeHtml(f.name)}" data-surcharge="${escapeHtml(f.surcharge)}">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button type="button" class="btn btn-sm ms-1 btn-delete-format"
@@ -188,19 +197,37 @@
 
     function populateDropdowns(theaters, formats, templates) {
         if (els.screenTheater) {
-            els.screenTheater.innerHTML = '<option value="">-- Chọn rạp --</option>';
-            theaters.forEach(t => els.screenTheater.innerHTML += `<option value="${t.id}">${t.name}</option>`);
+            replaceOptions(els.screenTheater, '-- Chọn rạp --', theaters, 'id', item => item.name);
         }
         if (els.screenFormat) {
-            els.screenFormat.innerHTML = '<option value="">-- Chọn định dạng --</option>';
-            formats.forEach(f => els.screenFormat.innerHTML += `<option value="${f.id}">${f.name} (+${parseInt(f.surcharge).toLocaleString()}đ)</option>`);
+            replaceOptions(els.screenFormat, '-- Chọn định dạng --', formats, 'id', item => `${item.name} (+${parseInt(item.surcharge || 0, 10).toLocaleString()}đ)`);
         }
         if (els.screenTemplate) {
-            els.screenTemplate.innerHTML = '<option value="">-- Chọn mẫu --</option>';
-            templates.forEach(t => {
-                els.screenTemplate.innerHTML += `<option value="${t.id}" data-matrix="${t.seat_matrix}" data-regular="${t.regular_seat_rows}" data-vip="${t.vip_seat_rows}" data-couple="${t.couple_seat_rows}">${t.template_name} (${t.seat_matrix})</option>`;
-            });
+            replaceOptions(els.screenTemplate, '-- Chọn mẫu --', templates, 'id', item => `${item.template_name} (${item.seat_matrix})`, item => ({
+                matrix: item.seat_matrix,
+                regular: item.regular_seat_rows,
+                vip: item.vip_seat_rows,
+                couple: item.couple_seat_rows,
+            }));
         }
+    }
+
+    function replaceOptions(select, emptyLabel, items, valueKey, labelFactory, attributesFactory = null) {
+        const fragment = document.createDocumentFragment();
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = emptyLabel;
+        fragment.appendChild(emptyOption);
+        items.forEach((item) => {
+            const option = document.createElement('option');
+            option.value = String(item[valueKey] ?? '');
+            option.textContent = String(labelFactory(item) ?? '');
+            Object.entries(attributesFactory?.(item) || {}).forEach(([key, value]) => {
+                option.dataset[key] = String(value ?? '');
+            });
+            fragment.appendChild(option);
+        });
+        select.replaceChildren(fragment);
     }
 
     function renderPagination(meta) {

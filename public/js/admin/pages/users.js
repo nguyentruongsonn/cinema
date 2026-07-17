@@ -51,6 +51,7 @@
     let currentStatus = '';
     let currentVerified = '';
     let availableRoles = [];
+    let usersById = new Map();
 
     function getModalInstance(modalEl) {
         if (!modalEl) return null;
@@ -66,7 +67,10 @@
                 availableRoles = data.data || [];
                 
                 // Populate role filter
-                els.roleFilter.innerHTML = '<option value="">Tất cả vai trò</option>';
+                const allRolesOption = document.createElement('option');
+                allRolesOption.value = '';
+                allRolesOption.textContent = 'Tất cả vai trò';
+                els.roleFilter.replaceChildren(allRolesOption);
                 availableRoles.forEach(role => {
                     const option = document.createElement('option');
                     option.value = role.slug;
@@ -75,7 +79,7 @@
                 });
 
                 // Populate role select in form
-                els.roles.innerHTML = '';
+                els.roles.replaceChildren();
                 availableRoles.forEach(role => {
                     const option = document.createElement('option');
                     option.value = role.id;
@@ -116,67 +120,110 @@
     }
 
     function renderTable(users, startIndex) {
+        usersById = new Map();
+
         if (!users || users.length === 0) {
-            els.tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>Không tìm thấy người dùng nào.</td></tr>`;
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            const icon = document.createElement('i');
+
+            cell.colSpan = 9;
+            cell.className = 'text-center py-5 text-muted';
+            icon.className = 'bi bi-inbox fs-1 d-block mb-3 opacity-50';
+            cell.append(icon, document.createTextNode('Không tìm thấy người dùng nào.'));
+            row.appendChild(cell);
+            els.tableBody.replaceChildren(row);
             return;
         }
 
-        els.tableBody.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        const firstIndex = Number.isFinite(Number(startIndex)) ? Number(startIndex) : 1;
+
         users.forEach((user, index) => {
+            const userId = Number.parseInt(String(user.id), 10);
+            if (!Number.isSafeInteger(userId) || userId <= 0) return;
+
+            usersById.set(userId, user);
+
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-            
+
             const dCreated = new Date(user.created_at);
-            const roleNames = user.roles?.map(r => r.name).join(', ') || '<span class="text-muted">Chưa có</span>';
+            const roleNames = Array.isArray(user.roles)
+                ? user.roles.map(role => String(role.name || '')).filter(Boolean).join(', ')
+                : '';
             const isVerified = user.email_verified_at !== null;
-            
-            tr.innerHTML = `
-                <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
-                <td class="fw-medium text-white">${user.name || '<span class="text-muted">N/A</span>'}</td>
-                <td class="text-white-50">${user.email}</td>
-                <td class="text-white-50">${user.phone || '<span class="text-muted">-</span>'}</td>
-                <td class="text-white-50">${roleNames}</td>
-                <td class="text-center">
-                    <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input toggle-status-btn m-0" type="checkbox" role="switch"
-                            data-id="${user.id}" ${user.status ? 'checked' : ''} style="cursor:pointer;">
-                    </div>
-                </td>
-                <td class="text-center">
-                    ${isVerified 
-                        ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Đã xác thực</span>' 
-                        : '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-circle"></i> Chưa xác thực</span>'
-                    }
-                </td>
-                <td class="text-white-50">${dCreated.toLocaleDateString('vi-VN')}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary edit-btn me-1" data-id="${user.id}" title="Sửa">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-warning reset-password-btn me-1" data-id="${user.id}" data-name="${user.name}" title="Đặt lại mật khẩu">
-                        <i class="bi bi-key"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${user.id}" title="Xóa">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            `;
-            els.tableBody.appendChild(tr);
+
+            tr.appendChild(createTextCell(firstIndex + index, 'text-center text-white-50'));
+            tr.appendChild(createTextCell(user.name, 'fw-medium text-white', 'N/A'));
+            tr.appendChild(createTextCell(user.email, 'text-white-50'));
+            tr.appendChild(createTextCell(user.phone, 'text-white-50', '-'));
+            tr.appendChild(createTextCell(roleNames, 'text-white-50', 'Chưa có'));
+
+            const statusCell = document.createElement('td');
+            statusCell.className = 'text-center';
+            const statusWrapper = document.createElement('div');
+            statusWrapper.className = 'form-check form-switch mb-0 d-flex justify-content-center';
+            const statusToggle = document.createElement('input');
+            statusToggle.className = 'form-check-input toggle-status-btn m-0';
+            statusToggle.type = 'checkbox';
+            statusToggle.setAttribute('role', 'switch');
+            statusToggle.dataset.id = String(userId);
+            statusToggle.checked = Boolean(user.status);
+            statusToggle.style.cursor = 'pointer';
+            statusToggle.addEventListener('change', handleToggleStatus);
+            statusWrapper.appendChild(statusToggle);
+            statusCell.appendChild(statusWrapper);
+            tr.appendChild(statusCell);
+
+            const verifiedCell = document.createElement('td');
+            verifiedCell.className = 'text-center';
+            const verifiedBadge = document.createElement('span');
+            verifiedBadge.className = isVerified ? 'badge bg-success' : 'badge bg-warning text-dark';
+            const verifiedIcon = document.createElement('i');
+            verifiedIcon.className = isVerified ? 'bi bi-check-circle' : 'bi bi-exclamation-circle';
+            verifiedBadge.append(verifiedIcon, document.createTextNode(isVerified ? ' Đã xác thực' : ' Chưa xác thực'));
+            verifiedCell.appendChild(verifiedBadge);
+            tr.appendChild(verifiedCell);
+
+            const createdDate = Number.isNaN(dCreated.getTime()) ? '-' : dCreated.toLocaleDateString('vi-VN');
+            tr.appendChild(createTextCell(createdDate, 'text-white-50'));
+
+            const actionsCell = document.createElement('td');
+            actionsCell.className = 'text-center';
+            actionsCell.append(
+                createActionButton(userId, 'edit-btn', 'btn-outline-primary', 'bi-pencil', 'Sửa', handleEdit, 'me-1'),
+                createActionButton(userId, 'reset-password-btn', 'btn-outline-warning', 'bi-key', 'Đặt lại mật khẩu', handleResetPasswordClick, 'me-1'),
+                createActionButton(userId, 'delete-btn', 'btn-outline-danger', 'bi-trash', 'Xóa', handleDelete),
+            );
+            tr.appendChild(actionsCell);
+
+            fragment.appendChild(tr);
         });
 
-        // Attach event listeners
-        document.querySelectorAll('.toggle-status-btn').forEach(btn => {
-            btn.addEventListener('change', handleToggleStatus);
-        });
-        document.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', handleEdit);
-        });
-        document.querySelectorAll('.reset-password-btn').forEach(btn => {
-            btn.addEventListener('click', handleResetPasswordClick);
-        });
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', handleDelete);
-        });
+        els.tableBody.replaceChildren(fragment);
+    }
+
+    function createTextCell(value, className, fallback = '') {
+        const cell = document.createElement('td');
+        const text = value === null || value === undefined || value === '' ? fallback : String(value);
+        cell.className = className;
+        cell.textContent = text;
+        if (text === fallback && fallback) cell.classList.add('text-muted');
+        return cell;
+    }
+
+    function createActionButton(userId, actionClass, colorClass, iconClass, title, handler, spacingClass = '') {
+        const button = document.createElement('button');
+        const icon = document.createElement('i');
+        button.type = 'button';
+        button.className = ['btn', 'btn-sm', colorClass, actionClass, spacingClass].filter(Boolean).join(' ');
+        button.dataset.id = String(userId);
+        button.title = title;
+        icon.className = `bi ${iconClass}`;
+        button.appendChild(icon);
+        button.addEventListener('click', handler);
+        return button;
     }
 
     function renderPagination(pagination) {
@@ -407,11 +454,11 @@
 
     /* ── Reset Password ────────────────────────────────────────────── */
     function handleResetPasswordClick(e) {
-        const userId = e.currentTarget.dataset.id;
-        const userName = e.currentTarget.dataset.name;
+        const userId = Number.parseInt(e.currentTarget.dataset.id, 10);
+        const userName = usersById.get(userId)?.name || '';
 
-        els.resetUserId.value = userId;
-        els.resetUserName.textContent = userName;
+        els.resetUserId.value = String(userId);
+        els.resetUserName.textContent = String(userName);
         els.newPassword.value = '';
         els.newPasswordConfirmation.value = '';
 

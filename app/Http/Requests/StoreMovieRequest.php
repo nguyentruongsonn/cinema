@@ -2,31 +2,17 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Movie;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-/**
- * StoreMovieRequest - Validation for creating a new movie
- *
- * Handles validation logic for movie creation following Clean Architecture principles.
- * Separates validation from controllers for better maintainability.
- */
 class StoreMovieRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        // Authorization is handled by middleware (admin role required)
-        return true;
+        return (bool) $this->user()?->can('create', Movie::class);
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
@@ -35,40 +21,46 @@ class StoreMovieRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:255',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
                 Rule::unique('movies', 'slug'),
             ],
             'original_title' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'poster_url' => ['nullable', 'string', 'max:255'],
-            'trailer_url' => ['nullable', 'string', 'max:255'],
-            'duration' => ['required', 'integer', 'min:1'],
+            'description' => ['nullable', 'string', 'max:10000'],
+            'poster_url' => ['nullable', 'url', 'max:2048'],
+            'trailer_url' => ['nullable', 'url', 'max:2048'],
+            'poster_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'banner_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'duration' => ['required', 'integer', 'min:1', 'max:600'],
             'release_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:release_date'],
             'age_rating' => ['nullable', 'string', 'max:50'],
-            'surcharge' => ['nullable', 'numeric', 'min:0'],
+            'surcharge' => ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'],
             'director' => ['nullable', 'string', 'max:255'],
-            'cast' => ['nullable', 'string', 'max:255'],
-            'backdrops' => ['nullable', 'array'],
+            'cast' => ['nullable', 'string', 'max:2000'],
+            'backdrops' => ['nullable', 'array', 'max:20'],
+            'backdrops.*' => ['string', 'url', 'max:2048'],
             'status' => ['sometimes', 'boolean'],
             'is_hidden' => ['sometimes', 'boolean'],
-            'manual_override_status' => ['nullable', 'integer', 'min:0'],
+            'manual_override_status' => ['nullable', 'integer', 'min:0', 'max:3'],
             'is_hot' => ['sometimes', 'boolean'],
-            'category_ids' => ['nullable', 'array'],
-            'category_ids.*' => ['integer', 'exists:categories,id'],
+            'category_ids' => ['nullable', 'array', 'max:20'],
+            'category_ids.*' => ['integer', 'distinct', 'exists:categories,id'],
         ];
     }
 
-    /**
-     * Get custom messages for validator errors.
-     *
-     * @return array<string, string>
-     */
     public function messages(): array
     {
         return [
             'title.required' => 'Movie title is required.',
             'title.max' => 'Movie title cannot exceed 255 characters.',
+            'slug.regex' => 'Movie slug may only contain lowercase letters, numbers, and hyphens.',
             'slug.unique' => 'This slug is already taken.',
+            'poster_url.url' => 'Poster URL must be a valid URL.',
+            'trailer_url.url' => 'Trailer URL must be a valid URL.',
+            'poster_file.mimes' => 'Poster must be a JPG, JPEG, PNG, or WEBP image.',
+            'poster_file.max' => 'Poster cannot exceed 5MB.',
+            'banner_file.mimes' => 'Banner must be a JPG, JPEG, PNG, or WEBP image.',
+            'banner_file.max' => 'Banner cannot exceed 8MB.',
             'duration.required' => 'Movie duration is required.',
             'duration.integer' => 'Duration must be a valid number.',
             'duration.min' => 'Duration must be at least 1 minute.',
@@ -78,15 +70,11 @@ class StoreMovieRequest extends FormRequest
             'surcharge.numeric' => 'Surcharge must be a valid number.',
             'surcharge.min' => 'Surcharge cannot be negative.',
             'category_ids.array' => 'Categories must be an array.',
+            'category_ids.*.distinct' => 'Duplicate categories are not allowed.',
             'category_ids.*.exists' => 'One or more selected categories do not exist.',
         ];
     }
 
-    /**
-     * Get custom attributes for validator errors.
-     *
-     * @return array<string, string>
-     */
     public function attributes(): array
     {
         return [
@@ -94,6 +82,8 @@ class StoreMovieRequest extends FormRequest
             'original_title' => 'original title',
             'poster_url' => 'poster URL',
             'trailer_url' => 'trailer URL',
+            'poster_file' => 'poster file',
+            'banner_file' => 'banner file',
             'release_date' => 'release date',
             'end_date' => 'end date',
             'age_rating' => 'age rating',

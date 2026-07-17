@@ -3,10 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\AuditLogService;
 use App\Services\UserService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
+use App\Http\Requests\ListUsersRequest;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Http\Requests\ResetUserPasswordRequest;
+use App\Http\Resources\UserResource;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -22,266 +28,268 @@ class UserController extends Controller
      */
     public function index()
     {
+        $this->authorize('viewAny', User::class);
         return view('admin.users.index');
     }
 
     /**
      * Get paginated users (API)
      */
-    public function list(Request $request)
+    public function list(ListUsersRequest $request): JsonResponse
     {
-        try {
-            $filters = [
-                'search' => $request->input('search'),
-                'role' => $request->input('role'),
-                'status' => $request->input('status'),
-                'verified' => $request->input('verified'),
-                'sort_by' => $request->input('sort_by', 'created_at'),
-                'sort_order' => $request->input('sort_order', 'desc'),
-            ];
+        $this->authorize('viewAny', User::class);
 
-            $perPage = $request->input('per_page', 15);
-            $users = $this->userService->getPaginatedUsers($filters, $perPage);
+        $filters = [
+            'search' => $request->input('search'),
+            'role' => $request->input('role'),
+            'status' => $request->input('status'),
+            'verified' => $request->input('verified'),
+            'sort_by' => $request->input('sort_by', 'created_at'),
+            'sort_order' => $request->input('sort_order', 'desc'),
+        ];
 
-            return response()->json([
-                'success' => true,
-                'data' => $users->items(),
-                'pagination' => [
-                    'total' => $users->total(),
-                    'per_page' => $users->perPage(),
-                    'current_page' => $users->currentPage(),
-                    'last_page' => $users->lastPage(),
-                    'from' => $users->firstItem(),
-                    'to' => $users->lastItem(),
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch users: ' . $e->getMessage()
-            ], 500);
-        }
+        $perPage = $request->input('per_page', 15);
+        $users = $this->userService->getPaginatedUsers($filters, $perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => UserResource::collection($users->getCollection()),
+            'pagination' => [
+                'total' => $users->total(),
+                'per_page' => $users->perPage(),
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'from' => $users->firstItem(),
+                'to' => $users->lastItem(),
+            ]
+        ]);
     }
 
     /**
      * Store a new user
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'username' => 'nullable|string|max:255|unique:users,username',
-            'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:6',
-            'avatar_url' => 'nullable|url',
-            'birthday' => 'nullable|date',
-            'gender' => 'nullable|in:male,female,other',
-            'address' => 'nullable|string',
-            'role_id' => 'nullable|exists:roles,id',
-            'status' => 'nullable|boolean',
-        ]);
+        $this->authorize('create', User::class);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        return DB::transaction(function () use ($request) {
+            $user = $this->userService->createUser($request->userData(), $request->roleId(), $request->status());
+            $user->load('role');
 
-        try {
-            $user = $this->userService->createUser($request->all());
+            app(AuditLogService::class)->record(
+                $request->user(),
+                'user.created',
+                $user,
+                [],
+                $this->auditUserValues($user)
+            );
 
             return response()->json([
                 'success' => true,
                 'message' => 'User created successfully',
-                'data' => $user
+                'data' => new UserResource($user)
             ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create user: ' . $e->getMessage()
-            ], 500);
-        }
+        });
     }
 
     /**
      * Get single user details
      */
-    public function show(User $user)
+    public function show(User $user): JsonResponse
     {
-        try {
-            $user->load(['role', 'orders' => function ($query) {
-                $query->latest()->limit(10);
-            }]);
+        $this->authorize('view', $user);
 
-            return response()->json([
-                'success' => true,
-                'data' => $user
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch user: ' . $e->getMessage()
-            ], 500);
-        }
+        $user->load(['role', 'orders' => function ($query) {
+            $query->latest()->limit(10);
+        }]);
+
+        return response()->json([
+            'success' => true,
+            'data' => new UserResource($user)
+        ]);
     }
 
     /**
      * Update user
      */
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'username' => ['nullable', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:6',
-            'avatar_url' => 'nullable|url',
-            'birthday' => 'nullable|date',
-            'gender' => 'nullable|in:male,female,other',
-            'address' => 'nullable|string',
-            'loyalty_points' => 'nullable|integer|min:0',
-            'role_id' => 'nullable|exists:roles,id',
-            'status' => 'nullable|boolean',
-        ]);
+        $oldValues = $this->auditUserValues($user);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        return DB::transaction(function () use ($request, $user, $oldValues) {
+            // Update basic profile fields
+            if (array_intersect_key($request->userData(), array_flip(['name', 'username', 'email', 'phone', 'birthday', 'gender', 'avatar_url', 'address', 'password']))) {
+                $user = $this->userService->updateUser($user, $request->userData());
+            }
 
-        try {
-            $updatedUser = $this->userService->updateUser($user, $request->all());
+            // Handle role update separately (requires specific permission)
+            if ($request->roleId() !== null) {
+                $this->authorize('updateRole', $user);
+                $user = $this->userService->updateRole($user, $request->roleId());
+            }
+
+            // Handle loyalty points update separately (requires specific permission)
+            if ($request->loyaltyPoints() !== null) {
+                $this->authorize('updateLoyaltyPoints', $user);
+                $user = $this->userService->updateLoyaltyPoints($user, $request->loyaltyPoints());
+            }
+
+            // Handle status update separately (requires specific permission)
+            if ($request->status() !== null) {
+                $this->authorize('updateStatus', $user);
+                $user = $this->userService->updateStatus($user, $request->status());
+            }
+
+            $user->load('role');
+
+            app(AuditLogService::class)->record(
+                $request->user(),
+                'user.updated',
+                $user,
+                $oldValues,
+                $this->auditUserValues($user)
+            );
 
             return response()->json([
                 'success' => true,
                 'message' => 'User updated successfully',
-                'data' => $updatedUser
+                'data' => new UserResource($user)
             ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update user: ' . $e->getMessage()
-            ], 500);
-        }
+        });
     }
 
     /**
      * Delete user
      */
-    public function destroy(User $user)
+    public function destroy(User $user): JsonResponse
     {
+        $this->authorize('delete', $user);
+
         try {
-            $this->userService->deleteUser($user);
+            $oldValues = $this->auditUserValues($user);
+
+            DB::transaction(function () use ($user, $oldValues): void {
+                $this->userService->deleteUser($user);
+
+                app(AuditLogService::class)->record(
+                    auth()->user(),
+                    'user.deleted',
+                    $user,
+                    $oldValues,
+                    []
+                );
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'User deleted successfully'
             ]);
         } catch (\Exception $e) {
+            Log::error('Error deleting user', ['user_id' => $user->id, 'error' => $e->getMessage(), 'admin' => auth()->id()]);
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+                'message' => 'Cannot delete user. User may have existing orders or bookings.'
+            ], 422);
         }
     }
 
     /**
      * Toggle user status
      */
-    public function toggleStatus(User $user)
+    public function toggleStatus(User $user): JsonResponse
     {
-        try {
+        $this->authorize('updateStatus', $user);
+        $oldValues = $this->auditUserValues($user);
+
+        $updatedUser = DB::transaction(function () use ($user, $oldValues) {
             $updatedUser = $this->userService->toggleStatus($user);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'User status updated successfully',
-                'data' => $updatedUser
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to toggle status: ' . $e->getMessage()
-            ], 500);
-        }
+            $updatedUser->load('role');
+
+            app(AuditLogService::class)->record(
+                auth()->user(),
+                'user.status_toggled',
+                $updatedUser,
+                $oldValues,
+                $this->auditUserValues($updatedUser)
+            );
+
+            return $updatedUser;
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User status updated successfully',
+            'data' => new UserResource($updatedUser)
+        ]);
     }
 
     /**
      * Reset user password
      */
-    public function resetPassword(Request $request, User $user)
+    public function resetPassword(ResetUserPasswordRequest $request, User $user): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'password' => 'required|string|min:6|confirmed',
+        $this->authorize('resetPassword', $user);
+
+        DB::transaction(function () use ($request, $user): void {
+            $this->userService->resetPassword($user, $request->validated('password'));
+
+            app(AuditLogService::class)->record(
+                $request->user(),
+                'user.password_reset',
+                $user,
+                [],
+                ['credential_reset' => true]
+            );
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password reset successfully'
         ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            $this->userService->resetPassword($user, $request->password);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Password reset successfully'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to reset password: ' . $e->getMessage()
-            ], 500);
-        }
     }
 
     /**
      * Get all roles
      */
-    public function getRoles()
+    public function getRoles(): JsonResponse
     {
-        try {
-            $roles = $this->userService->getAllRoles();
+        $this->authorize('viewAny', User::class);
 
-            return response()->json([
-                'success' => true,
-                'data' => $roles
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch roles: ' . $e->getMessage()
-            ], 500);
-        }
+        $roles = $this->userService->getAllRoles();
+
+        return response()->json([
+            'success' => true,
+            'data' => $roles
+        ]);
     }
 
     /**
      * Get user statistics
      */
-    public function stats()
+    public function stats(): JsonResponse
     {
-        try {
-            $stats = $this->userService->getUserStats();
+        $this->authorize('viewAny', User::class);
 
-            return response()->json([
-                'success' => true,
-                'data' => $stats
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch statistics: ' . $e->getMessage()
-            ], 500);
-        }
+        $stats = $this->userService->getUserStats();
+
+        return response()->json([
+            'success' => true,
+            'data' => $stats
+        ]);
+    }
+
+    private function auditUserValues(User $user): array
+    {
+        return [
+            'name' => $user->name,
+            'email' => $user->email,
+            'username' => $user->username,
+            'phone' => $user->phone,
+            'role_id' => $user->role_id,
+            'status' => (bool) $user->status,
+            'loyalty_points' => (int) $user->loyalty_points,
+            'email_verified_at' => $user->email_verified_at?->toDateTimeString(),
+        ];
     }
 }

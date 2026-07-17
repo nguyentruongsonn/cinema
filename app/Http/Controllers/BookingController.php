@@ -2,44 +2,81 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Showtime;
+use App\Http\Requests\ViewBookingRequest;
+use App\Services\ShowtimeService;
 use Illuminate\Contracts\Encryption\DecryptException;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Throwable;
 
 class BookingController extends Controller
 {
+    public function __construct(
+        private readonly ShowtimeService $showtimeService
+    ) {
+    }
+
     /**
      * Display the booking page for a specific showtime.
      */
-    public function show(Request $request, string $encryptedShowtimeId)
+    public function show(ViewBookingRequest $request, string $encryptedShowtimeId): View
     {
         try {
             $showtimeId = (int) Crypt::decryptString($encryptedShowtimeId);
-        } catch (DecryptException) {
-            abort(404, 'Invalid showtime identifier.');
-        }
-        $showtime = Showtime::with([
-            'movie',
-            'screen.theater',
-            'format',
-            'versionType',
-        ])->findOrFail($showtimeId);
+        } catch (DecryptException $e) {
+            Log::warning('Invalid encrypted showtime identifier used for booking page', [
+                'user_id' => Auth::id(),
+                'ip' => $request->ip(),
+                'identifier_length' => strlen($encryptedShowtimeId),
+                'error' => $e->getMessage(),
+            ]);
 
-        // Validate showtime is bookable
-        if ($showtime->status != 1) {
-            abort(403, 'Suất chiếu này không khả dụng.');
+            abort(404, 'Invalid booking link.');
         }
 
-        $now = Carbon::now();
+        try {
+            $showtime = $this->showtimeService->getBookableShowtimeForBookingPage($showtimeId);
 
-        if ($showtime->scheduled_at <= $now) {
-            abort(403, 'Suất chiếu này đã bắt đầu hoặc kết thúc. Không thể đặt vé.');
+            Log::info('Booking page accessed', [
+                'showtime_id' => $showtime->id,
+                'user_id' => Auth::id(),
+                'ip' => $request->ip(),
+            ]);
+
+            return view('users.booking.index', [
+                'showtime' => $showtime,
+            ]);
+        } catch (ModelNotFoundException) {
+            Log::notice('Booking page requested for missing showtime', [
+                'showtime_id' => $showtimeId,
+                'user_id' => Auth::id(),
+                'ip' => $request->ip(),
+            ]);
+
+            abort(404, 'Showtime not found.');
+        } catch (HttpException $e) {
+            Log::notice('Booking page requested for unavailable showtime', [
+                'showtime_id' => $showtimeId,
+                'user_id' => Auth::id(),
+                'ip' => $request->ip(),
+                'status_code' => $e->getStatusCode(),
+            ]);
+
+            abort($e->getStatusCode(), 'This showtime is not available for booking.');
+        } catch (Throwable $e) {
+            Log::error('Booking page failed unexpectedly', [
+                'showtime_id' => $showtimeId,
+                'user_id' => Auth::id(),
+                'ip' => $request->ip(),
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            abort(500, 'Unable to load booking page.');
         }
-
-        return view('users.booking.index', [
-            'showtime' => $showtime,
-        ]);
     }
 }

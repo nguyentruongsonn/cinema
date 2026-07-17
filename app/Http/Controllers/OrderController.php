@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CancelOrderRequest;
 use App\Http\Requests\StoreOrderRequest;
 use App\Services\OrderService;
+use App\Models\Order;
+use App\Http\Resources\OrderResource;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -34,9 +37,26 @@ class OrderController extends Controller
             );
         } catch (\RuntimeException $e) {
             $statusCode = in_array($e->getCode(), [403, 422], true) ? $e->getCode() : 422;
-            return $this->errorResponse($e->getMessage(), $statusCode);
+
+            Log::warning('Order creation rejected', [
+                'user_id' => Auth::id(),
+                'status_code' => $statusCode,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse(
+                $statusCode === 403 ? 'You are not authorized to create this order.' : 'Order could not be created from the provided data.',
+                $statusCode
+            );
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to create order: ' . $e->getMessage(), 500);
+            Log::error('Order creation failed', [
+                'user_id' => Auth::id(),
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse('Failed to create order.', 500);
         }
     }
 
@@ -55,9 +75,28 @@ class OrderController extends Controller
             );
         } catch (\RuntimeException $e) {
             $statusCode = $e->getCode() === 403 ? 403 : 404;
-            return $this->errorResponse($e->getMessage(), $statusCode);
+
+            Log::notice('Order lookup rejected', [
+                'user_id' => Auth::id(),
+                'order_id' => (int) $id,
+                'status_code' => $statusCode,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse(
+                $statusCode === 403 ? 'You are not authorized to view this order.' : 'Order not found.',
+                $statusCode
+            );
         } catch (\Exception $e) {
-            return $this->errorResponse('Order not found', 404);
+            Log::error('Order lookup failed', [
+                'user_id' => Auth::id(),
+                'order_id' => (int) $id,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse('Order not found.', 404);
         }
     }
 
@@ -80,8 +119,71 @@ class OrderController extends Controller
                 'total' => $orders->total(),
             ], 'Orders retrieved successfully');
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve orders: ' . $e->getMessage(), 500);
+            Log::error('User order list retrieval failed', [
+                'user_id' => Auth::id(),
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse('Failed to retrieve orders.', 500);
         }
+    }
+
+    public function adminOrders(Request $request)
+    {
+        $validated = $request->validate([
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'status' => ['nullable', 'string', 'in:all,pending,paid,confirmed,cancelled,expired,failed'],
+            'branch_id' => ['nullable', 'integer'],
+            'theater_id' => ['nullable', 'integer'],
+            'movie_id' => ['nullable', 'integer'],
+            'date' => ['nullable', 'date'],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $query = Order::query()
+            ->with([
+                'user:id,name,email,phone',
+                'showtime.movie:id,title,poster_url,duration,age_rating',
+                'showtime.screen:id,name,theater_id',
+                'showtime.screen.theater:id,name,branch_id',
+                'showtime.screen.theater.branch:id,name',
+                'orderItems',
+                'payment',
+            ])
+            ->when(($validated['status'] ?? 'all') !== 'all', fn ($q) => $q->where('payment_status', $validated['status']))
+            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime.screen.theater', fn ($theater) => $theater->where('branch_id', $id)))
+            ->when($validated['theater_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime.screen', fn ($screen) => $screen->where('theater_id', $id)))
+            ->when($validated['movie_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime', fn ($showtime) => $showtime->where('movie_id', $id)))
+            ->when($validated['date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', $date))
+            ->when($validated['search'] ?? null, function ($q, $search) {
+                $q->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('code', 'like', "%{$search}%")
+                        ->orWhereHas('user', fn ($user) => $user->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
+                });
+            })
+            ->latest('created_at');
+
+        $orders = $query->paginate($validated['per_page'] ?? 15);
+
+        return $this->successResponse([
+            'data' => OrderResource::collection($orders->items())->resolve(),
+            'meta' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ],
+        ], 'Admin orders retrieved successfully');
+    }
+
+    public function adminOrder(int $id)
+    {
+        $order = Order::query()
+            ->with(['user', 'showtime.movie', 'showtime.screen.theater.branch', 'orderItems', 'payment'])
+            ->findOrFail($id);
+
+        return $this->successResponse((new OrderResource($order))->resolve(), 'Admin order retrieved successfully');
     }
 
     /**
@@ -99,9 +201,28 @@ class OrderController extends Controller
             );
         } catch (\RuntimeException $e) {
             $statusCode = in_array($e->getCode(), [403, 422], true) ? $e->getCode() : 422;
-            return $this->errorResponse($e->getMessage(), $statusCode);
+
+            Log::warning('Order cancellation rejected', [
+                'user_id' => Auth::id(),
+                'order_id' => (int) $id,
+                'status_code' => $statusCode,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse(
+                $statusCode === 403 ? 'You are not authorized to cancel this order.' : 'Order cannot be cancelled.',
+                $statusCode
+            );
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to cancel order: ' . $e->getMessage(), 500);
+            Log::error('Order cancellation failed', [
+                'user_id' => Auth::id(),
+                'order_id' => (int) $id,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse('Failed to cancel order.', 500);
         }
     }
 }

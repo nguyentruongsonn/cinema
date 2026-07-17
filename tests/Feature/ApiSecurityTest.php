@@ -266,4 +266,53 @@ class ApiSecurityTest extends TestCase
             $this->assertContains('role:admin,super-admin', $middleware, "Admin toggle route {$uri} must require admin role.");
         }
     }
+
+    public function test_api_responses_include_request_id_header_and_body(): void
+    {
+        $response = $this->getJson('/api/v1/movies', [
+            'X-Request-ID' => 'security-test-request-id',
+        ]);
+
+        $response->assertHeader('X-Request-ID', 'security-test-request-id');
+        $response->assertJsonPath('request_id', 'security-test-request-id');
+    }
+
+    public function test_api_not_found_uses_standard_error_without_internal_details(): void
+    {
+        $response = $this->getJson('/api/v1/definitely-missing-route', [
+            'X-Request-ID' => 'not-found-request-id',
+        ]);
+
+        $response->assertStatus(404)
+            ->assertHeader('X-Request-ID', 'not-found-request-id')
+            ->assertJson([
+                'success' => false,
+                'message' => 'Resource not found',
+                'request_id' => 'not-found-request-id',
+            ]);
+
+        $content = $response->getContent();
+        $this->assertStringNotContainsString('NotFoundHttpException', $content);
+        $this->assertStringNotContainsString('vendor', $content);
+        $this->assertStringNotContainsString('C:\\', $content);
+    }
+
+    public function test_api_validation_errors_use_standard_shape_with_request_id(): void
+    {
+        $response = $this->postJson('/api/v1/auth/login', [
+            'login' => '',
+            'password' => '',
+        ], [
+            'X-Request-ID' => 'validation-request-id',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertHeader('X-Request-ID', 'validation-request-id')
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Validation failed')
+            ->assertJsonPath('request_id', 'validation-request-id')
+            ->assertJsonStructure([
+                'errors' => ['login', 'password'],
+            ]);
+    }
 }

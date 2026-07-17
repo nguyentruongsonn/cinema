@@ -621,7 +621,12 @@ class ProfilePage {
             }
 
             // Update Membership Status UI
-            document.getElementById('pointsDashboardTotal').innerHTML = `${loyaltyPoints.toLocaleString('vi-VN')} <span class="fs-4 text-muted fw-normal">Points</span>`;
+            const pointsTotal = document.getElementById('pointsDashboardTotal');
+            pointsTotal.replaceChildren(document.createTextNode(loyaltyPoints.toLocaleString('vi-VN')));
+            const pointsLabel = document.createElement('span');
+            pointsLabel.className = 'fs-4 text-muted fw-normal';
+            pointsLabel.textContent = ' Points';
+            pointsTotal.appendChild(pointsLabel);
             
             let rank = 'Silver Member';
             let nextTier = '1000 Points to Gold';
@@ -1207,7 +1212,11 @@ class ProfilePage {
         }
         
         document.getElementById('odModalSeats').textContent = seatsText || 'N/A';
-        document.getElementById('odModalSeatType').innerHTML = `<i class="bi bi-star-fill me-1 text-warning"></i> ${seatTypes.join(' & ')}`;
+        const seatTypeElement = document.getElementById('odModalSeatType');
+        seatTypeElement.replaceChildren();
+        const seatTypeIcon = document.createElement('i');
+        seatTypeIcon.className = 'bi bi-star-fill me-1 text-warning';
+        seatTypeElement.append(seatTypeIcon, document.createTextNode(` ${seatTypes.join(' & ')}`));
         
         // Status check - completed, confirmed, paid are successful
         const statusBadge = document.getElementById('odModalStatus');

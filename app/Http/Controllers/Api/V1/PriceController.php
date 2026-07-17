@@ -110,7 +110,9 @@ class PriceController extends Controller
                 'theaters' => $theatersData
             ], 'Pricing data retrieved successfully');
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve pricing data: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Failed to retrieve pricing data', 500);
         }
     }
 }

@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PaymentCallbackRequest;
+use App\Http\Requests\PaymentWebhookRequest;
 use App\Models\Order;
+use App\Exceptions\PaymentGatewayException;
 use App\Services\OrderService;
 use App\Services\PaymentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -21,122 +25,136 @@ class PaymentController extends Controller
     ) {}
 
     /**
-     * Show payment summary page (not used currently — redirect to booking).
+     * Show payment summary page (kept for route compatibility).
      *
-     * @param int|string $order Order ID (unused, kept for route compatibility)
+     * @param int|string $order Order ID (unused)
      */
     public function index(int|string $order): RedirectResponse
     {
-        return redirect()->route('home');
+        return redirect()
+            ->route('home')
+            ->with('warning', 'Trang thanh toán không còn khả dụng. Vui lòng kiểm tra trạng thái đơn hàng.');
     }
 
     /**
-     * PayOS return URL after successful payment.
-     * Redirects back to the booking page with success status.
+     * PayOS return URL after payment.
+     *
+     * SECURITY: Browser return URLs are user-controlled. This method must never
+     * mark an order paid based on query parameters. For authenticated owners only,
+     * it may ask the gateway for a trusted status sync; verified webhooks remain
+     * the primary fulfillment path.
      */
-    public function payosCallback(Request $request): RedirectResponse
+    public function payosCallback(PaymentCallbackRequest $request): RedirectResponse
     {
-        $orderCode = $request->query('orderCode');
-        $status    = $request->query('status');
+        $orderCode = $request->getOrderCode();
 
-        if (!is_string($orderCode) || $orderCode === '') {
-            $orderCode = $request->query('orderCode') ?? $request->query('order_code');
+        Log::info('PayOS callback received', [
+            'order_code_present' => filled($orderCode),
+            'status' => $request->getStatus(),
+            'code' => $request->getCode(),
+            'user_id' => Auth::id(),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        $order = $this->resolveOwnedOrderForReturn($orderCode, 'callback');
+
+        if (!$order) {
+            return redirect()
+                ->route('home')
+                ->with('warning', 'Không thể xác minh đơn hàng thanh toán. Vui lòng đăng nhập và kiểm tra lại đơn hàng.');
         }
 
-        // Try to find the order's showtime encrypted id for the redirect.
-        $encryptedShowtimeId = null;
-        if (is_string($orderCode) && $orderCode !== '') {
-            $order = $this->orderService->findByGatewayCode((int) $orderCode);
+        try {
+            $this->paymentService->syncFromGateway($order);
+            $order->refresh();
+        } catch (Throwable $e) {
+            report($e);
 
-            // If user is authenticated, ensure order belongs to them (defense in depth)
-            // Allow guest access in case session expired during payment
-            if ($order && Auth::check() && (int) $order->user_id !== (int) Auth::id()) {
-                $order = null;
-            }
-
-            if ($order) {
-                // PayOS return URL có thể về trước webhook/queue worker.
-                // Nếu return params báo thành công thì finalize ngay để cập nhật đủ:
-                // orders, payments, order_items, tickets, promotion used_count,
-                // điểm người dùng, seat_holds.
-                $isSuccessfulReturn = $status === 'PAID'
-                    || $status === 'success'
-                    || $request->query('code') === '00';
-
-                if ($isSuccessfulReturn) {
-                    $this->paymentService->markPaidFromReturn($order);
-                } else {
-                    // Fallback: đồng bộ trực tiếp từ PayOS để tránh đơn kẹt pending.
-                    $this->paymentService->syncFromGateway($order);
-                }
-
-                $order->refresh();
-            }
-
-            $encryptedShowtimeId = $order?->showtime?->encrypted_id;
+            Log::warning('PayOS callback gateway sync failed', [
+                'order_id' => $order->id,
+                'gateway_order_code' => $order->gateway_order_code,
+                'user_id' => Auth::id(),
+            ]);
         }
 
-        if ($encryptedShowtimeId && (
-            $status === 'PAID'
-            || $status === 'success'
-            || $request->query('code') === '00'
-            || (isset($order) && $order?->payment_status === 'paid')
-        )) {
-            return redirect()->route('booking.show', [
-                'encryptedShowtimeId' => $encryptedShowtimeId,
-                'paymentStatus'       => 'success',
-                'orderCode'           => $orderCode,
-            ], 302, []);
+        $encryptedShowtimeId = $order->showtime?->encrypted_id;
+
+        if (!$encryptedShowtimeId) {
+            return redirect()
+                ->route('home')
+                ->with('warning', 'Không tìm thấy lịch chiếu của đơn hàng. Vui lòng kiểm tra lại đơn hàng.');
         }
 
-        return redirect()->route('home');
+        return redirect()->route('booking.show', [
+            'encryptedShowtimeId' => $encryptedShowtimeId,
+            'paymentStatus' => $order->payment_status === 'paid' ? 'success' : 'pending',
+            'orderCode' => $order->gateway_order_code,
+        ], 302, []);
     }
 
     /**
      * PayOS cancel URL when user cancels payment.
-     * Redirects back to the booking page with cancelled status.
      */
-    public function payosCancel(Request $request): RedirectResponse
+    public function payosCancel(PaymentCallbackRequest $request): RedirectResponse
     {
-        $orderCode = $request->query('orderCode');
+        $orderCode = $request->getOrderCode();
 
-        $encryptedShowtimeId = null;
-        if (is_string($orderCode) && $orderCode !== '') {
-            $order = $this->orderService->findByGatewayCode((int) $orderCode);
+        Log::info('PayOS cancel callback received', [
+            'order_code_present' => filled($orderCode),
+            'user_id' => Auth::id(),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
-            // If user is authenticated, ensure order belongs to them (defense in depth)
-            // Allow guest access in case session expired during payment
-            if ($order && Auth::check() && (int) $order->user_id !== (int) Auth::id()) {
-                $order = null;
-            }
+        $order = $this->resolveOwnedOrderForReturn($orderCode, 'cancel');
 
-            if ($order) {
-                $this->paymentService->markCancelledFromReturn($order);
-                $order->refresh();
-            }
-
-            $encryptedShowtimeId = $order?->showtime?->encrypted_id;
+        if (!$order) {
+            return redirect()
+                ->route('home')
+                ->with('warning', 'Không thể xác minh đơn hàng bị hủy. Vui lòng đăng nhập và kiểm tra lại đơn hàng.');
         }
 
-        if ($encryptedShowtimeId) {
-            return redirect()->route('booking.show', [
-                'encryptedShowtimeId' => $encryptedShowtimeId,
-                'paymentStatus'       => 'cancelled',
-                'orderCode'           => $orderCode,
-            ], 302, []);
+        $this->paymentService->markCancelledFromReturn($order);
+        $order->refresh();
+
+        $encryptedShowtimeId = $order->showtime?->encrypted_id;
+
+        if (!$encryptedShowtimeId) {
+            return redirect()
+                ->route('home')
+                ->with('warning', 'Không tìm thấy lịch chiếu của đơn hàng. Vui lòng kiểm tra lại đơn hàng.');
         }
 
-        return redirect()->route('home');
+        return redirect()->route('booking.show', [
+            'encryptedShowtimeId' => $encryptedShowtimeId,
+            'paymentStatus' => 'cancelled',
+            'orderCode' => $order->gateway_order_code,
+        ], 302, []);
     }
 
     /**
      * PayOS webhook — called by PayOS server to confirm payment.
-     * Xử lý đồng bộ để đơn hàng không bị kẹt pending khi queue worker chưa chạy.
+     *
+     * Signature verification must be enforced by route middleware and the gateway
+     * verifier inside PaymentService::handleWebhook().
      */
-    public function payosWebhook(Request $request): \Illuminate\Http\JsonResponse
+    public function payosWebhook(PaymentWebhookRequest $request): JsonResponse
     {
+        Log::info('PayOS webhook received', [
+            'order_code' => data_get($request->validated(), 'data.orderCode') ?? data_get($request->validated(), 'data.order_code'),
+            'code' => $request->validated('code'),
+            'success' => $request->validated('success'),
+            'ip' => $request->ip(),
+        ]);
+
         try {
-            $result = $this->paymentService->handleWebhook($request->all());
+            $result = $this->paymentService->handleWebhook($request->validated());
+
+            Log::info('PayOS webhook processed', [
+                'already_processed' => $result['already_processed'] ?? false,
+                'skipped' => $result['skipped'] ?? false,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -146,13 +164,97 @@ class PaymentController extends Controller
                     default => 'Payment processed successfully',
                 },
             ]);
+        } catch (PaymentGatewayException $e) {
+            Log::warning('PayOS webhook ignored after gateway verification failure', [
+                'order_code' => data_get($request->validated(), 'data.orderCode') ?? data_get($request->validated(), 'data.order_code'),
+                'exception' => $e::class,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Webhook accepted but not processed',
+            ]);
         } catch (Throwable $e) {
+            if ($e instanceof PaymentGatewayException) {
+                Log::warning('PayOS webhook ignored after gateway verification failure', [
+                    'order_code' => data_get($request->validated(), 'data.orderCode') ?? data_get($request->validated(), 'data.order_code'),
+                    'exception' => $e::class,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Webhook accepted but not processed',
+                ]);
+            }
+
             report($e);
+
+            Log::error('PayOS webhook processing failed', [
+                'order_code' => data_get($request->validated(), 'data.orderCode') ?? data_get($request->validated(), 'data.order_code'),
+                'exception' => $e::class,
+            ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to process webhook',
             ], 500);
         }
+    }
+
+    /**
+     * Resolve an order from payment return parameters only for authenticated owners.
+     */
+    private function resolveOwnedOrderForReturn(?string $orderCode, string $action): ?Order
+    {
+        if (!Auth::check()) {
+            Log::warning('Payment return rejected for guest user', [
+                'action' => $action,
+                'order_code_present' => filled($orderCode),
+            ]);
+
+            return null;
+        }
+
+        if (!$this->isValidGatewayOrderCode($orderCode)) {
+            Log::warning('Payment return rejected due to invalid order code', [
+                'action' => $action,
+                'user_id' => Auth::id(),
+            ]);
+
+            return null;
+        }
+
+        $order = $this->orderService->findByGatewayCode((int) $orderCode);
+
+        if (!$order) {
+            Log::warning('Payment return order not found', [
+                'action' => $action,
+                'user_id' => Auth::id(),
+            ]);
+
+            return null;
+        }
+
+        if ((int) $order->user_id !== (int) Auth::id()) {
+            Log::warning('Payment return ownership check failed', [
+                'action' => $action,
+                'order_id' => $order->id,
+                'order_user_id' => $order->user_id,
+                'actor_user_id' => Auth::id(),
+            ]);
+
+            return null;
+        }
+
+        return $order;
+    }
+
+    /**
+     * PayOS gateway order codes are numeric and generated server-side.
+     */
+    private function isValidGatewayOrderCode(?string $orderCode): bool
+    {
+        return is_string($orderCode)
+            && preg_match('/^[1-9][0-9]{5,30}$/', $orderCode) === 1;
     }
 }

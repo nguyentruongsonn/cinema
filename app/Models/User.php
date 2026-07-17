@@ -14,6 +14,11 @@ class User extends Authenticatable implements JWTSubject
 {
     use HasFactory, Notifiable;
 
+    /**
+     * Mass assignable attributes - SECURITY: sensitive privilege fields removed.
+     * Status remains fillable for controlled admin/service workflows and must not be accepted from public requests.
+     * Do NOT add: role_id, loyalty_points, email_verified_at, last_login_*, remember_token
+     */
     protected $fillable = [
         'name',
         'email',
@@ -24,11 +29,20 @@ class User extends Authenticatable implements JWTSubject
         'birthday',
         'gender',
         'address',
+        'status',
+    ];
+
+    /**
+     * Guarded attributes - prevent mass assignment
+     */
+    protected $guarded = [
+        'id',
+        'role_id',
         'loyalty_points',
         'email_verified_at',
-        'status',
         'last_login_at',
         'last_login_ip',
+        'remember_token',
     ];
 
     protected $hidden = [
@@ -42,6 +56,8 @@ class User extends Authenticatable implements JWTSubject
         'birthday' => 'date',
         'status' => 'boolean',
     ];
+
+    protected $with = ['role']; // Always eager load role for auth checks
 
     public function role(): BelongsTo
     {
@@ -90,7 +106,13 @@ class User extends Authenticatable implements JWTSubject
     // Helper: check any of roles
     public function hasAnyRole(array $slugs): bool
     {
-        return $this->role && in_array($this->role->slug, $slugs);
+        return $this->role && in_array($this->role->slug, $slugs, true);
+    }
+
+    // Helper: check admin role
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
     }
 
     // Helper: check permission via role
@@ -107,5 +129,44 @@ class User extends Authenticatable implements JWTSubject
     public function scopeByEmail($query, $email)
     {
         return $query->where('email', $email);
+    }
+
+    // Explicit setters for guarded fields (admin/service use only)
+
+    public function assignRole(int $roleId): void
+    {
+        $this->role_id = $roleId;
+        $this->save();
+    }
+
+    public function updateLoyaltyPoints(int $points): void
+    {
+        $this->loyalty_points = $points;
+        $this->save();
+    }
+
+    public function activate(): void
+    {
+        $this->status = true;
+        $this->save();
+    }
+
+    public function deactivate(): void
+    {
+        $this->status = false;
+        $this->save();
+    }
+
+    public function markEmailAsVerified(): void
+    {
+        $this->email_verified_at = now();
+        $this->save();
+    }
+
+    public function recordLogin(string $ip): void
+    {
+        $this->last_login_at = now();
+        $this->last_login_ip = $ip;
+        $this->save();
     }
 }

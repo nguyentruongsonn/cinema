@@ -14,7 +14,28 @@ class RegisterRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (!$this->filled('username') && $this->filled('email')) {
+        // Normalize email
+        $email = $this->input('email');
+        if (is_string($email)) {
+            $this->merge(['email' => strtolower(trim($email))]);
+        }
+
+        // Normalize username
+        $username = $this->input('username');
+        if (is_string($username)) {
+            $this->merge(['username' => strtolower(trim($username))]);
+        }
+
+        // Normalize phone
+        $phone = $this->input('phone');
+        if (is_string($phone)) {
+            $this->merge(['phone' => trim($phone)]);
+        }
+
+        // Auto-generate username from email if not provided
+        // WARNING: Race-prone - uniqueness validation happens after normalization
+        // Consider moving username generation to service layer
+        if (! $this->filled('username') && $this->filled('email')) {
             $this->merge([
                 'username' => str($this->input('email'))->before('@')->slug('_')->toString(),
             ]);
@@ -34,9 +55,11 @@ class RegisterRequest extends FormRequest
             'password' => [
                 'required',
                 'string',
+                'max:1024',
                 'confirmed',
                 Password::min(8)->letters()->numbers(),
             ],
+            // NOTE: Terms is nullable. If this is a legal requirement, consider making it required.
             'terms' => ['nullable', 'accepted'],
         ];
     }

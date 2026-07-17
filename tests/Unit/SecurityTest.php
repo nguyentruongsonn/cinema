@@ -244,4 +244,39 @@ class SecurityTest extends TestCase
             $this->assertEquals($expected, $escaped);
         }
     }
+
+    public function test_env_example_uses_safe_release_defaults(): void
+    {
+        $env = $this->parseEnvExample();
+
+        $this->assertSame('false', $env['APP_DEBUG'] ?? null);
+        $this->assertSame('info', $env['LOG_LEVEL'] ?? null);
+        $this->assertSame('true', $env['SESSION_ENCRYPT'] ?? null);
+        $this->assertSame('true', $env['SESSION_SECURE'] ?? null);
+        $this->assertSame('false', $env['JWT_SHOW_BLACKLIST_EXCEPTION'] ?? null);
+        $this->assertSame('', $env['APP_KEY'] ?? null);
+        $this->assertSame('', $env['JWT_SECRET'] ?? null);
+        $this->assertSame('', $env['PAYOS_API_KEY'] ?? null);
+        $this->assertSame('', $env['PAYOS_WEBHOOK_SECRET'] ?? null);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function parseEnvExample(): array
+    {
+        $contents = file(base_path('.env.example'), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $values = [];
+
+        foreach ($contents ?: [] as $line) {
+            if (str_starts_with(trim($line), '#') || ! str_contains($line, '=')) {
+                continue;
+            }
+
+            [$key, $value] = explode('=', $line, 2);
+            $values[$key] = trim($value, "\"'");
+        }
+
+        return $values;
+    }
 }

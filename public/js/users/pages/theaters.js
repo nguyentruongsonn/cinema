@@ -53,10 +53,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             
             if (result.success && result.data) {
-                // Keep the "Tất cả chi nhánh" option and append others
-                const defaultOption = '<option value="">Tất cả chi nhánh</option>';
-                const branchOptions = result.data.map(branchName => `<option value="${branchName}">${branchName}</option>`).join('');
-                branchFilter.innerHTML = defaultOption + branchOptions;
+                const options = [];
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Tất cả chi nhánh';
+                options.push(defaultOption);
+
+                result.data.forEach(branchName => {
+                    const option = document.createElement('option');
+                    option.value = String(branchName ?? '');
+                    option.textContent = String(branchName ?? '');
+                    options.push(option);
+                });
+
+                branchFilter.replaceChildren(...options);
             }
         } catch (error) {
             console.error('Error fetching branches:', error);
@@ -98,93 +108,161 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Renderers ---
     function renderGroupedTheaters(theaters) {
-        // Group theaters by branch name
-        const groups = {};
+        const groups = new Map();
+
         theaters.forEach(theater => {
             const branchName = theater.branch ? theater.branch.name : 'Khác';
-            if (!groups[branchName]) {
-                groups[branchName] = [];
+            const safeBranchName = String(branchName ?? 'Khác');
+
+            if (!groups.has(safeBranchName)) {
+                groups.set(safeBranchName, []);
             }
-            groups[branchName].push(theater);
+
+            groups.get(safeBranchName).push(theater);
         });
 
-        let html = '';
+        const fragment = document.createDocumentFragment();
 
-        for (const [branchName, branchTheaters] of Object.entries(groups)) {
-            html += `
-                <div class="col-12 branch-group">
-                    <h2 class="branch-title">${branchName}</h2>
-                    <div class="row g-4">
-                        ${branchTheaters.map(theater => generateTheaterCard(theater)).join('')}
-                    </div>
-                </div>
-            `;
-        }
+        groups.forEach((branchTheaters, branchName) => {
+            const group = document.createElement('div');
+            group.className = 'col-12 branch-group';
 
-        // We wrap the whole thing inside theatersGrid which is a container
-        theatersGrid.innerHTML = html;
-        // Since theatersGrid itself was a row, we should remove the 'row' class from it or just let the inner rows handle the grid.
-        // Let's modify theatersGrid class safely.
-        theatersGrid.className = 'w-100'; // Remove row g-4 from the main container as we handle it per group
+            const title = document.createElement('h2');
+            title.className = 'branch-title';
+            title.textContent = branchName;
+
+            const row = document.createElement('div');
+            row.className = 'row g-4';
+            branchTheaters.forEach(theater => row.appendChild(generateTheaterCard(theater)));
+
+            group.append(title, row);
+            fragment.appendChild(group);
+        });
+
+        theatersGrid.replaceChildren(fragment);
+        theatersGrid.className = 'w-100';
     }
 
     function generateTheaterCard(theater) {
-        // Mock badges or extract from screens if they had format data.
-        // For visual match with the requested UI, we will add some badges randomly if screens contain keywords or just mock for preview
-        let badgesHtml = '';
-        const badges = new Set();
-        
-        if (theater.screens && theater.screens.length > 0) {
-            theater.screens.forEach(s => {
-                if (s.name.toUpperCase().includes('IMAX') || (s.format && s.format.name.toUpperCase().includes('IMAX'))) badges.add('IMAX');
-                if (s.name.toUpperCase().includes('GOLD CLASS') || (s.format && s.format.name.toUpperCase().includes('GOLD CLASS'))) badges.add('GOLD CLASS');
-                if (s.name.toUpperCase().includes('DOLBY') || (s.format && s.format.name.toUpperCase().includes('DOLBY'))) badges.add('DOLBY ATMOS');
-            });
-        }
-        
-        // Add random badges for mockup if no screens data available, matching screenshot aesthetic
-        if (badges.size === 0) {
-            // Using theater ID to pseudo-randomly assign badges so they don't look completely empty
-            if (theater.id % 2 === 0) badges.add('IMAX');
-            if (theater.id % 3 === 0) badges.add('GOLD CLASS');
-            if (theater.id % 4 === 0) badges.add('DOLBY ATMOS');
+        const column = document.createElement('div');
+        column.className = 'col-md-6 col-lg-4';
+
+        const card = document.createElement('div');
+        card.className = 'theater-card';
+
+        const imageUrl = getSafeImageUrl(theater.images?.[0]?.url);
+        const media = document.createElement('div');
+        media.className = imageUrl ? 'theater-img' : 'theater-img-placeholder';
+
+        if (imageUrl) {
+            media.style.backgroundImage = `url(${JSON.stringify(imageUrl)})`;
+        } else {
+            const placeholderIcon = document.createElement('i');
+            placeholderIcon.className = 'bi bi-camera-video';
+            media.appendChild(placeholderIcon);
         }
 
-        badges.forEach(badge => {
-            let badgeClass = '';
-            if (badge === 'IMAX') badgeClass = 'imax';
-            else if (badge === 'GOLD CLASS') badgeClass = 'gold-class';
-            
-            badgesHtml += `<span class="t-badge ${badgeClass}">${badge}</span>`;
+        const badgesContainer = document.createElement('div');
+        badgesContainer.className = 'theater-badges';
+
+        getTheaterBadges(theater).forEach(badge => {
+            const badgeElement = document.createElement('span');
+            badgeElement.className = 't-badge';
+            badgeElement.textContent = badge;
+
+            if (badge === 'IMAX') {
+                badgeElement.classList.add('imax');
+            } else if (badge === 'GOLD CLASS') {
+                badgeElement.classList.add('gold-class');
+            }
+
+            badgesContainer.appendChild(badgeElement);
         });
 
-        return `
-            <div class="col-md-6 col-lg-4">
-                <div class="theater-card">
-                    ${theater.images && theater.images.length > 0 
-                        ? `<div class="theater-img" style="background-image: url('${theater.images[0].url}')">
-                             <div class="theater-badges">${badgesHtml}</div>
-                           </div>`
-                        : `<div class="theater-img-placeholder">
-                             <i class="bi bi-camera-video"></i>
-                             <div class="theater-badges">${badgesHtml}</div>
-                           </div>`
-                    }
-                    <div class="theater-info">
-                        <h3 class="theater-name">${theater.name}</h3>
-                        
-                        <div class="theater-detail">
-                            <i class="bi bi-geo-alt-fill"></i>
-                            <span>${theater.address}</span>
-                        </div>
-                        
-                        <div class="theater-actions">
-                            <a href="#" class="btn-theater">Xem lịch chiếu <i class="bi bi-arrow-right"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        media.appendChild(badgesContainer);
+
+        const info = document.createElement('div');
+        info.className = 'theater-info';
+
+        const name = document.createElement('h3');
+        name.className = 'theater-name';
+        name.textContent = String(theater.name ?? '');
+
+        const detail = document.createElement('div');
+        detail.className = 'theater-detail';
+
+        const locationIcon = document.createElement('i');
+        locationIcon.className = 'bi bi-geo-alt-fill';
+
+        const address = document.createElement('span');
+        address.textContent = String(theater.address ?? '');
+        detail.append(locationIcon, address);
+
+        const actions = document.createElement('div');
+        actions.className = 'theater-actions';
+
+        const scheduleLink = document.createElement('a');
+        scheduleLink.href = '#';
+        scheduleLink.className = 'btn-theater';
+        scheduleLink.append(document.createTextNode('Xem lịch chiếu '));
+
+        const arrowIcon = document.createElement('i');
+        arrowIcon.className = 'bi bi-arrow-right';
+        scheduleLink.appendChild(arrowIcon);
+        actions.appendChild(scheduleLink);
+
+        info.append(name, detail, actions);
+        card.append(media, info);
+        column.appendChild(card);
+
+        return column;
+    }
+
+    function getTheaterBadges(theater) {
+        const badges = new Set();
+        const screens = Array.isArray(theater.screens) ? theater.screens : [];
+
+        screens.forEach(screen => {
+            const screenName = String(screen?.name ?? '').toUpperCase();
+            const formatName = String(screen?.format?.name ?? '').toUpperCase();
+            const capability = `${screenName} ${formatName}`;
+
+            if (capability.includes('IMAX')) {
+                badges.add('IMAX');
+            }
+            if (capability.includes('GOLD CLASS')) {
+                badges.add('GOLD CLASS');
+            }
+            if (capability.includes('DOLBY')) {
+                badges.add('DOLBY ATMOS');
+            }
+        });
+
+        return badges;
+    }
+
+    function getSafeImageUrl(value) {
+        if (!value) {
+            return '';
+        }
+
+        const urlValue = String(value).trim();
+
+        if (urlValue.startsWith('/') && !urlValue.startsWith('//')) {
+            return urlValue;
+        }
+
+        try {
+            const parsedUrl = new URL(urlValue, window.location.origin);
+
+            if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
+                return parsedUrl.href;
+            }
+        } catch (error) {
+            return '';
+        }
+
+        return '';
     }
 
     function renderPagination(paginationData) {
@@ -193,28 +271,35 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        let html = '';
+        const controls = [];
+
+        controls.push(createPaginationButton(
+            paginationData.current_page - 1,
+            'bi bi-chevron-left',
+            paginationData.current_page === 1
+        ));
         
-        // Prev button
-        html += `<button class="page-btn" ${paginationData.current_page === 1 ? 'disabled' : ''} data-page="${paginationData.current_page - 1}">
-            <i class="bi bi-chevron-left"></i>
-        </button>`;
-        
-        // Page numbers
         for (let i = 1; i <= paginationData.last_page; i++) {
             if (i === 1 || i === paginationData.last_page || (i >= paginationData.current_page - 1 && i <= paginationData.current_page + 1)) {
-                html += `<button class="page-btn ${i === paginationData.current_page ? 'active' : ''}" data-page="${i}">${i}</button>`;
+                const pageButton = createPaginationButton(i, '', false, String(i));
+                pageButton.classList.toggle('active', i === paginationData.current_page);
+                controls.push(pageButton);
             } else if (i === paginationData.current_page - 2 || i === paginationData.current_page + 2) {
-                html += `<span class="px-2" style="color: #666;">...</span>`;
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'px-2';
+                ellipsis.style.color = '#666';
+                ellipsis.textContent = '...';
+                controls.push(ellipsis);
             }
         }
         
-        // Next button
-        html += `<button class="page-btn" ${paginationData.current_page === paginationData.last_page ? 'disabled' : ''} data-page="${paginationData.current_page + 1}">
-            <i class="bi bi-chevron-right"></i>
-        </button>`;
+        controls.push(createPaginationButton(
+            paginationData.current_page + 1,
+            'bi bi-chevron-right',
+            paginationData.current_page === paginationData.last_page
+        ));
         
-        paginationContainer.innerHTML = html;
+        paginationContainer.replaceChildren(...controls);
         paginationContainer.style.display = 'flex';
         
         // Add listeners
@@ -226,6 +311,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.theaters-filters-section').scrollIntoView({ behavior: 'smooth' });
             });
         });
+    }
+
+    function createPaginationButton(page, iconClass, disabled, label = '') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'page-btn';
+        button.disabled = disabled;
+        button.dataset.page = String(page);
+
+        if (label) {
+            button.textContent = label;
+        } else {
+            const icon = document.createElement('i');
+            icon.className = iconClass;
+            button.appendChild(icon);
+        }
+
+        return button;
     }
 
     // --- UI Helpers ---

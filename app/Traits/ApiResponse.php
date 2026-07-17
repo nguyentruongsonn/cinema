@@ -15,6 +15,7 @@ trait ApiResponse
             'success' => true,
             'message' => $message,
             'data' => $data,
+            'request_id' => $this->requestId(),
         ], $code);
     }
 
@@ -27,6 +28,7 @@ trait ApiResponse
             'success' => false,
             'message' => $message,
             'errors' => $errors,
+            'request_id' => $this->requestId(),
         ], $code);
     }
 
@@ -79,6 +81,12 @@ trait ApiResponse
                 'from' => $data->firstItem(),
                 'to' => $data->lastItem(),
             ],
+            'request_id' => $this->requestId(),
         ], $code);
+    }
+
+    private function requestId(): ?string
+    {
+        return request()->attributes->get('request_id');
     }
 }

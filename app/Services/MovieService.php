@@ -6,8 +6,9 @@ use App\Models\Movie;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
+use Illuminate\Support\Arr;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 
 /**
  * MovieService - Business Logic Layer for Movie Management
@@ -18,6 +19,89 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class MovieService
 {
     /**
+     * Allowed sortable columns for public movie listing
+     */
+    private const ALLOWED_SORT_COLUMNS = [
+        'release_date',
+        'title',
+        'duration',
+        'created_at',
+        'is_hot',
+    ];
+
+    /**
+     * Allowed sort directions
+     */
+    private const ALLOWED_SORT_DIRECTIONS = ['asc', 'desc'];
+
+    /**
+     * Maximum items per page
+     */
+    private const MAX_PER_PAGE = 100;
+
+    /**
+     * Default items per page
+     */
+    private const DEFAULT_PER_PAGE = 12;
+
+    /**
+     * Maximum search keyword length
+     */
+    private const MAX_SEARCH_LENGTH = 100;
+
+    /**
+     * Allowed fields for create operation
+     */
+    private const CREATE_FIELDS = [
+        'title',
+        'original_title',
+        'slug',
+        'description',
+        'director',
+        'cast',
+        'duration',
+        'release_date',
+        'end_date',
+        'poster_url',
+        'poster_path',
+        'banner_path',
+        'trailer_url',
+        'age_rating',
+        'surcharge',
+        'backdrops',
+        'status',
+        'is_hot',
+        'is_hidden',
+        'manual_override_status',
+    ];
+
+    /**
+     * Allowed fields for update operation
+     */
+    private const UPDATE_FIELDS = [
+        'title',
+        'original_title',
+        'slug',
+        'description',
+        'director',
+        'cast',
+        'duration',
+        'release_date',
+        'end_date',
+        'poster_url',
+        'poster_path',
+        'banner_path',
+        'trailer_url',
+        'age_rating',
+        'surcharge',
+        'backdrops',
+        'status',
+        'is_hot',
+        'is_hidden',
+        'manual_override_status',
+    ];
+
+    /**
      * Get paginated list of movies with filters and sorting
      *
      * @param array $filters
@@ -25,58 +109,62 @@ class MovieService
      */
     public function getMovies(array $filters): LengthAwarePaginator
     {
-        try {
-            $query = Movie::query()
-                ->with(['categories'])
-                ->when(($filters['status'] ?? 'active') !== 'all', function ($query) use ($filters) {
-                    return match ($filters['status'] ?? 'active') {
-                        'now_showing' => $query->nowShowing(),
-                        'upcoming' => $query->upcoming(),
-                        'hidden' => $query->where('is_hidden', 1),
-                        'published' => $query->where('status', 1),
-                        'draft' => $query->where('status', 0),
-                        default => $query->active(),
-                    };
-                })
-                ->when($filters['q'] ?? null, function ($query, $keyword) {
-                    $query->where(function ($q) use ($keyword) {
-                        $q->where('title', 'like', "%{$keyword}%")
-                            ->orWhere('original_title', 'like', "%{$keyword}%")
-                            ->orWhere('director', 'like', "%{$keyword}%")
-                            ->orWhere('cast', 'like', "%{$keyword}%")
-                            ->orWhere('description', 'like', "%{$keyword}%");
-                    });
-                })
-                ->when($filters['category_id'] ?? null, fn ($query, $categoryId) => $query->byCategory($categoryId))
-                ->when(array_key_exists('is_hot', $filters), fn ($query) => $query->where('is_hot', $filters['is_hot']))
-                ->when($filters['age_rating'] ?? null, fn ($query, $ageRating) => $query->where('age_rating', $ageRating))
-                ->when($filters['release_from'] ?? null, fn ($query, $date) => $query->whereDate('release_date', '>=', $date))
-                ->when($filters['release_to'] ?? null, fn ($query, $date) => $query->whereDate('release_date', '<=', $date));
+        $query = Movie::query()
+            ->with(['categories'])
+            ->when(($filters['status'] ?? 'active') !== 'all', function ($query) use ($filters) {
+                return match ($filters['status'] ?? 'active') {
+                    'now_showing' => $query->nowShowing(),
+                    'upcoming' => $query->upcoming(),
+                    'hidden' => $query->where('is_hidden', 1),
+                    'published' => $query->where('status', 1),
+                    'draft' => $query->where('status', 0),
+                    default => $query->active(),
+                };
+            })
+            ->when($filters['q'] ?? null, function ($query, string $keyword): void {
+                $keyword = trim(mb_substr($keyword, 0, self::MAX_SEARCH_LENGTH));
+                $escaped = addcslashes($keyword, '\\%_');
 
-            $sortBy = $filters['sort_by'] ?? 'release_date';
-            $sortDir = $filters['sort_dir'] ?? 'desc';
-            $perPage = $filters['per_page'] ?? 12;
+                $query->where(function ($q) use ($escaped): void {
+                    $q->where('title', 'like', "%{$escaped}%")
+                        ->orWhere('original_title', 'like', "%{$escaped}%")
+                        ->orWhere('director', 'like', "%{$escaped}%")
+                        ->orWhere('cast', 'like', "%{$escaped}%");
+                });
+            })
+            ->when($filters['category_id'] ?? null, fn ($query, $categoryId) => $query->byCategory($categoryId))
+            ->when(array_key_exists('is_hot', $filters), fn ($query) => $query->where('is_hot', $filters['is_hot']))
+            ->when($filters['age_rating'] ?? null, fn ($query, $ageRating) => $query->where('age_rating', $ageRating))
+            ->when($filters['release_from'] ?? null, fn ($query, $date) => $query->whereDate('release_date', '>=', $date))
+            ->when($filters['release_to'] ?? null, fn ($query, $date) => $query->whereDate('release_date', '<=', $date));
 
-            $movies = $query
-                ->orderBy($sortBy, $sortDir)
-                ->orderBy('id', 'desc')
-                ->paginate($perPage)
-                ->withQueryString();
+        // Whitelist and validate sort parameters
+        $sortBy = in_array($filters['sort_by'] ?? null, self::ALLOWED_SORT_COLUMNS, true)
+            ? $filters['sort_by']
+            : 'release_date';
 
-            Log::info('Movies retrieved', [
-                'count' => $movies->count(),
-                'total' => $movies->total(),
-                'filters' => $filters
-            ]);
+        $sortDir = in_array(strtolower($filters['sort_dir'] ?? ''), self::ALLOWED_SORT_DIRECTIONS, true)
+            ? strtolower($filters['sort_dir'])
+            : 'desc';
 
-            return $movies;
-        } catch (\Exception $e) {
-            Log::error('Failed to retrieve movies', [
-                'filters' => $filters,
-                'error' => $e->getMessage()
-            ]);
-            throw $e;
-        }
+        // Clamp per_page to safe bounds
+        $perPage = min(
+            max((int) ($filters['per_page'] ?? self::DEFAULT_PER_PAGE), 1),
+            self::MAX_PER_PAGE
+        );
+
+        $movies = $query
+            ->orderBy($sortBy, $sortDir)
+            ->orderByDesc('id')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        Log::debug('Movies retrieved', [
+            'count' => $movies->count(),
+            'total' => $movies->total(),
+        ]);
+
+        return $movies;
     }
 
     /**
@@ -124,42 +212,32 @@ class MovieService
      */
     public function createMovie(array $data): Movie
     {
-        try {
-            $movie = DB::transaction(function () use ($data) {
-                // Extract category IDs
-                $categoryIds = $data['category_ids'] ?? [];
-                unset($data['category_ids']);
+        $movie = DB::transaction(function () use ($data): Movie {
+            $categoryIds = $data['category_ids'] ?? [];
 
-                // Generate slug if not provided
-                $data['slug'] = $data['slug'] ?? Str::slug($data['title']);
+            // Whitelist allowed fields only
+            $payload = Arr::only($data, self::CREATE_FIELDS);
 
-                // Create movie
-                $movie = Movie::create($data);
+            // Model boot event will handle slug generation if not provided
+            $movie = Movie::create($payload);
 
-                // Sync categories
-                if (!empty($categoryIds)) {
-                    $movie->categories()->sync($categoryIds);
-                }
+            // Sync categories
+            if (!empty($categoryIds)) {
+                $movie->categories()->sync($categoryIds);
+            }
 
-                return $movie->load('categories');
-            });
+            return $movie->load('categories');
+        });
 
-            // Invalidate statistics cache
-            Cache::forget('movies:statistics');
+        // Invalidate caches after successful commit
+        Cache::forget('movies:statistics');
 
-            Log::info('Movie created successfully', [
-                'movie_id' => $movie->id,
-                'title' => $movie->title
-            ]);
+        Log::info('Movie created successfully', [
+            'movie_id' => $movie->id,
+            'title' => $movie->title,
+        ]);
 
-            return $movie;
-        } catch (\Exception $e) {
-            Log::error('Failed to create movie', [
-                'data' => $data,
-                'error' => $e->getMessage()
-            ]);
-            throw $e;
-        }
+        return $movie;
     }
 
     /**
@@ -168,29 +246,25 @@ class MovieService
      * @param string|int $idOrSlug
      * @return Movie
      */
-    public function getMovie($idOrSlug): Movie
+    public function getMovie(string|int $idOrSlug): Movie
     {
-        try {
-            $cacheKey = is_numeric($idOrSlug)
-                ? "movie:id:{$idOrSlug}"
-                : "movie:slug:{$idOrSlug}";
+        $cacheKey = is_numeric($idOrSlug)
+            ? "movie:id:{$idOrSlug}"
+            : "movie:slug:{$idOrSlug}";
 
-            return Cache::remember($cacheKey, 1800, function () use ($idOrSlug) {
-                $movie = Movie::with(['categories', 'showtimes.screen.theater'])
-                    ->where(function ($query) use ($idOrSlug) {
-                        $query->where('id', $idOrSlug)
-                            ->orWhere('slug', $idOrSlug);
-                    })
-                    ->firstOrFail();
+        return Cache::remember($cacheKey, 1800, function () use ($idOrSlug): Movie {
+            $query = Movie::with(['categories', 'showtimes.screen.theater']);
 
-                Log::info('Movie retrieved (cached)', ['movie_id' => $movie->id]);
+            $movie = is_numeric($idOrSlug)
+                ? $query->whereKey((int) $idOrSlug)->firstOrFail()
+                : $query->where('slug', $idOrSlug)->firstOrFail();
 
-                return $movie;
-            });
-        } catch (\Exception $e) {
-            Log::warning('Movie not found', ['identifier' => $idOrSlug]);
-            throw $e;
-        }
+            Log::debug('Movie retrieved from database for cache', [
+                'movie_id' => $movie->id,
+            ]);
+
+            return $movie;
+        });
     }
 
     /**
@@ -202,52 +276,42 @@ class MovieService
      */
     public function updateMovie(int $id, array $data): Movie
     {
-        try {
-            $movie = DB::transaction(function () use ($id, $data) {
-                $movie = Movie::findOrFail($id);
-                $oldSlug = $movie->slug;
+        $oldSlug = null;
 
-                // Extract category IDs
-                $categoryIds = $data['category_ids'] ?? null;
-                unset($data['category_ids']);
+        $movie = DB::transaction(function () use ($id, $data, &$oldSlug): Movie {
+            $movie = Movie::findOrFail($id);
+            $oldSlug = $movie->slug;
 
-                // Auto-generate slug if title changed but slug not provided
-                if (isset($data['title']) && empty($data['slug'])) {
-                    $data['slug'] = Str::slug($data['title']);
-                }
+            $categoryIds = $data['category_ids'] ?? null;
 
-                // Update movie
-                $movie->update($data);
+            // Whitelist allowed fields only
+            $payload = Arr::only($data, self::UPDATE_FIELDS);
 
-                // Sync categories if provided
-                if (is_array($categoryIds)) {
-                    $movie->categories()->sync($categoryIds);
-                }
+            // Model boot event will handle slug uniqueness if title changed
+            $movie->update($payload);
 
-                // Invalidate caches
-                Cache::forget("movie:id:{$id}");
-                Cache::forget("movie:slug:{$oldSlug}");
-                if ($movie->slug !== $oldSlug) {
-                    Cache::forget("movie:slug:{$movie->slug}");
-                }
-                Cache::forget('movies:statistics');
+            // Sync categories if provided
+            if (is_array($categoryIds)) {
+                $movie->categories()->sync($categoryIds);
+            }
 
-                return $movie->load('categories');
-            });
+            return $movie->load('categories');
+        });
 
-            Log::info('Movie updated successfully', [
-                'movie_id' => $movie->id,
-                'title' => $movie->title
-            ]);
-
-            return $movie;
-        } catch (\Exception $e) {
-            Log::error('Failed to update movie', [
-                'movie_id' => $id,
-                'error' => $e->getMessage()
-            ]);
-            throw $e;
+        // Invalidate caches after successful commit
+        Cache::forget("movie:id:{$id}");
+        Cache::forget("movie:slug:{$movie->slug}");
+        if (isset($oldSlug) && $movie->slug !== $oldSlug) {
+            Cache::forget("movie:slug:{$oldSlug}");
         }
+        Cache::forget('movies:statistics');
+
+        Log::info('Movie updated successfully', [
+            'movie_id' => $movie->id,
+            'title' => $movie->title,
+        ]);
+
+        return $movie;
     }
 
     /**
@@ -255,34 +319,37 @@ class MovieService
      *
      * @param int $id
      * @return bool
+     * @throws ValidationException
      */
     public function deleteMovie(int $id): bool
     {
-        try {
-            $movie = Movie::findOrFail($id);
-            $title = $movie->title;
-            $slug = $movie->slug;
+        $movie = Movie::findOrFail($id);
 
-            $movie->delete();
-
-            // Invalidate caches
-            Cache::forget("movie:id:{$id}");
-            Cache::forget("movie:slug:{$slug}");
-            Cache::forget('movies:statistics');
-
-            Log::info('Movie deleted successfully', [
-                'movie_id' => $id,
-                'title' => $title
+        // Check for existing showtimes before deletion
+        if ($movie->showtimes()->exists()) {
+            throw ValidationException::withMessages([
+                'movie' => 'Cannot delete a movie that has scheduled showtimes. Consider hiding or archiving it instead.',
             ]);
-
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Failed to delete movie', [
-                'movie_id' => $id,
-                'error' => $e->getMessage()
-            ]);
-            throw $e;
         }
+
+        $slug = $movie->slug;
+
+        DB::transaction(function () use ($movie): void {
+            $movie->categories()->detach();
+            $movie->delete();
+        });
+
+        // Invalidate caches after successful commit
+        Cache::forget("movie:id:{$id}");
+        Cache::forget("movie:slug:{$slug}");
+        Cache::forget('movies:statistics');
+
+        Log::info('Movie deleted successfully', [
+            'movie_id' => $id,
+            'title' => $movie->title,
+        ]);
+
+        return true;
     }
 
     /**
@@ -292,25 +359,18 @@ class MovieService
      */
     public function getMovieStatistics(): array
     {
-        try {
-            return Cache::remember('movies:statistics', 300, function () {
-                $stats = [
-                    'total' => Movie::count(),
-                    'active' => Movie::active()->count(),
-                    'now_showing' => Movie::nowShowing()->count(),
-                    'upcoming' => Movie::upcoming()->count(),
-                    'hot' => Movie::where('is_hot', 1)->count(),
-                ];
+        return Cache::remember('movies:statistics', 300, function (): array {
+            $stats = [
+                'total' => Movie::query()->count(),
+                'active' => Movie::query()->active()->count(),
+                'now_showing' => Movie::query()->nowShowing()->count(),
+                'upcoming' => Movie::query()->upcoming()->count(),
+                'hot' => Movie::query()->where('is_hot', 1)->count(),
+            ];
 
-                Log::info('Movie statistics retrieved (cached)', $stats);
+            Log::debug('Movie statistics retrieved from database', $stats);
 
-                return $stats;
-            });
-        } catch (\Exception $e) {
-            Log::error('Failed to retrieve movie statistics', [
-                'error' => $e->getMessage()
-            ]);
-            throw $e;
-        }
+            return $stats;
+        });
     }
 }

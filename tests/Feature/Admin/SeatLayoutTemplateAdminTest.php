@@ -18,7 +18,8 @@ class SeatLayoutTemplateAdminTest extends TestCase
             ['slug' => 'admin'],
             ['name' => 'Admin', 'description' => 'Administrator']
         );
-        $user->update(['role_id' => $role->id]);
+        $user->assignRole($role->id);
+        $user->refresh();
 
         $this->actingAs($user);
 
@@ -27,6 +28,6 @@ class SeatLayoutTemplateAdminTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Quản lý mẫu sơ đồ ghế');
         $response->assertSee('data-bs-toggle="tab"', false);
-        $response->assertSee('data-bs-target="#pane-all"', false);
+        $response->assertSee('data-bs-target="#pane-table"', false);
     }
 }

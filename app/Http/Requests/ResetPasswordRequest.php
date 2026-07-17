@@ -12,15 +12,36 @@ class ResetPasswordRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $email = $this->input('email');
+        $token = $this->input('token');
+
+        if (is_string($email)) {
+            $this->merge(['email' => strtolower(trim($email))]);
+        }
+
+        if (is_string($token)) {
+            $this->merge(['token' => trim($token)]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'token' => ['required', 'string'],
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string', Password::min(6), 'confirmed'],
+            'token' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email:rfc', 'max:255'],
+            // CRITICAL: Password policy must match registration to prevent downgrade attacks
+            'password' => [
+                'required',
+                'string',
+                'max:1024',
+                'confirmed',
+                Password::min(8)->letters()->numbers(),
+            ],
         ];
     }
 }

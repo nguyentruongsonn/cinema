@@ -44,7 +44,9 @@ class AuthController extends Controller
 
             return $this->setAuthCookies($response, $result['access_token'], $result['expires_in'], $result['refresh_token'], $result['refresh_expires_in']);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Registration failed: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Registration failed', 500);
         }
     }
 
@@ -71,7 +73,9 @@ class AuthController extends Controller
 
             return $this->setAuthCookies($response, $result['access_token'], $result['expires_in'], $result['refresh_token'], $result['refresh_expires_in']);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Login failed: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Login failed', 500);
         }
     }
 
@@ -98,7 +102,9 @@ class AuthController extends Controller
 
             return $this->setAuthCookies($response, $result['access_token'], $result['expires_in'], $result['refresh_token'], $result['refresh_expires_in']);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Google login failed: ' . $e->getMessage(), 401);
+            report($e);
+
+            return $this->errorResponse('Google login failed', 401);
         }
     }
 
@@ -113,7 +119,9 @@ class AuthController extends Controller
                 'User retrieved successfully'
             );
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to retrieve user: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Failed to retrieve user', 500);
         }
     }
 
@@ -140,7 +148,9 @@ class AuthController extends Controller
                 ->withCookie(cookie()->forget('refresh_token', '/', config('session.domain')))
                 ->withCookie(cookie()->forget(config('session.cookie'), '/', config('session.domain')));
         } catch (\Throwable $e) {
-            return $this->errorResponse('Logout failed: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Logout failed', 500);
         }
     }
 
@@ -169,7 +179,9 @@ class AuthController extends Controller
 
             return $this->setAuthCookies($response, $result['access_token'], $result['expires_in'], $result['refresh_token'], $result['refresh_expires_in']);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Token refresh failed: ' . $e->getMessage(), 401);
+            report($e);
+
+            return $this->errorResponse('Token refresh failed', 401);
         }
     }
 
@@ -184,7 +196,9 @@ class AuthController extends Controller
                 'Profile retrieved successfully'
             );
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to retrieve profile: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Failed to retrieve profile', 500);
         }
     }
 
@@ -199,7 +213,9 @@ class AuthController extends Controller
                 'Profile updated successfully'
             );
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to update profile: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Failed to update profile', 500);
         }
     }
 
@@ -220,7 +236,9 @@ class AuthController extends Controller
 
             return $this->successResponse(null, 'Password changed successfully');
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to change password: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Failed to change password', 500);
         }
     }
 
@@ -260,7 +278,9 @@ class AuthController extends Controller
 
             return $this->errorResponse('Failed to reset password', 400);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to reset password: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Failed to reset password', 500);
         }
     }
 
@@ -278,7 +298,9 @@ class AuthController extends Controller
 
             return $this->successResponse(null, 'Verification email sent');
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to send verification email: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Failed to send verification email', 500);
         }
     }
 
@@ -299,7 +321,9 @@ class AuthController extends Controller
 
             return $this->successResponse(null, 'Email verified successfully');
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to verify email: ' . $e->getMessage(), 500);
+            report($e);
+
+            return $this->errorResponse('Failed to verify email', 500);
         }
     }
 

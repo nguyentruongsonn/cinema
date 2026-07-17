@@ -47,10 +47,18 @@
                 const data = await res.json();
                 const branches = data.data || [];
                 
-                els.branchId.innerHTML = '<option value="">-- Chọn chi nhánh --</option>';
+                const fragment = document.createDocumentFragment();
+                const emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = '-- Chọn chi nhánh --';
+                fragment.appendChild(emptyOption);
                 branches.forEach(b => {
-                    els.branchId.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+                    const option = document.createElement('option');
+                    option.value = String(b.id);
+                    option.textContent = String(b.name ?? '');
+                    fragment.appendChild(option);
                 });
+                els.branchId.replaceChildren(fragment);
             }
         } catch (error) {
             console.error('Error fetching branches:', error);

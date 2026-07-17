@@ -15,16 +15,19 @@ class Promotion extends Model
         'name',
         'category',
         'description',
-        'discount_type',
-        'discount_value',
+        // discount_type and discount_value removed - must not change after first usage
+        // 'discount_type',
+        // 'discount_value',
         'min_order_value',
         'max_discount_amount',
         'start_date',
         'end_date',
         'usage_limit',
-        'usage_count',
+        // usage_count removed - use incrementUsage()/decrementUsage() methods
+        // 'usage_count',
         'daily_usage_limit',
-        'status',
+        // status removed - use activate()/deactivate() methods
+        // 'status',
     ];
 
     protected $casts = [
@@ -74,5 +77,90 @@ class Promotion extends Model
     public function scopeByCode($query, $code)
     {
         return $query->where('code', $code);
+    }
+
+    /**
+     * Increment usage counter atomically.
+     * Should be called within a transaction with row lock.
+     */
+    public function incrementUsage(): void
+    {
+        $this->increment('usage_count', 1, []);
+    }
+
+    /**
+     * Decrement usage counter (for rollback scenarios).
+     * Should be called within a transaction with row lock.
+     */
+    public function decrementUsage(): void
+    {
+        $this->decrement('usage_count', 1, []);
+    }
+
+    /**
+     * Activate promotion.
+     */
+    public function activate(): bool
+    {
+        $this->forceFill(['status' => true]);
+
+        return $this->save();
+    }
+
+    /**
+     * Deactivate promotion.
+     */
+    public function deactivate(): bool
+    {
+        $this->forceFill(['status' => false]);
+
+        return $this->save();
+    }
+
+    /**
+     * Check if promotion can be used.
+     */
+    public function canBeUsed(): bool
+    {
+        return $this->status
+            && $this->isWithinDateRange()
+            && $this->hasRemainingUses();
+    }
+
+    /**
+     * Check if promotion is within valid date range.
+     */
+    public function isWithinDateRange(): bool
+    {
+        $now = now();
+        
+        $afterStart = is_null($this->start_date) || $this->start_date <= $now;
+        $beforeEnd = is_null($this->end_date) || $this->end_date >= $now;
+        
+        return $afterStart && $beforeEnd;
+    }
+
+    /**
+     * Check if promotion has remaining uses.
+     */
+    public function hasRemainingUses(): bool
+    {
+        if (is_null($this->usage_limit)) {
+            return true;
+        }
+        
+        return $this->usage_count < $this->usage_limit;
+    }
+
+    /**
+     * Get remaining uses count.
+     */
+    public function remainingUses(): ?int
+    {
+        if (is_null($this->usage_limit)) {
+            return null; // unlimited
+        }
+        
+        return max(0, $this->usage_limit - $this->usage_count);
     }
 }

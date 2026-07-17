@@ -37,12 +37,12 @@ Route::prefix('v1')->group(function () {
     // Public home page data route
     Route::get('home', [HomeController::class, 'data']);
 
-    // Public routes
-    Route::prefix('auth')->middleware('throttle:auth')->group(function () {
-        Route::post('register', [AuthController::class, 'register']);
-        Route::post('login', [AuthController::class, 'login']);
-        Route::post('google', [AuthController::class, 'googleLogin']);
-        Route::post('refresh', [AuthController::class, 'refresh']); // Refresh token from HttpOnly cookie
+    // Public auth routes - throttle:auth prevents brute-force and abuse
+    Route::prefix('auth')->group(function () {
+        Route::post('register', [AuthController::class, 'register'])->middleware('throttle:auth');
+        Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth');
+        Route::post('google', [AuthController::class, 'googleLogin'])->middleware('throttle:auth');
+        Route::post('refresh', [AuthController::class, 'refresh'])->middleware('throttle:auth');
     });
 
     // Public movie routes
@@ -98,6 +98,7 @@ Route::prefix('v1')->group(function () {
         Route::prefix('seats')->middleware('throttle:seats')->group(function () {
             Route::post('lock', [SeatController::class, 'lock']);
             Route::delete('unlock/{holdId}', [SeatController::class, 'unlock']);
+            Route::post('holds/{holdId}/release', [SeatController::class, 'unlock']);
         });
 
         // Order routes
@@ -124,15 +125,17 @@ Route::prefix('v1')->group(function () {
         Route::prefix('promotions')->group(function () {
             Route::get('registered', [PromotionController::class, 'registered']);
             Route::post('register', [PromotionController::class, 'register']);
-            Route::get('{code}/validate', [PromotionController::class, 'validate']);
         });
     });
 
-    // Public auth routes (forgot/reset password) - rate limited to prevent abuse
-    Route::prefix('auth')->middleware('throttle:auth')->group(function () {
-        Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
-        Route::post('reset-password', [AuthController::class, 'resetPassword']);
-        Route::post('verify-email', [AuthController::class, 'verifyEmail']);
+    // Public promotion validation route
+    Route::get('promotions/{code}/validate', [PromotionController::class, 'validate']);
+
+    // Public auth routes (forgot/reset password) - throttle:auth to prevent abuse
+    Route::prefix('auth')->group(function () {
+        Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:auth');
+        Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:auth');
+        Route::post('verify-email', [AuthController::class, 'verifyEmail'])->middleware('throttle:auth');
     });
 
     // Admin routes
@@ -142,6 +145,8 @@ Route::prefix('v1')->group(function () {
         Route::get('admin/tickets/stats', [\App\Http\Controllers\Admin\TicketStatController::class, 'stats']);
         Route::get('admin/combos/stats', [\App\Http\Controllers\Admin\ComboStatController::class, 'stats']);
         Route::get('admin/food/stats', [\App\Http\Controllers\Admin\FoodStatController::class, 'stats']);
+        Route::get('admin/orders', [OrderController::class, 'adminOrders']);
+        Route::get('admin/orders/{id}', [OrderController::class, 'adminOrder'])->whereNumber('id');
 
         // Movie management
         Route::prefix('admin/movies')->group(function () {

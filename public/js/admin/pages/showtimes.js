@@ -5,6 +5,15 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     /* ── DOM Elements ────────────────────────────────────── */
     const els = {
         // Filter bar
@@ -96,10 +105,18 @@
         // Preserve current selected value
         const currentValue = el.value;
         
-        el.innerHTML = `<option value="">${emptyLabel}</option>`;
+        const fragment = document.createDocumentFragment();
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = emptyLabel;
+        fragment.appendChild(emptyOption);
         items.forEach(item => {
-            el.innerHTML += `<option value="${item[valueKey]}">${item[labelKey]}</option>`;
+            const option = document.createElement('option');
+            option.value = String(item[valueKey] ?? '');
+            option.textContent = String(item[labelKey] ?? '');
+            fragment.appendChild(option);
         });
+        el.replaceChildren(fragment);
         
         // Restore selected value if it still exists in the new options
         if (currentValue) {
@@ -225,15 +242,15 @@
                 <td class="text-center text-white-50 movie-stt">${index + 1}</td>
                 <td class="movie-info-cell">
                     <div class="d-flex align-items-center gap-3">
-                        <img src="${posterUrl}" alt="${movie.title}" class="movie-poster-thumb">
+                        <img src="${escapeHtml(posterUrl)}" alt="${escapeHtml(movie.title)}" class="movie-poster-thumb">
                         <div class="movie-text-info">
-                            <div class="movie-title">${movie.title}</div>
+                            <div class="movie-title">${escapeHtml(movie.title)}</div>
                             <div class="movie-release">${formatDate(movie.release_date)}</div>
                         </div>
                     </div>
                 </td>
                 <td class="text-center text-white movie-duration">${movie.duration || '—'} phút</td>
-                <td class="text-white-50 movie-categories">${categories}</td>
+                <td class="text-white-50 movie-categories">${escapeHtml(categories)}</td>
             `;
 
             tr.addEventListener('click', () => {
@@ -328,11 +345,11 @@
                     <div class="showtime-date">${dateStr}</div>
                 </td>
                 <td>
-                    <div class="screen-name-display">${st.screen?.name || '—'}</div>
-                    <div class="theater-name-sub">${st.screen?.theater?.name || '—'}</div>
+                    <div class="screen-name-display">${escapeHtml(st.screen?.name || '—')}</div>
+                    <div class="theater-name-sub">${escapeHtml(st.screen?.theater?.name || '—')}</div>
                 </td>
                 <td class="text-center text-white">${capacity}</td>
-                <td class="format-display">${formatDisplay}</td>
+                <td class="format-display">${escapeHtml(formatDisplay)}</td>
                 <td class="text-center">
                     <div class="form-check form-switch d-inline-block">
                         <input class="form-check-input status-toggle" type="checkbox" id="${toggleId}" ${checked} data-id="${st.id}">

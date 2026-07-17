@@ -25,7 +25,7 @@ class Screen extends Model
 
     protected $casts = [
         'capacity' => 'integer',
-        'status' => 'boolean',
+        'status' => 'integer',
     ];
 
     public function theater(): BelongsTo

@@ -5,6 +5,15 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     const config = window.SEAT_LAYOUT_CONFIG || {};
     const screenId = config.screenId;
     if (!screenId) return;
@@ -147,9 +156,9 @@
                     if (isDisabled) {
                         div.innerHTML = `<i class="bi bi-slash-circle"></i>`;
                     } else if (isCouple) {
-                        div.innerHTML = `<svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="38" height="11" rx="2" /><rect x="4" y="14" width="40" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="43" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${seat.label}</span>`;
+                        div.innerHTML = `<svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="38" height="11" rx="2" /><rect x="4" y="14" width="40" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="43" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${escapeHtml(seat.label)}</span>`;
                     } else {
-                        div.innerHTML = `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="14" height="11" rx="2" /><rect x="4" y="14" width="16" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="19" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${seat.label}</span>`;
+                        div.innerHTML = `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="14" height="11" rx="2" /><rect x="4" y="14" width="16" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="19" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${escapeHtml(seat.label)}</span>`;
                     }
 
                     els.seatGrid.appendChild(div);
@@ -194,9 +203,9 @@
             seatEl.classList.remove('seat-disabled');
             seatEl.title = `${label} · ${typeName}`;
             if (isCouple) {
-                seatEl.innerHTML = `<svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="38" height="11" rx="2" /><rect x="4" y="14" width="40" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="43" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${label}</span>`;
+                seatEl.innerHTML = `<svg width="2em" height="1em" viewBox="0 0 48 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="38" height="11" rx="2" /><rect x="4" y="14" width="40" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="43" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${escapeHtml(label)}</span>`;
             } else {
-                seatEl.innerHTML = `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="14" height="11" rx="2" /><rect x="4" y="14" width="16" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="19" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${label}</span>`;
+                seatEl.innerHTML = `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" class="seat-icon-shape"><rect x="5" y="2" width="14" height="11" rx="2" /><rect x="4" y="14" width="16" height="5" rx="1" /><rect x="2" y="11" width="3" height="8" rx="1" /><rect x="19" y="11" width="3" height="8" rx="1" /></svg><span class="seat-label">${escapeHtml(label)}</span>`;
             }
         } else {
             seatEl.classList.add('seat-disabled');

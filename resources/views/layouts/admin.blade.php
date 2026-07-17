@@ -362,7 +362,7 @@
     <script src="{{ asset('js/admin/mobile-search-toggle.js') }}?v={{ time() }}"></script>
 
     <!-- Ticket Scanner JS -->
-    <script src="{{ asset('js/admin/ticket-scanner.js') }}?v={{ time() }}"></script>
+    @vite('resources/js/admin-ticket-scanner-bootstrap.js')
 
     @stack('scripts')
 </body>

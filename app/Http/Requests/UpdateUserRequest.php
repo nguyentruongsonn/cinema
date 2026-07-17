@@ -1,0 +1,92 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Models\User;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class UpdateUserRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        $targetUser = $this->route('user');
+
+        return $targetUser instanceof User
+            && ($this->user()?->can('update', $targetUser) ?? false);
+    }
+
+    public function rules(): array
+    {
+        $targetUser = $this->route('user');
+
+        return [
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($targetUser?->id)],
+            'username' => ['nullable', 'string', 'max:255', Rule::unique('users', 'username')->ignore($targetUser?->id)],
+            'phone' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]+$/'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'avatar_url' => ['nullable', 'url', 'max:500'],
+            'birthday' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', 'in:male,female,other'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'loyalty_points' => ['nullable', 'integer', 'min:0'],
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
+            'status' => ['nullable', 'boolean'],
+        ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $targetUser = $this->route('user');
+            $actor = $this->user();
+
+            if (!$targetUser instanceof User || !$actor) {
+                return;
+            }
+
+            if ($this->has('role_id') && !$actor->can('updateRole', $targetUser)) {
+                $validator->errors()->add('role_id', 'You are not authorized to change user roles.');
+            }
+
+            if ($this->has('loyalty_points') && !$actor->can('updateLoyaltyPoints', $targetUser)) {
+                $validator->errors()->add('loyalty_points', 'You are not authorized to change loyalty points.');
+            }
+
+            if ($this->has('status') && !$actor->can('updateStatus', $targetUser)) {
+                $validator->errors()->add('status', 'You are not authorized to change user status.');
+            }
+        });
+    }
+
+    public function userData(): array
+    {
+        $validated = $this->validated();
+
+        unset($validated['role_id'], $validated['status'], $validated['loyalty_points']);
+
+        return $validated;
+    }
+
+    public function roleId(): ?int
+    {
+        $roleId = $this->validated()['role_id'] ?? null;
+
+        return $roleId === null ? null : (int) $roleId;
+    }
+
+    public function status(): ?bool
+    {
+        return array_key_exists('status', $this->validated())
+            ? (bool) $this->validated()['status']
+            : null;
+    }
+
+    public function loyaltyPoints(): ?int
+    {
+        return array_key_exists('loyalty_points', $this->validated())
+            ? (int) $this->validated()['loyalty_points']
+            : null;
+    }
+}

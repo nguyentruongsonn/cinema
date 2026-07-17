@@ -9,10 +9,32 @@ use App\Traits\ApiResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class HomeController extends Controller
 {
     use ApiResponse;
+
+    private const HOME_MOVIE_LIMIT = 8;
+    private const MOVIE_OPTION_LIMIT = 100;
+    private const AVAILABLE_DATE_LIMIT = 7;
+    private const HOME_CACHE_KEY = 'home:data:v1';
+    private const HOME_CACHE_TTL_SECONDS = 300;
+
+    private const MOVIE_COLUMNS = [
+        'id',
+        'title',
+        'slug',
+        'description',
+        'poster_url',
+        'backdrops',
+        'trailer_url',
+        'age_rating',
+        'duration',
+        'release_date',
+        'is_hot',
+    ];
 
     public function index(): View
     {
@@ -21,7 +43,19 @@ class HomeController extends Controller
 
     public function data(): JsonResponse
     {
+        $data = Cache::remember(
+            self::HOME_CACHE_KEY,
+            self::HOME_CACHE_TTL_SECONDS,
+            fn (): array => $this->composeHomeData()
+        );
+
+        return $this->successResponse($data, 'Home data loaded successfully');
+    }
+
+    private function composeHomeData(): array
+    {
         $featuredMovie = Movie::query()
+            ->select(self::MOVIE_COLUMNS)
             ->with('categories:id,name')
             ->active()
             ->where(function ($query) {
@@ -35,17 +69,19 @@ class HomeController extends Controller
             ->first();
 
         $nowShowingMovies = Movie::query()
+            ->select(self::MOVIE_COLUMNS)
             ->with('categories:id,name')
             ->nowShowing()
             ->latest('release_date')
-            ->limit(8)
+            ->limit(self::HOME_MOVIE_LIMIT)
             ->get();
 
         $upcomingMovies = Movie::query()
+            ->select(self::MOVIE_COLUMNS)
             ->with('categories:id,name')
             ->upcoming()
             ->orderBy('release_date')
-            ->limit(8)
+            ->limit(self::HOME_MOVIE_LIMIT)
             ->get();
 
         $movieOptions = Movie::query()
@@ -54,23 +90,28 @@ class HomeController extends Controller
                 $query->available()->upcoming();
             })
             ->orderBy('title')
-            ->get(['id', 'title']);
+            ->limit(self::MOVIE_OPTION_LIMIT)
+            ->get(['id', 'title'])
+            ->map(fn (Movie $movie) => [
+                'id' => $movie->id,
+                'title' => $movie->title,
+            ])
+            ->values();
 
         $cinemaOptions = Theater::query()
+            ->select('theaters.id', 'theaters.name', 'theaters.branch_id', 'branches.name as branch_name')
+            ->leftJoin('branches', 'branches.id', '=', 'theaters.branch_id')
             ->active()
-            ->with('branch:id,name')
-            ->get(['id', 'name', 'branch_id'])
-            ->sortBy(function($theater) {
-                return ($theater->branch?->name ?? '') . '_' . $theater->name;
-            })
-            ->values()
-            ->map(function($theater) {
-                return [
-                    'id' => $theater->id,
-                    'name' => $theater->name,
-                    'city' => $theater->branch?->name ?? '',
-                ];
-            });
+            ->orderBy('branches.name')
+            ->orderBy('theaters.name')
+            ->limit(100)
+            ->get()
+            ->map(fn (Theater $theater) => [
+                'id' => $theater->id,
+                'name' => $theater->name,
+                'city' => (string) ($theater->branch_name ?? ''),
+            ])
+            ->values();
 
         $availableDates = Showtime::query()
             ->available()
@@ -78,14 +119,14 @@ class HomeController extends Controller
             ->selectRaw('DATE(scheduled_at) as show_date')
             ->distinct()
             ->orderByRaw('show_date asc')
-            ->limit(7)
+            ->limit(self::AVAILABLE_DATE_LIMIT)
             ->pluck('show_date')
             ->map(function ($date) {
-                $parsedDate = Carbon::parse($date)->locale('vi');
+                $parsedDate = Carbon::parse($date);
 
                 return [
-                    'value' => $parsedDate->format('Y-m-d'),
-                    'label' => $parsedDate->isoFormat('dddd, DD/MM'),
+                    'value' => $parsedDate->toDateString(),
+                    'label' => $parsedDate->toDateString(),
                 ];
             })
             ->values();
@@ -94,14 +135,18 @@ class HomeController extends Controller
             $featuredMovie = $nowShowingMovies->first() ?? $upcomingMovies->first();
         }
 
-        return $this->successResponse([
+        return [
             'featured_movie' => $this->transformMovie($featuredMovie),
-            'now_showing_movies' => $nowShowingMovies->map(fn (Movie $movie) => $this->transformMovie($movie))->values(),
-            'upcoming_movies' => $upcomingMovies->map(fn (Movie $movie) => $this->transformMovie($movie))->values(),
+            'now_showing_movies' => $nowShowingMovies
+                ->map(fn (Movie $movie) => $this->transformMovie($movie))
+                ->values(),
+            'upcoming_movies' => $upcomingMovies
+                ->map(fn (Movie $movie) => $this->transformMovie($movie))
+                ->values(),
             'movie_options' => $movieOptions,
             'cinema_options' => $cinemaOptions,
             'available_dates' => $availableDates,
-        ], 'Home data loaded successfully');
+        ];
     }
 
     private function transformMovie(?Movie $movie): ?array
@@ -110,31 +155,77 @@ class HomeController extends Controller
             return null;
         }
 
-        // Parse backdrops JSON if it exists
-        $backdrops = [];
-        if ($movie->backdrops) {
-            $decoded = is_string($movie->backdrops) ? json_decode($movie->backdrops, true) : $movie->backdrops;
-            $backdrops = is_array($decoded) ? $decoded : [];
-        }
+        $backdrops = $this->safeBackdrops($movie);
+        $posterUrl = $this->safeUrl($movie->poster_url);
+        $backdrops = collect($backdrops)
+            ->map(fn ($url): ?string => $this->safeUrl(is_string($url) ? $url : null))
+            ->reject(fn (?string $url): bool => $url === null)
+            ->values()
+            ->all();
 
         return [
             'id' => $movie->id,
-            'title' => $movie->title,
+            'title' => strip_tags((string) $movie->title),
             'slug' => $movie->slug,
-            'description' => $movie->description,
-            'poster_url' => $movie->poster_url,
-            'backdrop_url' => !empty($backdrops) ? $backdrops[0] : $movie->poster_url,
+            'description' => strip_tags((string) $movie->description),
+            'poster_url' => $posterUrl,
+            'backdrop_url' => ! empty($backdrops) ? $backdrops[0] : $posterUrl,
             'backdrops' => $backdrops,
-            'trailer_url' => $movie->trailer_url,
+            'trailer_url' => $this->safeUrl($movie->trailer_url),
             'age_rating' => $movie->age_rating,
             'duration' => $movie->duration,
             'release_date' => optional($movie->release_date)->format('Y-m-d'),
             'categories' => $movie->categories
                 ->map(fn ($category) => [
                     'id' => $category->id,
-                    'name' => $category->name,
+                    'name' => strip_tags((string) $category->name),
                 ])
                 ->values(),
         ];
+    }
+
+    private function safeBackdrops(Movie $movie): array
+    {
+        if (! $movie->backdrops) {
+            return [];
+        }
+
+        if (is_array($movie->backdrops)) {
+            return $movie->backdrops;
+        }
+
+        $decoded = json_decode((string) $movie->backdrops, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+            Log::warning('Invalid movie backdrops JSON on home data endpoint', [
+                'movie_id' => $movie->id,
+                'json_error' => json_last_error_msg(),
+            ]);
+
+            return [];
+        }
+
+        return $decoded;
+    }
+
+    private function safeUrl(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        $url = trim($url);
+
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        if (! filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        return in_array($scheme, ['http', 'https'], true) ? $url : null;
     }
 }

@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Exceptions\PaymentGatewayException;
+use App\Models\IdempotencyKey;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Seat;
 use App\Models\SeatHold;
+use App\Models\SeatHoldItem;
 use App\Models\Showtime;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -20,38 +22,76 @@ use Throwable;
  */
 class PaymentService
 {
+    private const TRANSACTION_ATTEMPTS = 3;
+
     public function __construct(
         private readonly PayOSGateway            $gateway,
         private readonly PricingService          $pricing,
         private readonly OrderFulfillmentService $fulfillment,
+        private readonly AuditSnapshotService    $auditSnapshots,
     ) {}
 
     /**
      * Tạo đơn hàng và link thanh toán.
-     * Phase 1: Added SeatHold validation and full transaction wrapping
+     * Phase 1.2: Refactored with robust IdempotencyKey::executeIdempotent() wrapper
      */
     public function initiate(
         User      $user,
         Showtime  $showtime,
         array     $validated,
-        string    $baseUrl
+        string    $baseUrl,
+        ?string   $idempotencyKey = null
     ): array {
-        return DB::transaction(function () use ($user, $showtime, $validated, $baseUrl) {
-            $items = collect($validated['items'] ?? []);
+        // Auto-generate idempotency key if not provided (for backward compatibility)
+        if ($idempotencyKey === null) {
+            $idempotencyKey = $this->generateIdempotencyKey($user, $showtime, $validated);
+        }
 
-            $seatRequests    = $items->where('type', 'seat')->all();
-            $productRequests = $items->where('type', 'product')->all();
+        // Use robust IdempotencyKey::executeIdempotent() wrapper
+        // This provides: unique constraint protection, payload verification,
+        // retry logic, concurrent request blocking, and response caching
+        $idempotentResult = IdempotencyKey::executeIdempotent(
+            $idempotencyKey,
+            function ($record) use ($user, $showtime, $validated, $baseUrl) {
+                // Core payment initiation logic (executeIdempotent handles transaction)
+                $items = collect($validated['items'] ?? []);
 
-            // PHASE 1: Validate seat hold BEFORE creating order
-            $seatIds = collect($seatRequests)
-                ->map(fn($seat) => (int)($seat['id'] ?? $seat))
-                ->filter()
-                ->values()
-                ->all();
+                $seatRequests    = $items->where('type', 'seat')->all();
+                $productRequests = $items->where('type', 'product')->all();
 
-            if (!empty($seatIds)) {
-                $this->validateSeatHold($user, $showtime, $seatIds);
-            }
+                // PHASE 1: Validate seat hold BEFORE creating order
+                $seatIds = collect($seatRequests)
+                    ->map(fn($seat) => (int)($seat['id'] ?? $seat))
+                    ->filter()
+                    ->values()
+                    ->all();
+
+                $seatHold = !empty($seatIds)
+                    ? $this->validateSeatHold($user, $showtime, $seatIds)
+                    : null;
+                $checkoutFingerprint = $seatHold
+                    ? $this->checkoutFingerprint($user, $showtime, $validated, $seatHold)
+                    : null;
+
+                if ($checkoutFingerprint) {
+                    $existingOrder = Order::query()
+                        ->where('checkout_fingerprint', $checkoutFingerprint)
+                        ->whereIn('status', [Order::STATUS_PENDING, Order::STATUS_CONFIRMED])
+                        ->with('payment')
+                        ->first();
+
+                    if ($existingOrder?->checkout_url) {
+                        return [
+                            'status' => 200,
+                            'data' => [
+                                'checkout_url' => $existingOrder->checkout_url,
+                                'gateway_order_code' => $existingOrder->gateway_order_code,
+                                'order_number' => $existingOrder->code,
+                            ],
+                            'payment_id' => $existingOrder->payment?->id,
+                        ];
+                    }
+                }
 
             $pricing = $this->pricing->buildSnapshot(
                 $user,
@@ -62,12 +102,14 @@ class PaymentService
                 (int) ($validated['points_used'] ?? 0),
             );
 
-            $order = Order::create([
+            // PHASE 1 FIX: Use factory method to create order safely
+            $order = Order::createPending([
                 'code'               => $this->generateOrderNumber(),
                 'gateway_order_code' => $this->generateOrderCode(),
                 'payment_provider'   => 'payos',
                 'user_id'            => $user->id,
                 'showtime_id'        => $showtime->id,
+                'checkout_fingerprint' => $checkoutFingerprint,
                 'total_amount'       => $pricing['final_amount'],
                 'payload'            => [
                     'subtotal'         => $pricing['subtotal'],
@@ -79,19 +121,16 @@ class PaymentService
                     'seats'            => $pricing['seats'],
                     'products'         => $pricing['products'],
                 ],
-                'status'         => Order::STATUS_PENDING,
-                'payment_status' => 'pending',
-                'expired_at'     => now()->addMinutes(15),
+                'expired_at'         => now()->addMinutes(15),
             ]);
 
             // PHASE 2: Create payment record for audit trail
-            $payment = Payment::create([
+            $payment = Payment::createPending([
                 'order_id' => $order->id,
                 'user_id' => $user->id,
                 'method' => 'payos',
                 'gateway_order_code' => $order->gateway_order_code,
                 'amount' => $order->total_amount,
-                'status' => Payment::STATUS_PENDING,
                 'payload' => [
                     'showtime_id' => $showtime->id,
                     'seat_ids' => $seatIds,
@@ -113,27 +152,60 @@ class PaymentService
                 ]],
             ]);
             } catch (PaymentGatewayException $e) {
-                // Hủy đơn nếu tạo link thất bại
-                $order->update(['status' => Order::STATUS_CANCELLED, 'payment_status' => 'failed']);
+                // Hủy đơn nếu tạo link thất bại - PHASE 1 FIX: Use state transition method
+                $order->markFailed();
                 throw $e;
             }
 
             $checkoutUrl = $response['checkoutUrl'] ?? null;
-            $order->forceFill(['checkout_url' => $checkoutUrl])->save();
+            // PHASE 1 FIX: Use controlled checkout URL setter
+            $order->setCheckoutUrl($checkoutUrl);
 
-            return [
+            app(AuditLogService::class)->record(
+                $user,
+                'order.created',
+                $order,
+                [],
+                $this->auditSnapshots->order($order)
+            );
+
+            app(AuditLogService::class)->record(
+                $user,
+                'payment.created',
+                $payment,
+                [],
+                $this->auditSnapshots->payment($payment)
+            );
+
+            $result = [
                 'checkout_url'       => $checkoutUrl,
                 'gateway_order_code' => $order->gateway_order_code,
                 'order_number'       => $order->code,
             ];
-        });
+
+                // Return result in format expected by executeIdempotent()
+                return [
+                    'status' => 200,
+                    'data' => $result,
+                    'payment_id' => $payment->id,
+                ];
+            },
+            [
+                'path' => request()->path() ?? '/payment/initiate',
+                'method' => 'POST',
+                'data' => $validated,
+            ]
+        );
+
+        // Extract data from idempotent result
+        return $idempotentResult['data'];
     }
 
     /**
      * PHASE 1: Validate user has valid seat hold for payment
      * Prevents bypass of seat locking mechanism
      */
-    private function validateSeatHold(User $user, Showtime $showtime, array $seatIds): void
+    private function validateSeatHold(User $user, Showtime $showtime, array $seatIds): SeatHold
     {
         // 1. Normalize and validate seat IDs
         $seatIds = array_values(array_unique(array_map('intval', $seatIds)));
@@ -156,6 +228,10 @@ class PaymentService
 
         // 3. Validate user has valid hold for these seats
         $hold = SeatHold::query()
+            ->with(['items' => fn ($query) => $query
+                ->where('status', SeatHoldItem::STATUS_ACTIVE)
+                ->where('expires_at', '>', now())
+                ->lockForUpdate()])
             ->valid()
             ->where('user_id', $user->id)
             ->where('showtime_id', $showtime->id)
@@ -166,7 +242,8 @@ class PaymentService
             throw new \RuntimeException('Phiên giữ ghế đã hết hạn. Vui lòng chọn lại ghế.');
         }
 
-        $heldSeatIds = array_values(array_unique(array_map('intval', (array) $hold->seat_ids)));
+        // Use normalizedSeatIds() for backward compatibility with legacy JSON seat_ids
+        $heldSeatIds = $hold->normalizedSeatIds();
         sort($heldSeatIds);
 
         if ($seatIds !== $heldSeatIds) {
@@ -176,7 +253,7 @@ class PaymentService
         // 4. Check seats not already booked (double-booking protection)
         $bookedSeatIds = OrderItem::query()
             ->where('item_type', Seat::class)
-            ->whereIntegerInRaw('item_id', $seatIds)
+            ->whereIn('item_id', $seatIds)
             ->whereHas('order', function ($query) use ($showtime) {
                 $query->where('showtime_id', $showtime->id)
                     ->whereIn('status', [Order::STATUS_PENDING, Order::STATUS_CONFIRMED]);
@@ -187,6 +264,30 @@ class PaymentService
         if (!empty($bookedSeatIds)) {
             throw new \RuntimeException('Một số ghế đã được đặt bởi người dùng khác.');
         }
+
+        return $hold;
+    }
+
+    private function checkoutFingerprint(User $user, Showtime $showtime, array $validated, SeatHold $hold): string
+    {
+        $payload = [
+            'user_id' => $user->id,
+            'showtime_id' => $showtime->id,
+            'seat_hold_id' => $hold->id,
+            'items' => collect($validated['items'] ?? [])
+                ->map(fn ($item) => [
+                    'type' => (string) ($item['type'] ?? ''),
+                    'id' => (int) ($item['id'] ?? $item),
+                    'quantity' => (int) ($item['quantity'] ?? 1),
+                ])
+                ->sortBy([['type', 'asc'], ['id', 'asc']])
+                ->values()
+                ->all(),
+            'voucher_code' => $validated['voucher_code'] ?? null,
+            'points_used' => (int) ($validated['points_used'] ?? 0),
+        ];
+
+        return hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     /**
@@ -194,7 +295,11 @@ class PaymentService
      */
     public function handleWebhook(array $rawData): array
     {
-        $webhookData = $this->gateway->verifyWebhook($rawData);
+        try {
+            $webhookData = $this->gateway->verifyWebhook($rawData);
+        } catch (PaymentGatewayException) {
+            return ['already_processed' => false, 'skipped' => true];
+        }
 
         $orderCode = $webhookData['orderCode']
             ?? $webhookData['order_code']
@@ -241,11 +346,12 @@ class PaymentService
         }
     }
 
-    public function markPaidFromReturn(Order $order): array
-    {
-        return $this->fulfillment->finalize((int) $order->gateway_order_code);
-    }
-
+    /**
+     * SECURITY NOTE:
+     * Paid order finalization must never be triggered from browser return URLs.
+     * Return URLs are user-controlled and can be manipulated. Payment success is
+     * accepted only through verified webhook processing or gateway status sync.
+     */
     public function markCancelledFromReturn(Order $order): void
     {
         $this->markAsUnsuccessful((int) $order->gateway_order_code, 'CANCELLED');
@@ -280,7 +386,8 @@ class PaymentService
     private function markAsUnsuccessful(int $gatewayOrderCode, string $gatewayStatus): void
     {
         DB::transaction(function () use ($gatewayOrderCode, $gatewayStatus) {
-            $order = Order::where('gateway_order_code', $gatewayOrderCode)
+            $order = Order::query()
+                ->where('gateway_order_code', $gatewayOrderCode)
                 ->lockForUpdate()
                 ->first();
 
@@ -288,35 +395,98 @@ class PaymentService
                 return;
             }
 
+            $oldOrderValues = $this->auditSnapshots->order($order);
+
+            // PHASE 1 FIX: Use state transition methods instead of direct forceFill
             $normalizedStatus = $this->normalizeGatewayStatus($gatewayStatus);
-            $paymentStatus = match ($normalizedStatus) {
-                'CANCELLED', 'CANCELED' => 'cancelled',
-                'EXPIRED' => 'expired',
-                default => 'failed',
+
+            match ($normalizedStatus) {
+                'CANCELLED', 'CANCELED' => $order->markCancelled(),
+                'EXPIRED' => $order->markExpired(),
+                default => $order->markFailed(),
             };
 
-            $order->forceFill([
-                'status' => in_array($paymentStatus, ['cancelled', 'failed'], true)
-                    ? Order::STATUS_CANCELLED
-                    : Order::STATUS_PENDING,
-                'payment_status' => $paymentStatus,
-                'cancelled_at' => in_array($paymentStatus, ['cancelled', 'failed'], true)
-                    ? now()
-                    : $order->cancelled_at,
-            ])->save();
+            $payment = Payment::query()
+                ->where('order_id', $order->id)
+                ->lockForUpdate()
+                ->first();
 
-            Payment::where('order_id', $order->id)
-                ->update([
-                    'status' => $paymentStatus === 'cancelled'
-                        ? Payment::STATUS_CANCELLED
-                        : Payment::STATUS_FAILED,
-                    'failed_at' => now(),
-                ]);
+            $oldPaymentValues = $payment ? $this->auditSnapshots->payment($payment) : null;
 
-            SeatHold::where('user_id', $order->user_id)
+            if ($payment) {
+                $failedAt = now();
+                // PHASE 1 FIX: Use payment state transitions matching order status
+                match ($normalizedStatus) {
+                    'CANCELLED', 'CANCELED' => $payment->markCancelled($failedAt),
+                    'EXPIRED', 'FAILED', 'FAILURE', 'ERROR' => $payment->markFailed($failedAt),
+                    default => $payment->markFailed($failedAt),
+                };
+            }
+
+            SeatHold::query()
+                ->where('user_id', $order->user_id)
                 ->where('showtime_id', $order->showtime_id)
                 ->delete();
-        });
+
+            $orderAction = in_array($normalizedStatus, ['CANCELLED', 'CANCELED'], true)
+                ? 'order.cancelled'
+                : 'order.payment_failed';
+
+            app(AuditLogService::class)->recordSystemChange(
+                $orderAction,
+                $order->fresh(),
+                $oldOrderValues,
+                $this->auditSnapshots->order($order->fresh())
+            );
+
+            if ($payment && $oldPaymentValues) {
+                $paymentAction = in_array($normalizedStatus, ['CANCELLED', 'CANCELED'], true)
+                    ? 'payment.cancelled'
+                    : 'payment.failed';
+
+                app(AuditLogService::class)->recordSystemChange(
+                    $paymentAction,
+                    $payment->fresh(),
+                    $oldPaymentValues,
+                    $this->auditSnapshots->payment($payment->fresh())
+                );
+            }
+        }, self::TRANSACTION_ATTEMPTS);
+    }
+
+    private function generateIdempotencyKey(User $user, Showtime $showtime, array $validated): string
+    {
+        // Normalize payload for consistent UUID generation
+        $payload = [
+            'user_id' => $user->id,
+            'showtime_id' => $showtime->id,
+            'items' => collect($validated['items'] ?? [])
+                ->map(fn ($item) => [
+                    'type' => (string) ($item['type'] ?? ''),
+                    'id' => (int) ($item['id'] ?? $item),
+                    'quantity' => (int) ($item['quantity'] ?? 1),
+                ])
+                ->sortBy([
+                    ['type', 'asc'],
+                    ['id', 'asc'],
+                ])
+                ->values()
+                ->all(),
+            'voucher_code' => $validated['voucher_code'] ?? null,
+            'points_used' => (int) ($validated['points_used'] ?? 0),
+        ];
+
+        $hash = hash('sha256', 'payment:' . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        return sprintf(
+            '%s-%s-4%s-%s%s-%s',
+            substr($hash, 0, 8),
+            substr($hash, 8, 4),
+            substr($hash, 13, 3),
+            dechex((hexdec(substr($hash, 16, 1)) & 0x3) | 0x8),
+            substr($hash, 17, 3),
+            substr($hash, 20, 12)
+        );
     }
 
     private function generateOrderNumber(): string
@@ -328,8 +498,9 @@ class PaymentService
     {
         do {
             $value = (int) (now()->format('ymdHis') . random_int(10, 99));
-        } while (Order::where('gateway_order_code', $value)->exists());
+        } while (Order::query()->where('gateway_order_code', $value)->exists());
 
         return $value;
     }
+
 }

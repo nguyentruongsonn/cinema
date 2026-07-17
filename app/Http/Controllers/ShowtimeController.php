@@ -2,10 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BulkCreateShowtimeRequest;
+use App\Http\Requests\BulkSingleDayShowtimeRequest;
+use App\Http\Requests\StoreShowtimeRequest;
+use App\Http\Requests\UpdateShowtimeRequest;
 use App\Models\Showtime;
 use App\Services\ShowtimeService;
 use App\Traits\ApiResponse;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class ShowtimeController extends Controller
 {
@@ -21,73 +30,96 @@ class ShowtimeController extends Controller
      */
     public function index(Request $request)
     {
+        $filters = $request->validate([
+            'status' => ['nullable', Rule::in(['all', 'active', 'inactive'])],
+            'movie_id' => ['nullable', 'integer', 'exists:movies,id'],
+            'screen_id' => ['nullable', 'integer', 'exists:screens,id'],
+            'theater_id' => ['nullable', 'integer', 'exists:theaters,id'],
+            'format_id' => ['nullable', 'integer', 'exists:formats,id'],
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            'q' => ['nullable', 'string', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'sort_by' => ['nullable', Rule::in(['scheduled_at', 'created_at'])],
+            'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
+        ]);
+
+        $filters['status'] = $filters['status'] ?? 'all';
+        $filters['upcoming'] = false;
+
         try {
-            // Admin: xem tất cả, không giới hạn upcoming/status mặc định
-            $request->merge([
-                'status' => $request->query('status', 'all'),
-                'upcoming' => false,
-            ]);
-            $showtimes = $this->showtimeService->getAll($request);
+            $showtimes = $this->showtimeService->getAll($filters);
+
             return $this->paginatedResponse($showtimes, 'Showtimes retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve showtimes: ' . $e->getMessage(), 500);
+        } catch (\Throwable $e) {
+            Log::error('Failed to retrieve showtimes', ['exception' => $e]);
+
+            return $this->errorResponse('Failed to retrieve showtimes', 500);
         }
     }
 
     /**
      * Store a newly created showtime
      */
-    public function store(Request $request)
+    public function store(StoreShowtimeRequest $request)
     {
-        $validated = $request->validate([
-            'movie_id' => 'required|exists:movies,id',
-            'screen_id' => 'required|exists:screens,id',
-            'format_id' => 'nullable|exists:formats,id',
-            'version_type_id' => 'nullable|exists:version_types,id',
-            'scheduled_at' => 'required|date_format:Y-m-d H:i:s|after:now',
-            'status' => 'required|in:0,1',
-        ]);
+        $validated = $request->validated();
 
         try {
             $showtime = $this->showtimeService->create($validated);
             return $this->successResponse($showtime, 'Showtime created successfully', 201);
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to create showtime: ' . $e->getMessage(), 500);
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Invalid showtime data', 422, $e->errors());
+        } catch (\Throwable $e) {
+            Log::error('Failed to create showtime', ['exception' => $e]);
+
+            return $this->errorResponse('Failed to create showtime', 500);
         }
     }
 
     /**
      * Display the specified showtime
      */
-    public function show($id)
+    public function show(int $id)
     {
         try {
-            $showtime = $this->showtimeService->getById((int) $id);
+            $showtime = $this->showtimeService->getById($id);
+
             return $this->successResponse($showtime, 'Showtime retrieved successfully');
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Showtime not found', 404);
+        } catch (\Throwable $e) {
+            Log::error('Failed to retrieve showtime', [
+                'showtime_id' => $id,
+                'exception' => $e,
+            ]);
+
+            return $this->errorResponse('Failed to retrieve showtime', 500);
         }
     }
 
     /**
      * Update the specified showtime
      */
-    public function update(Request $request, $id)
+    public function update(UpdateShowtimeRequest $request, $id)
     {
-        $validated = $request->validate([
-            'movie_id' => 'sometimes|exists:movies,id',
-            'screen_id' => 'sometimes|exists:screens,id',
-            'format_id' => 'nullable|exists:formats,id',
-            'version_type_id' => 'nullable|exists:version_types,id',
-            'scheduled_at' => 'sometimes|date_format:Y-m-d H:i:s',
-            'status' => 'sometimes|in:0,1',
-        ]);
+        $validated = $request->validated();
 
         try {
             $showtime = $this->showtimeService->update((int) $id, $validated);
             return $this->successResponse($showtime, 'Showtime updated successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to update showtime: ' . $e->getMessage(), 500);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Showtime not found', 404);
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Invalid showtime data', 422, $e->errors());
+        } catch (\Throwable $e) {
+            Log::error('Failed to update showtime', [
+                'showtime_id' => (int) $id,
+                'exception' => $e,
+            ]);
+
+            return $this->errorResponse('Failed to update showtime', 500);
         }
     }
 
@@ -95,57 +127,25 @@ class ShowtimeController extends Controller
      * Bulk create showtimes across a date range × multiple times (Tab 1)
      * Payload: { movie_id, screen_id, date_from, date_to, times[], format_id?, version_type_id? }
      */
-    public function bulkCreate(Request $request)
+    public function bulkCreate(BulkCreateShowtimeRequest $request)
     {
-        $validated = $request->validate([
-            'movie_id'    => 'required|exists:movies,id',
-            'screen_id'   => 'required|exists:screens,id',
-            'date_from'   => 'required|date|before_or_equal:date_to',
-            'date_to'     => 'required|date',
-            'times'       => 'required|array|min:1',
-            'times.*'     => 'required|date_format:H:i',
-            'format_id'   => 'nullable|exists:formats,id',
-            'version_type_id' => 'nullable|exists:version_types,id',
-        ]);
+        $validated = $request->validated();
 
         try {
-            $created = 0;
-            $skipped = 0;
-            $from = new \DateTime($validated['date_from']);
-            $to   = new \DateTime($validated['date_to']);
-            $to->modify('+1 day'); // inclusive
-
-            $base = [
-                'movie_id'    => $validated['movie_id'],
-                'screen_id'   => $validated['screen_id'],
-                'format_id'   => $validated['format_id'] ?? null,
-                'version_type_id' => $validated['version_type_id'] ?? null,
-                'status'      => 1,
-            ];
-
-            for ($d = clone $from; $d < $to; $d->modify('+1 day')) {
-                foreach ($validated['times'] as $time) {
-                    $scheduledAt = $d->format('Y-m-d') . ' ' . $time . ':00';
-
-                    // Skip if duplicate
-                    $exists = \App\Models\Showtime::where('screen_id', $base['screen_id'])
-                        ->where('scheduled_at', $scheduledAt)
-                        ->exists();
-
-                    if ($exists) { $skipped++; continue; }
-
-                    \App\Models\Showtime::create(array_merge($base, ['scheduled_at' => $scheduledAt]));
-                    $created++;
-                }
-            }
+            $result = $this->showtimeService->bulkCreateDateRange($validated);
 
             return $this->successResponse(
-                ['created' => $created, 'skipped' => $skipped],
-                "Tạo thành công {$created} suất chiếu" . ($skipped ? ", bỏ qua {$skipped} trùng lịch" : ''),
+                $result,
+                "Tạo thành công {$result['created']} suất chiếu"
+                    . ($result['skipped'] ? ", bỏ qua {$result['skipped']} trùng lịch" : ''),
                 201
             );
-        } catch (\Exception $e) {
-            return $this->errorResponse('Bulk create failed: ' . $e->getMessage(), 500);
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Invalid showtime data', 422, $e->errors());
+        } catch (\Throwable $e) {
+            Log::error('Bulk showtime creation failed', ['exception' => $e]);
+
+            return $this->errorResponse('Bulk showtime creation failed', 500);
         }
     }
 
@@ -153,50 +153,25 @@ class ShowtimeController extends Controller
      * Bulk create showtimes for a single day, multiple (time × screen) slots (Tab 2)
      * Payload: { movie_id, date, slots[{time, screen_id}], format_id?, version_type_id?, status }
      */
-    public function bulkSingleDay(Request $request)
+    public function bulkSingleDay(BulkSingleDayShowtimeRequest $request)
     {
-        $validated = $request->validate([
-            'movie_id'       => 'required|exists:movies,id',
-            'date'           => 'required|date',
-            'format_id'      => 'nullable|exists:formats,id',
-            'version_type_id' => 'nullable|exists:version_types,id',
-            'status'         => 'nullable|in:0,1',
-            'slots'          => 'required|array|min:1',
-            'slots.*.time'   => 'required|date_format:H:i',
-            'slots.*.screen_id' => 'required|exists:screens,id',
-        ]);
+        $validated = $request->validated();
 
         try {
-            $created = 0;
-            $skipped = 0;
-
-            foreach ($validated['slots'] as $slot) {
-                $scheduledAt = $validated['date'] . ' ' . $slot['time'] . ':00';
-
-                $exists = \App\Models\Showtime::where('screen_id', $slot['screen_id'])
-                    ->where('scheduled_at', $scheduledAt)
-                    ->exists();
-
-                if ($exists) { $skipped++; continue; }
-
-                \App\Models\Showtime::create([
-                    'movie_id'    => $validated['movie_id'],
-                    'screen_id'   => $slot['screen_id'],
-                    'scheduled_at'=> $scheduledAt,
-                    'format_id'   => $validated['format_id'] ?? null,
-                    'version_type_id' => $validated['version_type_id'] ?? null,
-                    'status'      => $validated['status'] ?? 1,
-                ]);
-                $created++;
-            }
+            $result = $this->showtimeService->bulkCreateSingleDay($validated);
 
             return $this->successResponse(
-                ['created' => $created, 'skipped' => $skipped],
-                "Tạo thành công {$created} suất chiếu" . ($skipped ? ", bỏ qua {$skipped} trùng lịch" : ''),
+                $result,
+                "Tạo thành công {$result['created']} suất chiếu"
+                    . ($result['skipped'] ? ", bỏ qua {$result['skipped']} trùng lịch" : ''),
                 201
             );
-        } catch (\Exception $e) {
-            return $this->errorResponse('Bulk single-day create failed: ' . $e->getMessage(), 500);
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Invalid showtime data', 422, $e->errors());
+        } catch (\Throwable $e) {
+            Log::error('Single-day bulk showtime creation failed', ['exception' => $e]);
+
+            return $this->errorResponse('Bulk showtime creation failed', 500);
         }
     }
 
@@ -206,10 +181,24 @@ class ShowtimeController extends Controller
     public function destroy($id)
     {
         try {
+            $showtime = Showtime::findOrFail((int) $id);
+            $this->authorize('delete', $showtime);
+
             $this->showtimeService->delete((int) $id);
             return $this->successResponse(null, 'Showtime deleted successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to delete showtime: ' . $e->getMessage(), 500);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Showtime not found', 404);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse('Forbidden', 403);
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Invalid showtime data', 422, $e->errors());
+        } catch (\Throwable $e) {
+            Log::error('Failed to delete showtime', [
+                'showtime_id' => (int) $id,
+                'exception' => $e,
+            ]);
+
+            return $this->errorResponse('Failed to delete showtime', 500);
         }
     }
 
@@ -224,7 +213,12 @@ class ShowtimeController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return $this->errorResponse('Movie not found', 404);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(), 500);
+            Log::error('Failed to retrieve movie showtimes', [
+                'movie' => $slugOrId,
+                'exception' => $e,
+            ]);
+
+            return $this->errorResponse('Failed to retrieve showtimes', 500);
         }
     }
 }

@@ -75,8 +75,23 @@
         return text ? { message: text } : null;
     }
 
+    function getFirstValidationMessage(errors) {
+        if (!errors || typeof errors !== 'object') {
+            return null;
+        }
+
+        const firstError = Object.values(errors).find(Boolean);
+
+        if (Array.isArray(firstError)) {
+            return firstError[0] || null;
+        }
+
+        return typeof firstError === 'string' ? firstError : null;
+    }
+
     function createApiError(message, response, data) {
-        const error = new Error(message || `API request failed with status ${response.status}`);
+        const validationMessage = getFirstValidationMessage(data?.errors);
+        const error = new Error(validationMessage || message || `API request failed with status ${response.status}`);
 
         error.name = 'ApiError';
         error.status = response.status;

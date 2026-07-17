@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SeatLayoutTemplate extends Model
 {
@@ -27,5 +28,10 @@ class SeatLayoutTemplate extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 1);
+    }
+
+    public function screens(): HasMany
+    {
+        return $this->hasMany(Screen::class, 'seat_layout_template_id');
     }
 }

@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Services\TicketPricingService;
 use App\Models\Seat;
 use App\Models\SeatHold;
+use App\Models\SeatHoldItem;
 use App\Models\Showtime;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +18,7 @@ class SeatService
     private const STATUS_PENDING = 1;
     private const STATUS_CONFIRMED = 2;
     private const HOLD_MINUTES = 10;
+    private const TRANSACTION_ATTEMPTS = 3;
 
     public function __construct(
         private readonly OrderExpirationService $orderExpirationService,
@@ -44,13 +46,14 @@ class SeatService
 
         if ($userId) {
             $currentUserHolds = SeatHold::query()
+                ->with('items')
                 ->valid()
                 ->where('showtime_id', $showtimeId)
                 ->where('user_id', $userId)
                 ->get();
 
             $currentUserHoldSeatIds = $currentUserHolds
-                ->flatMap(fn (SeatHold $hold) => (array) $hold->seat_ids)
+                ->flatMap(fn (SeatHold $hold) => $hold->normalizedSeatIds())
                 ->map(fn ($id) => (int) $id)
                 ->unique()
                 ->values()
@@ -58,13 +61,14 @@ class SeatService
         }
 
         $otherUserHolds = SeatHold::query()
+            ->with('items')
             ->valid()
             ->where('showtime_id', $showtimeId)
             ->when($userId, fn ($query) => $query->where('user_id', '!=', $userId))
             ->get();
 
         $otherUserHoldSeatIds = $otherUserHolds
-            ->flatMap(fn (SeatHold $hold) => (array) $hold->seat_ids)
+            ->flatMap(fn (SeatHold $hold) => $hold->normalizedSeatIds())
             ->map(fn ($id) => (int) $id)
             ->unique()
             ->values()
@@ -126,7 +130,7 @@ class SeatService
             'seats' => $seatsData->values()->all(),
             'current_user_holds' => $currentUserHolds->map(fn (SeatHold $hold) => [
                 'id' => $hold->id,
-                'seat_ids' => $hold->seat_ids,
+                'seat_ids' => $hold->normalizedSeatIds(),
                 'held_until' => $hold->held_until->toISOString(),
                 'expires_in_seconds' => $this->getEvenExpiresInSeconds($hold),
             ])->values()->all(),
@@ -136,7 +140,8 @@ class SeatService
     public function lock(array $data, $user): array
     {
         $lockResult = DB::transaction(function () use ($data, $user) {
-            $this->cleanupExpiredReservations((int) $data['showtime_id']);
+            // Cleanup MUST happen inside transaction with row locks to prevent TOCTOU race conditions
+            $this->cleanupExpiredReservationsAtomic((int) $data['showtime_id']);
 
             $showtime = Showtime::query()
                 ->lockForUpdate()
@@ -154,7 +159,7 @@ class SeatService
                 throw new \RuntimeException('Một hoặc nhiều ghế không thuộc phòng chiếu của suất chiếu này.');
             }
 
-            $bookedSeatIds = $this->getBookedSeatIds($showtime->id, $seatIds);
+            $bookedSeatIds = $this->getBookedSeatIds($showtime->id, $seatIds, true);
             if (!empty($bookedSeatIds)) {
                 throw new \RuntimeException('Một số ghế đã được đặt hoặc đang chờ thanh toán: ' . implode(', ', $bookedSeatIds));
             }
@@ -162,7 +167,8 @@ class SeatService
             $conflictingSeatIds = $this->getConflictingHeldSeatIds(
                 showtimeId: $showtime->id,
                 seatIds: $seatIds,
-                excludeUserId: $user->id
+                excludeUserId: $user->id,
+                lockForUpdate: true
             );
 
             if (!empty($conflictingSeatIds)) {
@@ -183,13 +189,14 @@ class SeatService
             }
 
             $previousHolds = SeatHold::query()
+                ->with('items')
                 ->where('showtime_id', $showtime->id)
                 ->where('user_id', $user->id)
                 ->lockForUpdate()
-                ->get(['id', 'seat_ids']);
+                ->get();
 
             $releasedSeatIds = $previousHolds
-                ->flatMap(fn (SeatHold $hold) => (array) $hold->seat_ids)
+                ->flatMap(fn (SeatHold $hold) => $hold->normalizedSeatIds())
                 ->map(fn ($id) => (int) $id)
                 ->diff($seatIds)
                 ->unique()
@@ -197,23 +204,47 @@ class SeatService
                 ->all();
 
             if ($previousHolds->isNotEmpty()) {
+                SeatHoldItem::query()
+                    ->whereIn('seat_hold_id', $previousHolds->pluck('id')->all(), 'and', false)
+                    ->where('status', SeatHoldItem::STATUS_ACTIVE)
+                    ->update([
+                        'status' => SeatHoldItem::STATUS_EXPIRED,
+                        'active_lock_key' => null,
+                        'updated_at' => now(),
+                    ]);
+
                 SeatHold::query()
-                    ->whereIn('id', $previousHolds->pluck('id')->all())
+                    ->whereIn('id', $previousHolds->pluck('id')->all(), 'and', false)
                     ->delete();
             }
+
+            $heldUntil = now()->addMinutes(self::HOLD_MINUTES);
 
             $hold = SeatHold::create([
                 'showtime_id' => $showtime->id,
                 'user_id' => $user->id,
-                'seat_ids' => $seatIds,
-                'held_until' => now()->addMinutes(self::HOLD_MINUTES),
+                // seat_ids removed - using normalized SeatHoldItem records instead
+                'held_until' => $heldUntil,
             ]);
+
+            foreach ($seatIds as $seatId) {
+                SeatHoldItem::create([
+                    'seat_hold_id' => $hold->id,
+                    'showtime_id' => $showtime->id,
+                    'seat_id' => $seatId,
+                    'status' => SeatHoldItem::STATUS_ACTIVE,
+                    'active_lock_key' => SeatHoldItem::activeLockKey($showtime->id, $seatId),
+                    'expires_at' => $heldUntil,
+                ]);
+            }
+
+            $hold->load('items');
 
             return [
                 'hold' => $hold,
                 'released_seat_ids' => $releasedSeatIds,
             ];
-        });
+        }, self::TRANSACTION_ATTEMPTS);
 
         /** @var SeatHold $hold */
         $hold = $lockResult['hold'];
@@ -231,7 +262,7 @@ class SeatService
                 ));
             }
 
-            foreach ($hold->seat_ids as $seatId) {
+            foreach ($hold->normalizedSeatIds() as $seatId) {
                 broadcast(new SeatStatusUpdated(
                     showtimeId: $hold->showtime_id,
                     seatId:     (int) $seatId,
@@ -246,7 +277,7 @@ class SeatService
         return [
             'hold_id'          => $hold->id,
             'showtime_id'      => $hold->showtime_id,
-            'seat_ids'         => $hold->seat_ids,
+            'seat_ids'         => $hold->normalizedSeatIds(),
             'held_until'       => $hold->held_until->toISOString(),
             'expires_in_seconds' => $this->getEvenExpiresInSeconds($hold),
         ];
@@ -254,7 +285,7 @@ class SeatService
 
     public function unlock(int $holdId, $user): array
     {
-        $hold = SeatHold::query()->find($holdId);
+        $hold = SeatHold::query()->with('items')->find($holdId);
 
         if (!$hold) {
             throw new \RuntimeException('Seat hold not found', 404);
@@ -265,9 +296,29 @@ class SeatService
         }
 
         $showtimeId = $hold->showtime_id;
-        $seatIds    = (array) $hold->seat_ids;
+        $seatIds    = $hold->normalizedSeatIds();
 
-        SeatHold::query()->whereKey($hold->getKey())->delete();
+        DB::transaction(function () use ($hold): void {
+            $lockedHold = SeatHold::query()
+                ->whereKey($hold->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if (!$lockedHold) {
+                return;
+            }
+
+            SeatHoldItem::query()
+                ->where('seat_hold_id', $lockedHold->getKey())
+                ->where('status', SeatHoldItem::STATUS_ACTIVE)
+                ->update([
+                    'status' => SeatHoldItem::STATUS_EXPIRED,
+                    'active_lock_key' => null,
+                    'updated_at' => now(),
+                ]);
+
+            $lockedHold->delete();
+        }, self::TRANSACTION_ATTEMPTS);
 
         // Broadcast real-time unlock to all connected clients
         // Wrap in try/catch: development environments may not have Reverb/Pusher running
@@ -277,6 +328,7 @@ class SeatService
                     showtimeId: $showtimeId,
                     seatId:     (int) $seatId,
                     status:     'available',
+                    userId:     null,
                 ));
             }
         } catch (\Exception $e) {
@@ -289,9 +341,10 @@ class SeatService
     public function cleanupExpiredSeatHolds(?int $showtimeId = null, bool $broadcast = true): int
     {
         $expiredHolds = SeatHold::query()
+            ->with('items')
             ->expired()
             ->when($showtimeId, fn ($query) => $query->where('showtime_id', $showtimeId))
-            ->get(['id', 'showtime_id', 'seat_ids']);
+            ->get();
 
         if ($expiredHolds->isEmpty()) {
             return 0;
@@ -299,8 +352,17 @@ class SeatService
 
         $expiredHoldIds = $expiredHolds->pluck('id')->all();
 
+        SeatHoldItem::query()
+            ->whereIn('seat_hold_id', $expiredHoldIds, 'and', false)
+            ->where('status', SeatHoldItem::STATUS_ACTIVE)
+            ->update([
+                'status' => SeatHoldItem::STATUS_EXPIRED,
+                'active_lock_key' => null,
+                'updated_at' => now(),
+            ]);
+
         SeatHold::query()
-            ->whereIn('id', $expiredHoldIds)
+            ->whereIn('id', $expiredHoldIds, 'and', false)
             ->delete();
 
         if ($broadcast) {
@@ -316,6 +378,30 @@ class SeatService
         $this->orderExpirationService->expirePendingOrders($showtimeId);
     }
 
+    /**
+     * Cleanup expired holds inside the caller transaction while holding row locks.
+     *
+     * This method is intentionally separate from cleanupExpiredReservations() because
+     * seat locking must not perform availability cleanup outside the transaction that
+     * validates and creates the new hold.
+     */
+    private function cleanupExpiredReservationsAtomic(int $showtimeId): void
+    {
+        $expiredHolds = SeatHold::query()
+            ->expired()
+            ->where('showtime_id', $showtimeId)
+            ->lockForUpdate()
+            ->get(['id']);
+
+        if ($expiredHolds->isNotEmpty()) {
+            SeatHold::query()
+                ->whereIn('id', $expiredHolds->pluck('id')->all(), 'and', false)
+                ->delete();
+        }
+
+        $this->orderExpirationService->expirePendingOrders($showtimeId);
+    }
+
     private function getEvenExpiresInSeconds(SeatHold $hold): int
     {
         $seconds = max(0, (int) now()->diffInSeconds($hold->held_until, false));
@@ -327,12 +413,12 @@ class SeatService
     {
         try {
             foreach ($expiredHolds as $hold) {
-                foreach ((array) $hold->seat_ids as $seatId) {
+                foreach ($hold->normalizedSeatIds() as $seatId) {
                     broadcast(new SeatStatusUpdated(
-                        (int) $hold->showtime_id,
-                        (int) $seatId,
-                        'available',
-                        null
+                        showtimeId: (int) $hold->showtime_id,
+                        seatId:     (int) $seatId,
+                        status:     'available',
+                        userId:     null,
                     ));
                 }
             }
@@ -341,35 +427,45 @@ class SeatService
         }
     }
 
-    private function getConflictingHeldSeatIds(int $showtimeId, array $seatIds, int $excludeUserId): array
-    {
-        return SeatHold::query()
-            ->valid()
+    private function getConflictingHeldSeatIds(
+        int $showtimeId,
+        array $seatIds,
+        int $excludeUserId,
+        bool $lockForUpdate = false
+    ): array {
+        $query = SeatHoldItem::query()
+            ->active()
             ->where('showtime_id', $showtimeId)
-            ->where('user_id', '!=', $excludeUserId)
-            ->where(function ($query) use ($seatIds) {
-                foreach ($seatIds as $seatId) {
-                    $query->orWhereJsonContains('seat_ids', $seatId);
-                }
-            })
-            ->get(['seat_ids'])
-            ->flatMap(function (SeatHold $hold) use ($seatIds) {
-                return array_intersect(array_map('intval', (array) $hold->seat_ids), $seatIds);
-            })
+            ->whereIn('seat_id', $seatIds, 'and', false)
+            ->whereHas('seatHold', fn ($query) => $query->where('user_id', '!=', $excludeUserId));
+
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        return $query
+            ->pluck('seat_id')
+            ->map(fn ($id) => (int) $id)
             ->unique()
             ->values()
             ->all();
     }
 
-    private function getBookedSeatIds(int $showtimeId, ?array $seatIds = null): array
+    private function getBookedSeatIds(int $showtimeId, ?array $seatIds = null, bool $lockForUpdate = false): array
     {
-        return OrderItem::query()
+        $query = OrderItem::query()
             ->where('item_type', Seat::class)
-            ->when($seatIds, fn ($query) => $query->whereIntegerInRaw('item_id', $seatIds))
+            ->when($seatIds, fn ($query) => $query->whereIn('item_id', $seatIds, 'and', false))
             ->whereHas('order', function ($query) use ($showtimeId) {
                 $query->where('showtime_id', $showtimeId)
                     ->whereIn('status', [self::STATUS_PENDING, self::STATUS_CONFIRMED]);
-            })
+            });
+
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        return $query
             ->pluck('item_id')
             ->map(fn ($id) => (int) $id)
             ->unique()

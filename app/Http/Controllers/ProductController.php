@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ProductSummaryResource;
 use App\Services\ProductService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -21,17 +23,25 @@ class ProductController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $request->validate([
+        $filters = $request->validate([
             'type' => ['nullable', 'string', 'max:50'],
-            'q' => ['nullable', 'string', 'max:255'],
+            'q' => ['nullable', 'string', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);
 
         try {
-            $products = $this->productService->getBookingProducts($request);
+            $products = $this->productService->getBookingProducts($filters);
 
-            return $this->successResponse($products, 'Products retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve products: ' . $e->getMessage(), 500);
+            return $this->successResponse(
+                ProductSummaryResource::collection($products)->response()->getData(true),
+                'Products retrieved successfully'
+            );
+        } catch (\Throwable $e) {
+            Log::error('Failed to retrieve booking products.', [
+                'exception' => $e,
+            ]);
+
+            return $this->errorResponse('Failed to retrieve products.', 500);
         }
     }
 }

@@ -4,27 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMovieRequest;
 use App\Http\Requests\UpdateMovieRequest;
+use App\Models\Movie;
+use App\Services\AuditLogService;
 use App\Services\MovieService;
+use App\Services\PublicFileStorageService;
 use App\Traits\ApiResponse;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class MovieController extends Controller
 {
     use ApiResponse;
 
-    protected MovieService $movieService;
-
-    public function __construct(MovieService $movieService)
-    {
-        $this->movieService = $movieService;
-    }
+    public function __construct(
+        protected MovieService $movieService,
+        private readonly PublicFileStorageService $publicFiles
+    ) {}
 
     /**
      * Display a filterable, sortable, paginated listing of public movies.
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         try {
             $filters = $request->validate([
@@ -43,15 +48,21 @@ class MovieController extends Controller
             $movies = $this->movieService->getMovies($filters);
 
             return $this->paginatedResponse($movies, 'Movies retrieved successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse('Invalid filter parameters', 422, $e->errors());
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to retrieve movies: ' . $e->getMessage(), 500);
+            Log::error('Failed to retrieve movies', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return $this->errorResponse('Failed to retrieve movies', 500);
         }
     }
 
     /**
      * List movies currently showing.
      */
-    public function nowShowing(Request $request)
+    public function nowShowing(Request $request): JsonResponse
     {
         $request->merge(['status' => 'now_showing']);
 
@@ -61,7 +72,7 @@ class MovieController extends Controller
     /**
      * List upcoming movies.
      */
-    public function comingSoon(Request $request)
+    public function comingSoon(Request $request): JsonResponse
     {
         $request->merge(['status' => 'upcoming']);
 
@@ -71,56 +82,95 @@ class MovieController extends Controller
     /**
      * Search movies by keyword.
      */
-    public function search(Request $request)
+    public function search(Request $request): JsonResponse
     {
-        $request->validate([
-            'q' => ['required', 'string', 'max:255'],
-        ]);
+        try {
+            $request->validate([
+                'q' => ['required', 'string', 'max:255'],
+            ]);
 
-        return $this->index($request);
+            return $this->index($request);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse('Search query is required', 422, $e->errors());
+        }
     }
 
     /**
      * Store a newly created movie.
      */
-    public function store(Request $request)
+    public function store(StoreMovieRequest $request): JsonResponse
     {
+        $uploadedPaths = [];
+
         try {
-            $data = $request->except(['poster_file', 'banner_file']);
+            $this->authorize('create', Movie::class);
 
-            // Xử lý upload poster
-            if ($request->hasFile('poster_file') && $request->file('poster_file')->isValid()) {
-                $data['poster_path'] = $request->file('poster_file')->store('movies/posters', 'public');
-                unset($data['poster_url']); // xóa url cũ nếu có
-            }
+            return DB::transaction(function () use ($request, &$uploadedPaths) {
+                $data = $request->except(['poster_file', 'banner_file']);
 
-            // Xử lý upload banner
-            if ($request->hasFile('banner_file') && $request->file('banner_file')->isValid()) {
-                $data['banner_path'] = $request->file('banner_file')->store('movies/banners', 'public');
-            }
+                // Handle poster upload
+                if ($request->hasFile('poster_file') && $request->file('poster_file')->isValid()) {
+                    $data['poster_path'] = $this->publicFiles->store($request->file('poster_file'), 'movies/posters');
+                    $uploadedPaths[] = $data['poster_path'];
+                    unset($data['poster_url']);
+                }
 
-            $movie = $this->movieService->createMovie($data);
+                // Handle banner upload
+                if ($request->hasFile('banner_file') && $request->file('banner_file')->isValid()) {
+                    $data['banner_path'] = $this->publicFiles->store($request->file('banner_file'), 'movies/banners');
+                    $uploadedPaths[] = $data['banner_path'];
+                }
 
-            return $this->successResponse(
-                $movie->append(['poster_display_url', 'banner_display_url']),
-                'Movie created successfully',
-                201
-            );
+                $movie = $this->movieService->createMovie($data);
+
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'movie.created',
+                    $movie,
+                    [],
+                    $this->auditMovieValues($movie)
+                );
+
+                return $this->successResponse(
+                    $movie->append(['poster_display_url', 'banner_display_url']),
+                    'Movie created successfully',
+                    201
+                );
+            });
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return $this->errorResponse('Unauthorized to create movies', 403);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse('Invalid movie data', 422, $e->errors());
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to create movie: ' . $e->getMessage(), 500);
+            $this->publicFiles->deleteMany($uploadedPaths);
+
+            Log::error('Failed to create movie', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
+            ]);
+            return $this->errorResponse('Failed to create movie', 500);
         }
     }
 
     /**
      * Display the specified movie by id or slug.
      */
-    public function show($idOrSlug)
+    public function show($idOrSlug): JsonResponse
     {
         try {
             $movie = $this->movieService->getMovie($idOrSlug);
 
+            if (!$movie) {
+                return $this->errorResponse('Movie not found', 404);
+            }
+
             return $this->successResponse($movie, 'Movie retrieved successfully');
         } catch (\Throwable $e) {
+            Log::error('Failed to retrieve movie', [
+                'identifier' => $idOrSlug,
+                'error' => $e->getMessage(),
+            ]);
             return $this->errorResponse('Movie not found', 404);
         }
     }
@@ -128,79 +178,215 @@ class MovieController extends Controller
     /**
      * Update the specified movie.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateMovieRequest $request, $id): JsonResponse
     {
+        $newUploadedPaths = [];
+        $oldPathsToDelete = [];
+
         try {
-            $movie = \App\Models\Movie::findOrFail($id);
-            $data = $request->except(['poster_file', 'banner_file']);
+            $movie = Movie::findOrFail($id);
+            $this->authorize('update', $movie);
+            $oldValues = $this->auditMovieValues($movie);
 
-            // Xử lý upload poster mới
-            if ($request->hasFile('poster_file') && $request->file('poster_file')->isValid()) {
-                // Xóa file cũ nếu có
-                if ($movie->poster_path) {
-                    Storage::disk('public')->delete($movie->poster_path);
+            $response = DB::transaction(function () use ($request, $movie, $id, $oldValues, &$newUploadedPaths, &$oldPathsToDelete) {
+                $data = $request->except(['poster_file', 'banner_file']);
+
+                // Handle new poster upload
+                if ($request->hasFile('poster_file') && $request->file('poster_file')->isValid()) {
+                    if ($movie->poster_path) {
+                        $oldPathsToDelete[] = $movie->poster_path;
+                    }
+
+                    $data['poster_path'] = $this->publicFiles->store($request->file('poster_file'), 'movies/posters');
+                    $newUploadedPaths[] = $data['poster_path'];
                 }
-                $data['poster_path'] = $request->file('poster_file')->store('movies/posters', 'public');
-            }
 
-            // Xử lý upload banner mới
-            if ($request->hasFile('banner_file') && $request->file('banner_file')->isValid()) {
-                if ($movie->banner_path) {
-                    Storage::disk('public')->delete($movie->banner_path);
+                // Handle new banner upload
+                if ($request->hasFile('banner_file') && $request->file('banner_file')->isValid()) {
+                    if ($movie->banner_path) {
+                        $oldPathsToDelete[] = $movie->banner_path;
+                    }
+
+                    $data['banner_path'] = $this->publicFiles->store($request->file('banner_file'), 'movies/banners');
+                    $newUploadedPaths[] = $data['banner_path'];
                 }
-                $data['banner_path'] = $request->file('banner_file')->store('movies/banners', 'public');
-            }
 
-            $movie = $this->movieService->updateMovie($id, $data);
+                $updatedMovie = $this->movieService->updateMovie($id, $data);
 
-            return $this->successResponse(
-                $movie->append(['poster_display_url', 'banner_display_url']),
-                'Movie updated successfully'
-            );
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'movie.updated',
+                    $updatedMovie,
+                    $oldValues,
+                    $this->auditMovieValues($updatedMovie)
+                );
+
+                return $this->successResponse(
+                    $updatedMovie->append(['poster_display_url', 'banner_display_url']),
+                    'Movie updated successfully'
+                );
+            });
+
+            $this->publicFiles->deleteMany($oldPathsToDelete);
+
+            return $response;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->errorResponse('Movie not found', 404);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return $this->errorResponse('Unauthorized to update this movie', 403);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->publicFiles->deleteMany($newUploadedPaths);
+
+            return $this->errorResponse('Invalid movie data', 422, $e->errors());
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to update movie: ' . $e->getMessage(), 500);
+            $this->publicFiles->deleteMany($newUploadedPaths);
+
+            Log::error('Failed to update movie', [
+                'movie_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
+            ]);
+            return $this->errorResponse('Failed to update movie', 500);
         }
     }
 
     /**
      * Remove the specified movie.
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         try {
-            $this->movieService->deleteMovie($id);
+            $movie = Movie::findOrFail($id);
+            $this->authorize('delete', $movie);
+            $oldValues = $this->auditMovieValues($movie);
+
+            DB::transaction(function () use ($id, $movie, $oldValues): void {
+                $this->movieService->deleteMovie($id);
+
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'movie.deleted',
+                    $movie,
+                    $oldValues,
+                    []
+                );
+            });
 
             return $this->successResponse(null, 'Movie deleted successfully');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->errorResponse('Movie not found', 404);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return $this->errorResponse('Unauthorized to delete this movie', 403);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse('Invalid movie data', 422, $e->errors());
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to delete movie: ' . $e->getMessage(), 500);
+            Log::error('Failed to delete movie', [
+                'movie_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
+            ]);
+            return $this->errorResponse('Failed to delete movie', 500);
         }
     }
 
     /**
-     * Toggle active status.
+     * Toggle active status between 'hidden' and 'active'.
+     * 
+     * FIXED: Status is a string enum, not boolean.
+     * Valid values: 'active', 'now_showing', 'upcoming', 'hidden'
      */
-    public function toggleActive($id)
+    public function toggleActive($id): JsonResponse
     {
         try {
-            $movie = \App\Models\Movie::findOrFail($id);
-            $movie->update(['status' => !$movie->status]);
-            return $this->successResponse($movie, 'Movie status toggled successfully');
+            $movie = Movie::findOrFail($id);
+            $this->authorize('toggleStatus', $movie);
+            $oldValues = $this->auditMovieValues($movie);
+            $updatedMovie = null;
+
+            DB::transaction(function () use ($movie, $oldValues, &$updatedMovie) {
+                $newStatus = $movie->status === 'hidden' ? 'active' : 'hidden';
+                
+                $movie->lockForUpdate()->update(['status' => $newStatus]);
+                $updatedMovie = $movie->fresh();
+
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'movie.status_toggled',
+                    $updatedMovie,
+                    $oldValues,
+                    $this->auditMovieValues($updatedMovie)
+                );
+            });
+
+            return $this->successResponse($updatedMovie, 'Movie status toggled successfully');
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Movie not found', 404);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return $this->errorResponse('Unauthorized to toggle movie status', 403);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to toggle movie status: ' . $e->getMessage(), 500);
+            Log::error('Failed to toggle movie status', [
+                'movie_id' => $id,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+            return $this->errorResponse('Failed to toggle movie status', 500);
         }
     }
 
     /**
-     * Toggle hot status.
+     * Toggle hot status (is_hot is boolean, safe to toggle).
      */
-    public function toggleHot($id)
+    public function toggleHot($id): JsonResponse
     {
         try {
-            $movie = \App\Models\Movie::findOrFail($id);
-            $movie->update(['is_hot' => !$movie->is_hot]);
-            return $this->successResponse($movie, 'Movie hot status toggled successfully');
+            $movie = Movie::findOrFail($id);
+            $this->authorize('toggleHot', $movie);
+            $oldValues = $this->auditMovieValues($movie);
+            $updatedMovie = null;
+
+            DB::transaction(function () use ($movie, $oldValues, &$updatedMovie) {
+                $movie->lockForUpdate()->update(['is_hot' => !$movie->is_hot]);
+                $updatedMovie = $movie->fresh();
+
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'movie.hot_toggled',
+                    $updatedMovie,
+                    $oldValues,
+                    $this->auditMovieValues($updatedMovie)
+                );
+            });
+
+            return $this->successResponse($updatedMovie, 'Movie hot status toggled successfully');
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Movie not found', 404);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return $this->errorResponse('Unauthorized to toggle movie hot status', 403);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to toggle movie hot status: ' . $e->getMessage(), 500);
+            Log::error('Failed to toggle movie hot status', [
+                'movie_id' => $id,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+            return $this->errorResponse('Failed to toggle movie hot status', 500);
         }
+    }
+
+    private function auditMovieValues(Movie $movie): array
+    {
+        return [
+            'title' => $movie->title,
+            'slug' => $movie->slug,
+            'duration' => $movie->duration,
+            'release_date' => $movie->release_date?->toDateString(),
+            'end_date' => $movie->end_date?->toDateString(),
+            'status' => $movie->status,
+            'is_hidden' => (bool) $movie->is_hidden,
+            'is_hot' => (bool) $movie->is_hot,
+            'poster_path' => $movie->poster_path ? '[image]' : null,
+            'banner_path' => $movie->banner_path ? '[image]' : null,
+        ];
     }
 }

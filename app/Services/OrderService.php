@@ -9,8 +9,10 @@ use App\Models\Promotion;
 use App\Models\Seat;
 use App\Models\SeatHold;
 use App\Models\Showtime;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class OrderService
@@ -18,10 +20,12 @@ class OrderService
     private const STATUS_CANCELLED = 0;
     private const STATUS_PENDING = 1;
     private const STATUS_CONFIRMED = 2;
+    private const TRANSACTION_ATTEMPTS = 3;
 
     public function __construct(
         private readonly OrderExpirationService $orderExpirationService,
-        private readonly TicketPricingService $ticketPricingService
+        private readonly TicketPricingService $ticketPricingService,
+        private readonly AuditSnapshotService $auditSnapshots
     ) {
     }
 
@@ -38,6 +42,7 @@ class OrderService
             }
 
             $seatIds = array_values(array_map('intval', $data['seat_ids']));
+            sort($seatIds, SORT_NUMERIC);
 
             $seatHold = $this->getValidSeatHold($showtime->id, $user->id, $data['seat_hold_id'] ?? null);
 
@@ -67,8 +72,9 @@ class OrderService
 
             $totalAmount = max(0, $subtotal - $discountAmount);
 
-            $order->update([
-                'total_amount' => $totalAmount,
+            // PHASE 1 FIX: Use updateTotal() for amount, forceFill for payload
+            $order->updateTotal($totalAmount);
+            $order->forceFill([
                 'payload' => array_merge((array) $order->payload, [
                     'subtotal' => $subtotal,
                     'seat_total' => $seatTotal,
@@ -76,16 +82,28 @@ class OrderService
                     'discount_amount' => $discountAmount,
                     'promotion' => $promotionPayload,
                 ]),
-            ]);
+            ])->save();
             $seatHold->delete();
 
-        return $order->load([
-            'showtime.movie',
-            'showtime.screen.theater',
-            'orderItems',
-            'orderItems.item',
-        ]);
-        });
+            $order->load([
+                'showtime.movie',
+                'showtime.screen.theater',
+                'orderItems',
+                'orderItems.item',
+            ]);
+
+            if ($user instanceof User) {
+                app(AuditLogService::class)->record(
+                    $user,
+                    'order.created',
+                    $order,
+                    [],
+                    $this->auditSnapshots->order($order)
+                );
+            }
+
+            return $order;
+        }, self::TRANSACTION_ATTEMPTS);
     }
 
     public function findForUser(int $id, $user): Order
@@ -134,22 +152,132 @@ class OrderService
 
     public function cancel(int $id, $user): Order
     {
-        $order = Order::findOrFail($id);
-        $order = $this->orderExpirationService->expireOrder($order);
+        return DB::transaction(function () use ($id, $user) {
+            // Load order with lock to prevent concurrent cancellations
+            $order = Order::lockForUpdate()->findOrFail($id);
 
-        $this->ensureUserCanAccess($order, $user);
+            $this->ensureUserCanAccess($order, $user);
 
-        if ((int) $order->status === self::STATUS_CONFIRMED) {
-            throw new \RuntimeException('Không thể hủy đơn hàng đã thanh toán/xác nhận.', 422);
-        }
+            // Idempotency: If already cancelled, return early
+            if ((int) $order->status === self::STATUS_CANCELLED) {
+                return $order;
+            }
 
-        $order->update([
-            'status' => self::STATUS_CANCELLED,
-            'payment_status' => 'cancelled',
-            'cancelled_at' => now(),
-        ]);
+            $oldOrderValues = $this->auditSnapshots->order($order);
+            $payment = $order->payment;
+            $oldPaymentValues = $payment ? $this->auditSnapshots->payment($payment) : null;
 
-        return $order->fresh();
+            // Business rule: Cannot cancel confirmed/paid orders
+            if ((int) $order->status === self::STATUS_CONFIRMED) {
+                throw new \RuntimeException('Không thể hủy đơn hàng đã thanh toán/xác nhận.', 422);
+            }
+
+            // 1. PHASE 1 FIX: Use markCancelled() state transition method
+            $order->markCancelled();
+
+            // 2. Update payment status if payment exists
+            if ($payment) {
+                $payment->markCancelled(now());
+            }
+
+            // 3. Restore product stock from order items
+            $productItems = OrderItem::query()
+                ->where('order_id', $order->id)
+                ->where('item_type', Product::class)
+                ->get();
+
+            foreach ($productItems as $item) {
+                $product = Product::query()
+                    ->where('id', $item->item_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($product) {
+                    $product->increment('stock', $item->quantity);
+
+                    Log::info('Stock restored after order cancellation', [
+                        'order_id' => $order->id,
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'quantity_restored' => $item->quantity,
+                        'new_stock' => $product->stock,
+                    ]);
+                }
+            }
+
+            // 4. Decrement promotion usage if promotion was used
+            $payload = (array) $order->payload;
+            $promotion = $payload['promotion'] ?? null;
+
+            if ($promotion && isset($promotion['id'])) {
+                $promotionModel = Promotion::query()
+                    ->where('id', $promotion['id'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($promotionModel && $promotionModel->usage_count > 0) {
+                    $promotionModel->decrement('usage_count');
+
+                    Log::info('Promotion usage decremented after order cancellation', [
+                        'order_id' => $order->id,
+                        'promotion_id' => $promotionModel->id,
+                        'promotion_code' => $promotionModel->code,
+                        'new_usage_count' => $promotionModel->usage_count,
+                    ]);
+                }
+            }
+
+            // 5. Clean up only the hold associated with this order.
+            // Never delete unrelated active holds belonging to the same user/showtime.
+            $seatHoldId = is_numeric($payload['seat_hold_id'] ?? null)
+                ? (int) $payload['seat_hold_id']
+                : null;
+
+            if ($seatHoldId !== null) {
+                SeatHold::query()
+                    ->whereKey($seatHoldId)
+                    ->where('user_id', $order->user_id)
+                    ->where('showtime_id', $order->showtime_id)
+                    ->lockForUpdate()
+                    ->delete();
+            }
+
+            // 6. Log cancellation event
+            Log::info('Order cancelled successfully', [
+                'order_id' => $order->id,
+                'order_code' => $order->code,
+                'user_id' => $user->id,
+                'total_amount' => $order->total_amount,
+                'products_restored' => $productItems->count(),
+                'cancelled_by' => 'user',
+            ]);
+
+            $cancelledOrder = $order->fresh('payment');
+
+            if ($user instanceof User) {
+                app(AuditLogService::class)->record(
+                    $user,
+                    'order.cancelled',
+                    $cancelledOrder,
+                    $oldOrderValues,
+                    $this->auditSnapshots->order($cancelledOrder)
+                );
+
+                if ($payment && $oldPaymentValues) {
+                    $cancelledPayment = $payment->fresh();
+
+                    app(AuditLogService::class)->record(
+                        $user,
+                        'payment.cancelled',
+                        $cancelledPayment,
+                        $oldPaymentValues,
+                        $this->auditSnapshots->payment($cancelledPayment)
+                    );
+                }
+            }
+
+            return $cancelledOrder;
+        }, self::TRANSACTION_ATTEMPTS);
     }
 
     public function findByGatewayCode(int $gatewayOrderCode, bool $lock = false): ?Order
@@ -252,9 +380,11 @@ class OrderService
 
     private function createPendingOrder(Showtime $showtime, int $userId, array $seatIds, int $seatHoldId): Order
     {
-        return Order::create([
+        // PHASE 1 FIX: Use Order::createPending() factory method
+        return Order::createPending([
             'code' => 'ORD-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6)),
             'gateway_order_code' => (int) (now()->format('ymdHis') . random_int(100, 999)),
+            'payment_provider' => 'web',
             'user_id' => $userId,
             'showtime_id' => $showtime->id,
             'total_amount' => 0,
@@ -263,8 +393,6 @@ class OrderService
                 'seat_hold_id' => $seatHoldId,
                 'source' => 'web',
             ],
-            'status' => self::STATUS_PENDING,
-            'payment_status' => 'created',
             'expired_at' => now()->addMinutes(15),
         ]);
     }
@@ -275,6 +403,13 @@ class OrderService
             return 0;
         }
 
+        $productIds = collect($products)
+            ->map(fn (array $product): int => (int) $product['id']);
+
+        if ($productIds->duplicates()->isNotEmpty()) {
+            throw new \RuntimeException('Không được phép gửi trùng sản phẩm trong đơn hàng.');
+        }
+
         $requestedProducts = collect($products)
             ->mapWithKeys(fn (array $product) => [(int) $product['id'] => (int) $product['quantity']])
             ->filter(fn (int $quantity) => $quantity > 0);
@@ -283,9 +418,16 @@ class OrderService
             return 0;
         }
 
+        $productIds = $requestedProducts->keys()
+            ->map(fn ($id): int => (int) $id)
+            ->sort()
+            ->values()
+            ->all();
+
         $productModels = Product::query()
-            ->whereIn('id', $requestedProducts->keys()->all())
+            ->whereIn('id', $productIds)
             ->where('status', 1)
+            ->orderBy('id')
             ->lockForUpdate()
             ->get();
 
@@ -306,19 +448,13 @@ class OrderService
             $lineTotal = $unitPrice * $quantity;
             $totalAmount += $lineTotal;
 
-            OrderItem::create([
-                'order_id' => $order->id,
-                'item_type' => Product::class,
-                'item_id' => $product->id,
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'total_price' => $lineTotal,
-                'metadata' => [
-                    'product_name' => $product->name,
-                    'product_type' => $product->type,
-                    'image_url' => $product->image_url,
-                ],
+            // PHASE 5 FIX: Use OrderItem factory method instead of mass assignment
+            $item = OrderItem::createFromProduct($order, $product, $quantity, (string) $unitPrice, [
+                'product_name' => $product->name,
+                'product_type' => $product->type,
+                'image_url' => $product->image_url,
             ]);
+            $item->save();
 
             $product->decrement('stock', $quantity);
         }
@@ -353,7 +489,7 @@ class OrderService
 
         $discountAmount = $this->calculatePromotionDiscount($promotion, $subtotal);
 
-        $promotion->increment('used_count');
+        $promotion->increment('usage_count');
 
         return [
             $discountAmount,
@@ -419,7 +555,10 @@ class OrderService
             $unitPrice = $pricingResult['total_price'];
             $totalAmount += $unitPrice;
 
-            OrderItem::create([
+            // PHASE 5 WORKAROUND: Use forceCreate to bypass guarded protection
+            // TODO Phase 6: Refactor seat reservation architecture to use Ticket references from the start
+            // Current issue: OrderService stores seat references (Seat::class), but OrderItem expects Ticket references
+            OrderItem::forceCreate([
                 'order_id' => $order->id,
                 'item_type' => Seat::class,
                 'item_id' => $seat->id,
@@ -478,4 +617,5 @@ class OrderService
             && $user->role
             && in_array($user->role->slug, ['admin', 'manager', 'staff']);
     }
+
 }

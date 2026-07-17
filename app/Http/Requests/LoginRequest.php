@@ -13,9 +13,15 @@ class LoginRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (!$this->has('login')) {
+        $login = $this->input('login');
+
+        if (! is_string($login) || trim($login) === '') {
+            $login = $this->input('email') ?? $this->input('username');
+        }
+
+        if (is_string($login)) {
             $this->merge([
-                'login' => $this->input('email') ?? $this->input('username'),
+                'login' => strtolower(trim($login)),
             ]);
         }
     }
@@ -27,7 +33,8 @@ class LoginRequest extends FormRequest
     {
         return [
             'login' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:6', 'max:255'],
+            // Do not enforce password-strength policy during login; legacy valid passwords must remain usable.
+            'password' => ['required', 'string', 'max:1024'],
             'remember' => ['nullable', 'boolean'],
         ];
     }
@@ -37,7 +44,6 @@ class LoginRequest extends FormRequest
         return [
             'login.required' => 'Vui lòng nhập email hoặc tên đăng nhập.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
-            'password.min' => 'Mật khẩu phải có ít nhất :min ký tự.',
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Events\OrderPaid;
+use App\Models\IdempotencyKey;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -10,6 +11,7 @@ use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Seat;
 use App\Models\SeatHold;
+use App\Models\SeatHoldItem;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,24 +19,64 @@ use Illuminate\Support\Facades\Log;
 class OrderFulfillmentService
 {
     public function __construct(
-        private readonly OrderService $orderService
+        private readonly OrderService $orderService,
+        private readonly AuditSnapshotService $auditSnapshots
     ) {}
 
     /**
      * Finalize the order after successful payment.
+     * PHASE 1: Added idempotency protection against webhook replay
      */
     public function finalize(int $gatewayOrderCode): array
     {
         return DB::transaction(function () use ($gatewayOrderCode) {
+            $idempotencyKeyValue = "webhook:finalize:{$gatewayOrderCode}";
+
+            $idempotencyKey = IdempotencyKey::query()
+                ->byKey($idempotencyKeyValue)
+                ->lockForUpdate()
+                ->first();
+
+            if ($idempotencyKey && $idempotencyKey->status === 'completed') {
+                Log::info('Webhook already processed (idempotency)', [
+                    'gateway_order_code' => $gatewayOrderCode,
+                    'idempotency_key' => $idempotencyKeyValue,
+                ]);
+                return is_array($idempotencyKey->response_data)
+                    ? $idempotencyKey->response_data
+                    : ['already_processed' => true, 'skipped' => false];
+            }
+
+            if ($idempotencyKey && $idempotencyKey->status === 'pending') {
+                Log::warning('Concurrent webhook detected', [
+                    'gateway_order_code' => $gatewayOrderCode,
+                    'idempotency_key' => $idempotencyKeyValue,
+                ]);
+                throw new \RuntimeException('Webhook đang được xử lý bởi yêu cầu khác. Vui lòng thử lại sau.');
+            }
+
+            if (!$idempotencyKey) {
+                $idempotencyKey = IdempotencyKey::create([
+                    'key' => $idempotencyKeyValue,
+                    'request_data' => ['gateway_order_code' => $gatewayOrderCode],
+                    'status' => 'pending',
+                    'expires_at' => now()->addHours(24),
+                ]);
+            } else {
+                $idempotencyKey->update(['status' => 'pending']);
+            }
+
             $order = $this->orderService->findByGatewayCode($gatewayOrderCode, lock: true);
 
             if (!$order) {
                 Log::warning('Fulfillment failed: Order not found', ['gateway_order_code' => $gatewayOrderCode]);
+                $idempotencyKey->update(['status' => 'failed']);
                 throw new \InvalidArgumentException('Không tìm thấy đơn hàng.');
             }
 
             if ((int)$order->status === Order::STATUS_CONFIRMED || $order->payment_status === 'paid') {
                 $paidAt = $order->paid_at ?? now();
+                $oldOrderValues = $this->auditSnapshots->order($order);
 
                 $order->forceFill([
                     'status' => Order::STATUS_CONFIRMED,
@@ -42,62 +84,82 @@ class OrderFulfillmentService
                     'paid_at' => $paidAt,
                 ])->save();
 
-                Payment::where('order_id', $order->id)
-                    ->update([
-                        'status' => Payment::STATUS_SUCCESS,
-                        'paid_at' => $paidAt,
-                        'failed_at' => null,
-                    ]);
+                $payment = Payment::query()
+                    ->where('order_id', $order->id)
+                    ->lockForUpdate()
+                    ->first();
 
-                SeatHold::where('user_id', $order->user_id)
+                $oldPaymentValues = $payment ? $this->auditSnapshots->payment($payment) : null;
+
+                if ($payment) {
+                    $payment->markSuccessful($paidAt);
+                }
+
+                // Mark seat hold items as consumed (normalized model)
+                $seatHold = SeatHold::query()
+                    ->where('user_id', $order->user_id)
                     ->where('showtime_id', $order->showtime_id)
-                    ->delete();
+                    ->first();
 
-                return ['already_processed' => true, 'skipped' => false];
+                if ($seatHold) {
+                    SeatHoldItem::query()
+                        ->where('seat_hold_id', $seatHold->id)
+                        ->where('status', SeatHoldItem::STATUS_ACTIVE)
+                        ->get()
+                        ->each(fn($item) => $item->markConsumed());
+
+                    $seatHold->delete();
+                }
+
+                $result = ['already_processed' => true, 'skipped' => false];
+                $idempotencyKey->update([
+                    'status' => 'completed',
+                    'response_data' => $result,
+                ]);
+
+                app(AuditLogService::class)->recordSystemChange(
+                    'order.payment_reconciled',
+                    $order->fresh(),
+                    $oldOrderValues,
+                    $this->auditSnapshots->order($order->fresh())
+                );
+
+                if ($payment && $oldPaymentValues) {
+                    app(AuditLogService::class)->recordSystemChange(
+                        'payment.succeeded',
+                        $payment->fresh(),
+                        $oldPaymentValues,
+                        $this->auditSnapshots->payment($payment->fresh())
+                    );
+                }
+
+                return $result;
             }
 
             $paidAt = now();
+            $oldOrderValues = $this->auditSnapshots->order($order);
 
-            // Update order status
-            $order->update([
-                'status' => Order::STATUS_CONFIRMED,
-                'payment_status' => 'paid',
-                'paid_at' => $paidAt,
-                'cancelled_at' => null,
-            ]);
+            // PHASE 1 FIX: Use markPaid() state transition method
+            $order->markPaid($paidAt);
 
             // PHASE 2: Update payment record to success
-            Payment::where('order_id', $order->id)
-                ->update([
-                    'status' => Payment::STATUS_SUCCESS,
-                    'paid_at' => $paidAt,
-                    'failed_at' => null,
-                ]);
+            $payment = Payment::query()
+                ->where('order_id', $order->id)
+                ->lockForUpdate()
+                ->first();
+
+            $oldPaymentValues = $payment ? $this->auditSnapshots->payment($payment) : null;
+
+            if ($payment) {
+                $payment->markSuccessful($paidAt);
+            }
 
             $payload = $order->payload ?? [];
 
-            // 1. Create Seat OrderItems
+            // 1. Create Tickets for each seat FIRST, then create OrderItems (PHASE 5)
             $seats = $payload['seats'] ?? [];
             foreach ($seats as $seatData) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'item_type' => Seat::class,
-                    'item_id' => $seatData['id'],
-                    'quantity' => 1,
-                    'unit_price' => $seatData['price'],
-                    'total_price' => $seatData['price'],
-                    'metadata' => [
-                        'seat_label' => $seatData['name'],
-                        'row' => $seatData['row'] ?? null,
-                        'number' => $seatData['number'] ?? null,
-                        'seat_type' => $seatData['type'] ?? null,
-                    ],
-                ]);
-            }
-
-            // 2. Create Tickets for each seat (PHASE 3)
-            foreach ($seats as $seatData) {
-                Ticket::create([
+                $ticket = Ticket::forceCreate([
                     'order_id' => $order->id,
                     'user_id' => $order->user_id,
                     'showtime_id' => $order->showtime_id,
@@ -105,52 +167,88 @@ class OrderFulfillmentService
                     'ticket_code' => Ticket::generateTicketCode(),
                     'status' => Ticket::STATUS_VALID,
                 ]);
+
+                // Create OrderItem pointing to the ticket
+                $orderItem = OrderItem::createFromTicket(
+                    $order,
+                    $ticket,
+                    $seatData['price'],
+                    [
+                        'seat_label' => $seatData['name'],
+                        'row' => $seatData['row'] ?? null,
+                        'number' => $seatData['number'] ?? null,
+                        'seat_type' => $seatData['type'] ?? null,
+                    ]
+                );
+                $orderItem->save();
             }
 
-            // 3. Create Product OrderItems and decrement stock SAFELY (PHASE 3)
+            // 2. Create Product OrderItems and decrement stock SAFELY (PHASE 5)
             $products = $payload['products'] ?? [];
             foreach ($products as $productData) {
                 $quantity = (int)$productData['quantity'];
 
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'item_type' => Product::class,
-                    'item_id' => $productData['id'],
-                    'quantity' => $quantity,
-                    'unit_price' => $productData['price'],
-                    'total_price' => $productData['price'] * $quantity,
-                    'metadata' => [
-                        'product_name' => $productData['name'],
-                        'product_type' => $productData['type'] ?? null,
-                        'image_url' => $productData['image_url'] ?? null,
-                    ],
-                ]);
-
-                // PHASE 3: Safe stock decrement with pessimistic lock
-                $product = Product::where('id', $productData['id'])
+                // PHASE 5: Safe stock decrement with pessimistic lock FIRST
+                $product = Product::query()
+                    ->where('id', $productData['id'])
                     ->lockForUpdate()
                     ->first();
 
-                if ($product && $product->stock >= $quantity) {
-                    $product->decrement('stock', $quantity);
-                } else {
+                if (!$product) {
+                    Log::warning('Product not found during fulfillment', [
+                        'product_id' => $productData['id'],
+                    ]);
+                    continue;
+                }
+
+                if ($product->stock < $quantity) {
                     Log::warning('Insufficient product stock', [
                         'product_id' => $productData['id'],
                         'requested' => $quantity,
-                        'available' => $product->stock ?? 0,
+                        'available' => $product->stock,
                     ]);
+                    // Continue anyway - stock was checked at order creation
                 }
+
+                $product->decrement('stock', max(0, min($quantity, $product->stock)));
+
+                // Create OrderItem with factory method
+                $orderItem = OrderItem::createFromProduct(
+                    $order,
+                    $product,
+                    $quantity,
+                    $productData['price'],
+                    [
+                        'product_name' => $productData['name'],
+                        'product_type' => $productData['type'] ?? null,
+                        'image_url' => $productData['image_url'] ?? null,
+                    ]
+                );
+                $orderItem->save();
             }
 
-            // 4. PHASE 3: Release seat holds after successful payment
-            SeatHold::where('user_id', $order->user_id)
+            // 4. PHASE 1.4: Release seat holds after successful payment (normalized model)
+            $seatHold = SeatHold::query()
+                ->where('user_id', $order->user_id)
                 ->where('showtime_id', $order->showtime_id)
-                ->delete();
+                ->first();
+
+            if ($seatHold) {
+                // Mark all active items as consumed to release locks
+                SeatHoldItem::query()
+                    ->where('seat_hold_id', $seatHold->id)
+                    ->where('status', SeatHoldItem::STATUS_ACTIVE)
+                    ->get()
+                    ->each(fn($item) => $item->markConsumed());
+
+                // Delete parent hold record
+                $seatHold->delete();
+            }
 
             // 5. Increment promotion usage_count if any and mark user's voucher as used
             $voucher = $payload['voucher'] ?? null;
             if ($voucher && isset($voucher['id'])) {
-                Promotion::where('id', $voucher['id'])->increment('usage_count');
+                Promotion::query()->where('id', $voucher['id'])->increment('usage_count');
 
                 if ($order->user_id) {
                     DB::table('user_promotion')
@@ -194,7 +292,31 @@ class OrderFulfillmentService
                 Log::warning('Order broadcast failed (non-critical): ' . $e->getMessage());
             }
 
-            return ['already_processed' => false, 'skipped' => false];
+            $result = ['already_processed' => false, 'skipped' => false];
+
+            $idempotencyKey->update([
+                'status' => 'completed',
+                'response_data' => $result,
+            ]);
+
+            app(AuditLogService::class)->recordSystemChange(
+                'order.paid',
+                $order->fresh(),
+                $oldOrderValues,
+                $this->auditSnapshots->order($order->fresh())
+            );
+
+            if ($payment && $oldPaymentValues) {
+                app(AuditLogService::class)->recordSystemChange(
+                    'payment.succeeded',
+                    $payment->fresh(),
+                    $oldPaymentValues,
+                    $this->auditSnapshots->payment($payment->fresh())
+                );
+            }
+
+            return $result;
         });
     }
+
 }

@@ -3,11 +3,13 @@
 namespace Tests\Feature\Payment;
 
 use App\Models\Order;
+use App\Models\Screen;
 use App\Models\Seat;
 use App\Models\SeatHold;
 use App\Models\Showtime;
 use App\Models\User;
 use App\Services\PaymentService;
+use App\Services\PayOSGateway;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,6 +31,15 @@ class PaymentSecurityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        
+        // Mock PayOSGateway to avoid real API calls in tests
+        $this->mock(PayOSGateway::class, function ($mock) {
+            $mock->shouldReceive('createPaymentLink')
+                ->andReturn([
+                    'checkoutUrl' => 'https://test-checkout.payos.vn/test-payment-link',
+                    'orderCode' => 'TEST123456',
+                ]);
+        });
         
         $this->paymentService = app(PaymentService::class);
         
@@ -118,9 +129,11 @@ class PaymentSecurityTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('không thuộc phòng chiếu này');
 
+        $wrongScreen = Screen::factory()->create();
+
         $wrongScreenSeats = Seat::factory()
             ->count(2)
-            ->create(['screen_id' => 999]); // Different screen
+            ->create(['screen_id' => $wrongScreen->id]); // Different screen
 
         $wrongSeatIds = $wrongScreenSeats->pluck('id')->toArray();
 
@@ -157,7 +170,10 @@ class PaymentSecurityTest extends TestCase
         ]);
 
         foreach ($seatIds as $seatId) {
-            $existingOrder->orderItems()->create([
+            // OrderItem identity and financial fields are intentionally guarded.
+            // Force creation is appropriate here because this fixture simulates
+            // a previously persisted booking created by the trusted order flow.
+            $existingOrder->orderItems()->forceCreate([
                 'item_type' => Seat::class,
                 'item_id' => $seatId,
                 'quantity' => 1,
@@ -197,13 +213,17 @@ class PaymentSecurityTest extends TestCase
             'held_until' => now()->addMinutes(10),
         ]);
 
+        // Pass explicit idempotency key to avoid test collision
+        $idempotencyKey = \Illuminate\Support\Str::uuid()->toString();
+
         $result = $this->paymentService->initiate(
             $this->user,
             $this->showtime,
             [
                 'items' => array_map(fn($id) => ['type' => 'seat', 'id' => $id], $seatIds),
             ],
-            url('')
+            url(''),
+            $idempotencyKey
         );
 
         $this->assertArrayHasKey('checkout_url', $result);
@@ -233,13 +253,17 @@ class PaymentSecurityTest extends TestCase
             'held_until' => now()->addMinutes(10),
         ]);
 
+        // Explicit unique key for user1
+        $key1 = \Illuminate\Support\Str::uuid()->toString();
+
         $result1 = $this->paymentService->initiate(
             $user1,
             $this->showtime,
             [
                 'items' => array_map(fn($id) => ['type' => 'seat', 'id' => $id], $seatIds),
             ],
-            url('')
+            url(''),
+            $key1
         );
 
         $this->assertNotNull($result1['order_number']);
@@ -258,6 +282,9 @@ class PaymentSecurityTest extends TestCase
             'held_until' => now()->addMinutes(10),
         ]);
 
+        // Explicit unique key for user2 (different from user1)
+        $key2 = \Illuminate\Support\Str::uuid()->toString();
+
         // User 2's initiation succeeds (OrderItems not yet created by User 1)
         $result2 = $this->paymentService->initiate(
             $user2,
@@ -265,7 +292,8 @@ class PaymentSecurityTest extends TestCase
             [
                 'items' => array_map(fn($id) => ['type' => 'seat', 'id' => $id], $seatIds),
             ],
-            url('')
+            url(''),
+            $key2
         );
 
         // Both users successfully created PENDING orders

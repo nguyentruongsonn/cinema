@@ -8,14 +8,19 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ShowtimeService
 {
+    private const TRANSACTION_ATTEMPTS = 3;
+
     /**
      * Get paginated, filterable list of showtimes for admin/catalog.
      */
-    public function getAll(Request $request): LengthAwarePaginator
+    public function getAll(array $filters = []): LengthAwarePaginator
     {
         $query = Showtime::with([
             'movie:id,title,slug,duration,age_rating,poster_url',
@@ -27,10 +32,10 @@ class ShowtimeService
             'versionType:id,name,slug',
         ]);
 
-        $query = $this->applyFilters($query, $request);
-        $query = $this->applySorting($query, $request);
+        $query = $this->applyFilters($query, $filters);
+        $query = $this->applySorting($query, $filters);
 
-        $perPage = (int) $request->query('per_page', 15);
+        $perPage = max(1, min((int) ($filters['per_page'] ?? 15), 100));
         $showtimes = $query->paginate($perPage);
 
         $showtimes->getCollection()->transform(fn ($s) => $this->enrichShowtime($s));
@@ -60,9 +65,16 @@ class ShowtimeService
      */
     public function create(array $data): Showtime
     {
-        $showtime = Showtime::create($data);
-        $showtime->load(['movie', 'screen', 'screen.theater', 'format']);
-        return $showtime;
+        return DB::transaction(function () use ($data): Showtime {
+            $payload = $this->showtimePayload($data);
+
+            $this->assertNoScheduleConflict($payload);
+
+            $showtime = Showtime::create($payload);
+            $showtime->load(['movie', 'screen', 'screen.theater', 'format']);
+
+            return $showtime;
+        }, self::TRANSACTION_ATTEMPTS);
     }
 
     /**
@@ -70,10 +82,30 @@ class ShowtimeService
      */
     public function update(int $id, array $data): Showtime
     {
-        $showtime = Showtime::findOrFail($id);
-        $showtime->update($data);
-        $showtime->load(['movie', 'screen', 'screen.theater', 'format']);
-        return $showtime;
+        return DB::transaction(function () use ($id, $data): Showtime {
+            $showtime = Showtime::query()
+                ->lockForUpdate()
+                ->findOrFail($id);
+
+            $payload = $this->showtimePayload($data);
+            $merged = array_merge($showtime->only([
+                'movie_id',
+                'screen_id',
+                'format_id',
+                'version_type_id',
+                'price_rule_id',
+                'scheduled_at',
+                'pricing_snapshot',
+                'status',
+            ]), $payload);
+
+            $this->assertNoScheduleConflict($merged, $showtime->id);
+
+            $showtime->update($payload);
+            $showtime->load(['movie', 'screen', 'screen.theater', 'format']);
+
+            return $showtime;
+        }, self::TRANSACTION_ATTEMPTS);
     }
 
     /**
@@ -81,8 +113,121 @@ class ShowtimeService
      */
     public function delete(int $id): bool
     {
-        $showtime = Showtime::findOrFail($id);
-        return (bool) $showtime->delete();
+        return DB::transaction(function () use ($id): bool {
+            $showtime = Showtime::query()
+                ->withCount(['orders', 'seatHolds'])
+                ->lockForUpdate()
+                ->findOrFail($id);
+
+            if ($showtime->orders_count > 0 || $showtime->seat_holds_count > 0) {
+                throw ValidationException::withMessages([
+                    'showtime' => 'Cannot delete a showtime with existing orders or seat holds.',
+                ]);
+            }
+
+            return (bool) $showtime->delete();
+        }, self::TRANSACTION_ATTEMPTS);
+    }
+
+    /**
+     * Bulk create showtimes across a date range with multiple times per day.
+     *
+     * @param array $data Contains: movie_id, screen_id, date_from, date_to, times[], format_id?, version_type_id?
+     * @return array ['created' => int, 'skipped' => int]
+     */
+    public function bulkCreateDateRange(array $data): array
+    {
+        return DB::transaction(function () use ($data): array {
+            $created = 0;
+            $skipped = 0;
+            $from = new \DateTime($data['date_from']);
+            $to = new \DateTime($data['date_to']);
+            $to->modify('+1 day'); // inclusive
+
+            $base = $this->showtimePayload([
+                'movie_id' => $data['movie_id'],
+                'screen_id' => $data['screen_id'],
+                'format_id' => $data['format_id'] ?? null,
+                'version_type_id' => $data['version_type_id'] ?? null,
+                'status' => 1,
+            ]);
+
+            for ($d = clone $from; $d < $to; $d->modify('+1 day')) {
+                foreach ($data['times'] as $time) {
+                    $payload = array_merge($base, [
+                        'scheduled_at' => $d->format('Y-m-d') . ' ' . $time . ':00',
+                    ]);
+
+                    if ($this->hasScheduleConflict($payload)) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    Showtime::create($payload);
+                    $created++;
+                }
+            }
+
+            return ['created' => $created, 'skipped' => $skipped];
+        }, self::TRANSACTION_ATTEMPTS);
+    }
+
+    /**
+     * Bulk create showtimes for a single day with multiple time/screen slots.
+     *
+     * @param array $data Contains: movie_id, date, slots[{time, screen_id}], format_id?, version_type_id?, status?
+     * @return array ['created' => int, 'skipped' => int]
+     */
+    public function bulkCreateSingleDay(array $data): array
+    {
+        return DB::transaction(function () use ($data): array {
+            $created = 0;
+            $skipped = 0;
+
+            foreach ($data['slots'] as $slot) {
+                $payload = $this->showtimePayload([
+                    'movie_id' => $data['movie_id'],
+                    'screen_id' => $slot['screen_id'],
+                    'scheduled_at' => $data['date'] . ' ' . $slot['time'] . ':00',
+                    'format_id' => $data['format_id'] ?? null,
+                    'version_type_id' => $data['version_type_id'] ?? null,
+                    'status' => $data['status'] ?? 1,
+                ]);
+
+                if ($this->hasScheduleConflict($payload)) {
+                    $skipped++;
+                    continue;
+                }
+
+                Showtime::create($payload);
+                $created++;
+            }
+
+            return ['created' => $created, 'skipped' => $skipped];
+        }, self::TRANSACTION_ATTEMPTS);
+    }
+
+    /**
+     * Get a showtime that is allowed to enter the booking flow.
+     */
+    public function getBookableShowtimeForBookingPage(int $showtimeId): Showtime
+    {
+        $showtime = Showtime::with([
+            'movie',
+            'screen.theater',
+            'format',
+            'versionType',
+        ])->findOrFail($showtimeId);
+
+        if ((int) $showtime->status !== 1) {
+            throw new HttpException(403, 'Suất chiếu này không khả dụng.');
+        }
+
+        if ($showtime->scheduled_at === null || $showtime->scheduled_at->isPast()) {
+            throw new HttpException(403, 'Suất chiếu này đã bắt đầu hoặc kết thúc. Không thể đặt vé.');
+        }
+
+        return $showtime;
     }
 
     /**
@@ -208,51 +353,127 @@ class ShowtimeService
     }
 
     /**
+     * Return only fields that are safe for showtime creation/update.
+     */
+    private function showtimePayload(array $data): array
+    {
+        return Arr::only($data, [
+            'movie_id',
+            'screen_id',
+            'format_id',
+            'version_type_id',
+            'price_rule_id',
+            'scheduled_at',
+            'pricing_snapshot',
+            'status',
+        ]);
+    }
+
+    /**
+     * Assert that a showtime does not overlap another showtime in the same screen.
+     */
+    private function assertNoScheduleConflict(array $payload, ?int $ignoreShowtimeId = null): void
+    {
+        if ($this->hasScheduleConflict($payload, $ignoreShowtimeId)) {
+            throw ValidationException::withMessages([
+                'scheduled_at' => 'The selected screen already has an overlapping showtime.',
+            ]);
+        }
+    }
+
+    /**
+     * Check schedule overlap using the movie duration and same-screen locking.
+     */
+    private function hasScheduleConflict(array $payload, ?int $ignoreShowtimeId = null): bool
+    {
+        if (empty($payload['movie_id']) || empty($payload['screen_id']) || empty($payload['scheduled_at'])) {
+            return false;
+        }
+
+        $movie = Movie::query()
+            ->select(['id', 'duration'])
+            ->lockForUpdate()
+            ->findOrFail((int) $payload['movie_id']);
+
+        $duration = max((int) $movie->duration, 1);
+        $start = Carbon::parse($payload['scheduled_at']);
+        $end = $start->copy()->addMinutes($duration);
+
+        return Showtime::query()
+            ->select(['id', 'movie_id', 'scheduled_at'])
+            ->with('movie:id,duration')
+            ->where('screen_id', (int) $payload['screen_id'])
+            ->where('scheduled_at', '<', $end)
+            ->when($ignoreShowtimeId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreShowtimeId))
+            ->orderBy('scheduled_at')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get()
+            ->contains(function (Showtime $showtime) use ($start): bool {
+                $existingDuration = max((int) $showtime->movie?->duration, 1);
+                $existingEnd = $showtime->scheduled_at->copy()->addMinutes($existingDuration);
+
+                return $existingEnd->greaterThan($start);
+            });
+    }
+
+    /**
+     * Escape SQL LIKE wildcards.
+     */
+    private function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+    }
+
+    /**
      * Apply filters to showtime query based on request parameters.
      */
-    private function applyFilters(Builder $query, Request $request): Builder
+    private function applyFilters(Builder $query, array $filters): Builder
     {
-        if ($request->filled('movie_id')) {
-            $query->where('movie_id', $request->movie_id);
+        if (! empty($filters['movie_id'])) {
+            $query->where('movie_id', $filters['movie_id']);
         }
 
-        if ($request->filled('screen_id')) {
-            $query->where('screen_id', $request->screen_id);
+        if (! empty($filters['screen_id'])) {
+            $query->where('screen_id', $filters['screen_id']);
         }
 
-        if ($request->filled('theater_id')) {
-            $query->whereHas('screen', fn ($q) => $q->where('theater_id', $request->theater_id));
+        if (! empty($filters['theater_id'])) {
+            $query->whereHas('screen', fn ($q) => $q->where('theater_id', $filters['theater_id']));
         }
 
-        if ($request->filled('format_id')) {
-            $query->where('format_id', $request->format_id);
+        if (! empty($filters['format_id'])) {
+            $query->where('format_id', $filters['format_id']);
         }
 
-        if ($request->filled('date')) {
-            $query->whereDate('scheduled_at', $request->date);
+        if (! empty($filters['date'])) {
+            $query->whereBetween('scheduled_at', [
+                Carbon::parse($filters['date'])->startOfDay(),
+                Carbon::parse($filters['date'])->endOfDay(),
+            ]);
         }
 
-        if ($request->filled('date_from')) {
-            $query->whereDate('scheduled_at', '>=', $request->date_from);
+        if (! empty($filters['date_from'])) {
+            $query->where('scheduled_at', '>=', Carbon::parse($filters['date_from'])->startOfDay());
         }
 
-        if ($request->filled('date_to')) {
-            $query->whereDate('scheduled_at', '<=', $request->date_to);
+        if (! empty($filters['date_to'])) {
+            $query->where('scheduled_at', '<=', Carbon::parse($filters['date_to'])->endOfDay());
         }
 
-        $status = $request->query('status', 'active');
+        $status = $filters['status'] ?? 'active';
         if ($status === 'active') {
             $query->where('status', 1);
         } elseif ($status === 'inactive') {
             $query->where('status', 0);
         }
 
-        if ($request->boolean('upcoming', true)) {
+        if (($filters['upcoming'] ?? true) === true) {
             $query->where('scheduled_at', '>=', now());
         }
 
-        if ($request->filled('q')) {
-            $search = $request->q;
+        if (! empty($filters['q'])) {
+            $search = $this->escapeLike((string) $filters['q']);
             $query->whereHas('movie', fn ($q) => $q->where('title', 'like', "%{$search}%"));
         }
 
@@ -262,10 +483,10 @@ class ShowtimeService
     /**
      * Apply sorting to showtime query.
      */
-    private function applySorting(Builder $query, Request $request): Builder
+    private function applySorting(Builder $query, array $filters): Builder
     {
-        $sortField = $request->query('sort_by', 'scheduled_at');
-        $sortDir = $request->query('sort_dir', 'asc');
+        $sortField = $filters['sort_by'] ?? 'scheduled_at';
+        $sortDir = $filters['sort_dir'] ?? 'asc';
 
         $allowedSortFields = ['scheduled_at', 'created_at'];
         if (!in_array($sortField, $allowedSortFields, true)) {

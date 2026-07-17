@@ -2,14 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Branch;
-use App\Models\Format;
-use App\Models\SeatType;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\View\View;
 
 class PricePageController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         return view('users.prices.index');
     }

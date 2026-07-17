@@ -20,6 +20,8 @@ class AdminOrdersManager {
         
         this.orders = [];
         this.lastPage = 1;
+        this.loadRequest = null;
+        this.loadRequestId = 0;
         
         this.initElements();
         this.attachEvents();
@@ -154,12 +156,13 @@ class AdminOrdersManager {
             if (this.filters.date) params.append('date', this.filters.date);
             if (this.filters.search) params.append('search', this.filters.search);
             
-            // TODO: Replace with actual admin endpoint when available
-            // const url = `/admin/orders?${params}`;
-            const url = `/orders/user/me?${params}`;
-            console.warn('⚠️ Using user endpoint. Admin endpoint /api/v1/admin/orders not available yet.');
+            const url = `/admin/orders?${params}`;
             
-            const result = await this.apiRequest(url);
+            this.loadRequest?.abort();
+            this.loadRequest = new AbortController();
+            const requestId = ++this.loadRequestId;
+            const result = await this.apiRequest(url, { signal: this.loadRequest.signal });
+            if (requestId !== this.loadRequestId) return;
             
             if (!result.success) throw new Error(result.message || 'Không thể tải đơn hàng.');
             
@@ -172,6 +175,7 @@ class AdminOrdersManager {
             this.updateOrderCount(result.data.meta?.total || 0);
             
         } catch (err) {
+            if (err.name === 'AbortError') return;
             console.error('[Orders] Load orders error:', err);
             this.showToast('Lỗi tải danh sách đơn hàng: ' + err.message, 'danger');
         } finally {
@@ -192,19 +196,22 @@ class AdminOrdersManager {
         
         this.els.empty?.classList.add('d-none');
         this.els.grid.innerHTML = this.orders.map(order => this.buildOrderCard(order)).join('');
+        this.els.grid.querySelectorAll('[data-order-id]').forEach((button) => {
+            button.addEventListener('click', () => this.showOrderDetail(button.dataset.orderId));
+        });
     }
     
     buildOrderCard(order) {
         // Extract first ticket/showtime for poster
         const firstTicket = order.tickets?.[0] || {};
-        const showtime = firstTicket.showtime || {};
+        const showtime = order.showtime || firstTicket.showtime || {};
         const movie = showtime.movie || {};
         const screen = showtime.screen || {};
         const theater = screen.theater || {};
         const user = order.user || {};
         
         const title = this.esc(movie.title || 'Chưa rõ');
-        const poster = movie.poster_url || '/images/placeholder.jpg';
+        const poster = this.safeImageUrl(movie.poster_url);
         const rating = movie.age_rating || '';
         const theaterName = this.esc(theater.name || 'Chưa rõ');
         const screenName = this.esc(screen.name || '');
@@ -262,7 +269,7 @@ class AdminOrdersManager {
             
             <div class="ticket-actions">
                 <button class="ticket-detail-btn" type="button"
-                        onclick="window.adminOrdersManager.showOrderDetail('${this.esc(order.code)}')">
+                        data-order-id="${this.esc(order.id)}">
                     <i class="bi bi-eye"></i> Chi tiết
                 </button>
             </div>
@@ -283,7 +290,7 @@ class AdminOrdersManager {
         document.body.classList.add('modal-open');
         
         try {
-            const result = await this.apiRequest(`/orders/${encodeURIComponent(orderCode)}`);
+            const result = await this.apiRequest(`/admin/orders/${encodeURIComponent(orderCode)}`);
             if (!result.success) throw new Error(result.message);
             this.renderOrderModal(result.data);
         } catch (err) {
@@ -296,7 +303,7 @@ class AdminOrdersManager {
         
         const user = order.user || {};
         const firstTicket = order.tickets?.[0] || {};
-        const showtime = firstTicket.showtime || {};
+        const showtime = order.showtime || firstTicket.showtime || {};
         const movie = showtime.movie || {};
         const screen = showtime.screen || {};
         const theater = screen.theater || {};
@@ -484,11 +491,18 @@ class AdminOrdersManager {
     esc(str) {
         if (str == null) return '';
         return String(str)
-            .replace(/&/g, '&')
-            .replace(/</g, '<')
-            .replace(/>/g, '>')
-            .replace(/"/g, '"')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    safeImageUrl(value) {
+        const candidate = String(value || '');
+        if (/^\/[A-Za-z0-9_./?=&%-]*$/.test(candidate)) return candidate;
+        if (/^https?:\/\/[^\s"'<>]+$/i.test(candidate)) return candidate;
+        return '/images/placeholder.jpg';
     }
     
     async apiRequest(endpoint, options = {}) {

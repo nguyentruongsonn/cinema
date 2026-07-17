@@ -25,10 +25,7 @@ class Payment extends Model
         'transaction_code',
         'gateway_order_code',
         'amount',
-        'status',
         'payload',
-        'paid_at',
-        'failed_at',
     ];
 
     protected $casts = [
@@ -64,6 +61,87 @@ class Payment extends Model
     public function scopeFailed($query)
     {
         return $query->where('status', self::STATUS_FAILED);
+    }
+
+    /**
+     * Create an auditable pending payment without allowing callers to
+     * mass-assign lifecycle fields.
+     */
+    public static function createPending(array $attributes): self
+    {
+        $payment = new self($attributes);
+        $payment->status = self::STATUS_PENDING;
+        $payment->save();
+
+        return $payment;
+    }
+
+    public function markPending(): self
+    {
+        if ($this->status !== self::STATUS_PENDING) {
+            $this->status = self::STATUS_PENDING;
+            $this->paid_at = null;
+            $this->failed_at = null;
+            $this->save();
+        }
+
+        return $this;
+    }
+
+    public function markProcessing(): self
+    {
+        if (!in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING], true)) {
+            throw new \LogicException('Payment không ở trạng thái có thể xử lý.');
+        }
+
+        $this->status = self::STATUS_PROCESSING;
+        $this->save();
+
+        return $this;
+    }
+
+    public function markSuccessful(?\DateTimeInterface $paidAt = null): self
+    {
+        if ($this->status === self::STATUS_SUCCESS) {
+            return $this;
+        }
+
+        if (!in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING], true)) {
+            throw new \LogicException('Payment không ở trạng thái có thể chuyển thành công.');
+        }
+
+        $this->status = self::STATUS_SUCCESS;
+        $this->paid_at = $paidAt ?? now();
+        $this->failed_at = null;
+        $this->save();
+
+        return $this;
+    }
+
+    public function markFailed(?\DateTimeInterface $failedAt = null): self
+    {
+        if ($this->status === self::STATUS_SUCCESS || $this->status === self::STATUS_REFUNDED) {
+            throw new \LogicException('Không thể đánh dấu payment đã hoàn tất là thất bại.');
+        }
+
+        $this->status = self::STATUS_FAILED;
+        $this->failed_at = $failedAt ?? now();
+        $this->save();
+
+        return $this;
+    }
+
+    public function markCancelled(?\DateTimeInterface $cancelledAt = null): self
+    {
+        if ($this->status === self::STATUS_SUCCESS || $this->status === self::STATUS_REFUNDED) {
+            throw new \LogicException('Không thể hủy payment đã hoàn tất.');
+        }
+
+        $this->status = self::STATUS_CANCELLED;
+        $this->failed_at = $cancelledAt ?? now();
+        $this->save();
+
+        return $this;
     }
 
     // Helper: check if payment is successful

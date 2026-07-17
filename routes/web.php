@@ -19,7 +19,9 @@ Route::view('/movies/{idOrSlug}', 'users.movies.show')->name('movies.show');
 Route::view('/theaters', 'users.theaters.index')->name('theaters.index');
 Route::get('/prices', [\App\Http\Controllers\PricePageController::class, 'index'])->name('prices.index');
 
-Route::get('/booking/{encryptedShowtimeId}', [BookingController::class, 'show'])->name('booking.show');
+Route::get('/booking/{encryptedShowtimeId}', [BookingController::class, 'show'])
+    ->middleware('throttle:booking')
+    ->name('booking.show');
 Route::get('/payment/{order}', [PaymentController::class, 'index'])->name('payment.index');
 
 // Profile routes - auth handled by SSR (@guest/@auth directives in views)
@@ -28,9 +30,15 @@ Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index
 
 
 // PayOS Payment Gateway Callbacks
-Route::get('/payment/payos/callback', [PaymentController::class, 'payosCallback'])->name('payment.payos.callback');
-Route::get('/payment/payos/cancel', [PaymentController::class, 'payosCancel'])->name('payment.payos.cancel');
-Route::post('/payment/payos/webhook', [PaymentController::class, 'payosWebhook'])->name('payment.payos.webhook');
+Route::get('/payment/payos/callback', [PaymentController::class, 'payosCallback'])
+    ->middleware('throttle:payments')
+    ->name('payment.payos.callback');
+Route::get('/payment/payos/cancel', [PaymentController::class, 'payosCancel'])
+    ->middleware('throttle:payments')
+    ->name('payment.payos.cancel');
+Route::post('/payment/payos/webhook', [PaymentController::class, 'payosWebhook'])
+    ->middleware(['throttle:webhook', 'verify.payos'])
+    ->name('payment.payos.webhook');
 // Admin Panel Routes
 Route::prefix('admin')->middleware(['admin'])->group(function () {
     Route::view('/dashboard', 'admin.dashboard')->name('admin.dashboard');
@@ -42,7 +50,7 @@ Route::prefix('admin')->middleware(['admin'])->group(function () {
     Route::view('/combos/stats', 'admin.combos.stats')->name('admin.combos.stats');
     Route::view('/showtimes', 'admin.showtimes.index')->name('admin.showtimes.index');
     Route::view('/orders', 'admin.orders.index')->name('admin.orders.index');
-    
+
     // Branches
     Route::view('branches', 'admin.branches.index')->name('admin.branches.index');
 

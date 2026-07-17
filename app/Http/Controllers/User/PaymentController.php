@@ -6,20 +6,16 @@ use App\Exceptions\PaymentGatewayException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatePaymentRequest;
 use App\Http\Resources\OrderSummaryResource;
-use App\Services\PaymentService;
-use App\Services\OrderService;
-use App\Traits\ApiResponse;
-use App\Models\User;
 use App\Models\Order;
 use App\Models\Showtime;
+use App\Models\User;
+use App\Services\OrderService;
+use App\Services\PaymentService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
 
-/**
- * Xử lý thanh toán: tạo đơn, webhook, xem đơn hàng.
- * Logic nghiệp vụ nằm trong PaymentService và các service con.
- */
 class PaymentController extends Controller
 {
     use ApiResponse;
@@ -29,13 +25,10 @@ class PaymentController extends Controller
         private readonly OrderService $orderService
     ) {}
 
-    /**
-     * Tạo đơn hàng và link thanh toán PayOS.
-     * POST /api/payments
-     */
     public function createPayment(CreatePaymentRequest $request): JsonResponse
     {
         $user = $request->user();
+
         if (! $user instanceof User) {
             return $this->unauthorized();
         }
@@ -45,31 +38,32 @@ class PaymentController extends Controller
             ->findOrFail($request->validated('showtime_id'));
 
         try {
+            $validated = $request->validated();
+
             $result = $this->paymentService->initiate(
                 $user,
                 $showtime,
-                $request->validated(),
+                $validated,
                 url(''),
+                $validated['idempotency_key'] ?? throw new \InvalidArgumentException('Idempotency key is required'),
             );
 
             return $this->ok([
-                'checkout_url'       => $result['checkout_url'],
+                'checkout_url' => $result['checkout_url'],
                 'gateway_order_code' => $result['gateway_order_code'],
-                'order_number'       => $result['order_number'],
+                'order_number' => $result['order_number'],
             ], 'Tạo đơn hàng thành công.');
-
         } catch (PaymentGatewayException $e) {
-            return $this->error('Lỗi cổng thanh toán: ' . $e->getMessage(), 502);
+            report($e);
+
+            return $this->error('Cổng thanh toán tạm thời không khả dụng.', 502);
         } catch (Throwable $e) {
             report($e);
+
             return $this->error('Đã xảy ra lỗi khi xử lý thanh toán.', 500);
         }
     }
 
-    /**
-     * Nhận callback webhook từ PayOS sau khi giao dịch xử lý.
-     * POST /api/payos/webhook
-     */
     public function handleWebhook(Request $request): JsonResponse
     {
         try {
@@ -77,36 +71,35 @@ class PaymentController extends Controller
 
             return $this->ok([], match (true) {
                 $result['already_processed'] ?? false => 'Đơn hàng đã được xử lý trước đó.',
-                $result['skipped']           ?? false => 'Bỏ qua webhook không phải thanh toán thành công.',
-                default                               => 'Thanh toán thành công.',
+                $result['skipped'] ?? false => 'Bỏ qua webhook không phải thanh toán thành công.',
+                default => 'Thanh toán thành công.',
             });
         } catch (\InvalidArgumentException $e) {
-            return $this->error($e->getMessage(), 400);
+            report($e);
+
+            return $this->error('Dữ liệu webhook không hợp lệ.', 400);
         } catch (Throwable $e) {
             report($e);
+
             return $this->error('Lỗi xử lý webhook.', 500);
         }
     }
 
-    /**
-     * Trả về thông tin chi tiết đơn hàng (JSON cho frontend polling).
-     * GET /api/payments/orders/{orderCode}
-     */
     public function showOrderSummary(Request $request, int $orderCode): JsonResponse
     {
         $user = $request->user();
+
         if (! $user instanceof User) {
             return $this->unauthorized();
         }
 
         $order = $this->orderService->findByGatewayCode($orderCode);
 
-        if (!$order || $order->user_id !== $user->id) {
+        if (! $order || $order->user_id !== $user->id) {
             return $this->notFound('Không tìm thấy đơn hàng yêu cầu.');
         }
 
-        // Đồng bộ trạng thái từ PayOS nếu chưa paid
-        if ($order->status !== Order::STATUS_PAID) {
+        if (! $order->isPaid()) {
             $this->paymentService->syncFromGateway($order);
         }
 

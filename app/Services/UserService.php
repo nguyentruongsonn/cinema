@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Role;
+use App\Models\RefreshToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class UserService
 {
@@ -18,51 +20,70 @@ class UserService
     {
         $query = User::with('role');
 
-        // Search by name or email
+        // Search by name or email - bounded and normalized
         if (!empty($filters['search'])) {
-            $search = $filters['search'];
+            $search = trim((string) $filters['search']);
+
+            // Limit search length to prevent expensive queries
+            if (mb_strlen($search) > 100) {
+                throw new \InvalidArgumentException('Search query is too long (max 100 characters).');
+            }
+
+            // Use prefix search for indexed fields (email, username, phone) and LIKE for name
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('username', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                  ->orWhere('email', 'like', "{$search}%")
+                  ->orWhere('username', 'like', "{$search}%")
+                  ->orWhere('phone', 'like', "{$search}%");
             });
         }
 
-        // Filter by role
+        // Filter by role - fail closed on invalid role
         if (!empty($filters['role'])) {
-            $roleId = Role::where('slug', $filters['role'])->value('id');
-            if ($roleId) {
+            $roleId = Role::query()->where('slug', '=', $filters['role'])->value('id');
+            if (!$roleId) {
+                // Invalid role returns no results instead of ignoring filter
+                $query->whereRaw('1 = 0');
+            } else {
                 $query->where('role_id', $roleId);
             }
         }
 
-        // Filter by status
+        // Filter by status - use strict boolean validation
         if (isset($filters['status']) && $filters['status'] !== '') {
-            $query->where('status', (bool) $filters['status']);
+            $status = filter_var($filters['status'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($status !== null) {
+                $query->where('status', $status);
+            }
         }
 
-        // Filter by email verification
+        // Filter by email verification - use strict boolean validation
         if (isset($filters['verified']) && $filters['verified'] !== '') {
-            if ($filters['verified']) {
-                $query->whereNotNull('email_verified_at');
-            } else {
-                $query->whereNull('email_verified_at');
+            $verified = filter_var($filters['verified'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($verified !== null) {
+                if ($verified) {
+                    $query->whereNotNull('email_verified_at');
+                } else {
+                    $query->whereNull('email_verified_at');
+                }
             }
         }
 
         // Order by
-        $sortBy = $filters['sort_by'] ?? 'created_at';
-        $sortOrder = $filters['sort_order'] ?? 'desc';
-        $query->orderBy($sortBy, $sortOrder);
+        $allowedSorts = ['created_at', 'name', 'email', 'username', 'status'];
+        $sortBy = in_array($filters['sort_by'] ?? '', $allowedSorts, true)
+            ? $filters['sort_by']
+            : 'created_at';
+        $sortOrder = ($filters['sort_order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+        $perPage = min(max($perPage, 1), 100);
 
-        return $query->paginate($perPage);
+        return $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
     }
 
     /**
      * Create new user
      */
-    public function createUser(array $data): User
+    public function createUser(array $data, ?int $roleId = null, bool $status = true): User
     {
         try {
             DB::beginTransaction();
@@ -72,32 +93,38 @@ class UserService
                 $data['password'] = Hash::make($data['password']);
             }
 
-            // Set default values
-            $data['status'] = $data['status'] ?? true;
-            $data['loyalty_points'] = $data['loyalty_points'] ?? 0;
+            $allowedFields = [
+                'name',
+                'username',
+                'email',
+                'phone',
+                'birthday',
+                'gender',
+                'avatar_url',
+                'password',
+            ];
+            $userData = array_intersect_key($data, array_flip($allowedFields));
+            $userData['status'] = $status;
+            $userData['loyalty_points'] = 0;
 
-            // Create user
-            $user = User::create($data);
+            $user = User::create($userData);
 
-            // Assign role if provided (now single role, not multiple)
-            if (!empty($data['role_id'])) {
-                $user->role_id = $data['role_id'];
-                $user->save();
-            } elseif (!empty($data['roles'])) {
-                // Backward compatibility: if 'roles' is provided, take first one
-                $roleId = is_array($data['roles']) ? $data['roles'][0] : $data['roles'];
+            if ($roleId !== null) {
                 $user->role_id = $roleId;
                 $user->save();
             }
 
             DB::commit();
 
-            Log::info('User created', ['user_id' => $user->id, 'email' => $user->email]);
+            Log::info('User created', ['user_id' => $user->id]);
 
             return $user->load('role');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to create user', ['error' => $e->getMessage()]);
+            Log::error('Failed to create user', [
+                'user_id' => $user->id ?? null,
+                'error' => 'User creation failed'
+            ]);
             throw $e;
         }
     }
@@ -107,40 +134,101 @@ class UserService
      */
     public function updateUser(User $user, array $data): User
     {
-        try {
-            DB::beginTransaction();
+        $allowedFields = [
+            'name',
+            'username',
+            'email',
+            'phone',
+            'birthday',
+            'gender',
+            'avatar_url',
+            'address',
+            'password',
+        ];
 
-            // Hash password if provided and changed
-            if (!empty($data['password'])) {
-                $data['password'] = Hash::make($data['password']);
-            } else {
-                unset($data['password']);
-            }
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
 
-            // Update user
-            $user->update($data);
+        $profileData = array_intersect_key($data, array_flip($allowedFields));
 
-            // Update role if provided (now single role, not multiple)
-            if (isset($data['role_id'])) {
-                $user->role_id = $data['role_id'];
-                $user->save();
-            } elseif (isset($data['roles'])) {
-                // Backward compatibility: if 'roles' is provided, take first one
-                $roleId = is_array($data['roles']) ? $data['roles'][0] : $data['roles'];
-                $user->role_id = $roleId;
-                $user->save();
-            }
+        return DB::transaction(function () use ($user, $profileData) {
+            $user->fill($profileData);
+            $user->save();
 
-            DB::commit();
-
-            Log::info('User updated', ['user_id' => $user->id]);
+            Log::info('User profile updated', ['user_id' => $user->id]);
 
             return $user->fresh('role');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to update user', ['user_id' => $user->id, 'error' => $e->getMessage()]);
-            throw $e;
+        });
+    }
+
+    public function updateRole(User $user, int $roleId): User
+    {
+        return DB::transaction(function () use ($user, $roleId) {
+            $role = Role::query()->findOrFail($roleId);
+            $user->role_id = $role->id;
+            $user->save();
+
+            Log::info('User role updated', [
+                'user_id' => $user->id,
+                'role_id' => $role->id,
+            ]);
+
+            return $user->fresh('role');
+        });
+    }
+
+    public function updateLoyaltyPoints(User $user, int $loyaltyPoints): User
+    {
+        if ($loyaltyPoints < 0) {
+            throw new \InvalidArgumentException('Loyalty points cannot be negative.');
         }
+
+        return DB::transaction(function () use ($user, $loyaltyPoints) {
+            $user->loyalty_points = $loyaltyPoints;
+            $user->save();
+
+            Log::info('User loyalty points updated', [
+                'user_id' => $user->id,
+                'loyalty_points' => $loyaltyPoints,
+            ]);
+
+            return $user->fresh('role');
+        });
+    }
+
+    public function updateStatus(User $user, bool $status): User
+    {
+        return DB::transaction(function () use ($user, $status) {
+            $lockedUser = User::query()
+                ->with('role')
+                ->whereKey($user->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Prevent disabling the only active admin
+            if (!$status && $lockedUser->role && $lockedUser->role->slug === 'admin') {
+                $activeAdminCount = User::query()
+                    ->whereHas('role', fn($q) => $q->where('slug', '=', 'admin'))
+                    ->where('status', true)
+                    ->where('id', '!=', $lockedUser->id)
+                    ->count();
+
+                if ($activeAdminCount === 0) {
+                    throw new \DomainException('Cannot disable the last active admin.');
+                }
+            }
+
+            $lockedUser->status = $status;
+            $lockedUser->save();
+
+            Log::info('User status updated', [
+                'user_id' => $lockedUser->id,
+                'status' => $status,
+            ]);
+
+            return $lockedUser->fresh('role');
+        });
     }
 
     /**
@@ -148,82 +236,93 @@ class UserService
      */
     public function deleteUser(User $user): bool
     {
-        try {
-            DB::beginTransaction();
+        return DB::transaction(function () use ($user) {
+            $lockedUser = User::query()
+                ->whereKey($user->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
 
             // Check if user has active orders
-            if ($user->orders()->whereIn('status', ['pending', 'processing'])->exists()) {
-                throw new \Exception('Cannot delete user with active orders');
+            if ($lockedUser->orders()->whereIn('status', ['pending', 'processing'])->exists()) {
+                throw new \DomainException('Cannot delete user with active orders');
             }
 
-            $user->delete();
+            // Revoke all refresh tokens before deleting
+            RefreshToken::revokeAllForUser($lockedUser->id);
 
-            DB::commit();
+            $userId = $lockedUser->id;
+            $lockedUser->delete();
 
-            Log::info('User deleted', ['user_id' => $user->id]);
+            Log::info('User deleted', ['user_id' => $userId]);
 
             return true;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to delete user', ['user_id' => $user->id, 'error' => $e->getMessage()]);
-            throw $e;
-        }
+        });
     }
 
     /**
-     * Toggle user status
+     * Toggle user status with safeguards
      */
     public function toggleStatus(User $user): User
     {
-        $user->update(['status' => !$user->status]);
+        $lockedUser = User::query()
+            ->whereKey($user->getKey())
+            ->firstOrFail();
 
-        Log::info('User status toggled', [
-            'user_id' => $user->id,
-            'new_status' => $user->status
-        ]);
-
-        return $user;
+        return $this->updateStatus($lockedUser, !(bool) $lockedUser->status);
     }
 
     /**
-     * Reset user password
+     * Reset user password and revoke all sessions
      */
     public function resetPassword(User $user, string $newPassword): bool
     {
-        try {
-            $user->update([
-                'password' => Hash::make($newPassword)
-            ]);
+        return DB::transaction(function () use ($user, $newPassword) {
+            $user->password = Hash::make($newPassword);
+            $user->save();
+
+            // Revoke all refresh tokens to force re-login
+            RefreshToken::revokeAllForUser($user->id);
 
             Log::info('User password reset', ['user_id' => $user->id]);
 
             return true;
-        } catch (\Exception $e) {
-            Log::error('Failed to reset password', ['user_id' => $user->id, 'error' => $e->getMessage()]);
-            throw $e;
-        }
+        });
     }
 
     /**
      * Get all roles for dropdown
      */
-    public function getAllRoles()
+    public function getAllRoles(): Collection
     {
-        return Role::orderBy('name')->get();
+        return Role::query()
+            ->select(['id', 'name', 'slug', 'description'])
+            ->orderBy('name')
+            ->get();
     }
 
     /**
-     * Get user statistics
+     * Get user statistics in a single optimized query
      */
     public function getUserStats(): array
     {
+        $stats = DB::table('users')
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as inactive,
+                SUM(CASE WHEN email_verified_at IS NOT NULL THEN 1 ELSE 0 END) as verified,
+                SUM(CASE WHEN email_verified_at IS NULL THEN 1 ELSE 0 END) as unverified,
+                SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as recent
+            ', [now()->subDays(7)])
+            ->first();
+
         return [
-            'total' => User::count(),
-            'active' => User::where('status', true)->count(),
-            'inactive' => User::where('status', false)->count(),
-            'verified' => User::whereNotNull('email_verified_at')->count(),
-            'unverified' => User::whereNull('email_verified_at')->count(),
-            'recent' => User::where('created_at', '>=', now()->subDays(7))->count(),
+            'total' => (int) $stats->total,
+            'active' => (int) $stats->active,
+            'inactive' => (int) $stats->inactive,
+            'verified' => (int) $stats->verified,
+            'unverified' => (int) $stats->unverified,
+            'recent' => (int) $stats->recent,
         ];
     }
 }

@@ -21,10 +21,12 @@ class BookingManager {
         this.selectedProducts = new Map();
         this.appliedPromotion = null;
         this.appliedPoints = 0;
+        this.checkoutIntent = null;
         this.availablePoints = 0;
         this.registeredPromotions = [];
         this.currentStep = 1; // Track current step (1-5)
         this.steps = ['seats', 'food', 'promotion', 'confirm', 'success'];
+        this.isCreatingPayment = false;
 
         // DOM Elements
         this.seatMapContainer = document.getElementById('seatMap');
@@ -317,7 +319,10 @@ class BookingManager {
             console.error('Lỗi load success screen:', error);
             this.showToast('Có lỗi xảy ra khi tải thông tin vé: ' + error.message, 'danger');
         } finally {
-            this.hideLoading();
+            if (this.checkoutIntent?.state !== 'redirecting') {
+                this.isCreatingPayment = false;
+                this.hideLoading();
+            }
         }
     }
 
@@ -465,16 +470,15 @@ class BookingManager {
             this.showToast(pointsToUse > 0 ? `Áp dụng thành công ${pointsToUse.toLocaleString('vi-VN')} điểm.` : 'Đã huỷ dùng điểm.', 'success');
         });
 
-        // Handle page unload (unlock seats)
-        window.addEventListener('beforeunload', () => {
+        // Release an uncommitted hold when the page lifecycle ends. A checkout
+        // intent that already has a gateway link must keep its hold alive.
+        window.addEventListener('pagehide', () => {
             const holdId = this.getCurrentHoldId();
-            if (!holdId) return;
+            if (!holdId || ['created', 'redirecting'].includes(this.checkoutIntent?.state)) return;
 
-            // sendBeacon only sends POST reliably, so use the legacy _method override
-            // route if middleware supports it. Normal user cancellation still uses DELETE.
             navigator.sendBeacon(
-                `${this.apiUrl}/seats/unlock/${holdId}`,
-                JSON.stringify({ _method: 'DELETE' })
+                `${this.apiUrl}/seats/holds/${holdId}/release`,
+                new Blob([JSON.stringify({ hold_id: holdId })], { type: 'application/json' })
             );
         });
     }
@@ -752,6 +756,7 @@ class BookingManager {
             console.error('Load seats error:', error);
             this.showToast(error.message || 'Lỗi khi tải ghế', 'danger');
         } finally {
+            this.isCreatingPayment = false;
             this.hideLoading();
         }
     }
@@ -1022,7 +1027,11 @@ class BookingManager {
             ? `<svg width="2em" height="1em" viewBox="0 0 48 24" ${fillAttr} class="seat-icon-shape">${getGradient(gradId, gradTop, gradBot)}<rect x="5" y="2" width="38" height="11" rx="2"/><rect x="4" y="14" width="40" height="5" rx="1"/><rect x="2" y="11" width="3" height="8" rx="1"/><rect x="43" y="11" width="3" height="8" rx="1"/></svg>`
             : `<svg width="1em" height="1em" viewBox="0 0 24 24" ${fillAttr} class="seat-icon-shape">${getGradient(gradId, gradTop, gradBot)}<rect x="5" y="2" width="14" height="11" rx="2"/><rect x="4" y="14" width="16" height="5" rx="1"/><rect x="2" y="11" width="3" height="8" rx="1"/><rect x="19" y="11" width="3" height="8" rx="1"/></svg>`;
 
-        seatDiv.innerHTML = `${icon}<span class="seat-label">${label}</span>`;
+        seatDiv.innerHTML = icon;
+        const seatLabel = document.createElement('span');
+        seatLabel.className = 'seat-label';
+        seatLabel.textContent = String(label ?? '');
+        seatDiv.appendChild(seatLabel);
 
         if (this.isLockingSeats && this.selectedSeats.has(seat.id)) {
             seatDiv.classList.add('seat-pending-hold');
@@ -1423,6 +1432,10 @@ class BookingManager {
     }
 
     async proceedToPayment() {
+        if (this.isCreatingPayment) {
+            return;
+        }
+
         if (this.lockPromise) {
             this.showLoading('Đang kiểm tra ghế...');
             try {
@@ -1445,8 +1458,6 @@ class BookingManager {
         }
 
         try {
-            this.showLoading('Đang tạo đơn hàng...');
-
             // Build items array matching CreatePaymentRequest
             const items = [];
 
@@ -1469,18 +1480,37 @@ class BookingManager {
                 });
             });
 
-            // Create order and payment link
+            const payload = {
+                showtime_id: this.config.showtimeId,
+                items,
+                voucher_code: this.appliedPromotion?.code || null,
+                points_used: this.appliedPoints || 0
+            };
+            const intent = this.getOrCreateCheckoutIntent(payload);
+
+            if (intent.state === 'created' || intent.state === 'redirecting') {
+                this.redirectToCheckout(intent);
+                return;
+            }
+
+            this.isCreatingPayment = true;
+            this.showLoading('Đang tạo đơn hàng...');
+            intent.state = 'submitting';
+
+            // Create order and payment link. The intent key is stable across
+            // retries for the same hold and checkout payload.
             const response = await this.fetchAPI('/payments', {
                 method: 'POST',
-                body: JSON.stringify({
-                    showtime_id: this.config.showtimeId,
-                    items: items,
-                    voucher_code: this.appliedPromotion?.code || null,
-                    points_used: this.appliedPoints || 0
-                })
+                body: {
+                    idempotency_key: intent.key,
+                    ...payload
+                }
             });
 
             if (response.success && response.data?.checkout_url) {
+                intent.state = 'created';
+                intent.checkoutUrl = response.data.checkout_url;
+                intent.orderCode = response.data?.gateway_order_code || null;
                 this.showToast('Đang chuyển hướng đến cổng thanh toán...', 'success');
 
                 // Store order code and subscribe to private WebSocket channel.
@@ -1492,22 +1522,59 @@ class BookingManager {
                     this.subscribeToOrderChannel(orderCode);
                 }
 
-                // Redirect directly to PayOS checkout
-                setTimeout(() => {
-                    window.location.href = response.data.checkout_url;
-                }, 1000);
+                // Redirect directly to PayOS checkout while keeping the intent
+                // active if navigation is delayed or blocked by the browser.
+                this.redirectToCheckout(intent);
             } else {
                 throw new Error(response.message || 'Không thể tạo đơn hàng');
             }
         } catch (error) {
             console.error('Create order error:', error);
+            if (this.checkoutIntent?.state === 'submitting') {
+                this.checkoutIntent.state = 'retryable';
+            }
             this.showToast(error.message || 'Lỗi khi tạo đơn hàng', 'danger');
 
             // Reload seats to get latest status
             await this.loadSeats();
         } finally {
+            this.isCreatingPayment = false;
             this.hideLoading();
         }
+    }
+
+    getOrCreateCheckoutIntent(payload) {
+        const fingerprint = JSON.stringify({
+            hold_id: this.getCurrentHoldId(),
+            showtime_id: payload.showtime_id,
+            items: [...payload.items].sort((left, right) => {
+                const leftKey = `${left.type}:${left.id}`;
+                const rightKey = `${right.type}:${right.id}`;
+                return leftKey.localeCompare(rightKey);
+            }),
+            voucher_code: payload.voucher_code,
+            points_used: payload.points_used
+        });
+
+        if (!this.checkoutIntent || this.checkoutIntent.fingerprint !== fingerprint) {
+            this.checkoutIntent = {
+                key: this.createIdempotencyKey(),
+                fingerprint,
+                state: 'idle',
+                checkoutUrl: null,
+                orderCode: null
+            };
+        }
+
+        return this.checkoutIntent;
+    }
+
+    redirectToCheckout(intent) {
+        if (!intent?.checkoutUrl) return;
+
+        intent.state = 'redirecting';
+        this.isCreatingPayment = true;
+        window.location.href = intent.checkoutUrl;
     }
 
     fillPromotionCode(code) {
@@ -1981,6 +2048,18 @@ class BookingManager {
         return this.currentHold?.hold_id || this.currentHold?.id || null;
     }
 
+    createIdempotencyKey() {
+        if (window.crypto?.randomUUID) {
+            return window.crypto.randomUUID();
+        }
+
+        return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (character) => {
+            const numericCharacter = Number(character);
+            const randomValue = window.crypto.getRandomValues(new Uint8Array(1))[0];
+
+            return (numericCharacter ^ (randomValue & (15 >> (numericCharacter / 4)))).toString(16);
+        });
+    }
     // Utility Methods
     async fetchAPI(endpoint, options = {}) {
         if (!window.apiClient) {
@@ -1988,7 +2067,9 @@ class BookingManager {
         }
 
         const method = String(options.method || 'GET').toUpperCase();
-        const body = options.body ? JSON.parse(options.body) : null;
+        const body = typeof options.body === 'string'
+            ? JSON.parse(options.body)
+            : options.body ?? null;
         const requestOptions = { ...options };
 
         delete requestOptions.body;

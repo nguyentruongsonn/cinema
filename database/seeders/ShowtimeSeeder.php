@@ -21,7 +21,7 @@ class ShowtimeSeeder extends Seeder
             })
             ->get();
 
-        $screens = Screen::all();
+        $screens = Screen::all()->values();
 
         if ($movies->isEmpty()) {
             $this->command->warn('No now-showing movies found. Please run MovieSeeder first.');
@@ -45,12 +45,20 @@ class ShowtimeSeeder extends Seeder
         $now = now();
         $showtimesCreated = 0;
 
-        foreach ($movies as $movie) {
-            $screenIndex = 0;
-            foreach ($screens->take(3) as $screen) {
+        $screensPerMovie = max(1, min(3, intdiv($screens->count(), max(1, $movies->count()))));
+
+        foreach ($movies->values() as $movieIndex => $movie) {
+            for ($screenIndex = 0; $screenIndex < $screensPerMovie; $screenIndex++) {
+                $screenOffset = ($movieIndex * $screensPerMovie) + $screenIndex;
+                $screen = $screens[$screenOffset % $screens->count()];
+                $timeOffsetMinutes = intdiv($screenOffset, $screens->count()) * 10;
+
                 // Create showtimes for next 7 days
                 for ($day = 0; $day < 7; $day++) {
                     $date = $now->copy()->addDays($day);
+                    $scheduledAt = fn (int $hour, int $minute = 0) => $date->copy()
+                        ->setTime($hour, $minute)
+                        ->addMinutes($timeOffsetMinutes);
 
                     // Determine format based on screen index for variety
                     $morningFormat = $screenIndex == 0 ? $format2D : ($screenIndex == 1 ? $format3D : $format2D);
@@ -65,7 +73,7 @@ class ShowtimeSeeder extends Seeder
                         [
                             'movie_id' => $movie->id,
                             'screen_id' => $screen->id,
-                            'scheduled_at' => $date->copy()->setTime(9, 0),
+                            'scheduled_at' => $scheduledAt(9),
                         ],
                         [
                             'format_id' => $morningFormat,
@@ -80,7 +88,7 @@ class ShowtimeSeeder extends Seeder
                         [
                             'movie_id' => $movie->id,
                             'screen_id' => $screen->id,
-                            'scheduled_at' => $date->copy()->setTime(11, 0),
+                            'scheduled_at' => $scheduledAt(11),
                         ],
                         [
                             'format_id' => $screenIndex % 2 == 0 ? $format2D : $format3D,
@@ -95,7 +103,7 @@ class ShowtimeSeeder extends Seeder
                         [
                             'movie_id' => $movie->id,
                             'screen_id' => $screen->id,
-                            'scheduled_at' => $date->copy()->setTime(14, 0),
+                            'scheduled_at' => $scheduledAt(14),
                         ],
                         [
                             'format_id' => $lateFormat,
@@ -110,7 +118,7 @@ class ShowtimeSeeder extends Seeder
                         [
                             'movie_id' => $movie->id,
                             'screen_id' => $screen->id,
-                            'scheduled_at' => $date->copy()->setTime(17, 0),
+                            'scheduled_at' => $scheduledAt(17),
                         ],
                         [
                             'format_id' => $lateFormat,
@@ -125,7 +133,7 @@ class ShowtimeSeeder extends Seeder
                         [
                             'movie_id' => $movie->id,
                             'screen_id' => $screen->id,
-                            'scheduled_at' => $date->copy()->setTime(19, 30),
+                            'scheduled_at' => $scheduledAt(19, 30),
                         ],
                         [
                             'format_id' => $premiumFormat,
@@ -140,7 +148,7 @@ class ShowtimeSeeder extends Seeder
                         [
                             'movie_id' => $movie->id,
                             'screen_id' => $screen->id,
-                            'scheduled_at' => $date->copy()->setTime(22, 0),
+                            'scheduled_at' => $scheduledAt(22),
                         ],
                         [
                             'format_id' => $screenIndex == 1 ? $formatIMAX : $format3D,
@@ -150,13 +158,12 @@ class ShowtimeSeeder extends Seeder
                     );
                     $showtimesCreated++;
                 }
-                $screenIndex++;
             }
         }
 
         $this->command->info("Showtimes seeded successfully! Created {$showtimesCreated} showtimes.");
         $this->command->info('- Movies: ' . $movies->count());
-        $this->command->info('- Screens per movie: ' . min(3, $screens->count()));
+        $this->command->info('- Screens per movie: ' . $screensPerMovie);
         $this->command->info('- Days: 7');
         $this->command->info('- Showtimes per day: 6');
     }

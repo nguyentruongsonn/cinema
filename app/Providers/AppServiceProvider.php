@@ -2,11 +2,39 @@
 
 namespace App\Providers;
 
+use App\Models\Branch;
+use App\Models\Banner;
+use App\Models\Movie;
+use App\Models\Order;
+use App\Models\Payment;
+use App\Models\Post;
+use App\Models\Product;
+use App\Models\Promotion;
+use App\Models\Screen;
+use App\Models\SeatLayoutTemplate;
+use App\Models\Showtime;
+use App\Models\Theater;
+use App\Models\User;
+use App\Policies\BranchPolicy;
+use App\Policies\BannerPolicy;
+use App\Policies\MoviePolicy;
+use App\Policies\OrderPolicy;
+use App\Policies\PaymentPolicy;
+use App\Policies\PostPolicy;
+use App\Policies\ProductPolicy;
+use App\Policies\PromotionPolicy;
+use App\Policies\ScreenPolicy;
+use App\Policies\SeatLayoutTemplatePolicy;
+use App\Policies\ShowtimePolicy;
+use App\Policies\TheaterPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 
@@ -25,9 +53,123 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Authentication endpoints - strict limit
+        $this->configureRateLimiters();
+        $this->registerPolicies();
+        $this->configureMorphMap();
+        $this->configureSlowQueryLogging();
+    }
+
+    /**
+     * Configure polymorphic morph map for audit logs and other polymorphic relations.
+     *
+     * This decouples database polymorphic type values from internal class names,
+     * allowing class refactoring without breaking existing audit trails.
+     */
+    private function configureMorphMap(): void
+    {
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'user' => \App\Models\User::class,
+            'order' => \App\Models\Order::class,
+            'payment' => \App\Models\Payment::class,
+            'movie' => \App\Models\Movie::class,
+            'showtime' => \App\Models\Showtime::class,
+            'screen' => \App\Models\Screen::class,
+            'theater' => \App\Models\Theater::class,
+            'branch' => \App\Models\Branch::class,
+            'product' => \App\Models\Product::class,
+            'combo' => \App\Models\Combo::class,
+            'promotion' => \App\Models\Promotion::class,
+            'banner' => \App\Models\Banner::class,
+            'post' => \App\Models\Post::class,
+            'seat_layout_template' => \App\Models\SeatLayoutTemplate::class,
+            'ticket' => \App\Models\Ticket::class,
+            'seat_hold' => \App\Models\SeatHold::class,
+        ]);
+    }
+
+    /**
+     * Configure rate limiters for different endpoint types.
+     *
+     * Authentication limiters use composite keys (IP + identifier) to prevent
+     * both IP-based and account-targeted abuse.
+     */
+    private function configureRateLimiters(): void
+    {
+        // Login - strict limit by IP + normalized login identifier
+        // Prevents brute-force attacks against specific accounts
+        RateLimiter::for('login', function (Request $request) {
+            $login = $this->normalizeLoginIdentifier($request);
+            $key = $request->ip() . '|' . $login;
+
+            return Limit::perMinute(5)
+                ->by($key)
+                ->response(function () {
+                    return response()->json([
+                        'message' => 'Quá nhiều lần đăng nhập. Vui lòng thử lại sau.'
+                    ], 429);
+                });
+        });
+
+        // Registration - limit by IP and email separately
+        // Prevents mass fake account creation and email bombing
+        RateLimiter::for('register', function (Request $request) {
+            $email = $this->normalizeEmail($request->input('email'));
+
+            return [
+                Limit::perMinute(3)->by($request->ip())
+                    ->response(function () {
+                        return response()->json([
+                            'message' => 'Quá nhiều lần đăng ký. Vui lòng thử lại sau.'
+                        ], 429);
+                    }),
+                Limit::perHour(5)->by('email:' . $email)
+                    ->response(function () {
+                        return response()->json([
+                            'message' => 'Email này đã được sử dụng quá nhiều. Vui lòng thử lại sau.'
+                        ], 429);
+                    }),
+            ];
+        });
+
+        // Forgot password - strict limit by IP and email
+        // Prevents email bombing and user enumeration through timing
+        RateLimiter::for('forgot-password', function (Request $request) {
+            $email = $this->normalizeEmail($request->input('email'));
+
+            return [
+                Limit::perMinute(2)->by($request->ip())
+                    ->response(function () {
+                        return response()->json([
+                            'message' => 'Quá nhiều yêu cầu đặt lại mật khẩu. Vui lòng thử lại sau.'
+                        ], 429);
+                    }),
+                Limit::perHour(3)->by('forgot:' . $email)
+                    ->response(function () {
+                        return response()->json([
+                            'message' => 'Quá nhiều yêu cầu đặt lại mật khẩu cho email này. Vui lòng thử lại sau.'
+                        ], 429);
+                    }),
+            ];
+        });
+
+        // Reset password - limit by IP and email
+        // Prevents token brute-force and replay attacks
+        RateLimiter::for('reset-password', function (Request $request) {
+            $email = $this->normalizeEmail($request->input('email'));
+            $key = $request->ip() . '|reset:' . $email;
+
+            return Limit::perMinute(3)
+                ->by($key)
+                ->response(function () {
+                    return response()->json([
+                        'message' => 'Quá nhiều lần đặt lại mật khẩu. Vui lòng thử lại sau.'
+                    ], 429);
+                });
+        });
+
+        // General authentication endpoints (refresh, verify, etc.)
         RateLimiter::for('auth', function (Request $request) {
-            return Limit::perMinute(5)->by($request->ip());
+            return Limit::perMinute(10)->by($request->ip());
         });
 
         // General API endpoints
@@ -55,12 +197,57 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Booking page access - moderate limit to prevent showtime enumeration
+        RateLimiter::for('booking', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
+
         // Webhook callbacks - per hour limit by IP
         RateLimiter::for('webhook', function (Request $request) {
             return Limit::perHour(100)->by($request->ip());
         });
+    }
 
-        $this->configureSlowQueryLogging();
+    /**
+     * Normalize login identifier (email or username) for rate limiting.
+     *
+     * Applies same normalization as LoginRequest::prepareForValidation().
+     * IMPORTANT: Keep this synchronized with request normalization logic.
+     */
+    private function normalizeLoginIdentifier(Request $request): string
+    {
+        $login = $request->input('login')
+            ?? $request->input('email')
+            ?? $request->input('username')
+            ?? '';
+
+        if (! is_string($login)) {
+            return '';
+        }
+
+        $login = trim($login);
+
+        // Lowercase if it's an email
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $login = strtolower($login);
+        }
+
+        return $login;
+    }
+
+    /**
+     * Normalize email for rate limiting.
+     *
+     * Applies same normalization as should be in FormRequest::prepareForValidation().
+     * IMPORTANT: Keep this synchronized with request normalization logic.
+     */
+    private function normalizeEmail(?string $email): string
+    {
+        if (! is_string($email)) {
+            return '';
+        }
+
+        return strtolower(trim($email));
     }
 
     /**
@@ -89,8 +276,30 @@ class AppServiceProvider extends ServiceProvider
                 'route' => request()?->route()?->getName(),
                 'method' => request()?->method(),
                 'path' => request()?->path(),
-                'user_id' => optional(auth()->user())->id,
+                'user_id' => Auth::id(),
             ]);
         });
+    }
+
+    /**
+     * Register authorization policies.
+     *
+     * Policies enforce IDOR protection and proper authorization.
+     */
+    private function registerPolicies(): void
+    {
+        Gate::policy(Banner::class, BannerPolicy::class);
+        Gate::policy(Branch::class, BranchPolicy::class);
+        Gate::policy(Movie::class, MoviePolicy::class);
+        Gate::policy(Order::class, OrderPolicy::class);
+        Gate::policy(Payment::class, PaymentPolicy::class);
+        Gate::policy(Post::class, PostPolicy::class);
+        Gate::policy(Product::class, ProductPolicy::class);
+        Gate::policy(Promotion::class, PromotionPolicy::class);
+        Gate::policy(Screen::class, ScreenPolicy::class);
+        Gate::policy(SeatLayoutTemplate::class, SeatLayoutTemplatePolicy::class);
+        Gate::policy(Showtime::class, ShowtimePolicy::class);
+        Gate::policy(Theater::class, TheaterPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 }

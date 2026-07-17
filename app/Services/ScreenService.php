@@ -5,21 +5,20 @@ namespace App\Services;
 use App\Models\Screen;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Request;
 
 class ScreenService
 {
     /**
      * Get paginated, filterable list of screens.
      */
-    public function getAll(Request $request): LengthAwarePaginator
+    public function getAll(array $filters = []): LengthAwarePaginator
     {
         $query = Screen::with(['theater', 'format', 'sound']);
 
-        $this->applyFilters($query, $request);
-        $this->applySorting($query, $request);
+        $this->applyFilters($query, $filters);
+        $this->applySorting($query, $filters);
 
-        $perPage = (int) $request->query('per_page', 15);
+        $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 100);
 
         return $query->paginate($perPage);
     }
@@ -68,22 +67,18 @@ class ScreenService
     /**
      * Apply request filters to screen query.
      */
-    private function applyFilters(Builder $query, Request $request): void
+    private function applyFilters(Builder $query, array $filters): void
     {
-        if ($request->filled('theater_id')) {
-            $query->where('theater_id', $request->input('theater_id'));
+        if (! empty($filters['theater_id'])) {
+            $query->where('theater_id', $filters['theater_id']);
         }
 
-        if ($request->filled('format_id')) {
-            $query->where('format_id', $request->input('format_id'));
+        if (! empty($filters['format_id'])) {
+            $query->where('format_id', $filters['format_id']);
         }
 
-        if ($request->filled('screen_type')) {
-            $query->where('screen_type', $request->input('screen_type'));
-        }
-
-        if ($request->filled('q')) {
-            $search = $request->input('q');
+        if (! empty($filters['q'])) {
+            $search = $filters['q'];
 
             $query->where(function (Builder $subQuery) use ($search) {
                 $subQuery->where('name', 'like', "%{$search}%")
@@ -91,7 +86,7 @@ class ScreenService
             });
         }
 
-        $status = $request->input('status', 'active');
+        $status = $filters['status'] ?? 'active';
         if ($status === 'active') {
             $query->active();
         } elseif ($status === 'inactive') {
@@ -102,10 +97,10 @@ class ScreenService
     /**
      * Apply safe sorting to screen query.
      */
-    private function applySorting(Builder $query, Request $request): void
+    private function applySorting(Builder $query, array $filters): void
     {
-        $sortBy = $request->input('sort_by', 'name');
-        $sortDir = $request->input('sort_dir', 'asc');
+        $sortBy = $filters['sort_by'] ?? 'name';
+        $sortDir = $filters['sort_dir'] ?? 'asc';
 
         $allowedSorts = ['name', 'capacity', 'created_at'];
         if (!in_array($sortBy, $allowedSorts, true)) {

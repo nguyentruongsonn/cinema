@@ -25,7 +25,6 @@ class ShowtimeFactory extends Factory
             'movie_id' => Movie::factory(),
             'screen_id' => Screen::factory(),
             'scheduled_at' => $this->faker->dateTimeBetween('+1 day', '+30 days'),
-            'price' => $this->faker->randomFloat(2, 50, 200),
             'status' => true,
         ];
     }

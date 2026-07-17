@@ -11,6 +11,8 @@
     let stream = null;
     let scanning = false;
     let scannerModal = null;
+    let animationFrame = null;
+    let lastScanAt = 0;
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
@@ -107,11 +109,20 @@
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            // TODO: Integrate with a QR/barcode scanning library like jsQR or QuaggaJS
-            // For now, this is a placeholder
+            if (window.__ticketQrDecoder && Date.now() - lastScanAt >= 150) {
+                lastScanAt = Date.now();
+                const result = window.__ticketQrDecoder(imageData.data, imageData.width, imageData.height);
+                if (result?.data) {
+                    scanning = false;
+                    stopCamera();
+                    document.getElementById('ticketCodeInput').value = result.data.trim();
+                    verifyTicket();
+                    return;
+                }
+            }
         }
 
-        requestAnimationFrame(scanForCode);
+        animationFrame = requestAnimationFrame(scanForCode);
     }
 
     async function verifyTicket() {
@@ -125,18 +136,18 @@
 
         // Show loading
         const btn = document.getElementById('verifyTicketBtn');
-        const originalText = btn.innerHTML;
+        const originalText = btn.textContent;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xác thực...';
+        btn.textContent = 'Đang xác thực...';
 
         try {
-            const response = await fetch('/api/admin/tickets/verify', {
+            const response = await fetch('/api/v1/admin/tickets/verify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`
+                    'Accept': 'application/json'
                 },
+                credentials: 'include',
                 body: JSON.stringify({ ticket_code: code })
             });
 
@@ -152,7 +163,7 @@
             showResult('error', 'Lỗi kết nối: ' + error.message);
         } finally {
             btn.disabled = false;
-            btn.innerHTML = originalText;
+            btn.textContent = originalText;
         }
     }
 
@@ -199,7 +210,30 @@
             `;
         }
 
-        resultDiv.innerHTML = html;
+        resultDiv.textContent = '';
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'}`;
+        const icon = document.createElement('i');
+        icon.className = `bi ${type === 'success' ? 'bi-check-circle-fill' : type === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-x-circle-fill'} me-2`;
+        alert.appendChild(icon);
+        const text = document.createElement('span');
+        text.textContent = String(message || '');
+        alert.appendChild(text);
+        if (type === 'success' && ticketData) {
+            const details = document.createElement('div');
+            details.className = 'row g-2 small mt-2';
+            [['Mã vé', ticketData.code], ['Phim', ticketData.movie], ['Suất chiếu', ticketData.showtime], ['Ghế', ticketData.seat], ['Trạng thái', ticketData.status]].forEach(([label, value]) => {
+                const labelNode = document.createElement('strong');
+                labelNode.className = 'col-6';
+                labelNode.textContent = label;
+                const valueNode = document.createElement('span');
+                valueNode.className = 'col-6';
+                valueNode.textContent = String(value || 'N/A');
+                details.append(labelNode, valueNode);
+            });
+            alert.appendChild(details);
+        }
+        resultDiv.appendChild(alert);
         resultDiv.style.display = 'block';
 
         // Auto-hide after 5 seconds (except success)
@@ -212,6 +246,8 @@
 
     function cleanup() {
         stopCamera();
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        animationFrame = null;
         document.getElementById('ticketCodeInput').value = '';
         document.getElementById('scanResult').style.display = 'none';
         showManualMode();
