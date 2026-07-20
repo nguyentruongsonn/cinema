@@ -17,6 +17,7 @@ use App\Models\Theater;
 use App\Models\User;
 use App\Policies\BranchPolicy;
 use App\Policies\BannerPolicy;
+use App\Policies\ComboPolicy;
 use App\Policies\MoviePolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\PaymentPolicy;
@@ -258,11 +259,11 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureSlowQueryLogging(): void
     {
-        if (!filter_var(env('SLOW_QUERY_LOG_ENABLED', false), FILTER_VALIDATE_BOOLEAN)) {
+        if (! config('app.slow_query_log_enabled', false)) {
             return;
         }
 
-        $thresholdMs = (float) env('SLOW_QUERY_THRESHOLD_MS', 100);
+        $thresholdMs = (float) config('app.slow_query_threshold_ms', 100);
 
         DB::listen(function ($query) use ($thresholdMs) {
             if ($query->time < $thresholdMs) {
@@ -290,6 +291,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Banner::class, BannerPolicy::class);
         Gate::policy(Branch::class, BranchPolicy::class);
+        Gate::policy(\App\Models\Combo::class, ComboPolicy::class);
         Gate::policy(Movie::class, MoviePolicy::class);
         Gate::policy(Order::class, OrderPolicy::class);
         Gate::policy(Payment::class, PaymentPolicy::class);
@@ -301,5 +303,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Showtime::class, ShowtimePolicy::class);
         Gate::policy(Theater::class, TheaterPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+
+        Gate::define('viewDashboardMetrics', fn (User $user): bool =>
+            $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('view_dashboard')
+        );
     }
 }

@@ -7,6 +7,8 @@ use App\Models\IdempotencyKey;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\Seat;
 use App\Models\SeatHold;
 use App\Models\SeatHoldItem;
@@ -93,50 +95,158 @@ class PaymentService
                     }
                 }
 
-            $pricing = $this->pricing->buildSnapshot(
+            [$order, $payment, $checkoutReplayed] = DB::transaction(function () use (
                 $user,
                 $showtime,
                 $seatRequests,
                 $productRequests,
-                $validated['voucher_code'] ?? null,
-                (int) ($validated['points_used'] ?? 0),
-            );
+                $validated,
+                $checkoutFingerprint,
+                $seatHold,
+                $seatIds
+            ): array {
+                if ($seatHold) {
+                    SeatHold::query()->whereKey($seatHold->id)->lockForUpdate()->firstOrFail();
+                }
 
-            // PHASE 1 FIX: Use factory method to create order safely
-            $order = Order::createPending([
-                'code'               => $this->generateOrderNumber(),
-                'gateway_order_code' => $this->generateOrderCode(),
-                'payment_provider'   => 'payos',
-                'user_id'            => $user->id,
-                'showtime_id'        => $showtime->id,
-                'checkout_fingerprint' => $checkoutFingerprint,
-                'total_amount'       => $pricing['final_amount'],
-                'payload'            => [
-                    'subtotal'         => $pricing['subtotal'],
-                    'discount_amount'  => $pricing['discount_amount'],
-                    'voucher_discount' => $pricing['voucher_discount'],
-                    'point_discount'   => $pricing['point_discount'],
-                    'points_used'      => $pricing['points_used'],
-                    'voucher'          => $pricing['voucher'],
-                    'seats'            => $pricing['seats'],
-                    'products'         => $pricing['products'],
-                ],
-                'expired_at'         => now()->addMinutes(15),
-            ]);
+                if ($checkoutFingerprint) {
+                    $existingOrder = Order::query()
+                        ->where('checkout_fingerprint', $checkoutFingerprint)
+                        ->whereIn('status', [Order::STATUS_PENDING, Order::STATUS_CONFIRMED])
+                        ->with('payment')
+                        ->first();
 
-            // PHASE 2: Create payment record for audit trail
-            $payment = Payment::createPending([
-                'order_id' => $order->id,
-                'user_id' => $user->id,
-                'method' => 'payos',
-                'gateway_order_code' => $order->gateway_order_code,
-                'amount' => $order->total_amount,
-                'payload' => [
+                    if ($existingOrder?->checkout_url) {
+                        return [$existingOrder, $existingOrder->payment, true];
+                    }
+
+                    if ($existingOrder) {
+                        throw new \RuntimeException('Checkout is already being created. Please retry shortly.', 409);
+                    }
+                }
+
+                $pricing = $this->pricing->buildSnapshot(
+                    $user,
+                    $showtime,
+                    $seatRequests,
+                    $productRequests,
+                    $validated['voucher_code'] ?? null,
+                    (int) ($validated['points_used'] ?? 0),
+                );
+
+                $order = Order::createPending([
+                    'code' => $this->generateOrderNumber(),
+                    'gateway_order_code' => $this->generateOrderCode(),
+                    'payment_provider' => 'payos',
+                    'user_id' => $user->id,
                     'showtime_id' => $showtime->id,
-                    'seat_ids' => $seatIds,
-                    'created_at' => now()->toISOString(),
-                ],
-            ]);
+                    'checkout_fingerprint' => $checkoutFingerprint,
+                    'total_amount' => $pricing['final_amount'],
+                    'payload' => [
+                        'seat_hold_id' => $seatHold?->id,
+                        'subtotal' => $pricing['subtotal'],
+                        'discount_amount' => $pricing['discount_amount'],
+                        'voucher_discount' => $pricing['voucher_discount'],
+                        'point_discount' => $pricing['point_discount'],
+                        'points_used' => $pricing['points_used'],
+                        'voucher' => $pricing['voucher'],
+                        'seats' => $pricing['seats'],
+                        'products' => $pricing['products'],
+                        'product_stock_reserved' => ! empty($pricing['products']),
+                        'points_reserved' => $pricing['points_used'] > 0,
+                        'voucher_reserved' => $pricing['voucher'] !== null,
+                    ],
+                    'expired_at' => now()->addMinutes(15),
+                ]);
+
+                if ((int) $pricing['points_used'] > 0) {
+                    $lockedUser = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+                    $pointsUsed = (int) $pricing['points_used'];
+
+                    if ((int) $lockedUser->loyalty_points < $pointsUsed) {
+                        throw new \RuntimeException('Số điểm khả dụng đã thay đổi. Vui lòng thử lại.', 409);
+                    }
+
+                    $lockedUser->decrement('loyalty_points', $pointsUsed);
+                }
+
+                if ($pricing['voucher'] !== null) {
+                    $promotion = Promotion::query()
+                        ->whereKey($pricing['voucher']['id'])
+                        ->lockForUpdate()
+                        ->firstOrFail();
+                    $pivot = DB::table('user_promotion')
+                        ->where('user_id', $user->id)
+                        ->where('promotion_id', $promotion->id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (! $pivot || (int) $pivot->status !== 1 || $pivot->used_at !== null) {
+                        throw new \RuntimeException('Voucher đã được dùng bởi một giao dịch khác.', 409);
+                    }
+
+                    if ($promotion->usage_limit !== null && (int) $promotion->usage_count >= (int) $promotion->usage_limit) {
+                        throw new \RuntimeException('Voucher đã hết lượt sử dụng.', 409);
+                    }
+
+                    $promotion->increment('usage_count');
+                    DB::table('user_promotion')->where('id', $pivot->id)->update([
+                        'status' => 2,
+                        'order_id' => $order->id,
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                foreach ($pricing['products'] as $productData) {
+                    $product = Product::query()->whereKey($productData['id'])->lockForUpdate()->firstOrFail();
+                    $quantity = (int) $productData['quantity'];
+
+                    if ((int) $product->stock < $quantity) {
+                        throw new \RuntimeException("Sản phẩm {$product->name} không còn đủ tồn kho.", 409);
+                    }
+
+                    $product->decrement('stock', $quantity);
+                    OrderItem::createFromProduct(
+                        $order,
+                        $product,
+                        $quantity,
+                        (string) $productData['price'],
+                        [
+                            'product_name' => $productData['name'],
+                            'product_type' => $productData['type'] ?? null,
+                            'image_url' => $productData['image_url'] ?? null,
+                            'stock_reserved' => true,
+                        ]
+                    )->save();
+                }
+
+                $payment = Payment::createPending([
+                    'order_id' => $order->id,
+                    'user_id' => $user->id,
+                    'method' => 'payos',
+                    'gateway_order_code' => $order->gateway_order_code,
+                    'amount' => $order->total_amount,
+                    'payload' => [
+                        'showtime_id' => $showtime->id,
+                        'seat_ids' => $seatIds,
+                        'created_at' => now()->toISOString(),
+                    ],
+                ]);
+
+                return [$order, $payment, false];
+            }, self::TRANSACTION_ATTEMPTS);
+
+            if ($checkoutReplayed) {
+                return [
+                    'status' => 200,
+                    'data' => [
+                        'checkout_url' => $order->checkout_url,
+                        'gateway_order_code' => $order->gateway_order_code,
+                        'order_number' => $order->code,
+                    ],
+                    'payment_id' => $payment?->id,
+                ];
+            }
 
             try {
                 $response = $this->gateway->createPaymentLink([
@@ -153,7 +263,7 @@ class PaymentService
             ]);
             } catch (PaymentGatewayException $e) {
                 // Hủy đơn nếu tạo link thất bại - PHASE 1 FIX: Use state transition method
-                $order->markFailed();
+                $this->releaseFailedCheckoutReservations($order);
                 throw $e;
             }
 
@@ -288,6 +398,52 @@ class PaymentService
         ];
 
         return hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    private function releaseFailedCheckoutReservations(Order $order): void
+    {
+        DB::transaction(function () use ($order): void {
+            $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $productItems = OrderItem::query()
+                ->where('order_id', $lockedOrder->id)
+                ->where('item_type', Product::class)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($productItems as $item) {
+                Product::query()->whereKey($item->item_id)->lockForUpdate()->first()?->increment('stock', $item->quantity);
+                $item->delete();
+            }
+
+            $payload = (array) $lockedOrder->payload;
+            $pointsUsed = (int) ($payload['points_used'] ?? 0);
+            if (($payload['points_reserved'] ?? false) && $pointsUsed > 0) {
+                User::query()->whereKey($lockedOrder->user_id)->lockForUpdate()->first()?->increment('loyalty_points', $pointsUsed);
+            }
+
+            $voucher = $payload['voucher'] ?? null;
+            if (($payload['voucher_reserved'] ?? false) && isset($voucher['id'])) {
+                $promotion = Promotion::query()->whereKey($voucher['id'])->lockForUpdate()->first();
+                if ($promotion && (int) $promotion->usage_count > 0) {
+                    $promotion->decrement('usage_count');
+                }
+
+                DB::table('user_promotion')
+                    ->where('user_id', $lockedOrder->user_id)
+                    ->where('promotion_id', $voucher['id'])
+                    ->where('order_id', $lockedOrder->id)
+                    ->where('status', 2)
+                    ->update([
+                        'status' => 1,
+                        'order_id' => null,
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            $lockedOrder->forceFill(['checkout_fingerprint' => null])->save();
+            $lockedOrder->markFailed();
+            $lockedOrder->payment?->markFailed();
+        }, self::TRANSACTION_ATTEMPTS);
     }
 
     /**

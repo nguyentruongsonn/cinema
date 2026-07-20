@@ -9,4 +9,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::job(new CleanupExpiredSeatHolds())->everyMinute();
+Schedule::job(new CleanupExpiredSeatHolds)->everyMinute();
+Schedule::command('queue:monitor-health')->everyMinute()->withoutOverlapping();

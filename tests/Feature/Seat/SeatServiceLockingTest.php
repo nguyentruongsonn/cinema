@@ -9,6 +9,8 @@ use App\Models\SeatHold;
 use App\Models\SeatHoldItem;
 use App\Models\Showtime;
 use App\Models\User;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Services\SeatService;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -219,6 +221,43 @@ class SeatServiceLockingTest extends TestCase
             'showtime_id' => $this->showtime->id,
             'seat_ids' => [$wrongSeat->id],
         ], $this->firstUser);
+    }
+
+    #[Test]
+    public function expired_pending_orders_do_not_block_a_new_seat_hold(): void
+    {
+        $seat = Seat::factory()->create([
+            'screen_id' => $this->showtime->screen_id,
+        ]);
+        $expiredOrder = Order::factory()->pending()->create([
+            'showtime_id' => $this->showtime->id,
+            'expired_at' => now()->subMinute(),
+        ]);
+
+        OrderItem::forceCreate([
+            'order_id' => $expiredOrder->id,
+            'item_type' => Seat::class,
+            'item_id' => $seat->id,
+            'quantity' => 1,
+            'unit_price' => 100000,
+            'total_price' => 100000,
+            'metadata' => ['seat_label' => $seat->label],
+        ]);
+
+        $result = $this->seatService->lock([
+            'showtime_id' => $this->showtime->id,
+            'seat_ids' => [$seat->id],
+        ], $this->firstUser);
+
+        $this->assertDatabaseHas('seat_hold_items', [
+            'seat_hold_id' => $result['hold_id'],
+            'seat_id' => $seat->id,
+            'status' => SeatHoldItem::STATUS_ACTIVE,
+        ]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $expiredOrder->id,
+            'status' => Order::STATUS_PENDING,
+        ]);
     }
 
     #[Test]

@@ -5,6 +5,12 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
     const els = {
         tableBody: document.getElementById('postsTableBody'),
         pagination: document.getElementById('paginationContainer'),
@@ -45,13 +51,14 @@
             if (currentSearch) url.searchParams.append('search', currentSearch);
             if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
             if (currentCategory !== 'all') url.searchParams.append('category', currentCategory);
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'posts:list' });
             if (res && res.ok) {
                 const json = await res.json();
                 renderTable(json.data, json.pagination?.from || json.from);
                 renderPagination(json.pagination || json);
             } else throw new Error();
         } catch (error) {
+            if (error.name === 'AbortError') return;
             els.tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-danger">Lỗi tải dữ liệu</td></tr>`;
         }
     }
@@ -69,28 +76,29 @@
         posts.forEach((post, index) => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-            const categoryBadge = `<span class="badge-category badge-category-${post.category}">${categoryLabels[post.category] || post.category}</span>`;
+            const safeCategory = Object.hasOwn(categoryLabels, post.category) ? post.category : 'news';
+            const categoryBadge = `<span class="badge-category badge-category-${safeCategory}">${escapeHtml(categoryLabels[post.category] || post.category)}</span>`;
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td>
-                    <div class="post-title">${post.title}</div>
-                    ${post.excerpt ? `<small class="post-excerpt">${post.excerpt.substring(0, 60)}${post.excerpt.length > 60 ? '...' : ''}</small>` : ''}
+                    <div class="post-title">${escapeHtml(post.title)}</div>
+                    ${post.excerpt ? `<small class="post-excerpt">${escapeHtml(post.excerpt.substring(0, 60))}${post.excerpt.length > 60 ? '...' : ''}</small>` : ''}
                 </td>
                 <td class="text-center">${categoryBadge}</td>
                 <td class="text-center">
-                    <span class="author-badge">${post.author?.name || 'Unknown'}</span>
+                    <span class="author-badge">${escapeHtml(post.author?.name || 'Unknown')}</span>
                 </td>
-                <td class="text-center text-light">${post.view_count || 0}</td>
+                <td class="text-center text-light">${escapeHtml(post.view_count || 0)}</td>
                 <td class="text-center text-light small">${formatDate(post.created_at)}</td>
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input toggle-publish-btn m-0" type="checkbox" data-id="${post.id}" ${post.is_published ? 'checked' : ''} style="cursor:pointer;">
+                        <input class="form-check-input toggle-publish-btn m-0" type="checkbox" data-id="${escapeHtml(post.id)}" ${post.is_published ? 'checked' : ''} style="cursor:pointer;">
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-sm btn-edit-post" style="color: var(--text-secondary); background:rgba(255,255,255,0.05);" data-post='${JSON.stringify(post).replace(/'/g, "&#39;")}' title="Sửa"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-post" style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${post.id}" title="Xóa"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-edit-post" style="color: var(--text-secondary); background:rgba(255,255,255,0.05);" data-post='${escapeHtml(JSON.stringify(post))}' title="Sửa"><i class="bi bi-pencil"></i></button>
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-post" style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${escapeHtml(post.id)}" title="Xóa"><i class="bi bi-trash"></i></button>
                     </div>
                 </td>
             `;
@@ -102,7 +110,7 @@
         if (!meta || meta.last_page <= 1) { els.pagination.innerHTML = ''; return; }
         let html = '<ul class="pagination pagination-sm m-0">';
         html += meta.current_page > 1 ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>` : `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             html += i === meta.current_page ? `<li class="page-item active"><span class="page-link">${i}</span></li>` : `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
         }
         html += meta.current_page < meta.last_page ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>` : `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
@@ -227,7 +235,7 @@
         } catch (error) { console.error('Error loading categories:', error); }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    window.onAdminPageLoad(() => {
         loadCategories();
         loadData(1);
 

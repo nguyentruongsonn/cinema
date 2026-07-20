@@ -42,7 +42,7 @@
     async function fetchPrerequisites() {
         try {
             // Fetch branches for dropdown
-            const res = await window.AdminCore.apiFetch('/api/v1/admin/branches?per_page=100');
+            const res = await window.AdminCore.apiFetch('/api/v1/admin/branches?options=1', { cacheTtl: 300000 });
             if (res && res.ok) {
                 const data = await res.json();
                 const branches = data.data || [];
@@ -75,7 +75,7 @@
             url.searchParams.append('page', page);
             if (currentSearch) url.searchParams.append('search', currentSearch);
 
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'theaters:list' });
             if (res && res.ok) {
                 const data = await res.json();
                 renderTable(data.data, data.from);
@@ -84,6 +84,7 @@
                 throw new Error('Failed to fetch');
             }
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Error loading data:', error);
             els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -150,7 +151,7 @@
             html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
         }
 
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             if (i === meta.current_page) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
             } else {
@@ -290,7 +291,7 @@
     }
 
     /* ── Init ──────────────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', async () => {
+    window.onAdminPageLoad(async () => {
         await fetchPrerequisites();
         loadData(1);
     });

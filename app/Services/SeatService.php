@@ -227,16 +227,20 @@ class SeatService
                 'held_until' => $heldUntil,
             ]);
 
-            foreach ($seatIds as $seatId) {
-                SeatHoldItem::create([
+            $timestamp = now();
+            SeatHoldItem::query()->insert(array_map(
+                fn (int $seatId) => [
                     'seat_hold_id' => $hold->id,
                     'showtime_id' => $showtime->id,
                     'seat_id' => $seatId,
                     'status' => SeatHoldItem::STATUS_ACTIVE,
                     'active_lock_key' => SeatHoldItem::activeLockKey($showtime->id, $seatId),
                     'expires_at' => $heldUntil,
-                ]);
-            }
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ],
+                $seatIds
+            ));
 
             $hold->load('items');
 
@@ -375,7 +379,6 @@ class SeatService
     private function cleanupExpiredReservations(?int $showtimeId = null): void
     {
         $this->cleanupExpiredSeatHolds($showtimeId);
-        $this->orderExpirationService->expirePendingOrders($showtimeId);
     }
 
     /**
@@ -399,7 +402,6 @@ class SeatService
                 ->delete();
         }
 
-        $this->orderExpirationService->expirePendingOrders($showtimeId);
     }
 
     private function getEvenExpiresInSeconds(SeatHold $hold): int
@@ -458,7 +460,16 @@ class SeatService
             ->when($seatIds, fn ($query) => $query->whereIn('item_id', $seatIds, 'and', false))
             ->whereHas('order', function ($query) use ($showtimeId) {
                 $query->where('showtime_id', $showtimeId)
-                    ->whereIn('status', [self::STATUS_PENDING, self::STATUS_CONFIRMED]);
+                    ->where(function ($statusQuery) {
+                        $statusQuery->where('status', self::STATUS_CONFIRMED)
+                            ->orWhere(function ($pendingQuery) {
+                                $pendingQuery->where('status', self::STATUS_PENDING)
+                                    ->where(function ($expiryQuery) {
+                                        $expiryQuery->whereNull('expired_at')
+                                            ->orWhere('expired_at', '>', now());
+                                    });
+                            });
+                    });
             });
 
         if ($lockForUpdate) {

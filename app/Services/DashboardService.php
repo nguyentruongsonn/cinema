@@ -115,11 +115,12 @@ class DashboardService
             ->select('user_id', DB::raw('count(*) as order_count'))
             ->where('status', self::STATUS_CONFIRMED)
             ->whereNotNull('user_id')
-            ->groupBy('user_id')
-            ->get();
+            ->groupBy('user_id');
 
-        $totalBuyingUsers = $userOrderCounts->count();
-        $returningUsers = $userOrderCounts->where('order_count', '>=', 2)->count();
+        $totalBuyingUsers = DB::query()->fromSub(clone $userOrderCounts, 'buyers')->count();
+        $returningUsers = DB::query()
+            ->fromSub($userOrderCounts->havingRaw('COUNT(*) >= 2'), 'returning_buyers')
+            ->count();
         $retentionRate = $totalBuyingUsers > 0 ? round(($returningUsers / $totalBuyingUsers) * 100, 1) : 0;
 
         return [
@@ -175,13 +176,19 @@ class DashboardService
      */
     private function getTrafficHeatmap(Carbon $startDate, Carbon $endDate)
     {
+        [$dayExpression, $hourExpression] = match (DB::connection()->getDriverName()) {
+            'sqlite' => ["CAST(strftime('%w', showtimes.scheduled_at) AS INTEGER) + 1", "CAST(strftime('%H', showtimes.scheduled_at) AS INTEGER)"],
+            'pgsql' => ['EXTRACT(DOW FROM showtimes.scheduled_at) + 1', 'EXTRACT(HOUR FROM showtimes.scheduled_at)'],
+            default => ['DAYOFWEEK(showtimes.scheduled_at)', 'HOUR(showtimes.scheduled_at)'],
+        };
+
         return DB::table('orders')
             ->join('showtimes', 'orders.showtime_id', '=', 'showtimes.id')
             ->where('orders.status', self::STATUS_CONFIRMED)
             ->whereBetween('orders.paid_at', [$startDate, $endDate])
             ->whereNotNull('showtimes.scheduled_at')
-            ->selectRaw('DAYOFWEEK(showtimes.scheduled_at) as day_of_week, HOUR(showtimes.scheduled_at) as hour, COUNT(DISTINCT orders.id) as customer_count')
-            ->groupBy(DB::raw('DAYOFWEEK(showtimes.scheduled_at)'), DB::raw('HOUR(showtimes.scheduled_at)'))
+            ->selectRaw("{$dayExpression} as day_of_week, {$hourExpression} as hour, COUNT(DISTINCT orders.id) as customer_count")
+            ->groupByRaw("{$dayExpression}, {$hourExpression}")
             ->get();
     }
 
@@ -212,14 +219,14 @@ class DashboardService
     private function getRecentOrders()
     {
         return Order::query()
-            ->with(['user:id,name,full_name', 'showtime.movie:id,title', 'showtime.screen.theater:id,name', 'payment:id,order_id,status'])
+            ->with(['user:id,name', 'showtime.movie:id,title', 'showtime.screen.theater:id,name', 'payment:id,order_id,status'])
             ->latest()
             ->limit(5)
             ->get()
             ->map(fn ($order) => [
                 'id' => $order->id,
                 'code' => $order->code,
-                'customer' => $order->user?->name ?? $order->user?->full_name ?? 'N/A',
+                'customer' => $order->user?->name ?? 'N/A',
                 'movie' => $order->showtime?->movie?->title ?? 'N/A',
                 'total_amount' => (float) $order->total_amount,
                 'status' => $order->status,

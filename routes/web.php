@@ -37,7 +37,7 @@ Route::get('/payment/payos/cancel', [PaymentController::class, 'payosCancel'])
     ->middleware('throttle:payments')
     ->name('payment.payos.cancel');
 Route::post('/payment/payos/webhook', [PaymentController::class, 'payosWebhook'])
-    ->middleware(['throttle:webhook', 'verify.payos'])
+    ->middleware('throttle:webhook')
     ->name('payment.payos.webhook');
 // Admin Panel Routes
 Route::prefix('admin')->middleware(['admin'])->group(function () {

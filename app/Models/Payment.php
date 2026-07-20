@@ -106,7 +106,7 @@ class Payment extends Model
             return $this;
         }
 
-        if (!in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING], true)) {
+        if ($this->status === self::STATUS_REFUNDED) {
             throw new \LogicException('Payment không ở trạng thái có thể chuyển thành công.');
         }
 

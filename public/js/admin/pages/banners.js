@@ -5,6 +5,25 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function safeImageUrl(value, fallback = '/images/placeholder.png') {
+        const candidate = String(value || '').trim();
+        if (/^data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/i.test(candidate)) return candidate;
+        if (/^\/(?!\/)[A-Za-z0-9_./?=&%-]+$/.test(candidate) && !candidate.includes('..')) return candidate;
+        if (/^https?:\/\/[^\s"'<>]+$/i.test(candidate)) return candidate;
+        return fallback;
+    }
+
+    function storageImageUrl(path) {
+        const cleanPath = String(path || '').replace(/^\/+/, '');
+        return safeImageUrl(`/storage/${cleanPath}`);
+    }
+
     const els = {
         tableBody: document.getElementById('bannersTableBody'),
         pagination: document.getElementById('paginationContainer'),
@@ -48,13 +67,14 @@
             if (currentSearch) url.searchParams.append('search', currentSearch);
             if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
             if (currentPosition !== 'all') url.searchParams.append('position', currentPosition);
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'banners:list' });
             if (res && res.ok) {
                 const json = await res.json();
                 renderTable(json.data, json.pagination?.from || json.from);
                 renderPagination(json.pagination || json);
             } else throw new Error();
         } catch (error) {
+            if (error.name === 'AbortError') return;
             els.tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-danger">Lỗi tải dữ liệu</td></tr>`;
         }
     }
@@ -85,27 +105,28 @@
         banners.forEach((banner, index) => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-            const positionBadge = `<span class="badge-position badge-position-${banner.position}">${positionLabels[banner.position] || banner.position}</span>`;
-            const imgSrc = banner.image_path ? `/storage/${banner.image_path}` : '/images/placeholder.png';
+            const safePosition = Object.hasOwn(positionLabels, banner.position) ? banner.position : 'sidebar';
+            const positionBadge = `<span class="badge-position badge-position-${safePosition}">${escapeHtml(positionLabels[banner.position] || banner.position)}</span>`;
+            const imgSrc = banner.image_path ? storageImageUrl(banner.image_path) : '/images/placeholder.png';
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
-                <td><img src="${imgSrc}" alt="${banner.title}" class="banner-image-preview" onerror="this.src='/images/placeholder.png'"></td>
+                <td><img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(banner.title)}" class="banner-image-preview"></td>
                 <td>
-                    <div class="banner-title">${banner.title}</div>
-                    ${banner.description ? `<small class="banner-description">${banner.description.substring(0, 50)}${banner.description.length > 50 ? '...' : ''}</small>` : ''}
+                    <div class="banner-title">${escapeHtml(banner.title)}</div>
+                    ${banner.description ? `<small class="banner-description">${escapeHtml(banner.description.substring(0, 50))}${banner.description.length > 50 ? '...' : ''}</small>` : ''}
                 </td>
                 <td class="text-center">${positionBadge}</td>
-                <td class="text-center"><span class="order-badge">${banner.display_order || 0}</span></td>
+                <td class="text-center"><span class="order-badge">${escapeHtml(banner.display_order || 0)}</span></td>
                 <td class="text-center small">${getDateRange(banner.start_date, banner.end_date)}</td>
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input toggle-active-btn m-0" type="checkbox" data-id="${banner.id}" ${banner.is_active ? 'checked' : ''} style="cursor:pointer;">
+                        <input class="form-check-input toggle-active-btn m-0" type="checkbox" data-id="${escapeHtml(banner.id)}" ${banner.is_active ? 'checked' : ''} style="cursor:pointer;">
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-sm btn-edit-banner" style="color: var(--text-secondary); background:rgba(255,255,255,0.05);" data-banner='${JSON.stringify(banner).replace(/'/g, "&#39;")}' title="Sửa"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-banner" style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${banner.id}" title="Xóa"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-edit-banner" style="color: var(--text-secondary); background:rgba(255,255,255,0.05);" data-banner='${escapeHtml(JSON.stringify(banner))}' title="Sửa"><i class="bi bi-pencil"></i></button>
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-banner" style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${escapeHtml(banner.id)}" title="Xóa"><i class="bi bi-trash"></i></button>
                     </div>
                 </td>
             `;
@@ -117,7 +138,7 @@
         if (!meta || meta.last_page <= 1) { els.pagination.innerHTML = ''; return; }
         let html = '<ul class="pagination pagination-sm m-0">';
         html += meta.current_page > 1 ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>` : `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             html += i === meta.current_page ? `<li class="page-item active"><span class="page-link">${i}</span></li>` : `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
         }
         html += meta.current_page < meta.last_page ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>` : `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
@@ -162,7 +183,7 @@
 
             selectedFiles.forEach((file, index) => {
                 const reader = new FileReader();
-                reader.onload = function (e) {
+                reader.addEventListener('load', function (e) {
                     const wrap = document.createElement('div');
                     wrap.style.position = 'relative';
                     wrap.style.display = 'inline-block';
@@ -177,7 +198,9 @@
 
                     const btn = document.createElement('button');
                     btn.type = 'button';
-                    btn.innerHTML = '<i class="bi bi-x"></i>';
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-x';
+                    btn.appendChild(icon);
                     btn.style.position = 'absolute';
                     btn.style.top = '-6px';
                     btn.style.right = '-6px';
@@ -191,17 +214,17 @@
                     btn.style.padding = '0';
                     btn.style.fontSize = '14px';
                     btn.style.cursor = 'pointer';
-                    btn.onclick = function() {
+                    btn.addEventListener('click', function() {
                         selectedFiles.splice(index, 1);
                         renderPreviews();
                         // Reset file input if empty
                         if(selectedFiles.length === 0) els.image.value = '';
-                    };
+                    });
 
                     wrap.appendChild(img);
                     wrap.appendChild(btn);
                     els.previewWrap.appendChild(wrap);
-                };
+                }, { once: true });
                 reader.readAsDataURL(file);
             });
         }
@@ -227,7 +250,12 @@
             els.description.value = banner.description || '';
 
             // Show single image for edit
-            els.previewWrap.innerHTML = `<img src="/storage/${banner.image_path}" style="height:80px; width:120px; object-fit:cover; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">`;
+            els.previewWrap.replaceChildren();
+            const preview = document.createElement('img');
+            preview.src = storageImageUrl(banner.image_path);
+            preview.alt = '';
+            preview.style.cssText = 'height:80px;width:120px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);';
+            els.previewWrap.appendChild(preview);
             els.previewContainer.style.display = 'block';
             selectedFiles = [];
 
@@ -324,5 +352,5 @@
         } catch (error) { console.error('Error loading positions:', error); }
     }
 
-    document.addEventListener('DOMContentLoaded', () => { loadPositions(); loadData(1); });
+    window.onAdminPageLoad(() => { loadPositions(); loadData(1); });
 })();

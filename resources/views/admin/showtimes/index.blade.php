@@ -533,11 +533,10 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/showtimes.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/showtimes.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/admin/pages/showtimes.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/showtimes.js') }}?v={{ config('app.asset_version') }}" defer></script>
 @endpush

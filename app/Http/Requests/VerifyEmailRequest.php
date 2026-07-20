@@ -18,7 +18,7 @@ class VerifyEmailRequest extends FormRequest
     {
         return [
             'id' => ['required', 'integer', 'exists:users,id'],
-            'hash' => ['required', 'string'],
+            'hash' => ['required', 'string', 'regex:/^\d+\.[a-f0-9]{64}$/'],
         ];
     }
 }

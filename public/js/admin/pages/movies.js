@@ -5,6 +5,19 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function safeImageUrl(value) {
+        const candidate = String(value || '').trim();
+        if (/^\/(?!\/)[A-Za-z0-9_./?=&%-]+$/.test(candidate) && !candidate.includes('..')) return candidate;
+        if (/^https?:\/\/[^\s"'<>]+$/i.test(candidate)) return candidate;
+        return '';
+    }
+
     const els = {
         tableBody: document.getElementById('moviesTableBody'),
         pagination: document.getElementById('paginationContainer'),
@@ -72,11 +85,7 @@
             if (search) url.searchParams.append('q', search);
             if (status !== 'all') url.searchParams.append('status', status);
 
-            const res = await fetch(url.toString(), {
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'movies:list' });
             if (res.ok) {
                 const json = await res.json();
                 renderTable(json.data, json.pagination?.from);
@@ -85,6 +94,7 @@
                 throw new Error('Failed to fetch');
             }
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Error loading data:', error);
             els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -119,45 +129,45 @@
             
             const isHotChecked = movie.is_hot ? 'checked' : '';
             const isActiveChecked = movie.status ? 'checked' : '';
-            const posterSrc = movie.poster_display_url || movie.poster_url || '';
+            const posterSrc = safeImageUrl(movie.poster_display_url || movie.poster_url);
             
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td class="text-center">
                     <div class="movie-poster-container">
                         ${posterSrc 
-                            ? `<img src="${posterSrc}" alt="Poster" loading="lazy">` 
+                            ? `<img src="${escapeHtml(posterSrc)}" alt="Poster" loading="lazy">`
                             : `<i class="bi bi-image text-white-50 fs-3"></i>`}
                     </div>
                 </td>
                 <td>
-                    <div class="fw-medium text-white fs-6">${movie.title}</div>
-                    <div class="small text-white-50 mt-1">Đạo diễn: ${movie.director || 'N/A'} • ${movie.duration} phút</div>
-                    <div class="small text-white-50 mt-1"><i class="bi bi-calendar3 me-1"></i> ${rDate} <span class="badge bg-dark border border-secondary ms-2">${movie.age_rating || 'P'}</span></div>
+                    <div class="fw-medium text-white fs-6">${escapeHtml(movie.title)}</div>
+                    <div class="small text-white-50 mt-1">Đạo diễn: ${escapeHtml(movie.director || 'N/A')} • ${escapeHtml(movie.duration)} phút</div>
+                    <div class="small text-white-50 mt-1"><i class="bi bi-calendar3 me-1"></i> ${escapeHtml(rDate)} <span class="badge bg-dark border border-secondary ms-2">${escapeHtml(movie.age_rating || 'P')}</span></div>
                 </td>
                 <td class="text-center">${statusHtml}</td>
                 <td class="text-center">
                     <div class="form-check form-switch d-inline-block">
                         <input class="form-check-input toggle-active-btn" type="checkbox" role="switch"
-                            data-id="${movie.id}" ${isActiveChecked} style="cursor:pointer;">
+                            data-id="${escapeHtml(movie.id)}" ${isActiveChecked} style="cursor:pointer;">
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="form-check form-switch d-inline-block">
                         <input class="form-check-input toggle-hot-btn" type="checkbox" role="switch"
-                            data-id="${movie.id}" ${isHotChecked} style="cursor:pointer;">
+                            data-id="${escapeHtml(movie.id)}" ${isHotChecked} style="cursor:pointer;">
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-edit-movie"
                             style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
-                            data-movie='${JSON.stringify(movie).replace(/'/g, "&#39;")}'
+                            data-movie='${escapeHtml(JSON.stringify(movie))}'
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button type="button" class="btn btn-sm ms-1 btn-delete-movie"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${movie.id}" title="Xóa">
+                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${escapeHtml(movie.id)}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -180,7 +190,7 @@
             html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
         }
 
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             if (i === meta.current_page) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
             } else {
@@ -222,7 +232,9 @@
 
     function showPosterPreview(src) {
         if (!src) return;
-        els.posterPreview.src = src;
+        const previewUrl = String(src).startsWith('blob:') ? src : safeImageUrl(src);
+        if (!previewUrl) return;
+        els.posterPreview.src = previewUrl;
         els.posterPreview.style.display = 'block';
         if (els.posterPlaceholder) els.posterPlaceholder.style.display = 'none';
         if (els.clearPosterBtn) els.clearPosterBtn.classList.remove('d-none');
@@ -237,7 +249,9 @@
 
     function showBannerPreview(src) {
         if (!src) return;
-        els.bannerPreview.src = src;
+        const previewUrl = String(src).startsWith('blob:') ? src : safeImageUrl(src);
+        if (!previewUrl) return;
+        els.bannerPreview.src = previewUrl;
         els.bannerPreview.style.display = 'block';
         if (els.bannerPlaceholder) els.bannerPlaceholder.style.display = 'none';
         if (els.clearBannerBtn) els.clearBannerBtn.classList.remove('d-none');
@@ -491,7 +505,7 @@
     }
 
     /* ── Init ──────────────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', () => {
+    window.onAdminPageLoad(() => {
         loadData(1, '', 'all');
     });
 

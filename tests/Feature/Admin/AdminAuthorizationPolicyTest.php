@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Banner;
+use App\Models\Combo;
 use App\Models\Movie;
 use App\Models\Permission;
 use App\Models\Product;
@@ -110,6 +111,17 @@ class AdminAuthorizationPolicyTest extends TestCase
         $this->assertTrue(Gate::forUser($admin)->allows('delete', $product));
         $this->assertFalse(Gate::forUser($customer)->allows('create', Banner::class));
         $this->assertFalse(Gate::forUser($customer)->allows('create', Product::class));
+    }
+
+    public function test_dashboard_and_combo_authorization_are_registered_for_admins(): void
+    {
+        $admin = $this->makeUserWithRole('admin');
+        $customer = $this->makeUserWithRole('customer');
+
+        $this->assertTrue(Gate::forUser($admin)->allows('viewDashboardMetrics'));
+        $this->assertTrue(Gate::forUser($admin)->allows('viewAny', Combo::class));
+        $this->assertFalse(Gate::forUser($customer)->allows('viewDashboardMetrics'));
+        $this->assertFalse(Gate::forUser($customer)->allows('viewAny', Combo::class));
     }
 
     /**

@@ -217,5 +217,5 @@
         'expired_at' => $order->expired_at ? $order->expired_at->toISOString() : null
     ]);
 </script>
-<script type="module" src="{{ asset('js/users/pages/payment.js?v=' . time()) }}"></script>
+<script type="module" src="{{ asset('js/users/pages/payment.js') }}?v={{ config('app.asset_version') }}"></script>
 @endsection

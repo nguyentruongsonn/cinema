@@ -122,11 +122,49 @@ class IdempotencyKey extends Model
             throw new \InvalidArgumentException('Invalid idempotency key format. Expected UUID v4.');
         }
 
-        return DB::transaction(function () use ($key, $operation, $requestContext) {
-            $record = null;
+        $claimExisting = function (self $existing) use ($requestContext): array {
+            if (isset($requestContext['data']) &&
+                $existing->request_data !== null &&
+                json_encode($requestContext['data']) !== json_encode($existing->request_data)) {
+                throw new \DomainException(
+                    'Idempotency key reused with different request payload. ' .
+                    'Each unique operation must use a unique idempotency key.'
+                );
+            }
 
-            try {
-                $record = self::create([
+            if ($existing->status === self::STATUS_COMPLETED) {
+                return ['result' => [
+                    'status' => $existing->response_status ?? 200,
+                    'data' => $existing->response_data,
+                    'idempotent' => true,
+                ]];
+            }
+
+            if ($existing->status === self::STATUS_PROCESSING) {
+                throw new \RuntimeException(
+                    'Operation already in progress. Please retry in a few moments.',
+                    409
+                );
+            }
+
+            $existing->update([
+                'status' => self::STATUS_PROCESSING,
+                'response_data' => null,
+                'response_status' => null,
+            ]);
+
+            return ['record' => $existing];
+        };
+
+        try {
+            $claim = DB::transaction(function () use ($key, $requestContext, $claimExisting): array {
+                $existing = self::query()->where('key', $key)->lockForUpdate()->first();
+
+                if ($existing) {
+                    return $claimExisting($existing);
+                }
+
+                return ['record' => self::create([
                     'key' => $key,
                     'user_id' => Auth::id(),
                     'request_path' => $requestContext['path'] ?? null,
@@ -134,32 +172,46 @@ class IdempotencyKey extends Model
                     'request_data' => $requestContext['data'] ?? null,
                     'status' => self::STATUS_PROCESSING,
                     'expires_at' => now()->addHours(24),
-                ]);
-            } catch (\Illuminate\Database\QueryException $e) {
-                if (! self::isIdempotencyKeyDuplicate($e)) {
-                    throw $e;
-                }
-
-                return self::handleDuplicateKey($key, $operation, $requestContext);
+                ])];
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            if (! self::isIdempotencyKeyDuplicate($e)) {
+                throw $e;
             }
 
-            try {
-                $result = $operation($record);
+            $claim = DB::transaction(function () use ($key, $claimExisting): array {
+                return $claimExisting(
+                    self::query()->where('key', $key)->lockForUpdate()->firstOrFail()
+                );
+            });
+        }
 
-                $record->update([
+        if (isset($claim['result'])) {
+            return $claim['result'];
+        }
+
+        $record = $claim['record'];
+
+        try {
+            $result = $operation($record);
+
+            DB::transaction(function () use ($record, $result): void {
+                self::query()->whereKey($record->getKey())->lockForUpdate()->firstOrFail()->update([
                     'response_data' => $result['data'] ?? $result,
                     'response_status' => $result['status'] ?? 200,
                     'status' => self::STATUS_COMPLETED,
                     'payment_id' => $result['payment_id'] ?? null,
                 ]);
+            });
 
-                return [
-                    'status' => $result['status'] ?? 200,
-                    'data' => $result['data'] ?? $result,
-                    'idempotent' => false,
-                ];
-            } catch (\Throwable $e) {
-                $record->update([
+            return [
+                'status' => $result['status'] ?? 200,
+                'data' => $result['data'] ?? $result,
+                'idempotent' => false,
+            ];
+        } catch (\Throwable $e) {
+            DB::transaction(function () use ($record, $e): void {
+                self::query()->whereKey($record->getKey())->lockForUpdate()->firstOrFail()->update([
                     'status' => self::STATUS_FAILED,
                     'response_data' => [
                         'error' => $e->getMessage(),
@@ -169,10 +221,10 @@ class IdempotencyKey extends Model
                         ? $e->getStatusCode()
                         : 500,
                 ]);
+            });
 
-                throw $e;
-            }
-        });
+            throw $e;
+        }
     }
 
     /**

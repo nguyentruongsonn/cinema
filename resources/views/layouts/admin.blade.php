@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="view-transition" content="same-origin">
     <title>@yield('title', 'Admin Dashboard') - Cinema Premium</title>
 
     <!-- Google Fonts -->
@@ -16,17 +17,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <!-- Admin Custom CSS -->
-    <link rel="stylesheet" href="{{ asset('css/admin/admin.css') }}?v={{ time() }}">
-
-    <!-- ApexCharts -->
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    @vite('resources/css/admin.css')
+    @vite(['resources/js/admin-shell.js', 'resources/js/admin-navigation.js', 'resources/js/admin-ticket-scanner-bootstrap.js'])
 
     @stack('styles')
 </head>
 <body>
     <div class="admin-wrapper">
         <!-- Mobile Header (Tablet & Mobile Only) -->
-        <div class="mobile-header d-lg-none">
+        <div id="adminMobileHeader" class="mobile-header d-lg-none" data-turbo-permanent>
             <button class="mobile-menu-toggle" aria-label="Open menu" aria-expanded="false">
                 <i class="bi bi-list"></i>
             </button>
@@ -36,7 +35,7 @@
         </div>
 
         <!-- Collapsible Sidebar -->
-        <aside class="admin-sidebar d-flex flex-column" role="navigation" aria-label="Main navigation">
+        <aside id="adminSidebar" class="admin-sidebar d-flex flex-column" role="navigation" aria-label="Main navigation" data-turbo-permanent>
             <!-- Sidebar Header with Toggle -->
             <div class="sidebar-header">
                 <div class="d-flex align-items-center justify-content-between">
@@ -274,13 +273,13 @@
     </div>
 
     <!-- Sidebar Overlay for Mobile -->
-    <div class="sidebar-overlay d-lg-none"></div>
+    <div id="adminSidebarOverlay" class="sidebar-overlay d-lg-none" data-turbo-permanent></div>
 
     <!-- Toast Container -->
-    <div id="adminToastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;"></div>
+    <div id="adminToastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;" data-turbo-permanent></div>
 
     <!-- Ticket Scanner Modal -->
-    <div class="modal fade" id="ticketScannerModal" tabindex="-1" aria-labelledby="ticketScannerModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal fade" id="ticketScannerModal" tabindex="-1" aria-labelledby="ticketScannerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-turbo-permanent>
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content bg-dark text-white border-secondary">
                 <div class="modal-header border-secondary">
@@ -335,14 +334,14 @@
     </div>
 
     <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ asset('js/admin/admin-core.js') }}?v={{ time() }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" data-turbo-eval="false"></script>
 
     <!-- Admin Core JS -->
-    <script>
+    <script data-turbo-eval="false">
         window.APP_CONFIG = {
             appName: @json(config('app.name', 'Cinema')),
             apiUrl: @json(url('/api/v1')),
+            assetVersion: @json(config('app.asset_version')),
             csrfToken: @json(csrf_token()),
             auth: {
                 checked: @json(Auth::guard('web')->check() || !request()->hasCookie('refresh_token')),
@@ -351,19 +350,6 @@
             },
         };
     </script>
-    <script src="{{ asset('js/core/api-client.js') }}"></script>
-    <script src="{{ asset('js/users/auth.js') }}"></script>
-    <script src="{{ asset('js/admin/app.js') }}?v={{ time() }}"></script>
-
-    <!-- Responsive Menu JS -->
-    <script src="{{ asset('js/admin/responsive-menu.js') }}?v={{ time() }}"></script>
-
-    <!-- Mobile Search Toggle JS -->
-    <script src="{{ asset('js/admin/mobile-search-toggle.js') }}?v={{ time() }}"></script>
-
-    <!-- Ticket Scanner JS -->
-    @vite('resources/js/admin-ticket-scanner-bootstrap.js')
-
     @stack('scripts')
 </body>
 </html>

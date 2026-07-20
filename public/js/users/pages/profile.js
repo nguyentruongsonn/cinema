@@ -311,6 +311,7 @@ class ProfilePage {
 
     renderAvatar(avatarUrl, name = 'U') {
         const fallbackText = (name || 'U').trim().charAt(0).toUpperCase() || 'U';
+        const safeAvatarUrl = avatarUrl ? this.safeImageUrl(avatarUrl) : '';
 
         // Main cover avatar
         if (this.elements.avatarFallback) {
@@ -319,15 +320,15 @@ class ProfilePage {
 
         if (!this.elements.avatar || !this.elements.avatarFallback) return;
 
-        if (avatarUrl) {
-            this.elements.avatar.src = avatarUrl;
+        if (safeAvatarUrl) {
+            this.elements.avatar.src = safeAvatarUrl;
             this.elements.avatar.classList.remove('d-none');
             this.elements.avatarFallback.classList.add('d-none');
 
-            this.elements.avatar.onerror = () => {
+            this.elements.avatar.addEventListener('error', () => {
                 this.elements.avatar.classList.add('d-none');
                 this.elements.avatarFallback.classList.remove('d-none');
-            };
+            }, { once: true });
         } else {
             this.elements.avatar.classList.add('d-none');
             this.elements.avatarFallback.classList.remove('d-none');
@@ -339,14 +340,14 @@ class ProfilePage {
         if (sidebarAvatarFallback) sidebarAvatarFallback.textContent = fallbackText;
 
         if (sidebarAvatarImg && sidebarAvatarFallback) {
-            if (avatarUrl) {
-                sidebarAvatarImg.src = avatarUrl;
+            if (safeAvatarUrl) {
+                sidebarAvatarImg.src = safeAvatarUrl;
                 sidebarAvatarImg.classList.remove('d-none');
                 sidebarAvatarFallback.classList.add('d-none');
-                sidebarAvatarImg.onerror = () => {
+                sidebarAvatarImg.addEventListener('error', () => {
                     sidebarAvatarImg.classList.add('d-none');
                     sidebarAvatarFallback.classList.remove('d-none');
-                };
+                }, { once: true });
             } else {
                 sidebarAvatarImg.classList.add('d-none');
                 sidebarAvatarFallback.classList.remove('d-none');
@@ -581,16 +582,16 @@ class ProfilePage {
                 ">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="background:#e50914; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; letter-spacing:.5px;">VOUCHER</span>
-                        <code style="color:#e50914; font-size:16px; font-weight:700; letter-spacing:2px;">${v.code}</code>
+                        <code style="color:#e50914; font-size:16px; font-weight:700; letter-spacing:2px;">${this.escapeHtml(v.code)}</code>
                     </div>
-                    <div style="color:#fff; font-size:15px; font-weight:600;">${v.name || discountLabel}</div>
-                    <div style="color:#ccc; font-size:13px;">${v.description || discountLabel}</div>
+                    <div style="color:#fff; font-size:15px; font-weight:600;">${this.escapeHtml(v.name || discountLabel)}</div>
+                    <div style="color:#ccc; font-size:13px;">${this.escapeHtml(v.description || discountLabel)}</div>
                     <div style="display:flex; gap:16px; font-size:12px; color:#8d96a3;">
-                        <span><i class="bi bi-info-circle me-1"></i>${minLabel}</span>
-                        <span><i class="bi bi-calendar me-1"></i>${expiry}</span>
+                        <span><i class="bi bi-info-circle me-1"></i>${this.escapeHtml(minLabel)}</span>
+                        <span><i class="bi bi-calendar me-1"></i>${this.escapeHtml(expiry)}</span>
                     </div>
                     <div style="margin-top:4px;">
-                        <button class="voucher-copy-btn" data-code="${v.code}" style="
+                        <button class="voucher-copy-btn" data-code="${this.escapeHtml(v.code)}" style="
                             background:transparent; border:1px solid #333; color:#ccc;
                             border-radius:8px; padding:6px 14px; font-size:13px; cursor:pointer;
                             transition:all .2s;
@@ -673,7 +674,7 @@ class ProfilePage {
                         <tr>
                             <td class="text-white align-middle" style="font-size: 0.9rem;">${date}</td>
                             <td class="align-middle">
-                                <div class="text-white fw-bold mb-1">${movieName}</div>
+                                <div class="text-white fw-bold mb-1">${this.escapeHtml(movieName)}</div>
                                 <div class="text-muted" style="font-size: 0.8rem;">Ticket Booking</div>
                             </td>
                             <td class="text-end align-middle">
@@ -688,7 +689,7 @@ class ProfilePage {
                         <tr>
                             <td class="text-white align-middle" style="font-size: 0.9rem;">${date}</td>
                             <td class="align-middle">
-                                <div class="text-white fw-bold mb-1">${movieName}</div>
+                                <div class="text-white fw-bold mb-1">${this.escapeHtml(movieName)}</div>
                                 <div class="text-muted" style="font-size: 0.8rem;">Point Redemption</div>
                             </td>
                             <td class="text-end align-middle">
@@ -832,13 +833,12 @@ class ProfilePage {
         const poster = card.querySelector('.ticket-poster');
         const overlay = card.querySelector('.ticket-cancelled-overlay');
         if (poster) {
-            poster.src = order.poster_url || order.showtime?.movie?.poster_url || '/images/default-poster.jpg';
+            poster.src = this.safeImageUrl(order.poster_url || order.showtime?.movie?.poster_url);
             poster.alt = order.movie_title || order.showtime?.movie?.title || 'Poster';
             // Prevent infinite loop: remove handler after first error
-            poster.onerror = function() {
-                this.onerror = null;
-                this.src = '/images/default-poster.jpg';
-            };
+            poster.addEventListener('error', () => {
+                poster.src = '/images/default-poster.jpg';
+            }, { once: true });
         }
         if (overlay) {
             overlay.style.display = status === 'cancelled' ? 'flex' : 'none';
@@ -979,6 +979,22 @@ class ProfilePage {
         if (element) element.textContent = text;
     }
 
+    escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    safeImageUrl(value) {
+        const candidate = String(value || '').trim();
+        if (/^\/(?!\/)[A-Za-z0-9_./?=&%-]+$/.test(candidate) && !candidate.includes('..')) return candidate;
+        if (/^https?:\/\/[^\s"'<>]+$/i.test(candidate)) return candidate;
+        return '/images/default-poster.jpg';
+    }
+
     toDateInputValue(value) {
         if (!value) return '';
         const date = new Date(value);
@@ -992,22 +1008,41 @@ class ProfilePage {
         return Number.isNaN(date.getTime()) ? '2022' : String(date.getFullYear());
     }
 
-    openOrderDetailModal(order) {
+    async openOrderDetailModal(orderSummary) {
+        const modalEl = document.getElementById('orderDetailModal');
+        if (!modalEl) return;
+
+        window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        document.getElementById('odModalTicketsList').innerHTML = '<div class="text-muted py-3">Đang tải chi tiết vé...</div>';
+        document.getElementById('odModalProductsList').innerHTML = '';
+
+        try {
+            const response = await this.apiRequest(`/orders/${orderSummary.id}`);
+            this.renderOrderDetailModal(response?.data || orderSummary);
+        } catch (error) {
+            console.error('Load order detail error:', error);
+            this.renderOrderDetailModal(orderSummary);
+            this.showToast?.('Không thể tải đầy đủ chi tiết đơn hàng. Đang hiển thị dữ liệu đã lưu.', 'warning');
+        }
+    }
+
+    renderOrderDetailModal(order) {
         const modalEl = document.getElementById('orderDetailModal');
         if (!modalEl) return;
         
         // Populate modal data
-        const orderCode = order.code || order.id;
-        document.getElementById('odModalCode').textContent = `ORD-${orderCode}`;
+        const orderCode = order.code || order.order_code || order.id;
+        document.getElementById('odModalCode').textContent = String(orderCode).startsWith('ORD-')
+            ? orderCode
+            : `ORD-${orderCode}`;
         
-        const posterUrl = order.poster_url || (order.showtime?.movie?.poster_url) || '/images/default-poster.jpg';
+        const posterUrl = this.safeImageUrl(order.poster_url || order.showtime?.movie?.poster_url);
         const modalPoster = document.getElementById('odModalPoster');
         modalPoster.src = posterUrl;
         // Prevent infinite loop: remove handler after first error
-        modalPoster.onerror = function() {
-            this.onerror = null;
-            this.src = '/images/default-poster.jpg';
-        };
+        modalPoster.addEventListener('error', () => {
+            modalPoster.src = '/images/default-poster.jpg';
+        }, { once: true });
         
         document.getElementById('odModalMovieTitle').textContent = order.movie_title || (order.showtime?.movie?.title) || 'N/A';
         
@@ -1015,6 +1050,10 @@ class ProfilePage {
         const screen = order.screen_name || (order.showtime?.screen?.name) || '';
         document.getElementById('odModalTheater').textContent = branch ? `${branch}` : 'N/A';
         document.getElementById('odModalRoom').textContent = screen || 'N/A';
+        document.getElementById('odModalAddress').textContent = order.theater_address
+            || order.showtime?.screen?.theater?.address
+            || order.showtime?.screen?.theater?.branch?.address
+            || 'N/A';
         
         const rawDate = order.show_date || (order.showtime?.scheduled_at);
         if (rawDate) {
@@ -1035,10 +1074,10 @@ class ProfilePage {
         productsList.innerHTML = '';
         
         // Try to get items from order_items OR fallback to multiple sources
-        let tickets = [];
-        let products = [];
+        let tickets = Array.isArray(order.invoice?.tickets) ? order.invoice.tickets : [];
+        let products = Array.isArray(order.invoice?.products) ? order.invoice.products : [];
         
-        if (order.order_items && order.order_items.length > 0) {
+        if (tickets.length === 0 && products.length === 0 && order.order_items && order.order_items.length > 0) {
             // Primary path: use order_items for completed orders
             tickets = order.order_items.filter(item => 
                 item.item_type.includes('Seat') || item.item_type === 'ticket'
@@ -1184,8 +1223,8 @@ class ProfilePage {
             return `
                 <div class="d-flex justify-content-between mb-2">
                     <div>
-                        <div class="text-white fw-semibold">Vé ${group.type} (x${group.quantity})</div>
-                        <div class="text-muted" style="font-size: 0.8rem;">Ghế ${group.seats.join(', ')}</div>
+                        <div class="text-white fw-semibold">Vé ${this.escapeHtml(group.type)} (x${this.escapeHtml(group.quantity)})</div>
+                        <div class="text-muted" style="font-size: 0.8rem;">Ghế ${this.escapeHtml(group.seats.join(', '))}</div>
                     </div>
                     <div class="text-white">${group.totalPrice.toLocaleString('vi-VN')}đ</div>
                 </div>
@@ -1202,8 +1241,8 @@ class ProfilePage {
             return `
                 <div class="d-flex justify-content-between mb-2">
                     <div>
-                        <div class="text-white fw-semibold">${name} (x${qty})</div>
-                        ${description ? `<div class="text-muted" style="font-size: 0.8rem;">${description}</div>` : ''}
+                        <div class="text-white fw-semibold">${this.escapeHtml(name)} (x${this.escapeHtml(qty)})</div>
+                        ${description ? `<div class="text-muted" style="font-size: 0.8rem;">${this.escapeHtml(description)}</div>` : ''}
                     </div>
                     <div class="text-white">${parseFloat(total).toLocaleString('vi-VN')}đ</div>
                 </div>
@@ -1257,56 +1296,41 @@ class ProfilePage {
             barcodeContainer.innerHTML = this.generateBarcodeSVG(orderCode);
         }
         
-        const promoCode = order.payload?.promotion?.code || order.payload?.voucher?.code;
-        const discountAmount = parseFloat(order.payload?.discount_amount || order.payload?.voucher_discount || 0);
+        const promoCode = order.invoice?.promotion?.code || order.payload?.promotion?.code || order.payload?.voucher?.code;
+        const voucherDiscount = Number(order.invoice?.voucher_discount ?? order.payload?.voucher_discount ?? 0) || 0;
+        const pointDiscount = Number(order.invoice?.point_discount ?? order.payload?.point_discount ?? 0) || 0;
+        const discountAmount = Number(order.invoice?.discount_amount ?? order.payload?.discount_amount ?? 0) || 0;
+        const displayedVoucherDiscount = voucherDiscount || Math.max(0, discountAmount - pointDiscount);
         const voucherList = document.getElementById('odModalVoucherList');
         
-        if (promoCode && discountAmount > 0) {
+        if (promoCode && displayedVoucherDiscount > 0) {
             voucherList.classList.remove('d-none');
             document.getElementById('odModalVoucherCode').textContent = promoCode;
-            document.getElementById('odModalVoucherValue').textContent = `-${discountAmount.toLocaleString('vi-VN')}đ`;
+            document.getElementById('odModalVoucherValue').textContent = `-${displayedVoucherDiscount.toLocaleString('vi-VN')}đ`;
         } else {
             voucherList.classList.add('d-none');
         }
+
+        const pointsList = document.getElementById('odModalPointsList');
+        const pointsUsed = Number(order.invoice?.points_used ?? order.payload?.points_used ?? 0) || 0;
+        if (pointDiscount > 0) {
+            pointsList.classList.remove('d-none');
+            document.getElementById('odModalPointsUsed').textContent = pointsUsed.toLocaleString('vi-VN');
+            document.getElementById('odModalPointsValue').textContent = `-${pointDiscount.toLocaleString('vi-VN')}đ`;
+        } else {
+            pointsList.classList.add('d-none');
+        }
+
+        const subtotal = Number(order.invoice?.subtotal ?? order.payload?.subtotal ?? order.total_amount ?? 0) || 0;
+        document.getElementById('odModalSubtotal').textContent = `${subtotal.toLocaleString('vi-VN')}đ`;
         
-        document.getElementById('odModalTotal').textContent = `${parseFloat(order.total_amount || 0).toLocaleString('vi-VN')}đ`;
+        document.getElementById('odModalTotal').textContent = `${(Number(order.total_amount) || 0).toLocaleString('vi-VN')}đ`;
         
-        // Open modal using bootstrap
-        const modal = new window.bootstrap.Modal(modalEl);
-        modal.show();
+        window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
 
     generateBarcodeSVG(code) {
-        const width = 300;
-        const height = 70;
-        let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
-        svg += `<rect width="${width}" height="${height}" fill="#ffffff"/>`;
-        
-        let x = 20;
-        // Deterministic hash based on code
-        const hash = String(code).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        
-        let rand = hash;
-        const getNextWidth = () => {
-            rand = (rand * 9301 + 49297) % 233280;
-            return (rand % 3) + 1; // 1, 2, or 3
-        };
-        const getNextGap = () => {
-            rand = (rand * 9301 + 49297) % 233280;
-            return (rand % 3) + 1; // 1, 2, or 3
-        };
-
-        // Draw vertical stripes
-        while (x < width - 20) {
-            const w = getNextWidth();
-            svg += `<rect x="${x}" y="8" width="${w}" height="40" fill="#000000"/>`;
-            x += w + getNextGap();
-        }
-        
-        // Add code text below barcode stripes
-        svg += `<text x="50%" y="60" font-family="monospace" font-size="11" fill="#000000" text-anchor="middle" letter-spacing="2">${code}</text>`;
-        svg += `</svg>`;
-        return svg;
+        return window.generateProfileBarcodeSvg(code, (value) => this.escapeHtml(value));
     }
 }
 

@@ -387,7 +387,7 @@
         waitForAuth(loadStats);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    window.onAdminPageLoad(() => {
         cacheDoms();
         init();
     });

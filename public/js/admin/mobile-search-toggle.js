@@ -6,66 +6,54 @@
 (function() {
     'use strict';
 
-    // Only run on mobile
     function isMobile() {
         return window.innerWidth <= 768;
     }
 
-    function initMobileSearchToggle() {
-        if (!isMobile()) return;
+    function searchFormFor(element) {
+        return element?.closest('.admin-filter-container form, .admin-filter-container .search-container-lg');
+    }
 
-        // Find all search forms and buttons in admin-filter-container
-        const searchForms = document.querySelectorAll('.admin-filter-container form, .admin-filter-container #searchForm, .admin-filter-container .search-container-lg');
-        
-        searchForms.forEach(form => {
-            const searchButton = form.querySelector('.admin-filter-btn, .search-btn-rounded-right, button[type="submit"]');
-            const searchInput = form.querySelector('input[type="text"], #search, .admin-filter-input');
-            
-            if (searchButton && searchInput) {
-                // Toggle search on button click
-                searchButton.addEventListener('click', function(e) {
-                    // If form is not active (input hidden), show it instead of submitting
-                    if (!form.classList.contains('search-active')) {
-                        e.preventDefault();
-                        form.classList.add('search-active');
-                        searchInput.focus();
-                    }
-                    // If form is active and has value, allow submit
-                    // If form is active and empty, hide it
-                    else if (!searchInput.value.trim()) {
-                        e.preventDefault();
-                        form.classList.remove('search-active');
-                    }
-                });
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('.admin-filter-btn, .search-btn-rounded-right, button[type="submit"]');
+        const form = searchFormFor(button);
 
-                // Hide search when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!form.contains(e.target)) {
-                        form.classList.remove('search-active');
-                    }
-                });
-
-                // Keep search open when typing
-                searchInput.addEventListener('focus', function() {
-                    form.classList.add('search-active');
-                });
+        if (isMobile() && form) {
+            const input = form.querySelector('input[type="text"], #search, .admin-filter-input');
+            if (input && !form.classList.contains('search-active')) {
+                event.preventDefault();
+                form.classList.add('search-active');
+                input.focus();
+                return;
             }
+
+            if (input && !input.value.trim()) {
+                event.preventDefault();
+                form.classList.remove('search-active');
+                return;
+            }
+        }
+
+        document.querySelectorAll('.admin-filter-container .search-active').forEach((activeForm) => {
+            if (!activeForm.contains(event.target)) activeForm.classList.remove('search-active');
         });
-    }
+    });
 
-    // Init on page load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initMobileSearchToggle);
-    } else {
-        initMobileSearchToggle();
-    }
+    document.addEventListener('focusin', function (event) {
+        const form = searchFormFor(event.target);
+        if (isMobile() && form && event.target.matches('input[type="text"], #search, .admin-filter-input')) {
+            form.classList.add('search-active');
+        }
+    });
 
-    // Re-init on window resize
     let resizeTimer;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function() {
-            initMobileSearchToggle();
+            if (!isMobile()) {
+                document.querySelectorAll('.admin-filter-container .search-active')
+                    .forEach((form) => form.classList.remove('search-active'));
+            }
         }, 250);
     });
 

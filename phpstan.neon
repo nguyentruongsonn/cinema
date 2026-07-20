@@ -1,0 +1,13 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/Console/Commands
+        - app/Http/Controllers/Api/V1/OperationalHealthController.php
+        - app/Http/Middleware/InternalMetricsAccess.php
+        - app/Http/Middleware/RequestIdMiddleware.php
+        - app/Services/Observability
+        - app/Services/Api/OpenApiService.php
+    level: 5
+    tmpDir: storage/framework/cache/phpstan

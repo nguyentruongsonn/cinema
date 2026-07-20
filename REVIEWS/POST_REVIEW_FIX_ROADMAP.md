@@ -622,18 +622,11 @@ Manual/security verification:
 
 ---
 
-## 14. Immediate Next Sprint Recommendation
+## 14. Post-Remediation Status
 
-The next implementation sprint should focus on:
+The local remediation roadmap is complete as of 2026-07-18. Remaining release actions are environment-specific rather than repository implementation work:
 
-1. Fix baseline test failures.
-2. Harden `ShowtimeService` bulk creation:
-   - transaction
-   - unique constraint
-   - overlap validation
-   - FormRequests
-   - authorization
-3. Normalize seat holds into lockable rows.
-4. Add missing concurrency tests.
-
-Do not start broad UI/admin refactoring until these are complete.
+1. Run the browser matrix with `BROWSER_MATRIX_REQUIRE_FIREFOX=1` on a CI runner with working Firefox headless graphics.
+2. Execute a real PayOS sandbox payment, callback, cancellation, and signed webhook replay.
+3. Re-run migration/rollback and load gates against staging data and infrastructure.
+4. Obtain final human release approval after monitoring and alert destinations are connected.

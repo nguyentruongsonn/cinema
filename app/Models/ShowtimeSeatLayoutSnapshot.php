@@ -24,9 +24,9 @@ class ShowtimeSeatLayoutSnapshot extends Model
     /**
      * All fields are guarded. Use factory methods to create snapshots.
      */
-    protected array $fillable = [];
+    protected $fillable = [];
 
-    protected array $casts = [
+    protected $casts = [
         'layout_data' => 'array',
         'version' => 'integer',
     ];

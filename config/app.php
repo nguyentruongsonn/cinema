@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'asset_version' => env('ASSET_VERSION', '2026071802'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -122,5 +124,8 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    'slow_query_log_enabled' => (bool) env('SLOW_QUERY_LOG_ENABLED', false),
+    'slow_query_threshold_ms' => (float) env('SLOW_QUERY_THRESHOLD_MS', 100),
 
 ];

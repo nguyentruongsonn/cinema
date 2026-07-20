@@ -5,6 +5,9 @@
 (function () {
     'use strict';
 
+    const lifecycleController = new AbortController();
+    window.onAdminPageCleanup(() => lifecycleController.abort());
+
     function escapeHtml(value) {
         return String(value ?? '')
             .replace(/&/g, '&amp;')
@@ -156,7 +159,7 @@
             }
 
             // Fetch branches
-            const bRes = await window.AdminCore.apiFetch('/api/v1/admin/branches?per_page=200');
+            const bRes = await window.AdminCore.apiFetch('/api/v1/admin/branches?options=1', { cacheTtl: 300000 });
             if (bRes && bRes.ok) {
                 const bData = await bRes.json();
                 cachedBranches = bData.data || [];
@@ -164,7 +167,7 @@
             }
 
             // Fetch theaters, formats, version types from screens meta
-            const sRes = await window.AdminCore.apiFetch('/api/v1/admin/screens?per_page=1');
+            const sRes = await window.AdminCore.apiFetch('/api/v1/admin/screens?page=1&include_references=1');
             if (sRes && sRes.ok) {
                 const sData = await sRes.json();
                 cachedTheaters = sData.theaters || [];
@@ -289,7 +292,7 @@
             if (els.theaterFilter?.value) url.searchParams.append('theater_id', els.theaterFilter.value);
             if (els.statusFilter?.value) url.searchParams.append('status', els.statusFilter.value);
 
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'showtimes:list' });
             if (!res || !res.ok) throw new Error();
 
             const json = await res.json();
@@ -301,6 +304,7 @@
             els.showtimeCount.textContent = `${pagination.total ?? showtimes.length} suất chiếu`;
 
         } catch (err) {
+            if (err.name === 'AbortError') return;
             console.error(err);
             els.showtimesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -378,7 +382,7 @@
         }
 
         let html = '<nav><ul class="pagination mb-0">';
-        for (let i = 1; i <= (pag.last_page || 1); i++) {
+        for (const i of window.AdminCore.paginationPages(pag)) {
             const active = i === pag.current_page ? 'active' : '';
             html += `<li class="page-item ${active}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
         }
@@ -587,9 +591,10 @@
             }
 
             try {
-                const res = await window.AdminCore.apiFetch(`/api/v1/admin/screens?theater_id=${tid}&per_page=200`);
+                const res = await window.AdminCore.apiFetch(`/api/v1/admin/screens?theater_id=${tid}&per_page=50`);
                 if (res && res.ok) {
                     const json = await res.json();
+                    json.data = json.screens?.data || json.data || [];
                     fillSelect(screenSel, json.data || [], 'id', 'name', '-- Chọn phòng --');
                 }
             } catch (err) {
@@ -839,7 +844,7 @@
                 const id = btn.dataset.id;
                 deleteShowtime(id);
             }
-        });
+        }, { signal: lifecycleController.signal });
 
         // Event delegation for status toggle switches
         document.addEventListener('change', async (e) => {
@@ -872,7 +877,7 @@
                     toggle.checked = !toggle.checked;
                 }
             }
-        });
+        }, { signal: lifecycleController.signal });
     }
 
     /* ── Initialize ──────────────────────────────────────── */
@@ -894,10 +899,5 @@
         console.log('[Showtimes] Ready.');
     }
 
-    // Auto-init when DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    window.onAdminPageLoad(init);
 })();

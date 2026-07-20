@@ -27,6 +27,7 @@ class BookingManager {
         this.currentStep = 1; // Track current step (1-5)
         this.steps = ['seats', 'food', 'promotion', 'confirm', 'success'];
         this.isCreatingPayment = false;
+        this.lockPromise = null;
 
         // DOM Elements
         this.seatMapContainer = document.getElementById('seatMap');
@@ -226,7 +227,7 @@ class BookingManager {
             // Clean up URL without reloading
             window.history.replaceState({}, document.title, window.location.pathname);
 
-            if (paymentStatus === 'success' || paymentStatus === 'PAID') {
+            if (paymentStatus === 'success' || paymentStatus === 'PAID' || paymentStatus === 'pending') {
                 if (orderCode) {
                     this.showSuccessScreen(orderCode);
                     return false; // Stop normal initialization
@@ -271,53 +272,25 @@ class BookingManager {
         }
 
         try {
-            const response = await this.fetchAPI(`/payments/orders/${orderCode}`, {
-                method: 'GET'
-            });
+            const order = await this.fetchVerifiedOrderResult(orderCode);
 
-            if (response.success && response.data) {
-                const order = response.data;
-
-                // Show success toast notification
-                this.showToast('Thanh toán thành công!', 'success');
-
-                const orderCodeEl = document.getElementById('successOrderCode');
-                if (orderCodeEl) orderCodeEl.textContent = order.gateway_order_code || order.order_code;
-
-                // Populate seats
-                const successSeatsInfo = document.getElementById('successSeatsInfo');
-                if (successSeatsInfo && order.items) {
-                    const seatLabels = order.items
-                        .filter(item => item.type === 'Seat' && item.metadata)
-                        .map(item => item.metadata.seat_label)
-                        .filter(Boolean);
-                    
-                    if (seatLabels.length > 0) {
-                        successSeatsInfo.textContent = seatLabels.join(', ');
-                    }
-                }
-                
-                // Fallback to currently selected seats if still empty
-                if (successSeatsInfo && successSeatsInfo.textContent === '---' && this.selectedSeats.size > 0) {
-                    const seatLabels = Array.from(this.selectedSeats)
-                        .map(seatId => {
-                            const seat = this.seats.find(s => s.id === seatId);
-                            return seat ? (seat.label || `${seat.row}${seat.number}`) : '';
-                        })
-                        .filter(label => label);
-                    successSeatsInfo.textContent = seatLabels.join(', ');
-                }
-
-                const viewTicketBtn = document.getElementById('viewTicketBtn');
-                if (viewTicketBtn) {
-                    viewTicketBtn.href = `/tickets/order/${order.order_code}`; // Assuming this route exists
-                }
-            } else {
-                throw new Error(response.message || 'Không thể tải thông tin đơn hàng');
+            if (!order) {
+                throw new Error('Không thể tải thông tin đơn hàng');
             }
+
+            if (!this.isPaidOrder(order)) {
+                this.renderPendingPaymentResult(order);
+                return;
+            }
+
+            this.renderSuccessResult(order);
+            this.showToast('Thanh toán thành công!', 'success');
         } catch (error) {
             console.error('Lỗi load success screen:', error);
-            this.showToast('Có lỗi xảy ra khi tải thông tin vé: ' + error.message, 'danger');
+            this.setTextById('successStatusTitle', 'Chưa thể tải thông tin vé');
+            this.setTextById('successStatusMessage', 'Thanh toán không bị thay đổi. Vui lòng mở mục Vé của tôi để kiểm tra lại.');
+            this.setStatusIcon('bi-exclamation-triangle');
+            this.showToast('Không thể tải thông tin vé: ' + error.message, 'danger');
         } finally {
             if (this.checkoutIntent?.state !== 'redirecting') {
                 this.isCreatingPayment = false;
@@ -473,6 +446,8 @@ class BookingManager {
         // Release an uncommitted hold when the page lifecycle ends. A checkout
         // intent that already has a gateway link must keep its hold alive.
         window.addEventListener('pagehide', () => {
+            if (this._pollInterval) clearInterval(this._pollInterval);
+            this._pollInterval = null;
             const holdId = this.getCurrentHoldId();
             if (!holdId || ['created', 'redirecting'].includes(this.checkoutIntent?.state)) return;
 
@@ -634,7 +609,7 @@ class BookingManager {
         this.selectedSeats.forEach(seatId => {
             const seat = this.seats.find(s => s.id === seatId);
             if (seat) {
-                seatTotal += seat.price || 0;
+                seatTotal += Number(seat.price) || 0;
                 seatLabels.push(seat.label || `${seat.row}${seat.number}`);
             }
         });
@@ -772,7 +747,11 @@ class BookingManager {
                 throw new Error(response.message || 'Không thể tải combo');
             }
 
-            this.products = response.data || [];
+            const productsPayload = response.data;
+            const products = Array.isArray(productsPayload)
+                ? productsPayload
+                : (Array.isArray(productsPayload?.data) ? productsPayload.data : []);
+            this.products = window.BookingProductRenderer.normalize(products);
             this.renderProducts();
         } catch (error) {
             console.error('Load products error:', error);
@@ -781,71 +760,20 @@ class BookingManager {
     }
 
     getProductIcon(name) {
-        const lower = name.toLowerCase();
-        if (lower.includes('bắp') || lower.includes('popcorn') || lower.includes('ngô') || lower.includes('bap') || lower.includes('combo')) {
-            return 'bi-cookie';
-        }
-        if (lower.includes('nước') || lower.includes('coke') || lower.includes('coca') || lower.includes('sprite') || lower.includes('pepsi') || lower.includes('drink') || lower.includes('suối')) {
-            return 'bi-cup-straw';
-        }
-        return 'bi-gift';
+        return new window.BookingProductRenderer(this).icon(name);
     }
 
     renderProducts() {
-        if (!this.productsContainer) return;
-
-        if (this.products.length === 0) {
-            this.productsContainer.innerHTML = '<div class="text-center text-muted py-4">Hiện chưa có combo khả dụng.</div>';
-            return;
-        }
-
-        this.productsContainer.innerHTML = this.products.map(product => {
-            const quantity = this.selectedProducts.get(product.id) || 0;
-            const image = product.image_url || '';
-            const totalVal = product.price * quantity;
-            const totalHtml = quantity > 0
-                ? `<div class="product-item-total">Tổng: <span class="text-danger">${this.formatCurrency(totalVal)}</span></div>`
-                : '';
-            const iconClass = this.getProductIcon(product.name);
-
-            return `
-                <div class="product-card" data-product-id="${product.id}">
-                    <div class="product-image-wrapper">
-                        ${image ? `<img src="${image}" alt="${this.escapeHtml(product.name)}" class="product-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
-                        <div class="product-image-fallback" style="${image ? 'display: none;' : 'display: flex;'}">
-                            <i class="bi ${iconClass}"></i>
-                        </div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-name">${this.escapeHtml(product.name)}</div>
-                        <div class="product-description">${this.escapeHtml(product.description || 'Không có mô tả.')}</div>
-                        <div class="product-price">${this.formatCurrency(product.price)}</div>
-                        <div class="product-footer">
-                            <div class="quantity-control">
-                                <button type="button" class="quantity-btn minus" data-action="decrease" ${quantity <= 0 ? 'disabled' : ''}>−</button>
-                                <span class="quantity-value">${quantity}</span>
-                                <button type="button" class="quantity-btn plus" data-action="increase" ${quantity >= product.stock ? 'disabled' : ''}>+</button>
-                            </div>
-                            ${totalHtml}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        this.productsContainer.querySelectorAll('.product-card').forEach(item => {
-            const productId = parseInt(item.dataset.productId);
-            item.querySelector('[data-action="decrease"]')?.addEventListener('click', () => this.changeProductQuantity(productId, -1));
-            item.querySelector('[data-action="increase"]')?.addEventListener('click', () => this.changeProductQuantity(productId, 1));
-        });
+        new window.BookingProductRenderer(this).render();
     }
 
     changeProductQuantity(productId, delta) {
         const product = this.products.find(item => item.id === productId);
         if (!product) return;
 
-        const currentQuantity = this.selectedProducts.get(productId) || 0;
-        const nextQuantity = Math.max(0, Math.min(product.stock, currentQuantity + delta));
+        const currentQuantity = Number(this.selectedProducts.get(productId)) || 0;
+        const maxQuantity = Number(product.max_quantity) || 0;
+        const nextQuantity = Math.max(0, Math.min(maxQuantity, currentQuantity + delta));
 
         if (nextQuantity === 0) {
             this.selectedProducts.delete(productId);
@@ -1040,6 +968,11 @@ class BookingManager {
 
         if (!this.isLockingSeats && (status === 'available' || status === 'selected' || status === 'holding')) {
             seatDiv.addEventListener('click', () => this.handleSeatClick(seat));
+            seatDiv.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                this.handleSeatClick(seat);
+            });
             seatDiv.setAttribute('role', 'button');
             seatDiv.setAttribute('tabindex', '0');
             seatDiv.setAttribute('aria-label', `Ghế ${seat.row}${seat.number}, ${seat.seat_type?.name || 'Thường'}`);
@@ -1128,7 +1061,11 @@ class BookingManager {
         }
 
         if (this.lockPromise) {
-            return false;
+            await this.lockPromise;
+
+            if (this.isCurrentHoldForSelectedSeats()) {
+                return true;
+            }
         }
 
         this.isLockingSeats = true;
@@ -1303,12 +1240,12 @@ class BookingManager {
 
         // Calculate prices using dynamic prices from API
         let seatTotal = 0;
-        let quantity = this.selectedSeats.size;
+        const quantity = this.selectedSeats.size;
 
         this.selectedSeats.forEach(seatId => {
             const seat = this.seats.find(s => s.id === seatId);
             if (seat) {
-                seatTotal += seat.price || 0;  // Use dynamic price from API response
+                seatTotal += Number(seat.price) || 0;
             }
         });
         const productsTotal = this.calculateProductsTotal();
@@ -1341,7 +1278,7 @@ class BookingManager {
         }
 
         if (this.seatSurcharge) {
-            this.seatSurcharge.textContent = this.formatCurrency(totalSurcharge);
+            this.seatSurcharge.textContent = this.formatCurrency(seatTotal);
         }
 
         if (this.productTotal) {
@@ -1349,7 +1286,7 @@ class BookingManager {
         }
 
         if (this.discountAmount) {
-            this.discountAmount.textContent = this.formatCurrency(discount);
+            this.discountAmount.textContent = this.formatCurrency(discountAmount);
         }
 
         if (this.totalPrice) {
@@ -1541,6 +1478,148 @@ class BookingManager {
             this.isCreatingPayment = false;
             this.hideLoading();
         }
+    }
+
+    async fetchVerifiedOrderResult(orderCode) {
+        const retryDelays = [0, 350, 700, 1200, 1800];
+        let latestOrder = null;
+
+        for (const delay of retryDelays) {
+            if (delay > 0) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+
+            const response = await this.fetchAPI(`/payments/orders/${encodeURIComponent(orderCode)}`, {
+                method: 'GET'
+            });
+
+            if (!response.success || !response.data) {
+                throw new Error(response.message || 'Không thể tải thông tin đơn hàng');
+            }
+
+            latestOrder = response.data;
+            if (this.isPaidOrder(latestOrder)) {
+                return latestOrder;
+            }
+        }
+
+        return latestOrder;
+    }
+
+    isPaidOrder(order) {
+        return String(order?.payment_status || '').toLowerCase() === 'paid'
+            || String(order?.status || '').toLowerCase() === 'confirmed'
+            || Number(order?.status_code) === 2;
+    }
+
+    renderSuccessResult(order) {
+        const invoice = order.invoice || {};
+        const showtime = order.showtime || {};
+        const tickets = Array.isArray(invoice.tickets) ? invoice.tickets : [];
+        const products = Array.isArray(invoice.products) ? invoice.products : [];
+        const scheduledAt = showtime.scheduled_at || order.show_date;
+        const seatLabels = tickets
+            .map(ticket => ticket.metadata?.seat_label)
+            .filter(Boolean);
+
+        this.setTextById('successStatusTitle', 'Thanh toán thành công');
+        this.setTextById('successStatusMessage', 'Vé và hóa đơn đã được hệ thống xác nhận.');
+        this.setStatusIcon('bi-check-lg');
+        this.setTextById('successOrderCode', order.order_code || order.code || order.gateway_order_code || '---');
+        this.setTextById('successMovieTitle', order.movie_title || showtime.movie?.title || 'N/A');
+        this.setTextById('successMovieFormat', showtime.format?.name || showtime.version_type?.name || '2D');
+        this.setTextById('successShowtime', this.formatResultDateTime(scheduledAt));
+        this.setTextById(
+            'successTheater',
+            [order.branch_name || order.theater_name || showtime.screen?.theater?.name, order.screen_name || showtime.screen?.name]
+                .filter(Boolean)
+                .join(' - ') || 'N/A'
+        );
+        this.setTextById('successTheaterAddress', order.theater_address || showtime.screen?.theater?.address || 'N/A');
+        this.setTextById('successSeatsInfo', seatLabels.join(', ') || 'N/A');
+        this.setTextById('successSubtotal', this.formatCurrency(invoice.subtotal ?? order.total_amount));
+        this.setTextById('successTotalAmount', this.formatCurrency(order.total_amount));
+        this.setTextById('successDate', this.formatResultDateTime(order.created_at));
+
+        this.renderSuccessProducts(products);
+        this.renderResultDiscount('successVoucherRow', 'successVoucherLabel', 'successVoucherDiscount', {
+            label: invoice.promotion?.code ? `Voucher (${invoice.promotion.code})` : 'Voucher',
+            amount: Number(invoice.voucher_discount) || 0,
+        });
+        this.renderResultDiscount('successPointsRow', 'successPointsLabel', 'successPointsDiscount', {
+            label: invoice.points_used ? `Điểm thành viên (${Number(invoice.points_used).toLocaleString('vi-VN')} điểm)` : 'Điểm thành viên',
+            amount: Number(invoice.point_discount) || 0,
+        });
+
+        const viewTicketBtn = document.getElementById('viewTicketBtn');
+        if (viewTicketBtn) {
+            viewTicketBtn.href = `/tickets/order/${encodeURIComponent(order.order_code || order.code)}`;
+        }
+    }
+
+    renderPendingPaymentResult(order) {
+        this.setTextById('successStatusTitle', 'Thanh toán đang được xác minh');
+        this.setTextById('successStatusMessage', 'Hệ thống chưa nhận được xác nhận cuối cùng. Không thanh toán lại trong lúc chờ đồng bộ.');
+        this.setStatusIcon('bi-clock-history');
+        this.setTextById('successOrderCode', order?.order_code || order?.code || order?.gateway_order_code || '---');
+
+        const viewTicketBtn = document.getElementById('viewTicketBtn');
+        if (viewTicketBtn) {
+            viewTicketBtn.href = '/profile#tickets';
+            viewTicketBtn.textContent = 'Kiểm tra Vé của tôi';
+        }
+    }
+
+    renderSuccessProducts(products) {
+        const container = document.getElementById('successProductsList');
+        if (!container) return;
+
+        container.replaceChildren();
+        if (products.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'ticket-value text-muted';
+            empty.textContent = 'Không có sản phẩm đi kèm';
+            container.appendChild(empty);
+            return;
+        }
+
+        products.forEach(product => {
+            const row = document.createElement('div');
+            row.className = 'result-line-item';
+            const name = document.createElement('span');
+            const amount = document.createElement('strong');
+            name.textContent = `${product.metadata?.product_name || product.metadata?.name || 'Sản phẩm'} × ${Number(product.quantity) || 1}`;
+            amount.textContent = this.formatCurrency(product.total_price);
+            row.append(name, amount);
+            container.appendChild(row);
+        });
+    }
+
+    renderResultDiscount(rowId, labelId, valueId, discount) {
+        const row = document.getElementById(rowId);
+        if (!row) return;
+
+        const amount = Math.max(0, Number(discount.amount) || 0);
+        row.classList.toggle('d-none', amount === 0);
+        this.setTextById(labelId, discount.label);
+        this.setTextById(valueId, `-${this.formatCurrency(amount)}`);
+    }
+
+    setStatusIcon(iconClass) {
+        const icon = document.getElementById('successStatusIcon');
+        if (icon) icon.className = `bi ${iconClass}`;
+    }
+
+    setTextById(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value ?? '---';
+    }
+
+    formatResultDateTime(value) {
+        if (!value) return 'N/A';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'N/A';
+        return `${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}, ${date.toLocaleDateString('vi-VN')}`;
     }
 
     getOrCreateCheckoutIntent(payload) {
@@ -1808,8 +1887,7 @@ class BookingManager {
             return `
                 <div class="voucher-card-dark ${isApplied ? 'applied' : ''}" 
                      data-code="${this.escapeHtml(code)}"
-                     data-action="${isApplied ? 'cancel' : 'apply'}"
-                     onclick="document.querySelector('button[data-code=\\'${this.escapeHtml(code)}\\']').click()">
+                     data-voucher-action="${isApplied ? 'cancel' : 'apply'}">
                     
                     <div class="voucher-badge-row">
                         ${isApplied 
@@ -1831,8 +1909,6 @@ class BookingManager {
                         <i class="bi bi-ticket-perforated-fill"></i>
                     </div>
                     
-                    <!-- Hidden button to keep logic working -->
-                    <button type="button" class="d-none" data-voucher-action="${isApplied ? 'cancel' : 'apply'}" data-code="${this.escapeHtml(code)}"></button>
                 </div>
             `;
         }).join('');
@@ -1957,7 +2033,7 @@ class BookingManager {
         this.selectedSeats.forEach(seatId => {
             const seat = this.seats.find(s => s.id === seatId);
             if (seat && seat.price) {
-                seatsTotal += parseFloat(seat.price);
+                seatsTotal += Number(seat.price) || 0;
             }
         });
 
@@ -1970,7 +2046,7 @@ class BookingManager {
         this.selectedProducts.forEach((quantity, productId) => {
             const product = this.products.find(item => item.id === productId);
             if (product) {
-                total += parseFloat(product.price || 0) * quantity;
+                total += (Number(product.price) || 0) * (Number(quantity) || 0);
             }
         });
 
@@ -2027,6 +2103,13 @@ class BookingManager {
             .replace(/>/g, "\u0026gt;")
             .replace(/"/g, "\u0026quot;")
             .replace(/'/g, "\u0026#039;");
+    }
+
+    safeImageUrl(value) {
+        const candidate = String(value || '').trim();
+        if (/^\/(?!\/)[A-Za-z0-9_./?=&%-]+$/.test(candidate) && !candidate.includes('..')) return candidate;
+        if (/^https?:\/\/[^\s"'<>]+$/i.test(candidate)) return candidate;
+        return '';
     }
 
     normalizeHold(hold, fallbackSeatIds = []) {
@@ -2167,10 +2250,12 @@ class BookingManager {
     }
 
     formatCurrency(amount) {
+        const numericAmount = Number(amount);
+
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
-        }).format(amount);
+        }).format(Number.isFinite(numericAmount) ? numericAmount : 0);
     }
 
     /**
@@ -2184,8 +2269,9 @@ class BookingManager {
 
         this._pollInterval = setInterval(async () => {
             // Don't poll if user is in the middle of locking seats
-            if (this.isLockingSeats) return;
+            if (this.isLockingSeats || this._pollInFlight || document.hidden) return;
 
+            this._pollInFlight = true;
             try {
                 const response = await this.fetchAPI(
                     `/seats/showtime/${this.config.encryptedShowtimeId}`
@@ -2220,6 +2306,8 @@ class BookingManager {
                 }
             } catch (e) {
                 // Silent fail — polling is best-effort
+            } finally {
+                this._pollInFlight = false;
             }
         }, 5000); // Poll every 5 seconds
     }

@@ -134,7 +134,9 @@ class TicketController extends Controller
             }
 
             if ($ticket->status === 'used') {
-                return $this->error('Vé đã được sử dụng trước đó vào lúc ' . $ticket->used_at->format('d/m/Y H:i'), 400);
+                $checkedInAt = $ticket->checked_in_at?->format('d/m/Y H:i') ?? 'không xác định';
+
+                return $this->error('Vé đã được sử dụng trước đó vào lúc ' . $checkedInAt, 409);
             }
 
             if ($ticket->status === 'cancelled') {
@@ -149,9 +151,11 @@ class TicketController extends Controller
                 return $this->error('Suất chiếu đã qua. Vé không còn hiệu lực.', 400);
             }
 
-            $ticket->status = 'used';
-            $ticket->used_at = now();
-            $ticket->save();
+            if (! $ticket->markAsUsed()) {
+                return $this->error('Vé đã được xác thực bởi yêu cầu khác.', 409);
+            }
+
+            $ticket->refresh();
 
             return $this->ok([
                 'code' => $ticket->ticket_code,
@@ -162,7 +166,7 @@ class TicketController extends Controller
                 'theater' => $ticket->showtime->screen->theater->name ?? 'N/A',
                 'branch' => $ticket->showtime->screen->theater->branch->name ?? 'N/A',
                 'status' => 'Đã xác thực',
-                'verified_at' => now()->format('d/m/Y H:i:s'),
+                'verified_at' => $ticket->checked_in_at?->format('d/m/Y H:i:s'),
             ], 'Vé hợp lệ. Đã xác thực thành công.');
         } catch (ValidationException $e) {
             return $this->error('Dữ liệu không hợp lệ.', 422, $e->errors());

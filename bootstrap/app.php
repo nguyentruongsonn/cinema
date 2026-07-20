@@ -3,6 +3,7 @@
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AuthenticateFromCookie;
 use App\Http\Middleware\CookieToBearerToken;
+use App\Http\Middleware\InternalMetricsAccess;
 use App\Http\Middleware\RequestIdMiddleware;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyPayOSWebhookSignature;
@@ -18,6 +19,7 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -58,6 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
             'verify.payos' => VerifyPayOSWebhookSignature::class,
+            'internal.metrics' => InternalMetricsAccess::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [
@@ -65,6 +68,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        Integration::handles($exceptions);
+
         $shouldRenderJson = fn (Request $request): bool => $request->is('api/*') || $request->expectsJson();
 
         $apiError = function (Request $request, string $message, int $status, ?array $errors = null) {

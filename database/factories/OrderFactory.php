@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Showtime;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class OrderFactory extends Factory
@@ -16,7 +17,7 @@ class OrderFactory extends Factory
             'code' => 'ORD-' . fake()->unique()->numerify('######'),
             'gateway_order_code' => fake()->unique()->numberBetween(100000, 999999),
             'user_id' => User::factory(),
-            'showtime_id' => 1, // Minimal - tests will override if needed
+            'showtime_id' => Showtime::factory(),
             'total_amount' => fake()->numberBetween(100000, 500000),
             'status' => Order::STATUS_PENDING,
             'payment_provider' => 'payos',

@@ -29,9 +29,24 @@ class BranchController extends Controller
                 'search' => ['nullable', 'string', 'max:100'],
                 'status' => ['nullable', 'string', Rule::in(['all', 'active', 'inactive'])],
                 'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
+                'options' => ['nullable', 'boolean'],
             ]);
 
-            $query = Branch::query()->with('theaters');
+            if ($request->boolean('options')) {
+                return response()->json([
+                    'success' => true,
+                    'data' => Branch::query()
+                        ->select(['id', 'name'])
+                        ->where('is_active', true)
+                        ->orderBy('name')
+                        ->get(),
+                ]);
+            }
+
+            $query = Branch::query()->withCount([
+                'theaters',
+                'theaters as active_theaters_count' => fn ($theaters) => $theaters->where('status', true),
+            ]);
 
             if (!empty($filters['search'])) {
                 $search = trim($filters['search']);

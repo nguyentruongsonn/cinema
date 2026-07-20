@@ -23,6 +23,7 @@
             filterEnd: document.getElementById('filterEnd'),
             btnApply: document.getElementById('btnApplyFilter'),
             shortcuts: document.querySelectorAll('.btn-shortcut'),
+            statsTabs: document.querySelectorAll('[data-stats-type]'),
 
             // Cards
             cardTotalCombos: document.getElementById('cardTotalCombos'),
@@ -35,6 +36,8 @@
             chartTopCombos: document.getElementById('chartTopCombos'),
             chartComboRevenue: document.getElementById('chartComboRevenue'),
         };
+
+        currentType = document.querySelector('[data-stats-type].active')?.dataset.statsType || 'combo';
     }
 
     /* ── Helpers ────────────────────────────────────────────────────── */
@@ -90,7 +93,7 @@
             els.btnApply.disabled = true;
             els.btnApply.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cập nhật...';
         }
-        document.querySelectorAll('.stat-value, .stat-trend span, #chartComboTrend, #chartTopCombos, #chartComboRevenue').forEach(el => {
+        document.querySelectorAll('.stat-value, #chartComboTrend, #chartTopCombos, #chartComboRevenue').forEach(el => {
             el.classList.add('admin-skeleton');
             if (!el.id.startsWith('chart')) el.classList.add('admin-skeleton-text');
         });
@@ -101,8 +104,11 @@
             els.btnApply.disabled = false;
             els.btnApply.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Cập nhật';
         }
-        document.querySelectorAll('.skeleton, .admin-skeleton').forEach(el => {
-            el.classList.remove('skeleton', 'skeleton-text', 'skeleton-chart', 'admin-skeleton', 'admin-skeleton-text');
+        document.querySelectorAll('.stat-value').forEach(el => {
+            el.classList.remove('admin-skeleton', 'admin-skeleton-text');
+        });
+        document.querySelectorAll('#chartComboTrend, #chartTopCombos, #chartComboRevenue').forEach(el => {
+            el.classList.remove('admin-skeleton');
         });
     }
 
@@ -298,14 +304,18 @@
             inp?.addEventListener('change', loadStats);
         });
 
-        // Tab switching
-        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
-            tab.addEventListener('shown.bs.tab', (e) => {
-                const type = e.target.dataset.type;
-                if (type) {
-                    currentType = type;
-                    loadStats();
-                }
+        els.statsTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const type = tab.dataset.statsType;
+                if (!type || type === currentType) return;
+
+                els.statsTabs.forEach(item => {
+                    const isActive = item === tab;
+                    item.classList.toggle('active', isActive);
+                    item.setAttribute('aria-selected', String(isActive));
+                });
+                currentType = type;
+                loadStats();
             });
         });
     }
@@ -323,12 +333,11 @@
         state.pollInterval = setInterval(loadStats, 30000);
     }
 
-    // Cleanup interval on page unload
-    window.addEventListener('beforeunload', () => {
+    window.onAdminPageCleanup(() => {
         if (state.pollInterval) clearInterval(state.pollInterval);
     });
 
-    document.addEventListener('DOMContentLoaded', () => {
+    window.onAdminPageLoad(() => {
         cacheDoms();
         init();
     });

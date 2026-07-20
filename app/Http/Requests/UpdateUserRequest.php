@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,7 +26,8 @@ class UpdateUserRequest extends FormRequest
             'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($targetUser?->id)],
             'username' => ['nullable', 'string', 'max:255', Rule::unique('users', 'username')->ignore($targetUser?->id)],
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]+$/'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'password' => ['prohibited'],
+            'password_confirmation' => ['prohibited'],
             'avatar_url' => ['nullable', 'url', 'max:500'],
             'birthday' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', 'in:male,female,other'],
@@ -50,6 +52,14 @@ class UpdateUserRequest extends FormRequest
                 $validator->errors()->add('role_id', 'You are not authorized to change user roles.');
             }
 
+            if ($this->has('role_id')) {
+                $role = Role::query()->find($this->input('role_id'));
+                if ($role?->slug && in_array($role->slug, ['admin', 'super-admin'], true)
+                    && !$actor->hasRole('super-admin')) {
+                    $validator->errors()->add('role_id', 'Only a super-admin may assign administrative roles.');
+                }
+            }
+
             if ($this->has('loyalty_points') && !$actor->can('updateLoyaltyPoints', $targetUser)) {
                 $validator->errors()->add('loyalty_points', 'You are not authorized to change loyalty points.');
             }
@@ -58,6 +68,23 @@ class UpdateUserRequest extends FormRequest
                 $validator->errors()->add('status', 'You are not authorized to change user status.');
             }
         });
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $normalized = [];
+
+        if (is_string($this->input('email'))) {
+            $normalized['email'] = mb_strtolower(trim($this->input('email')));
+        }
+
+        if (is_string($this->input('username'))) {
+            $normalized['username'] = mb_strtolower(trim($this->input('username')));
+        }
+
+        if ($normalized !== []) {
+            $this->merge($normalized);
+        }
     }
 
     public function userData(): array

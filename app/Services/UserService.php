@@ -88,6 +88,14 @@ class UserService
         try {
             DB::beginTransaction();
 
+            if (isset($data['email'])) {
+                $data['email'] = $this->normalizeEmail($data['email']);
+            }
+
+            if ($roleId !== null) {
+                $this->ensureActorCanAssignRole($roleId);
+            }
+
             // Hash password if provided
             if (!empty($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
@@ -134,6 +142,8 @@ class UserService
      */
     public function updateUser(User $user, array $data): User
     {
+        $this->ensureActorCanManageAdministrativeUser($user);
+
         $allowedFields = [
             'name',
             'username',
@@ -143,11 +153,10 @@ class UserService
             'gender',
             'avatar_url',
             'address',
-            'password',
         ];
 
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
+        if (isset($data['email'])) {
+            $data['email'] = $this->normalizeEmail($data['email']);
         }
 
         $profileData = array_intersect_key($data, array_flip($allowedFields));
@@ -164,6 +173,9 @@ class UserService
 
     public function updateRole(User $user, int $roleId): User
     {
+        $this->ensureActorCanManageAdministrativeUser($user);
+        $this->ensureActorCanAssignRole($roleId);
+
         return DB::transaction(function () use ($user, $roleId) {
             $role = Role::query()->findOrFail($roleId);
             $user->role_id = $role->id;
@@ -276,6 +288,8 @@ class UserService
      */
     public function resetPassword(User $user, string $newPassword): bool
     {
+        $this->ensureActorCanManageAdministrativeUser($user);
+
         return DB::transaction(function () use ($user, $newPassword) {
             $user->password = Hash::make($newPassword);
             $user->save();
@@ -324,5 +338,28 @@ class UserService
             'unverified' => (int) $stats->unverified,
             'recent' => (int) $stats->recent,
         ];
+    }
+
+    private function ensureActorCanAssignRole(int $roleId): void
+    {
+        $role = Role::query()->findOrFail($roleId);
+
+        if (in_array($role->slug, ['admin', 'super-admin'], true)
+            && !(auth()->user()?->hasRole('super-admin') ?? false)) {
+            throw new \DomainException('Only a super-admin may assign administrative roles.');
+        }
+    }
+
+    private function ensureActorCanManageAdministrativeUser(User $user): void
+    {
+        if ($user->hasAnyRole(['admin', 'super-admin'])
+            && !(auth()->user()?->hasRole('super-admin') ?? false)) {
+            throw new \DomainException('Only a super-admin may manage administrative accounts.');
+        }
+    }
+
+    private function normalizeEmail(string $email): string
+    {
+        return mb_strtolower(trim($email));
     }
 }

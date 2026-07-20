@@ -5,6 +5,12 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
     const els = {
         tableBody: document.getElementById('promotionsTableBody'),
         pagination: document.getElementById('paginationContainer'),
@@ -60,7 +66,7 @@
             if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
             if (currentCategory !== 'all') url.searchParams.append('category', currentCategory);
 
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'promotions:list' });
             if (res && res.ok) {
                 const json = await res.json();
                 renderTable(json.data, json.pagination?.from || json.from);
@@ -69,6 +75,7 @@
                 throw new Error('Failed to fetch');
             }
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Error loading data:', error);
             els.tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -90,10 +97,10 @@
                 'food': '<span class="badge-category badge-category-food">Đồ ăn</span>',
                 'combo': '<span class="badge-category badge-category-combo">Combo</span>',
                 'all': '<span class="badge-category badge-category-all">Tất cả</span>'
-            }[promo.category] || promo.category;
+            }[promo.category] || escapeHtml(promo.category);
 
             const discountText = promo.discount_type === 'percent'
-                ? `${promo.discount_value}%`
+                ? `${escapeHtml(promo.discount_value)}%`
                 : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(promo.discount_value);
 
             // Format date range
@@ -113,15 +120,15 @@
                 : '<span class="text-white-50">Không</span>';
 
             const usageText = promo.usage_limit
-                ? `${promo.usage_count || 0}/${promo.usage_limit}`
-                : `${promo.usage_count || 0}`;
+                ? `${escapeHtml(promo.usage_count || 0)}/${escapeHtml(promo.usage_limit)}`
+                : `${escapeHtml(promo.usage_count || 0)}`;
 
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
-                <td><span class="promotion-code">${promo.code}</span></td>
+                <td><span class="promotion-code">${escapeHtml(promo.code)}</span></td>
                 <td>
-                    <div class="fw-medium text-white">${promo.name}</div>
-                    ${promo.description ? `<small class="text-white-50">${promo.description.substring(0, 50)}${promo.description.length > 50 ? '...' : ''}</small>` : ''}
+                    <div class="fw-medium text-white">${escapeHtml(promo.name)}</div>
+                    ${promo.description ? `<small class="text-white-50">${escapeHtml(promo.description.substring(0, 50))}${promo.description.length > 50 ? '...' : ''}</small>` : ''}
                 </td>
                 <td class="text-center" style="white-space: nowrap;">${categoryBadge}</td>
                 <td class="text-center text-warning fw-medium">${discountText}</td>
@@ -131,21 +138,21 @@
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
                         <input class="form-check-input toggle-active-btn m-0" type="checkbox" role="switch"
-                            data-id="${promo.id}" ${promo.status ? 'checked' : ''} style="cursor:pointer;">
+                            data-id="${escapeHtml(promo.id)}" ${promo.status ? 'checked' : ''} style="cursor:pointer;">
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-edit-promotion"
                             style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
-                            data-promotion='${JSON.stringify(promo).replace(/'/g, "&#39;")}'
+                            data-promotion='${escapeHtml(JSON.stringify(promo))}'
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button type="button" class="btn btn-sm ms-1 btn-delete-promotion"
                             style="color:#ef4444; background:rgba(239,68,68,0.1);"
-                            data-id="${promo.id}"
-                            data-used="${promo.usage_count || 0}"
+                            data-id="${escapeHtml(promo.id)}"
+                            data-used="${escapeHtml(promo.usage_count || 0)}"
                             title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -169,7 +176,7 @@
             html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
         }
 
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             if (i === meta.current_page) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
             } else {
@@ -440,7 +447,7 @@
     }
 
     /* ── Init ──────────────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', () => {
+    window.onAdminPageLoad(() => {
         loadCategories();
         loadData(1);
     });

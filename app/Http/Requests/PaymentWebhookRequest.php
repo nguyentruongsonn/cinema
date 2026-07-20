@@ -8,13 +8,12 @@ use Illuminate\Foundation\Http\FormRequest;
  * Validates PayOS webhook payload shape before service processing.
  *
  * SECURITY NOTE: This validates only basic structure. Cryptographic signature
- * verification must remain in VerifyPayOSWebhookSignature middleware and/or
- * PayOSGateway::verifyWebhook().
+ * verification is delegated to PayOSGateway::verifyWebhook().
  */
 class PaymentWebhookRequest extends FormRequest
 {
     /**
-     * Webhooks are authenticated by signature middleware, not user session.
+     * Webhooks are authenticated by the PayOS gateway verifier, not user session.
      */
     public function authorize(): bool
     {
@@ -30,7 +29,7 @@ class PaymentWebhookRequest extends FormRequest
             'code' => ['nullable', 'string', 'max:20'],
             'desc' => ['nullable', 'string', 'max:255'],
             'success' => ['nullable', 'boolean'],
-            'signature' => ['nullable', 'string', 'max:512'],
+            'signature' => ['required', 'string', 'max:512'],
             'data' => ['required', 'array'],
             'data.orderCode' => ['required_without:data.order_code', 'integer', 'min:1'],
             'data.order_code' => ['required_without:data.orderCode', 'integer', 'min:1'],

@@ -5,6 +5,22 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function safeImageUrl(value) {
+        const candidate = String(value || '').trim();
+        if (/^\/(?!\/)[A-Za-z0-9_./?=&%-]+$/.test(candidate) && !candidate.includes('..')) return candidate;
+        if (/^https?:\/\/[^\s"'<>]+$/i.test(candidate)) return candidate;
+        return '';
+    }
+
     const els = {
         tableBody: document.getElementById('productsTableBody'),
         pagination: document.getElementById('paginationContainer'),
@@ -66,7 +82,7 @@
             if (currentType !== 'all') url.searchParams.append('type', currentType);
             if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
 
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'products:list' });
             if (res && res.ok) {
                 const json = await res.json();
                 renderTable(json.data, json.pagination?.from);
@@ -75,6 +91,7 @@
                 throw new Error('Failed to fetch');
             }
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Error loading data:', error);
             els.tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -96,6 +113,7 @@
                 : '<span class="badge bg-secondary">Ngừng bán</span>';
 
             const priceFmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(prod.price);
+            const imageUrl = safeImageUrl(prod.image_url);
 
             let typeHtml = '';
             if (prod.type === 'combo') typeHtml = '<span class="badge" style="background:rgba(236,72,153,0.12);color:#ec4899;">Combo</span>';
@@ -105,17 +123,17 @@
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td class="text-center">
-                    ${prod.image_url
-                        ? `<img src="${prod.image_url}" alt="Image" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: rgba(255,255,255,0.1);">`
+                    ${imageUrl
+                        ? `<img src="${escapeHtml(imageUrl)}" alt="Image" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: rgba(255,255,255,0.1);">`
                         : `<div style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 4px; display:flex; align-items:center; justify-content:center;"><i class="bi bi-image text-white-50"></i></div>`}
                 </td>
                 <td>
-                    <div class="fw-medium text-white fs-6">${prod.name}</div>
-                    ${prod.description ? `<div class="small text-white-50 text-truncate mt-1" style="max-width: 200px;">${prod.description}</div>` : ''}
+                    <div class="fw-medium text-white fs-6">${escapeHtml(prod.name)}</div>
+                    ${prod.description ? `<div class="small text-white-50 text-truncate mt-1" style="max-width: 200px;">${escapeHtml(prod.description)}</div>` : ''}
                 </td>
                 <td>
                     <div>${typeHtml}</div>
-                    <div class="small text-white-50 mt-1">Kho: <strong>${prod.stock}</strong></div>
+                    <div class="small text-white-50 mt-1">Kho: <strong>${escapeHtml(prod.stock)}</strong></div>
                 </td>
                 <td>
                     <div class="fw-medium text-white">${priceFmt}</div>
@@ -123,19 +141,19 @@
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
                         <input class="form-check-input toggle-active-btn m-0" type="checkbox" role="switch"
-                            data-id="${prod.id}" ${prod.status ? 'checked' : ''} style="cursor:pointer;" title="Bật/Tắt trạng thái">
+                            data-id="${escapeHtml(prod.id)}" ${prod.status ? 'checked' : ''} style="cursor:pointer;" title="Bật/Tắt trạng thái">
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-edit-product"
                             style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
-                            data-product='${JSON.stringify(prod).replace(/'/g, "&#39;")}'
+                            data-product='${escapeHtml(JSON.stringify(prod))}'
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button type="button" class="btn btn-sm ms-1 btn-delete-product"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${prod.id}" title="Xóa">
+                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${escapeHtml(prod.id)}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -158,7 +176,7 @@
             html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
         }
 
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             if (i === meta.current_page) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
             } else {
@@ -186,7 +204,9 @@
     /* ── Forms & Interactions ──────────────────────────────────────── */
     function showImagePreview(src) {
         if (!src) return;
-        if (els.imagePreview) { els.imagePreview.src = src; els.imagePreview.style.display = 'block'; }
+        const previewUrl = String(src).startsWith('blob:') ? src : safeImageUrl(src);
+        if (!previewUrl) return;
+        if (els.imagePreview) { els.imagePreview.src = previewUrl; els.imagePreview.style.display = 'block'; }
         if (els.imagePlaceholder) els.imagePlaceholder.style.display = 'none';
         if (els.clearImageBtn) els.clearImageBtn.classList.remove('d-none');
     }
@@ -374,7 +394,7 @@
     }
 
     /* ── Init ──────────────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', () => {
+    window.onAdminPageLoad(() => {
         loadData(1);
     });
 

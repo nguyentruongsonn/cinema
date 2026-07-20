@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Screen;
 use App\Models\Theater;
 use App\Models\Format;
+use App\Models\Sound;
 use App\Models\VersionType;
 use App\Models\SeatLayoutTemplate;
 use App\Models\Seat;
@@ -14,6 +15,8 @@ use App\Http\Requests\Admin\StoreScreenRequest;
 use App\Http\Requests\Admin\UpdateScreenRequest;
 use App\Http\Requests\Admin\StoreFormatRequest;
 use App\Http\Requests\Admin\UpdateFormatRequest;
+use App\Http\Requests\Admin\StoreSoundRequest;
+use App\Http\Requests\Admin\UpdateSoundRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,13 +30,21 @@ class ScreenController extends Controller
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
+            'include_references' => ['nullable', 'boolean'],
+            'theater_id' => ['nullable', 'integer', 'exists:theaters,id'],
         ]);
 
         $search = $validated['search'] ?? null;
         $perPage = $validated['per_page'] ?? 10;
 
         $screens = Screen::query()
-            ->with(['theater', 'format', 'seatLayoutTemplate'])
+            ->with([
+                'theater:id,name',
+                'format:id,name',
+                'sound:id,name',
+                'seatLayoutTemplate:id,template_name',
+            ])
+            ->when($validated['theater_id'] ?? null, fn ($query, $theaterId) => $query->where('theater_id', $theaterId))
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -46,18 +57,41 @@ class ScreenController extends Controller
             ->latest()
             ->paginate($perPage);
 
-        $formats = Format::latest()->get();
-        $versionTypes = VersionType::latest()->get();
-        $theaters = Theater::active()->get();
-        $templates = SeatLayoutTemplate::active()->get();
-
-        return response()->json([
+        $response = [
             'screens' => $screens,
-            'formats' => $formats,
-            'version_types' => $versionTypes,
-            'theaters' => $theaters,
-            'templates' => $templates
-        ]);
+        ];
+
+        if ($request->boolean('include_references')) {
+            $response['formats'] = Format::query()
+                ->select(['id', 'name', 'surcharge'])
+                ->orderBy('name')
+                ->get();
+            $response['version_types'] = VersionType::query()
+                ->select(['id', 'name', 'slug'])
+                ->orderBy('name')
+                ->get();
+            $response['sounds'] = Sound::query()
+                ->select(['id', 'name'])
+                ->orderBy('name')
+                ->get();
+            $response['theaters'] = Theater::active()
+                ->select(['id', 'name'])
+                ->orderBy('name')
+                ->get();
+            $response['templates'] = SeatLayoutTemplate::active()
+                ->select([
+                    'id',
+                    'template_name',
+                    'seat_matrix',
+                    'regular_seat_rows',
+                    'vip_seat_rows',
+                    'couple_seat_rows',
+                ])
+                ->orderBy('template_name')
+                ->get();
+        }
+
+        return response()->json($response);
     }
 
     public function store(StoreScreenRequest $request)
@@ -252,6 +286,53 @@ class ScreenController extends Controller
             Log::error('Error deleting format', ['format_id' => $format->id, 'error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Không thể xóa định dạng.'], 500);
         }
+    }
+
+    public function storeSound(StoreSoundRequest $request)
+    {
+        $this->authorize('create', Sound::class);
+
+        $sound = Sound::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tạo định dạng âm thanh thành công.',
+            'data' => $sound,
+        ], 201);
+    }
+
+    public function updateSound(UpdateSoundRequest $request, Sound $sound)
+    {
+        $this->authorize('update', $sound);
+
+        $sound->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật định dạng âm thanh thành công.',
+            'data' => $sound,
+        ]);
+    }
+
+    public function destroySound(Sound $sound)
+    {
+        $this->authorize('delete', $sound);
+
+        if ($sound->screens()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể xóa định dạng âm thanh đang được phòng chiếu sử dụng.',
+            ], 422);
+        }
+
+        $sound->delete();
+
+        Log::info('Sound deleted', ['sound_id' => $sound->id, 'admin' => auth()->id()]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Xóa định dạng âm thanh thành công.',
+        ]);
     }
 
     /* ── Helper: Seat Generation ─────────────────────────────────────── */

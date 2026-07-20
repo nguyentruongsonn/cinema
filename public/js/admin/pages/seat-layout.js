@@ -260,6 +260,6 @@
     });
 
     /* ── Init ──────────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', loadSeatLayout);
+    window.onAdminPageLoad(loadSeatLayout);
 
 })();

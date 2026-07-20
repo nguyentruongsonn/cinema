@@ -5,7 +5,6 @@ namespace App\Http\Controllers\User;
 use App\Exceptions\PaymentGatewayException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatePaymentRequest;
-use App\Http\Resources\OrderSummaryResource;
 use App\Models\Order;
 use App\Models\Showtime;
 use App\Models\User;
@@ -99,16 +98,10 @@ class PaymentController extends Controller
             return $this->notFound('Không tìm thấy đơn hàng yêu cầu.');
         }
 
-        if (! $order->isPaid()) {
-            $this->paymentService->syncFromGateway($order);
-        }
+        // Keep this read endpoint fast and deterministic. Gateway synchronization
+        // belongs to the verified callback/webhook path, never to result rendering.
+        $order = $this->orderService->findForUser($order->id, $user);
 
-        $order->refresh()->load([
-            'showtime.movie',
-            'showtime.screen',
-            'orderItems',
-        ]);
-
-        return $this->ok(new OrderSummaryResource($order));
+        return $this->ok($this->orderService->format($order));
     }
 }

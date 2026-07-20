@@ -66,7 +66,7 @@
             if (currentSearch) url.searchParams.append('search', currentSearch);
             if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
 
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'combos:list' });
             if (res && res.ok) {
                 const json = await res.json();
                 renderTable(json.data, json.pagination?.from);
@@ -75,6 +75,7 @@
                 throw new Error('Failed to fetch');
             }
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Error loading data:', error);
             els.tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -169,7 +170,7 @@
             html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
         }
 
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             if (i === meta.current_page) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
             } else {
@@ -540,7 +541,7 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    window.onAdminPageLoad(() => {
         loadData(1);
     });
 })();

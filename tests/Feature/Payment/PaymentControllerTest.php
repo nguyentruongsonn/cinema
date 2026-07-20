@@ -116,67 +116,55 @@ class PaymentControllerTest extends TestCase
     }
 
     #[Test]
-    public function webhook_requires_signature_header()
+    public function webhook_rejects_malformed_payload_before_gateway_verification()
     {
         $webhookPayload = [
             'orderCode' => $this->order->gateway_order_code,
             'status' => 'success',
         ];
 
-        // Send webhook WITHOUT signature
         $response = $this->postJson(route('payment.payos.webhook'), $webhookPayload);
 
-        // Should reject with 401 (missing signature)
-        $response->assertStatus(401);
-        $response->assertJson([
-            'success' => false,
-            'message' => 'Missing signature',
-        ]);
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['data']);
     }
 
     #[Test]
-    public function webhook_rejects_invalid_signature()
+    public function webhook_signature_is_delegated_to_payos_gateway()
     {
-        Config::set('services.payos.webhook_secret', 'test-webhook-secret');
-
-        $webhookPayload = [
-            'orderCode' => $this->order->gateway_order_code,
-            'status' => 'success',
-        ];
-
-        // Send webhook with WRONG signature
-        $response = $this->postJson(
-            route('payment.payos.webhook'),
-            $webhookPayload,
-            ['x-payos-signature' => 'invalid-signature-12345']
-        );
-
-        // Should reject with 401 (invalid signature)
-        $response->assertStatus(401);
-        $response->assertJson([
-            'success' => false,
-            'message' => 'Invalid signature',
-        ]);
-    }
-
-    #[Test]
-    public function webhook_accepts_valid_signature()
-    {
-        $webhookSecret = 'test-webhook-secret';
-        Config::set('services.payos.webhook_secret', $webhookSecret);
-
         $webhookPayload = [
             'code' => '00',
             'success' => true,
+            'signature' => 'gateway-signature',
+            'data' => [
+                'orderCode' => (int) $this->order->gateway_order_code,
+                'status' => 'PAID',
+            ],
+        ];
+
+        $this->mock(PaymentService::class, function ($mock) use ($webhookPayload) {
+            $mock->shouldReceive('handleWebhook')
+                ->once()
+                ->with($webhookPayload)
+                ->andReturn(['already_processed' => false, 'skipped' => true]);
+        });
+
+        $this->postJson(route('payment.payos.webhook'), $webhookPayload)->assertOk();
+    }
+
+    #[Test]
+    public function webhook_accepts_valid_gateway_payload_without_custom_header()
+    {
+        $webhookPayload = [
+            'code' => '00',
+            'success' => true,
+            'signature' => 'gateway-signature',
             'data' => [
                 'orderCode' => (int) $this->order->gateway_order_code,
                 'status' => 'PAID',
                 'amount' => (int) $this->payment->amount,
             ],
         ];
-
-        $payloadJson = json_encode($webhookPayload);
-        $validSignature = hash_hmac('sha256', $payloadJson, $webhookSecret);
 
         // Mock PaymentService to avoid full business logic execution in controller test
         $this->mock(PaymentService::class, function ($mock) {
@@ -186,11 +174,7 @@ class PaymentControllerTest extends TestCase
         });
 
         // Send webhook with VALID signature
-        $response = $this->postJson(
-            route('payment.payos.webhook'),
-            $webhookPayload,
-            ['x-payos-signature' => $validSignature]
-        );
+        $response = $this->postJson(route('payment.payos.webhook'), $webhookPayload);
 
         // Should accept (200 OK)
         $response->assertOk();
@@ -206,15 +190,13 @@ class PaymentControllerTest extends TestCase
         $webhookPayload = [
             'code' => '00',
             'success' => true,
+            'signature' => 'gateway-signature',
             'data' => [
                 'orderCode' => (int) $this->order->gateway_order_code,
                 'status' => 'PAID',
                 'amount' => (int) $this->payment->amount,
             ],
         ];
-
-        $payloadJson = json_encode($webhookPayload);
-        $validSignature = hash_hmac('sha256', $payloadJson, $webhookSecret);
 
         $this->mock(PayOSGateway::class, function ($mock) {
             $mock->shouldReceive('verifyWebhook')
@@ -225,17 +207,9 @@ class PaymentControllerTest extends TestCase
                 ]);
         });
 
-        $firstResponse = $this->postJson(
-            route('payment.payos.webhook'),
-            $webhookPayload,
-            ['x-payos-signature' => $validSignature]
-        );
+        $firstResponse = $this->postJson(route('payment.payos.webhook'), $webhookPayload);
 
-        $secondResponse = $this->postJson(
-            route('payment.payos.webhook'),
-            $webhookPayload,
-            ['x-payos-signature' => $validSignature]
-        );
+        $secondResponse = $this->postJson(route('payment.payos.webhook'), $webhookPayload);
 
         $firstResponse->assertOk()->assertJson(['success' => true]);
         $secondResponse->assertOk()->assertJson(['success' => true]);
@@ -293,11 +267,7 @@ class PaymentControllerTest extends TestCase
         // Make 101 rapid requests to trigger throttle
         
         for ($i = 0; $i < 101; $i++) {
-            $response = $this->postJson(
-                route('payment.payos.webhook'),
-                $webhookPayload,
-                ['x-payos-signature' => $validSignature]
-            );
+        $response = $this->postJson(route('payment.payos.webhook'), $webhookPayload);
             
             if ($i < 100) {
                 // First 100 should pass (not throttled)

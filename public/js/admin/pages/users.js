@@ -105,7 +105,7 @@
             if (currentStatus !== '') url.searchParams.append('status', currentStatus);
             if (currentVerified !== '') url.searchParams.append('verified', currentVerified);
 
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'users:list' });
             if (res && res.ok) {
                 const response = await res.json();
                 renderTable(response.data, response.pagination.from);
@@ -114,6 +114,7 @@
                 throw new Error('Failed to fetch');
             }
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Error loading data:', error);
             els.tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -581,10 +582,5 @@
         attachEventListeners();
     }
 
-    // Start on DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    window.onAdminPageLoad(init);
 })();

@@ -97,6 +97,7 @@ class OrderFulfillmentService
 
                 // Mark seat hold items as consumed (normalized model)
                 $seatHold = SeatHold::query()
+                    ->whereKey(data_get($order->payload, 'seat_hold_id'))
                     ->where('user_id', $order->user_id)
                     ->where('showtime_id', $order->showtime_id)
                     ->first();
@@ -188,6 +189,17 @@ class OrderFulfillmentService
             foreach ($products as $productData) {
                 $quantity = (int)$productData['quantity'];
 
+                $reservedItem = OrderItem::query()
+                    ->where('order_id', $order->id)
+                    ->where('item_type', Product::class)
+                    ->where('item_id', $productData['id'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($reservedItem) {
+                    continue;
+                }
+
                 // PHASE 5: Safe stock decrement with pessimistic lock FIRST
                 $product = Product::query()
                     ->where('id', $productData['id'])
@@ -202,15 +214,10 @@ class OrderFulfillmentService
                 }
 
                 if ($product->stock < $quantity) {
-                    Log::warning('Insufficient product stock', [
-                        'product_id' => $productData['id'],
-                        'requested' => $quantity,
-                        'available' => $product->stock,
-                    ]);
-                    // Continue anyway - stock was checked at order creation
+                    throw new \RuntimeException('Không đủ tồn kho để hoàn tất đơn hàng đã thanh toán.');
                 }
 
-                $product->decrement('stock', max(0, min($quantity, $product->stock)));
+                $product->decrement('stock', $quantity);
 
                 // Create OrderItem with factory method
                 $orderItem = OrderItem::createFromProduct(
@@ -229,6 +236,7 @@ class OrderFulfillmentService
 
             // 4. PHASE 1.4: Release seat holds after successful payment (normalized model)
             $seatHold = SeatHold::query()
+                ->whereKey(data_get($order->payload, 'seat_hold_id'))
                 ->where('user_id', $order->user_id)
                 ->where('showtime_id', $order->showtime_id)
                 ->first();
@@ -248,7 +256,9 @@ class OrderFulfillmentService
             // 5. Increment promotion usage_count if any and mark user's voucher as used
             $voucher = $payload['voucher'] ?? null;
             if ($voucher && isset($voucher['id'])) {
-                Promotion::query()->where('id', $voucher['id'])->increment('usage_count');
+                if (! ($payload['voucher_reserved'] ?? false)) {
+                    Promotion::query()->where('id', $voucher['id'])->increment('usage_count');
+                }
 
                 if ($order->user_id) {
                     DB::table('user_promotion')
@@ -266,7 +276,7 @@ class OrderFulfillmentService
 
             // 6. Deduct points if any
             $pointsUsed = $payload['points_used'] ?? 0;
-            if ($pointsUsed > 0 && $order->user_id) {
+            if ($pointsUsed > 0 && $order->user_id && ! ($payload['points_reserved'] ?? false)) {
                 $user = $order->user;
                 if ($user) {
                     $user->decrement('loyalty_points', $pointsUsed);

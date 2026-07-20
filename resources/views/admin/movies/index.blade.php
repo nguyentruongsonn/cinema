@@ -305,11 +305,10 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/movies.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/movies.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/admin/pages/movies.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/movies.js') }}?v={{ config('app.asset_version') }}" defer></script>
 @endpush

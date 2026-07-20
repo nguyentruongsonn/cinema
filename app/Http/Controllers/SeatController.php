@@ -7,6 +7,7 @@ use App\Http\Requests\GetSeatsRequest;
 use App\Http\Requests\LockSeatRequest;
 use App\Http\Requests\UnlockSeatsRequest;
 use App\Models\SeatHold;
+use App\Models\Order;
 use App\Services\SeatService;
 use App\Traits\ApiResponse;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -152,6 +153,17 @@ class SeatController extends Controller
 
             if (! $hold->isValid()) {
                 return $this->errorResponse(__('seats.hold_expired'), 422);
+            }
+
+            $boundToCheckout = Order::query()
+                ->where('user_id', $user->id)
+                ->where('showtime_id', $hold->showtime_id)
+                ->where('status', Order::STATUS_PENDING)
+                ->where('payload->seat_hold_id', $hold->id)
+                ->exists();
+
+            if ($boundToCheckout) {
+                return $this->errorResponse('Seat hold is bound to an active checkout.', 409);
             }
 
             $data = $this->seatService->unlock((int) $holdId, $user);

@@ -7,11 +7,14 @@ use App\Models\RefreshToken;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -23,6 +26,8 @@ class AuthService
 
     public function register(array $data, string $ipAddress, ?string $userAgent = null): array
     {
+        $data['email'] = $this->normalizeEmail($data['email']);
+
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
@@ -51,7 +56,7 @@ class AuthService
 
     public function login(array $credentials, string $ipAddress, ?string $userAgent = null): ?array
     {
-        $login = (string) ($credentials['login'] ?? $credentials['email'] ?? '');
+        $login = trim((string) ($credentials['login'] ?? $credentials['email'] ?? ''));
         $rateKey = $this->loginRateKey($login, $ipAddress);
 
         if ($this->isRateLimited($rateKey)) {
@@ -59,6 +64,9 @@ class AuthService
         }
 
         $field = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        if ($field === 'email') {
+            $login = $this->normalizeEmail($login);
+        }
         $loginMethod = $field === 'email' ? 'email' : 'username';
 
         $user = User::where($field, $login)->first();
@@ -126,7 +134,7 @@ class AuthService
     {
         $googleUser = $this->verifyGoogleIdToken($idToken);
 
-        $email = $googleUser['email'] ?? null;
+        $email = isset($googleUser['email']) ? $this->normalizeEmail($googleUser['email']) : null;
 
         if (!$email) {
             throw new RuntimeException('Google token không hợp lệ.');
@@ -217,6 +225,7 @@ class AuthService
 
     public function sendPasswordResetLink(string $email): string
     {
+        $email = $this->normalizeEmail($email);
         $status = Password::sendResetLink(['email' => $email]);
 
         Log::info('Password reset link sent', ['email' => $email, 'status' => $status]);
@@ -252,7 +261,14 @@ class AuthService
             return false;
         }
 
-        $user->sendEmailVerificationNotification();
+        VerifyEmail::createUrlUsing(function (User $notifiable): string {
+            return URL::to('/api/v1/auth/verify-email') . '?' . http_build_query([
+                'id' => $notifiable->getKey(),
+                'hash' => $this->createEmailVerificationToken($notifiable),
+            ]);
+        });
+
+        $user->notify(new VerifyEmail());
 
         Log::info('Email verification sent', ['user_id' => $user->id]);
 
@@ -263,7 +279,7 @@ class AuthService
     {
         $user = User::findOrFail($userId);
 
-        if (!hash_equals($hash, sha1($user->getEmailForVerification()))) {
+        if (!$this->isValidEmailVerificationToken($user, $hash)) {
             Log::warning('Invalid email verification hash', ['user_id' => $userId]);
             return false;
         }
@@ -304,7 +320,11 @@ class AuthService
 
     public function refreshAccessToken(string $plainRefreshToken, ?string $ipAddress = null, ?string $userAgent = null): array
     {
-        $refreshToken = RefreshToken::findByPlainToken($plainRefreshToken);
+        return DB::transaction(function () use ($plainRefreshToken, $ipAddress, $userAgent): array {
+            $refreshToken = RefreshToken::query()
+                ->where('token', hash('sha256', $plainRefreshToken))
+                ->lockForUpdate()
+                ->first();
 
         if (!$refreshToken || !$refreshToken->isValid()) {
             throw new RuntimeException('Refresh token không hợp lệ hoặc đã hết hạn.');
@@ -332,7 +352,16 @@ class AuthService
 
         Log::info('Access token refreshed with refresh token rotation', ['user_id' => $user->id]);
 
-        return $this->dualTokenPayload($user, $accessToken, $newRefreshTokenData['plain_token']);
+            return $this->dualTokenPayload($user, $accessToken, $newRefreshTokenData['plain_token']);
+        }, 3);
+    }
+
+    public function createEmailVerificationToken(User $user, ?int $expiresAt = null): string
+    {
+        $expiresAt ??= now()->addMinutes((int) config('auth.passwords.users.expire', 60))->getTimestamp();
+        $payload = $user->getKey() . '|' . $this->normalizeEmail($user->getEmailForVerification()) . '|' . $expiresAt;
+
+        return $expiresAt . '.' . hash_hmac('sha256', $payload, (string) config('app.key'));
     }
 
     private function assignDefaultRole(User $user): void
@@ -414,5 +443,24 @@ class AuthService
         }
 
         return $username;
+    }
+
+    private function isValidEmailVerificationToken(User $user, string $token): bool
+    {
+        if (!preg_match('/^(\d+)\.([a-f0-9]{64})$/', $token, $matches)) {
+            return false;
+        }
+
+        $expiresAt = (int) $matches[1];
+        if ($expiresAt < now()->getTimestamp()) {
+            return false;
+        }
+
+        return hash_equals($this->createEmailVerificationToken($user, $expiresAt), $token);
+    }
+
+    private function normalizeEmail(string $email): string
+    {
+        return mb_strtolower(trim($email));
     }
 }

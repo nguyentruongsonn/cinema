@@ -16,11 +16,11 @@
 
     {{-- Filter Tabs --}}
     <div class="tickets-tabs" role="tablist">
-        <button class="tickets-tab active" data-filter-status="all" role="tab">Tất cả</button>
-        <button class="tickets-tab" data-filter-status="pending" role="tab">Chờ thanh toán</button>
-        <button class="tickets-tab" data-filter-status="paid" role="tab">Đã thanh toán</button>
-        <button class="tickets-tab" data-filter-status="confirmed" role="tab">Đã xác nhận</button>
-        <button class="tickets-tab" data-filter-status="cancelled" role="tab">Đã hủy</button>
+        <button class="tickets-tab active" data-filter-status="all" role="tab" aria-selected="true">Tất cả</button>
+        <button class="tickets-tab" data-filter-status="pending" role="tab" aria-selected="false">Chờ thanh toán</button>
+        <button class="tickets-tab" data-filter-status="paid" role="tab" aria-selected="false">Đã thanh toán</button>
+        <button class="tickets-tab" data-filter-status="cancelled" role="tab" aria-selected="false">Đã hủy</button>
+        <button class="tickets-tab" data-filter-status="expired" role="tab" aria-selected="false">Hết hạn</button>
     </div>
 </div>
 
@@ -90,7 +90,6 @@
 <div id="ordersEmpty" class="tickets-empty d-none">
     <i class="bi bi-inbox"></i>
     <h3>Không có đơn hàng nào</h3>
-    <p class="text-warning small">⚠️ Admin endpoint chưa có. Đang dùng user endpoint tạm thời.</p>
 </div>
 
 {{-- Orders List (Card-based) --}}
@@ -117,11 +116,10 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/users/pages/tickets.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/orders.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/users/pages/tickets.css') }}?v={{ config('app.asset_version') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/orders.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/admin/pages/orders.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/orders.js') }}?v={{ config('app.asset_version') }}" defer></script>
 @endpush

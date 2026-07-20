@@ -127,10 +127,10 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/admin/pages/ticket_stats.js') }}?v={{ time() }}" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts" defer></script>
+<script src="{{ asset('js/admin/pages/ticket_stats.js') }}?v={{ config('app.asset_version') }}" defer></script>
 @endpush

@@ -6,6 +6,7 @@ use App\Http\Requests\CancelOrderRequest;
 use App\Http\Requests\StoreOrderRequest;
 use App\Services\OrderService;
 use App\Models\Order;
+use App\Models\IdempotencyKey;
 use App\Http\Resources\OrderResource;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -28,15 +29,31 @@ class OrderController extends Controller
     {
         try {
             $user = Auth::user();
-            $order = $this->orderService->create($request->validated(), $user);
+            $validated = $request->validated();
+            $result = IdempotencyKey::executeIdempotent(
+                $validated['idempotency_key'],
+                function () use ($validated, $user): array {
+                    $order = $this->orderService->create($validated, $user);
+
+                    return [
+                        'status' => 201,
+                        'data' => $this->orderService->format($order),
+                    ];
+                },
+                [
+                    'path' => $request->path(),
+                    'method' => $request->method(),
+                    'data' => $validated,
+                ]
+            );
 
             return $this->successResponse(
-                $this->orderService->format($order),
+                $result['data'],
                 'Order created successfully',
                 201
             );
         } catch (\RuntimeException $e) {
-            $statusCode = in_array($e->getCode(), [403, 422], true) ? $e->getCode() : 422;
+            $statusCode = in_array($e->getCode(), [403, 409, 422], true) ? $e->getCode() : 422;
 
             Log::warning('Order creation rejected', [
                 'user_id' => Auth::id(),
@@ -107,7 +124,10 @@ class OrderController extends Controller
     {
         try {
             $user = Auth::user();
-            $perPage = (int) $request->input('per_page', 15);
+            $validated = $request->validate([
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+            ]);
+            $perPage = $validated['per_page'] ?? 15;
 
             $orders = $this->orderService->getUserOrders($user, $perPage);
 
@@ -149,9 +169,15 @@ class OrderController extends Controller
                 'showtime.screen.theater:id,name,branch_id',
                 'showtime.screen.theater.branch:id,name',
                 'orderItems',
+                'tickets.seat.seatType',
                 'payment',
             ])
-            ->when(($validated['status'] ?? 'all') !== 'all', fn ($q) => $q->where('payment_status', $validated['status']))
+            ->when(($validated['status'] ?? 'all') !== 'all', function ($query) use ($validated) {
+                $status = $validated['status'];
+                $paymentStatus = in_array($status, ['paid', 'confirmed'], true) ? 'paid' : $status;
+
+                $query->where('payment_status', $paymentStatus);
+            })
             ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime.screen.theater', fn ($theater) => $theater->where('branch_id', $id)))
             ->when($validated['theater_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime.screen', fn ($screen) => $screen->where('theater_id', $id)))
             ->when($validated['movie_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime', fn ($showtime) => $showtime->where('movie_id', $id)))
@@ -180,7 +206,7 @@ class OrderController extends Controller
     public function adminOrder(int $id)
     {
         $order = Order::query()
-            ->with(['user', 'showtime.movie', 'showtime.screen.theater.branch', 'orderItems', 'payment'])
+            ->with(['user', 'showtime.movie', 'showtime.screen.theater.branch', 'orderItems', 'tickets.seat.seatType', 'payment'])
             ->findOrFail($id);
 
         return $this->successResponse((new OrderResource($order))->resolve(), 'Admin order retrieved successfully');

@@ -85,6 +85,11 @@ class Order extends Model
         return $this->hasOne(Payment::class);
     }
 
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
     public function markPending(?\DateTimeInterface $expiresAt = null): self
     {
         $this->forceFill([

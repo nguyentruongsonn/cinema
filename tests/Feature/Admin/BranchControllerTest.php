@@ -59,7 +59,10 @@ class BranchControllerTest extends TestCase
                     '*' => ['id', 'name', 'is_active', 'theaters_count', 'active_theaters_count'],
                 ],
                 'pagination',
-            ]);
+            ])
+            ->assertJsonPath('data.0.theaters_count', 1)
+            ->assertJsonPath('data.0.active_theaters_count', 1)
+            ->assertJsonMissingPath('data.0.theaters');
     }
 
     #[Test]
@@ -69,6 +72,21 @@ class BranchControllerTest extends TestCase
             ->getJson('/api/v1/admin/branches?per_page=999');
 
         $response->assertStatus(422);
+    }
+
+    #[Test]
+    public function it_returns_lightweight_active_branch_options()
+    {
+        $activeBranch = Branch::factory()->create(['is_active' => true]);
+        Branch::factory()->create(['is_active' => false]);
+
+        $this->actingAs($this->admin)
+            ->getJson('/api/v1/admin/branches?options=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $activeBranch->id)
+            ->assertJsonMissingPath('pagination')
+            ->assertJsonMissingPath('data.0.theaters_count');
     }
 
     #[Test]

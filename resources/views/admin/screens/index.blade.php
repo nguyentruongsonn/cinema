@@ -9,7 +9,7 @@
 @if(session('success'))
     @push('scripts')
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            window.onAdminPageLoad(function () {
                 window.showAdminToast?.(@json(session('success')), 'success');
             });
         </script>
@@ -19,7 +19,7 @@
 @if(session('error'))
     @push('scripts')
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            window.onAdminPageLoad(function () {
                 window.showAdminToast?.(@json(session('error')), 'error');
             });
         </script>
@@ -302,15 +302,10 @@
 </div>
 
 {{-- ── MODAL: ĐỊNH DẠNG ÂM THANH ──────────────────────────────────── --}}
-<div class="modal fade" id="soundModal" tabindex="-1" aria-labelledby="soundModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-white border-secondary">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="soundModalLabel">
-                    <i class="bi bi-volume-up me-2" style="color:var(--accent-color);"></i>Thêm định dạng âm thanh
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
+<x-admin.modal id="soundModal" labelled-by="soundModalLabel">
+    <x-slot:title>
+        <i class="bi bi-volume-up me-2"></i>Thêm định dạng âm thanh
+    </x-slot:title>
             <form id="soundForm">
                 <input type="hidden" id="soundFormMethod" value="POST">
                 <input type="hidden" name="sound_id" id="soundIdInput" value="">
@@ -325,18 +320,14 @@
                     <button type="submit" class="btn-primary-custom border-0">Lưu âm thanh</button>
                 </div>
             </form>
-        </div>
-    </div>
-</div>
+</x-admin.modal>
 
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/admin/pages/screens.js') }}?v={{ time() }}" defer></script>
+<script src="{{ asset('js/admin/pages/screens.js') }}?v={{ config('app.asset_version') }}" defer></script>
 @endpush

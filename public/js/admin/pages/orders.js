@@ -5,6 +5,9 @@
  * ════════════════════════════════════════════════════════════════════════════
  */
 
+(function () {
+    'use strict';
+
 class AdminOrdersManager {
     constructor() {
         this.currentPage = 1;
@@ -22,6 +25,10 @@ class AdminOrdersManager {
         this.lastPage = 1;
         this.loadRequest = null;
         this.loadRequestId = 0;
+        this.detailRequest = null;
+        this.detailRequestId = 0;
+        this.previousFocus = null;
+        this.lifecycleController = new AbortController();
         
         this.initElements();
         this.attachEvents();
@@ -59,7 +66,9 @@ class AdminOrdersManager {
         this.els.statusTabs?.forEach(tab => {
             tab.addEventListener('click', () => {
                 this.els.statusTabs.forEach(t => t.classList.remove('active'));
+                this.els.statusTabs.forEach(t => t.setAttribute('aria-selected', 'false'));
                 tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
                 this.filters.status = tab.dataset.filterStatus;
                 this.currentPage = 1;
                 this.loadOrders();
@@ -87,6 +96,9 @@ class AdminOrdersManager {
         this.els.modal?.addEventListener('click', (e) => {
             if (e.target === this.els.modal) this.closeModal();
         });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.els.modal?.classList.contains('show')) this.closeModal();
+        }, { signal: this.lifecycleController.signal });
     }
     
     // ─── Load Filter Data ────────────────────────────────────────────────────
@@ -130,15 +142,21 @@ class AdminOrdersManager {
     
     populateSelect(select, items, valueKey, labelKey) {
         if (!select) return;
-        const firstOption = select.querySelector('option:first-child')?.outerHTML || '';
-        select.innerHTML = firstOption + items.map(item => 
-            `<option value="${this.esc(item[valueKey])}">${this.esc(item[labelKey])}</option>`
-        ).join('');
+        const firstOption = select.querySelector('option:first-child')?.cloneNode(true);
+        select.replaceChildren();
+        if (firstOption) select.appendChild(firstOption);
+        items.forEach((item) => {
+            const option = document.createElement('option');
+            option.value = String(item[valueKey] ?? '');
+            option.textContent = String(item[labelKey] ?? '');
+            select.appendChild(option);
+        });
     }
     
     // ─── Load Orders ─────────────────────────────────────────────────────────
     
     async loadOrders(page = 1) {
+        const requestId = ++this.loadRequestId;
         try {
             this.showLoading(true);
             this.currentPage = page;
@@ -160,7 +178,6 @@ class AdminOrdersManager {
             
             this.loadRequest?.abort();
             this.loadRequest = new AbortController();
-            const requestId = ++this.loadRequestId;
             const result = await this.apiRequest(url, { signal: this.loadRequest.signal });
             if (requestId !== this.loadRequestId) return;
             
@@ -179,7 +196,7 @@ class AdminOrdersManager {
             console.error('[Orders] Load orders error:', err);
             this.showToast('Lỗi tải danh sách đơn hàng: ' + err.message, 'danger');
         } finally {
-            this.showLoading(false);
+            if (requestId === this.loadRequestId) this.showLoading(false);
         }
     }
     
@@ -199,12 +216,16 @@ class AdminOrdersManager {
         this.els.grid.querySelectorAll('[data-order-id]').forEach((button) => {
             button.addEventListener('click', () => this.showOrderDetail(button.dataset.orderId));
         });
+        this.els.grid.querySelectorAll('img').forEach((image) => {
+            image.addEventListener('error', () => {
+                image.src = '/images/placeholder.jpg';
+            }, { once: true });
+        });
     }
     
     buildOrderCard(order) {
         // Extract first ticket/showtime for poster
-        const firstTicket = order.tickets?.[0] || {};
-        const showtime = order.showtime || firstTicket.showtime || {};
+        const showtime = order.showtime || {};
         const movie = showtime.movie || {};
         const screen = showtime.screen || {};
         const theater = screen.theater || {};
@@ -219,21 +240,20 @@ class AdminOrdersManager {
         const amount = this.formatCurrency(order.total_amount || 0);
         
         // Build seats list
-        const seats = (order.tickets || []).map(t => {
-            const seat = t.seat || {};
-            const label = seat.label || `${seat.row || ''}${seat.number || ''}`.trim() || 'N/A';
-            const typeName = seat.seat_type?.name || '';
+        const seats = this.getTicketItems(order).map((item) => {
+            const metadata = item.metadata || {};
+            const label = metadata.seat_label || metadata.seat_number || 'N/A';
+            const typeName = metadata.seat_type || metadata.seat_type_name || '';
             return typeName ? `${label} (${typeName})` : label;
         }).join(', ');
         
         // Status badge
-        const { cls, label: statusLabel, badge } = this.getStatusMeta(order.status);
+        const { label: statusLabel, badge } = this.getStatusMeta(this.normalizeStatus(order));
         
         return `
         <article class="ticket-card">
             <div class="ticket-poster">
-                <img class="ticket-poster-img" src="${poster}" alt="${title}" loading="lazy"
-                     onerror="this.src='/images/placeholder.jpg'">
+                <img class="ticket-poster-img" src="${this.esc(poster)}" alt="${title}" loading="lazy">
                 ${rating ? `<div class="ticket-formats"><span class="ticket-format-badge">${this.esc(rating)}</span></div>` : ''}
             </div>
             
@@ -254,7 +274,7 @@ class AdminOrdersManager {
                     </div>
                     <div class="ticket-info-item">
                         <span class="ticket-info-label"><i class="bi bi-person-check"></i> GHẾ</span>
-                        <span class="ticket-info-value">${seats || 'N/A'}</span>
+                        <span class="ticket-info-value">${this.esc(seats || 'N/A')}</span>
                     </div>
                 </div>
                 
@@ -280,6 +300,10 @@ class AdminOrdersManager {
     
     async showOrderDetail(orderCode) {
         if (!this.els.modal || !this.els.modalBody) return;
+        this.detailRequest?.abort();
+        this.detailRequest = new AbortController();
+        const requestId = ++this.detailRequestId;
+        this.previousFocus = document.activeElement;
         
         this.els.modalBody.innerHTML = `
             <div class="ticket-modal-loading">
@@ -288,12 +312,15 @@ class AdminOrdersManager {
             </div>`;
         this.els.modal.classList.add('show');
         document.body.classList.add('modal-open');
+        this.els.modalClose?.focus();
         
         try {
-            const result = await this.apiRequest(`/admin/orders/${encodeURIComponent(orderCode)}`);
+            const result = await this.apiRequest(`/admin/orders/${encodeURIComponent(orderCode)}`, { signal: this.detailRequest.signal });
+            if (requestId !== this.detailRequestId) return;
             if (!result.success) throw new Error(result.message);
             this.renderOrderModal(result.data);
         } catch (err) {
+            if (err.name === 'AbortError' || requestId !== this.detailRequestId) return;
             this.els.modalBody.innerHTML = `<div class="alert alert-danger m-4">${this.esc(err.message)}</div>`;
         }
     }
@@ -302,35 +329,35 @@ class AdminOrdersManager {
         if (!this.els.modalBody) return;
         
         const user = order.user || {};
-        const firstTicket = order.tickets?.[0] || {};
-        const showtime = order.showtime || firstTicket.showtime || {};
+        const showtime = order.showtime || {};
         const movie = showtime.movie || {};
         const screen = showtime.screen || {};
         const theater = screen.theater || {};
-        const { label: statusLabel, cls } = this.getStatusMeta(order.status);
+        const { label: statusLabel, cls } = this.getStatusMeta(this.normalizeStatus(order));
         
         // Build tickets list
-        const ticketsHtml = (order.tickets || []).map(ticket => {
-            const seat = ticket.seat || {};
-            const seatLabel = seat.label || `${seat.row || ''}${seat.number || ''}`.trim();
-            const seatType = seat.seat_type?.name || 'Thường';
+        const ticketsHtml = this.getTicketItems(order).map((item) => {
+            const metadata = item.metadata || {};
+            const seatLabel = metadata.seat_label || metadata.seat_number || 'N/A';
+            const seatType = metadata.seat_type || metadata.seat_type_name || 'Thường';
+            const ticketCode = metadata.ticket_code || item.ticket_code || 'N/A';
             return `
             <div class="ticket-modal-row">
-                <span>Ghế ${seatLabel}</span>
-                <span>${seatType} · ${ticket.ticket_code}</span>
+                <span>Ghế ${this.esc(seatLabel)}</span>
+                <span>${this.esc(seatType)} · ${this.esc(ticketCode)}</span>
             </div>`;
         }).join('');
         
         this.els.modalBody.innerHTML = `
         <div class="ticket-modal-hero">
-            <img src="${movie.poster_url || '/images/placeholder.jpg'}"
+            <img src="${this.esc(this.safeImageUrl(movie.poster_url))}"
                  alt="${this.esc(movie.title || '')}"
-                 onerror="this.src='/images/placeholder.jpg'">
+                 loading="lazy">
             <div class="ticket-modal-hero-info">
                 <span class="badge ${cls} mb-2">${statusLabel}</span>
                 <h2>${this.esc(movie.title || 'Chưa rõ')}</h2>
                 ${movie.age_rating ? `<span class="ticket-format-badge">${this.esc(movie.age_rating)}</span>` : ''}
-                ${movie.duration ? `<small class="text-muted ms-2">${movie.duration} phút</small>` : ''}
+                ${movie.duration ? `<small class="text-muted ms-2">${this.esc(movie.duration)} phút</small>` : ''}
             </div>
         </div>
         
@@ -364,15 +391,25 @@ class AdminOrdersManager {
         </div>
         
         <div class="ticket-modal-footer">
-            <button class="ticket-primary-btn" onclick="window.adminOrdersManager.closeModal()">
+            <button class="ticket-primary-btn" type="button" data-close-order-modal>
                 Đóng
             </button>
         </div>`;
+        this.els.modalBody.querySelector('[data-close-order-modal]')?.addEventListener('click', () => this.closeModal());
+        this.els.modalBody.querySelectorAll('img').forEach((image) => {
+            image.addEventListener('error', () => {
+                image.src = '/images/placeholder.jpg';
+            }, { once: true });
+        });
     }
     
     closeModal() {
+        this.detailRequest?.abort();
+        this.detailRequest = null;
+        this.detailRequestId++;
         this.els.modal?.classList.remove('show');
         document.body.classList.remove('modal-open');
+        this.previousFocus?.focus?.();
     }
     
     // ─── Pagination ──────────────────────────────────────────────────────────
@@ -400,23 +437,30 @@ class AdminOrdersManager {
         <nav>
             <ul class="pagination justify-content-center">
                 <li class="page-item ${this.currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="event.preventDefault(); window.adminOrdersManager.loadOrders(${this.currentPage - 1})">
+                    <a class="page-link" href="#" data-page="${this.currentPage - 1}">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                 </li>
                 ${pages.map(p => p === '...' 
                     ? '<li class="page-item disabled"><span class="page-link">...</span></li>'
                     : `<li class="page-item ${p === this.currentPage ? 'active' : ''}">
-                         <a class="page-link" href="#" onclick="event.preventDefault(); window.adminOrdersManager.loadOrders(${p})">${p}</a>
+                         <a class="page-link" href="#" data-page="${p}">${p}</a>
                        </li>`
                 ).join('')}
                 <li class="page-item ${this.currentPage === this.lastPage ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="event.preventDefault(); window.adminOrdersManager.loadOrders(${this.currentPage + 1})">
+                    <a class="page-link" href="#" data-page="${this.currentPage + 1}">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                 </li>
             </ul>
         </nav>`;
+        this.els.pagination.querySelectorAll('[data-page]').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const page = Number(link.dataset.page);
+                if (Number.isInteger(page) && page >= 1 && page <= this.lastPage) this.loadOrders(page);
+            });
+        });
     }
     
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -466,6 +510,21 @@ class AdminOrdersManager {
             }
         };
         return meta[status] || meta.pending;
+    }
+
+    normalizeStatus(order) {
+        const paymentStatus = String(order?.payment_status || '').toLowerCase();
+        if (paymentStatus) return paymentStatus === 'confirmed' ? 'paid' : paymentStatus;
+        const status = String(order?.status || '').toLowerCase();
+        return status === 'confirmed' || status === 'completed' ? 'paid' : status;
+    }
+
+    getTicketItems(order) {
+        const items = Array.isArray(order?.items) ? order.items : [];
+        return items.filter((item) => {
+            const type = String(item?.type || item?.item_type || '').toLowerCase();
+            return type.includes('seat') || type.includes('ticket') || Boolean(item?.metadata?.seat_label);
+        });
     }
     
     formatCurrency(amount) {
@@ -533,10 +592,20 @@ class AdminOrdersManager {
             console.log(`[${type.toUpperCase()}] ${message}`);
         }
     }
+
+    destroy() {
+        this.lifecycleController.abort();
+        this.loadRequest?.abort?.();
+        this.detailRequest?.abort?.();
+    }
 }
 
 // ─── Initialize ──────────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', () => {
-    window.adminOrdersManager = new AdminOrdersManager();
+window.onAdminPageLoad(() => {
+    const manager = new AdminOrdersManager();
+    window.adminOrdersManager = manager;
+    window.onAdminPageCleanup(() => manager.destroy());
 });
+
+})();

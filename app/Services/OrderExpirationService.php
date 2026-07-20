@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\SeatHold;
 use App\Models\SeatHoldItem;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -113,8 +114,17 @@ class OrderExpirationService
         // 4. Restore promotion usage
         $this->restorePromotionUsage($order);
 
-        // 5. Clean up seat holds
+        // 5. Restore loyalty points reserved for this checkout
+        $this->restoreLoyaltyPoints($order);
+
+        // 6. Clean up seat holds
         $this->cleanupSeatHolds($order);
+
+        $payload = (array) $order->payload;
+        $payload['product_stock_reserved'] = false;
+        $payload['voucher_reserved'] = false;
+        $payload['points_reserved'] = false;
+        $order->forceFill(['payload' => $payload])->save();
 
         // 6. Audit log
         Log::info('Order expired and resources restored', [
@@ -171,6 +181,8 @@ class OrderExpirationService
                     'new_stock' => $product->stock,
                 ]);
             }
+
+            $item->delete();
         }
     }
 
@@ -183,9 +195,10 @@ class OrderExpirationService
     private function restorePromotionUsage(Order $order): void
     {
         $payload = (array) $order->payload;
-        $promotion = $payload['promotion'] ?? null;
+        $promotion = $payload['voucher'] ?? $payload['promotion'] ?? null;
+        $wasReserved = $payload['voucher_reserved'] ?? array_key_exists('promotion', $payload);
 
-        if ($promotion && isset($promotion['id'])) {
+        if ($wasReserved && $promotion && isset($promotion['id'])) {
             $promotionModel = Promotion::query()
                 ->where('id', $promotion['id'])
                 ->lockForUpdate()
@@ -201,7 +214,31 @@ class OrderExpirationService
                     'new_usage_count' => $promotionModel->usage_count,
                 ]);
             }
+
+            DB::table('user_promotion')
+                ->where('user_id', $order->user_id)
+                ->where('promotion_id', $promotion['id'])
+                ->where('order_id', $order->id)
+                ->where('status', 2)
+                ->update([
+                    'status' => 1,
+                    'order_id' => null,
+                    'updated_at' => now(),
+                ]);
         }
+    }
+
+    private function restoreLoyaltyPoints(Order $order): void
+    {
+        $payload = (array) $order->payload;
+        $pointsUsed = (int) ($payload['points_used'] ?? 0);
+
+        if (! ($payload['points_reserved'] ?? false) || $pointsUsed <= 0 || ! $order->user_id) {
+            return;
+        }
+
+        $user = User::query()->whereKey($order->user_id)->lockForUpdate()->first();
+        $user?->increment('loyalty_points', $pointsUsed);
     }
 
     /**

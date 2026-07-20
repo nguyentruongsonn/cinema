@@ -133,6 +133,25 @@ class OrderItem extends Model
     }
 
     /**
+     * Create order item from an issued ticket (after successful payment)
+     */
+    public static function createFromTicket(Order $order, Ticket $ticket, string $unitPrice, array $metadata = []): self
+    {
+        self::validatePrice($unitPrice);
+
+        $item = new self();
+        $item->order_id = $order->id;
+        $item->item_type = Ticket::class;
+        $item->item_id = $ticket->id;
+        $item->quantity = 1;
+        $item->unit_price = $unitPrice;
+        $item->total_price = $unitPrice;
+        $item->metadata = $metadata;
+
+        return $item;
+    }
+
+    /**
      * Calculate item total price from unit price and quantity
      */
     protected static function calculateTotal(string $unitPrice, int $quantity): string

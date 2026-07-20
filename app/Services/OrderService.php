@@ -46,7 +46,7 @@ class OrderService
 
             $seatHold = $this->getValidSeatHold($showtime->id, $user->id, $data['seat_hold_id'] ?? null);
 
-            $this->ensureSeatHoldMatches($seatIds, (array) $seatHold->seat_ids);
+            $this->ensureSeatHoldMatches($seatIds, $seatHold->normalizedSeatIds());
 
             $seats = Seat::with('seatType')
                 ->whereIn('id', $seatIds)
@@ -111,16 +111,22 @@ class OrderService
         $order = Order::with([
             'user',
             'showtime.movie',
-            'showtime.screen.theater',
+            'showtime.format',
+            'showtime.versionType',
+            'showtime.screen.theater.branch',
             'orderItems',
+            'tickets.seat.seatType',
             'payment',
         ])->findOrFail($id);
 
         $order = $this->orderExpirationService->expireOrder($order)->load([
             'user',
             'showtime.movie',
-            'showtime.screen.theater',
+            'showtime.format',
+            'showtime.versionType',
+            'showtime.screen.theater.branch',
             'orderItems',
+            'tickets.seat.seatType',
             'payment',
         ]);
 
@@ -299,6 +305,69 @@ class OrderService
             self::STATUS_CONFIRMED => 'confirmed',
         ];
 
+        $payload = (array) $order->payload;
+        $ticketItems = $order->orderItems
+            ->filter(fn (OrderItem $item) => in_array($item->item_type, [Seat::class, \App\Models\Ticket::class], true))
+            ->map(fn (OrderItem $item) => [
+                'id' => $item->id,
+                'type' => class_basename($item->item_type),
+                'quantity' => (int) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'total_price' => (float) $item->total_price,
+                'metadata' => (array) $item->metadata,
+            ])
+            ->values();
+
+        if ($ticketItems->isEmpty()) {
+            $ticketItems = collect($payload['seats'] ?? [])->map(fn (array $seat) => [
+                'id' => $seat['id'] ?? null,
+                'type' => 'Seat',
+                'quantity' => 1,
+                'unit_price' => (float) ($seat['price'] ?? 0),
+                'total_price' => (float) ($seat['price'] ?? 0),
+                'metadata' => [
+                    'seat_label' => $seat['name'] ?? $seat['label'] ?? (($seat['row'] ?? '') . ($seat['number'] ?? '')),
+                    'row' => $seat['row'] ?? null,
+                    'number' => $seat['number'] ?? null,
+                    'seat_type' => $seat['type'] ?? $seat['seat_type'] ?? 'Thường',
+                ],
+            ])->values();
+        }
+
+        $productItems = $order->orderItems
+            ->reject(fn (OrderItem $item) => in_array($item->item_type, [Seat::class, \App\Models\Ticket::class], true))
+            ->map(fn (OrderItem $item) => [
+                'id' => $item->id,
+                'type' => class_basename($item->item_type),
+                'quantity' => (int) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'total_price' => (float) $item->total_price,
+                'metadata' => (array) $item->metadata,
+            ])
+            ->values();
+
+        if ($productItems->isEmpty()) {
+            $productItems = collect($payload['products'] ?? [])->map(fn (array $product) => [
+                'id' => $product['id'] ?? null,
+                'type' => 'Product',
+                'quantity' => (int) ($product['quantity'] ?? 1),
+                'unit_price' => (float) ($product['price'] ?? 0),
+                'total_price' => (float) ($product['total_price'] ?? (($product['price'] ?? 0) * ($product['quantity'] ?? 1))),
+                'metadata' => [
+                    'product_name' => $product['name'] ?? 'Sản phẩm',
+                    'product_description' => $product['description'] ?? null,
+                    'product_type' => $product['type'] ?? null,
+                ],
+            ])->values();
+        }
+
+        $seatTotal = (float) ($payload['seat_total'] ?? $ticketItems->sum('total_price'));
+        $productTotal = (float) ($payload['product_total'] ?? $productItems->sum('total_price'));
+        $subtotal = (float) ($payload['subtotal'] ?? ($seatTotal + $productTotal));
+        $voucherDiscount = (float) ($payload['voucher_discount'] ?? 0);
+        $pointDiscount = (float) ($payload['point_discount'] ?? 0);
+        $discountAmount = (float) ($payload['discount_amount'] ?? ($voucherDiscount + $pointDiscount));
+
         return [
             'id' => $order->id,
             'code' => $order->code,
@@ -328,7 +397,22 @@ class OrderService
             'theater_name' => $order->showtime?->screen?->theater?->name,
             'screen_name' => $order->showtime?->screen?->name,
             'branch_name' => $order->showtime?->screen?->theater?->branch?->name,
-            'payload' => $order->payload,
+            'theater_address' => $order->showtime?->screen?->theater?->address
+                ?: $order->showtime?->screen?->theater?->branch?->address,
+            'payload' => $payload,
+            'invoice' => [
+                'tickets' => $ticketItems->all(),
+                'products' => $productItems->all(),
+                'subtotal' => $subtotal,
+                'seat_total' => $seatTotal,
+                'product_total' => $productTotal,
+                'voucher_discount' => $voucherDiscount,
+                'point_discount' => $pointDiscount,
+                'discount_amount' => $discountAmount,
+                'points_used' => (int) ($payload['points_used'] ?? 0),
+                'promotion' => $payload['voucher'] ?? $payload['promotion'] ?? null,
+                'total' => (float) $order->total_amount,
+            ],
         ];
     }
 

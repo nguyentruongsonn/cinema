@@ -13,6 +13,10 @@
     let scannerModal = null;
     let animationFrame = null;
     let lastScanAt = 0;
+    let cameraStartPromise = null;
+    let cameraGeneration = 0;
+    let verificationPromise = null;
+    let verificationController = null;
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
@@ -29,7 +33,9 @@
         scannerModal = new bootstrap.Modal(modalEl);
 
         // Button event listeners
-        document.getElementById('scanTicketBtn')?.addEventListener('click', openScanner);
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('#scanTicketBtn')) openScanner();
+        });
         document.getElementById('cameraScanBtn')?.addEventListener('click', showCameraMode);
         document.getElementById('manualScanBtn')?.addEventListener('click', showManualMode);
         document.getElementById('verifyTicketBtn')?.addEventListener('click', verifyTicket);
@@ -73,23 +79,42 @@
         document.getElementById('ticketCodeInput')?.focus();
     }
 
-    async function startCamera() {
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
-            });
+    function startCamera() {
+        if (stream || scanning) return Promise.resolve(stream);
+        if (cameraStartPromise) return cameraStartPromise;
+
+        const generation = ++cameraGeneration;
+        cameraStartPromise = navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+        }).then((newStream) => {
+            if (generation !== cameraGeneration) {
+                newStream.getTracks().forEach(track => track.stop());
+                return null;
+            }
+            stream = newStream;
             const video = document.getElementById('scannerVideo');
             video.srcObject = stream;
             scanning = true;
             scanForCode();
-        } catch (err) {
-            showResult('error', 'Không thể truy cập camera: ' + err.message);
-            showManualMode();
-        }
+            return stream;
+        }).catch((err) => {
+            if (generation === cameraGeneration) {
+                showResult('error', 'Không thể truy cập camera: ' + err.message);
+                showManualMode();
+            }
+            return null;
+        }).finally(() => {
+            cameraStartPromise = null;
+        });
+
+        return cameraStartPromise;
     }
 
     function stopCamera() {
+        cameraGeneration++;
         scanning = false;
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        animationFrame = null;
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
             stream = null;
@@ -125,7 +150,16 @@
         animationFrame = requestAnimationFrame(scanForCode);
     }
 
-    async function verifyTicket() {
+    function verifyTicket() {
+        if (verificationPromise) return verificationPromise;
+        verificationPromise = verifyTicketRequest().finally(() => {
+            verificationPromise = null;
+            verificationController = null;
+        });
+        return verificationPromise;
+    }
+
+    async function verifyTicketRequest() {
         const input = document.getElementById('ticketCodeInput');
         const code = input.value.trim();
 
@@ -139,6 +173,7 @@
         const originalText = btn.textContent;
         btn.disabled = true;
         btn.textContent = 'Đang xác thực...';
+        verificationController = new AbortController();
 
         try {
             const response = await fetch('/api/v1/admin/tickets/verify', {
@@ -148,10 +183,11 @@
                     'Accept': 'application/json'
                 },
                 credentials: 'include',
+                signal: verificationController.signal,
                 body: JSON.stringify({ ticket_code: code })
             });
 
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
 
             if (response.ok && data.success) {
                 showResult('success', 'Xác thực thành công!', data.data);
@@ -160,7 +196,7 @@
                 showResult('error', data.message || 'Vé không hợp lệ');
             }
         } catch (error) {
-            showResult('error', 'Lỗi kết nối: ' + error.message);
+            if (error.name !== 'AbortError') showResult('error', 'Lỗi kết nối: ' + error.message);
         } finally {
             btn.disabled = false;
             btn.textContent = originalText;
@@ -169,47 +205,6 @@
 
     function showResult(type, message, ticketData = null) {
         const resultDiv = document.getElementById('scanResult');
-        let html = '';
-
-        if (type === 'success' && ticketData) {
-            html = `
-                <div class="alert alert-success">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="bi bi-check-circle-fill fs-3 me-3"></i>
-                        <div>
-                            <h6 class="mb-0">Vé hợp lệ</h6>
-                            <small>${message}</small>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="row g-2 small">
-                        <div class="col-6"><strong>Mã vé:</strong></div>
-                        <div class="col-6">${ticketData.code || 'N/A'}</div>
-                        <div class="col-6"><strong>Phim:</strong></div>
-                        <div class="col-6">${ticketData.movie || 'N/A'}</div>
-                        <div class="col-6"><strong>Suất chiếu:</strong></div>
-                        <div class="col-6">${ticketData.showtime || 'N/A'}</div>
-                        <div class="col-6"><strong>Ghế:</strong></div>
-                        <div class="col-6">${ticketData.seat || 'N/A'}</div>
-                        <div class="col-6"><strong>Trạng thái:</strong></div>
-                        <div class="col-6"><span class="badge bg-success">${ticketData.status || 'Valid'}</span></div>
-                    </div>
-                </div>
-            `;
-        } else if (type === 'error') {
-            html = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-x-circle-fill me-2"></i>${message}
-                </div>
-            `;
-        } else if (type === 'warning') {
-            html = `
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>${message}
-                </div>
-            `;
-        }
-
         resultDiv.textContent = '';
         const alert = document.createElement('div');
         alert.className = `alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'}`;
@@ -245,9 +240,8 @@
     }
 
     function cleanup() {
+        verificationController?.abort();
         stopCamera();
-        if (animationFrame) cancelAnimationFrame(animationFrame);
-        animationFrame = null;
         document.getElementById('ticketCodeInput').value = '';
         document.getElementById('scanResult').style.display = 'none';
         showManualMode();
@@ -256,6 +250,9 @@
     // Expose globally for debugging
     window.ticketScanner = {
         open: openScanner,
-        verify: verifyTicket
+        verify: verifyTicket,
+        startCamera,
+        stopCamera,
+        cleanup
     };
 })();

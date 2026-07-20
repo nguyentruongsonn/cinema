@@ -1699,4 +1699,155 @@ This migration MUST be applied carefully:
 
 ---
 
-_Last Updated: 2026-07-17 19:05_
+- **00:18** - Post-review full remediation pass completed:
+    - Applied the pending checkout fingerprint migration and added/applied normalized unique user email, financial foreign keys, and unique user-promotion constraints
+    - Replaced the custom PayOS raw-body/header verifier with SDK payload verification and retained webhook throttling
+    - Moved gateway execution outside the idempotency database transaction; persisted failed idempotency state and added same-hold checkout serialization
+    - Bound orders to exact seat holds, blocked active-checkout release, reserved product stock/vouchers/loyalty points before redirect, and restored reservations on failure/expiration
+    - Reconciled late verified payments, rejected unreserved stock oversell, and made ticket check-in atomic using `checked_in_at`
+    - Hardened admin role/password boundaries, expiring email verification signatures, refresh-token rotation, forgot-password privacy, and database email uniqueness
+    - Remediated reviewed frontend DOM-XSS sinks, admin order API contract/races, scanner duplication, booking polling/keyboard interaction, and localStorage bearer fallback
+    - Tightened CSP by removing `unsafe-eval`, expanded static/browser regressions, and made the browser matrix timeout-safe with explicit Firefox strict mode
+    - Verification passed:
+        - `php artisan test --compact`: 198 tests, 1375 assertions
+        - `npm run test:frontend:security` and `npm run build`
+        - Chromium and WebKit remediation, booking, scanner, and XSS browser regressions
+        - `npm run test:browser:smoke`: 5 pages and 4 endpoints, no console warning after exact response matching
+        - `composer audit`: no known security advisories
+        - `php artisan migrate --force`: all three pending remediation migrations applied successfully
+    - Firefox headless remains an environment-specific compositor timeout locally; matrix skips it with a warning unless `BROWSER_MATRIX_REQUIRE_FIREFOX=1` is set in CI
+
+---
+
+- **12:06** - Admin no-reload navigation and performance lifecycle pass completed:
+    - Added local Hotwire Turbo Drive runtime and scoped interception to same-origin `/admin` links while preserving normal navigation outside the admin area
+    - Kept the mobile header, sidebar, overlay, toast container, and ticket scanner modal alive with `data-turbo-permanent`; synchronized active sidebar/submenu state after every visit
+    - Migrated admin page initialization from one-time `DOMContentLoaded` handlers to shared Turbo-aware `onAdminPageLoad` / `onAdminPageCleanup` lifecycle helpers
+    - Aborted pending API requests, polling intervals, page-scoped document listeners, scanner camera work, and modal artifacts before Turbo caches/leaves a page
+    - Reworked mobile search and scanner triggers to use persistent delegated handlers without accumulating listeners across visits
+    - Extended the admin browser regression across all 17 sidebar routes and verified the same window, `performance.timeOrigin`, navigation entry, and permanent sidebar survive every transition
+    - Verification passed:
+        - `npm run build`
+        - `npm run test:browser:admin-dashboard`: 17 Turbo routes, one dashboard request, one combo API request
+        - `npm run test:frontend:security`
+        - `php artisan test tests/Feature/Admin/AdminDashboardRegressionTest.php tests/Feature/Admin/AdminAuthorizationPolicyTest.php`: 7 tests, 56 assertions
+    - Result: admin sidebar navigation now replaces page content without a full document reload; cached data and page cleanup prevent duplicate work when moving repeatedly between sections
+
+---
+
+- **13:05** - Admin data-loading performance pass completed:
+    - Replaced full theater eager loading on branch listings with database-side total/active theater counts
+    - Added lightweight active branch options and reused the same five-minute client cache across theater/showtime pages
+    - Made screen reference payloads opt-in, selected only required relation/reference columns, and reused the cached reference response in showtime setup
+    - Reduced seat-layout-template initialization from three list requests to one response containing paginated data and all status counters
+    - Namespaced session API cache by authenticated user/role, normalized relative/absolute URL cache keys, and cleaned request controllers on cache hits/errors
+    - Added stale-request cancellation to banners, posts, promotions, screens, and seat-layout-template lists; fixed nested branch/seat-template pagination contracts
+    - Added composite admin listing indexes for branches, theaters, screens, seat templates, products, users, promotions, posts, and banners
+    - Applied migration `2026_07_18_120000_add_admin_listing_performance_indexes`
+    - Verification passed:
+        - Targeted admin feature tests: 12 tests, 66 assertions
+        - `npm run test:frontend:security`
+        - `npm run build`
+        - `npm run test:browser:admin-dashboard`: 17 Turbo routes; dashboard=1, combos=1, screens=1, seat templates=1, branch options=1
+    - Result: repeated navigation reuses safe account-scoped cache, list filters cannot be overwritten by stale responses, and high-volume admin list queries use targeted indexes
+
+---
+
+- **14:52** - Admin statistics and modal pattern normalization completed:
+    - Moved the combo statistics scope selector into the shared filter bar and replaced the panel-less Bootstrap tabs with an accessible segmented control
+    - Removed the duplicate statistics skeleton implementation and reused the shared admin skeleton animation and chart shapes
+    - Applied one Bootstrap modal visual pattern to every admin modal instead of maintaining an incomplete ID allow-list
+    - Fixed the blocked black-screen modal by moving opened dialogs to `body`, outside the `.admin-main` view-transition stacking context
+    - Added deterministic modal/backdrop/body-lock cleanup for normal close and Turbo navigation, while preserving the permanent ticket scanner modal
+    - Added a screen-page initialization guard to prevent duplicate identical requests when Turbo evaluates a page script twice
+    - Verification passed:
+        - Blade cache and JavaScript syntax checks
+        - `npm run build`
+        - `npm run test:browser:admin-dashboard`: 17 Turbo routes; modal open/close and open-then-navigate lifecycle passed; dashboard=1, combos=1, screens=1, seat templates=1, branch options=1
+        - `npm run test:browser:ticket-scanner`
+    - Result: statistics controls follow the shared filter hierarchy, loading states use one skeleton system, and admin modals remain visible, dismissible, and cleanup-safe across Turbo navigation
+
+---
+
+- **16:40** - System structure remediation and final local closure completed:
+    - Restored Sound management end-to-end with authorization, controller CRUD, admin rendering/forms, screen references, and feature coverage
+    - Split API routing into `routes/api/public.php`, `auth.php`, `customer.php`, and `admin.php` without changing public contracts
+    - Added route/controller reflection, frontend syntax, repository hygiene, and CI quality gates
+    - Removed the public auth configuration debug endpoint, tracked scratch scripts, and unused experimental admin modules
+    - Added shared admin filter/modal components and standardized modal, skeleton, and Turbo cleanup behavior
+    - Replaced remaining `time()` asset cache keys and extended screen reference cache lifetime to avoid repeat network work across admin visits
+    - Fixed screen active toggling to submit the required status payload
+    - Verification passed:
+        - `php artisan test --compact`: 205 tests, 1432 assertions
+        - `composer test:structure`: 172 controller actions and repository hygiene passed
+        - `npm run test:frontend:syntax`: 60 JavaScript files passed
+        - `npm run test:frontend:security` and `npm run build`
+        - `npm run test:browser:admin-dashboard`: all 17 Turbo routes and modal lifecycle passed; screens reference request remained one
+        - `npm run test:browser:ticket-scanner`
+        - Route inventory: 178 routes
+    - Result: all repository-local remediation is complete. Remaining actions require staging/production services: real PayOS sandbox flow, staging-scale migration/load rehearsal, production alert wiring, strict Firefox CI, and human release approval.
+
+---
+
+- **17:35** - Modern platform architecture pass completed:
+    - Added Sentry error/performance integration with safe PII defaults, request-ID tags, tracing, logs, cache/Redis, SQL, queue, and outgoing HTTP instrumentation
+    - Added liveness/readiness endpoints, protected Prometheus-format request metrics, `Server-Timing` support, and request correlation in responses/log context
+    - Added Predis and production Redis isolation for cache, sessions, and queues; added scheduled cross-platform queue-depth/failed-job monitoring with critical alert output
+    - Added hashed Vite user/admin shells and Vite entries for booking/profile; extracted booking product rendering and profile barcode generation into focused modules
+    - Added ESLint, Larastan level 5, scoped Pint, dependency audits, browser smoke, and production build to CI
+    - Added runtime-synchronized OpenAPI 3.1 generation and contract tests covering every API URI/method
+    - Rewrote `README.md`, `ARCHITECTURE.md`, and API documentation to match the actual system
+    - Fixed a latent typed Eloquent `$casts`/`$fillable` incompatibility found by Larastan
+    - Kept metrics disabled by default outside configured Redis environments to prevent database-cache write amplification
+    - Verification passed:
+        - `php artisan test --compact`: 210 tests, 1758 assertions
+        - Route inventory: 182 routes; 176 controller actions passed reflection validation
+        - `composer analyse`, scoped Pint, ESLint, frontend syntax/security, Vite build, Composer/npm audits
+        - Public smoke: 5 pages and 4 API endpoints
+        - Booking idempotency, all 17 admin Turbo routes, modal lifecycle, and ticket-scanner browser regressions
+    - Horizon remains Linux-only because it requires `ext-pcntl`; Windows uses Redis `queue:work` plus `queue:monitor-health`, while queue contracts remain Horizon-compatible for a Linux runtime.
+
+---
+
+- **18:05** - Booking seat-hold latency and product total regression fixed:
+    - Normalized booking product payloads to numeric IDs/prices and the public `max_quantity` contract instead of the unavailable internal `stock` field
+    - Fixed `updateSummary()` references to undefined `totalSurcharge` and `discount` variables and normalized decimal-string seat prices before arithmetic
+    - Hardened product totals and currency formatting so invalid external values fall back to zero rather than rendering `NaN`
+    - Added a 250ms debounced background seat hold after selection; pressing Continue now awaits/reuses the in-flight hold instead of starting or rejecting another request
+    - Moved seat-status broadcasts from synchronous `ShouldBroadcastNow` execution to the post-commit `broadcasts` queue so lock responses no longer wait for Reverb delivery
+    - Added browser coverage using the real public product payload shape, quantity changes, a 210,000 VND combined total, no-NaN assertions, and background hold scheduling
+    - Verification passed:
+        - `php artisan test --compact`: 211 tests, 1761 assertions
+        - Seat locking/event tests: 7 tests, 23 assertions
+        - ESLint, frontend security gate, JavaScript/PHP syntax, and Vite production build
+        - `npm run test:browser:booking-idempotency`
+
+---
+
+- **2026-07-20** - Order detail completeness and explicit seat-hold flow completed:
+    - Added a normalized `invoice` payload to customer order details, merging ticket/seat snapshots from pending checkout payloads with fulfilled ticket and product order items
+    - Included cinema address, seat type/position, product quantities/prices, subtotal, voucher discount, loyalty-points discount, promotion code, and final total
+    - Changed the profile modal to fetch `/orders/{id}` on demand instead of rendering incomplete paginated summary data
+    - Removed automatic seat holding after every seat click; holding now occurs only when the customer presses Continue, while concurrent Continue requests reuse one in-flight request
+    - Removed full pending-order expiration cleanup from the seat-lock critical path; expired pending orders no longer block seats, and normalized hold items are inserted in one batch
+    - Verification passed:
+        - Focused backend tests: 8 tests, 28 assertions
+        - `npm run test:browser:booking-idempotency`
+        - `node scripts/frontend-remediation-regression.mjs`
+        - ESLint, `npm run build`, PHP syntax checks, and `git diff --check`
+
+---
+
+- **2026-07-20** - Booking result completeness and strict fast-path completed:
+    - Replaced the payment-result read request's synchronous PayOS lookup with an owner-scoped, DB-only order snapshot; gateway state changes remain restricted to verified callback/webhook flows
+    - Added bounded local polling for webhook races and an explicit pending-verification state that never reports success before persisted payment confirmation
+    - Completed the result screen with order code, movie/format, showtime, branch/screen/address, seats, products, voucher, loyalty-points discount, subtotal, total, and booking date
+    - Removed duplicate result markup and the third-party placeholder QR request, eliminating an unnecessary external dependency and data-leak surface
+    - Verification passed:
+        - Payment/order focused tests: 14 tests, 161 assertions
+        - Booking browser regression including complete result rendering
+        - ESLint, Vite production build, PHP syntax checks, and `git diff --check`
+
+---
+
+_Last Updated: 2026-07-20_

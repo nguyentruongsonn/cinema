@@ -5,7 +5,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/users/pages/profile.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/users/pages/profile.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @section('content')
@@ -539,6 +539,10 @@
                                             <span class="e-ticket-label">THỜI GIAN</span>
                                             <span id="odModalShowtime" class="e-ticket-value">Giờ chiếu</span>
                                         </div>
+                                        <div class="e-ticket-info-item full-width">
+                                            <span class="e-ticket-label">ĐỊA CHỈ</span>
+                                            <span id="odModalAddress" class="e-ticket-value">Địa chỉ rạp</span>
+                                        </div>
                                     </div>
                                     <div class="e-ticket-seats-section">
                                         <span class="e-ticket-label">VỊ TRÍ GHẾ NGỒI CỦA BẠN</span>
@@ -585,11 +589,19 @@
                                 <div id="odModalProductsList" class="invoice-items-list mb-4 pb-4 border-bottom"></div>
 
                                 <div class="invoice-totals mt-auto">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="invoice-label">Tạm tính</span>
+                                        <span class="text-white" id="odModalSubtotal">0đ</span>
+                                    </div>
                                     <div class="d-flex justify-content-between mb-2 d-none" id="odModalVoucherList">
                                         <span class="invoice-label">
                                             Voucher (<span id="odModalVoucherCode">CODE</span>)
                                         </span>
                                         <span class="invoice-discount-val" id="odModalVoucherValue">-0đ</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2 d-none" id="odModalPointsList">
+                                        <span class="invoice-label">Giảm bằng điểm (<span id="odModalPointsUsed">0</span> điểm)</span>
+                                        <span class="invoice-discount-val" id="odModalPointsValue">-0đ</span>
                                     </div>
                                     <div class="invoice-grand-total mt-3 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
                                         <span>Tổng cộng</span>
@@ -622,6 +634,5 @@
 @endsection
 
 @push('scripts')
-    <script type="module" src="{{ asset('js/users/pages/profile.js') }}"></script>
+    @vite('resources/js/pages/profile.js')
 @endpush
-

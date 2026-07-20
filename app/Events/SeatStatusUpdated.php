@@ -4,11 +4,12 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class SeatStatusUpdated implements ShouldBroadcastNow
+class SeatStatusUpdated implements ShouldBroadcast, ShouldDispatchAfterCommit
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -36,6 +37,11 @@ class SeatStatusUpdated implements ShouldBroadcastNow
     public function broadcastAs(): string
     {
         return 'seat.status.updated';
+    }
+
+    public function broadcastQueue(): string
+    {
+        return 'broadcasts';
     }
 
     public function broadcastWith(): array

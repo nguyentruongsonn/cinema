@@ -76,6 +76,19 @@ if ((env.SESSION_SECURE ?? '').toLowerCase() !== 'true') {
 }
 
 if (strictExternal) {
+    for (const [key, expected] of [
+        ['CACHE_STORE', 'redis'],
+        ['SESSION_DRIVER', 'redis'],
+        ['QUEUE_CONNECTION', 'redis'],
+    ]) {
+        if ((env[key] ?? '').toLowerCase() !== expected) {
+            failures.push(`${key} must be ${expected} for production readiness`);
+        }
+    }
+
+    addMissing(failures, env, 'SENTRY_LARAVEL_DSN');
+    addMissing(failures, env, 'METRICS_TOKEN');
+
     if (!(env.LOG_STACK ?? '').split(',').map((value) => value.trim()).includes('slack')) {
         failures.push('LOG_STACK should include slack for production alert delivery');
     }

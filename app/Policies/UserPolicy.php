@@ -65,7 +65,11 @@ class UserPolicy
             return true;
         }
 
-        // Admin can update any user
+        if ($this->isAdministrativeUser($targetUser) && !$user->hasRole('super-admin')) {
+            return false;
+        }
+
+        // Admin can update non-administrative users; only super-admin can update administrators.
         if ($user->hasAnyRole(['admin', 'super-admin'])) {
             return true;
         }
@@ -95,8 +99,8 @@ class UserPolicy
             return false;
         }
 
-        // Cannot delete other admins without super admin permission
-        if ($targetUser->hasAnyRole(['admin', 'super-admin']) && !$user->hasRole('super-admin')) {
+        // Administrative accounts are protected by the role hierarchy.
+        if ($this->isAdministrativeUser($targetUser) && !$user->hasRole('super-admin')) {
             return false;
         }
 
@@ -116,7 +120,11 @@ class UserPolicy
             return false;
         }
 
-        // Only admin with role management permission
+        if ($this->isAdministrativeUser($targetUser) && !$user->hasRole('super-admin')) {
+            return false;
+        }
+
+        // Only super-admin or delegated role managers can change non-administrative users.
         return $user->hasRole('super-admin')
             || $user->hasPermission('manage_user_roles')
             || $user->hasPermission('users.manage_roles');
@@ -152,6 +160,10 @@ class UserPolicy
             return false;
         }
 
+        if ($this->isAdministrativeUser($targetUser) && !$user->hasRole('super-admin')) {
+            return false;
+        }
+
         // Only admin with user management permission
         return $user->hasRole('super-admin') || $user->hasPermission('users.manage_status');
     }
@@ -169,8 +181,7 @@ class UserPolicy
             return true;
         }
 
-        // Admin can force password change
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_users');
+        return $this->canResetCredentials($user, $targetUser);
     }
 
     /**
@@ -185,7 +196,7 @@ class UserPolicy
             return false;
         }
 
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_users');
+        return $this->canResetCredentials($user, $targetUser);
     }
 
     /**
@@ -213,5 +224,19 @@ class UserPolicy
 
         // Only super admin with impersonation permission
         return $user->hasRole('super-admin');
+    }
+
+    private function canResetCredentials(User $user, User $targetUser): bool
+    {
+        if ($this->isAdministrativeUser($targetUser)) {
+            return $user->hasRole('super-admin');
+        }
+
+        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_users');
+    }
+
+    private function isAdministrativeUser(User $user): bool
+    {
+        return $user->hasAnyRole(['admin', 'super-admin']);
     }
 }

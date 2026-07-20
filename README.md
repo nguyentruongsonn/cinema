@@ -1,221 +1,82 @@
-# 🎬 Cinema - Website Đặt Vé Xem Phim
+# Cinema Booking Platform
 
-Một ứng dụng web hiện đại để đặt vé xem phim trực tuyến, được xây dựng với **Laravel**, **Bootstrap 5**, **JWT Authentication**, và **RESTful API**.
+Cinema is a Laravel 12 booking platform with a customer storefront, Turbo-powered administration, PayOS payment processing, real-time seat updates, and production-oriented security and reliability controls.
 
-## ✨ Tính Năng Chính
+## Technology
 
-### 👥 Người Dùng
-- ✅ Đăng ký & Đăng nhập với JWT
-- ✅ Xem danh sách phim & rạp chiếu
-- ✅ Chọn suất chiếu & ghế ngồi
-- ✅ Đặt vé & thanh toán
-- ✅ Quản lý đơn hàng
-- ✅ Hủy vé
+- PHP 8.2+ and Laravel 12
+- MySQL 8 for transactional data
+- Redis for production cache, sessions, queues, and distributed locks
+- Vite 7, Bootstrap 5, Tailwind CSS 4, and Hotwire Turbo 8
+- Laravel Reverb for optional real-time seat and order events
+- Sentry for errors, tracing, logs, and performance telemetry
+- PHPUnit, Playwright, Larastan, ESLint, and Laravel Pint
 
-### 🛠️ Admin
-- ✅ Quản lý phim (CRUD)
-- ✅ Quản lý rạp chiếu (CRUD)
-- ✅ Quản lý suất chiếu (CRUD)
-- ✅ Xem báo cáo doanh thu
-- ✅ Quản lý người dùng
+## Main Capabilities
 
-## 🏗️ Stack Công Nghệ
+- Movie, theater, screen, showtime, seat-layout, product, combo, promotion, order, payment, ticket, post, and banner management
+- Seat holding and checkout serialization with expiration cleanup
+- Idempotent order/payment operations and replay-safe PayOS webhooks
+- Ticket QR verification with atomic check-in
+- Role and policy-based administration
+- Account-scoped admin caching, stale request cancellation, and paginated listings
+- Runtime-generated OpenAPI 3.1 contract
+- Liveness, readiness, protected metrics, request correlation, slow-query logging, and queue monitoring
 
-| Lớp | Công Nghệ |
-|-----|-----------|
-| **Backend** | Laravel 11, PHP 8.2 |
-| **Database** | MySQL 5.7+ |
-| **Authentication** | JWT (tymon/jwt-auth) |
-| **API** | RESTful API |
-| **Frontend** | HTML5, CSS3, JavaScript |
-| **UI Framework** | Bootstrap 5 |
-| **HTTP Client** | Fetch API |
-| **Architecture** | MVC Pattern |
+## Local Setup
 
-## 📁 Cấu Trúc Thư Mục
-
-```
-cinema/
-├── app/
-│   ├── Http/Controllers/        # API Controllers
-│   ├── Http/Middleware/         # JWT & Admin Middleware
-│   ├── Models/                  # Eloquent Models
-│   └── Traits/                  # Reusable Traits
-├── database/
-│   ├── migrations/              # Database Schemas
-│   └── seeders/                 # Sample Data
-├── public/
-│   ├── index.html               # Frontend Entry
-│   ├── css/style.css            # Styles
-│   └── js/app.js                # Frontend Logic
-├── routes/
-│   ├── api.php                  # API Routes
-│   └── web.php                  # Web Routes
-├── config/
-│   └── auth.php                 # JWT Config
-└── SETUP_GUIDE.md               # Installation Guide
-```
-
-## 🚀 Bắt Đầu Nhanh
-
-### 1. Cài Đặt
-```bash
-cd c:\xampp\htdocs\cinema
+```powershell
 composer install
+npm ci
+Copy-Item .env.example .env
 php artisan key:generate
-php artisan migrate
-php artisan db:seed
+php artisan migrate --seed
+npm run build
+php artisan serve
 ```
 
-### 2. Chạy Server
-```bash
-php artisan serve --host=localhost --port=8000
+Local development may keep `CACHE_STORE`, `SESSION_DRIVER`, and `QUEUE_CONNECTION` on database/array drivers. Production should use the Redis defaults documented in `.env.example`.
+
+## Development
+
+```powershell
+composer dev
 ```
 
-### 3. Truy Cập
-- **Website**: http://localhost:8000
-- **API**: http://localhost:8000/api
+This starts the Laravel server, queue listener, application logs, and Vite development server.
 
-### 4. Đăng Nhập Test
-- Email: `test@example.com`
-- Password: `password`
+## Quality Gates
 
-## 📚 Tài Liệu
-
-- [SETUP_GUIDE.md](./SETUP_GUIDE.md) - Hướng dẫn cài đặt chi tiết
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Kiến trúc hệ thống
-- [API_DOCS.md](./API_DOCS.md) - Tài liệu API
-
-## 🔌 API Endpoints
-
-### Authentication
-```
-POST   /api/auth/register
-POST   /api/auth/login
-POST   /api/auth/logout
-GET    /api/auth/me
-POST   /api/auth/refresh
+```powershell
+composer test:structure
+composer analyse
+composer test:modern-format
+npm run lint
+npm run test:frontend:syntax
+npm run test:frontend:security
+npm run build
+php artisan test --compact
+npm run test:browser:smoke
+npm run test:browser:admin-dashboard
 ```
 
-### Movies
-```
-GET    /api/movies
-GET    /api/movies/{id}
-POST   /api/admin/movies
-PUT    /api/admin/movies/{id}
-DELETE /api/admin/movies/{id}
-```
+GitHub Actions runs static analysis, formatting, frontend checks, the production build, PHP tests, browser smoke, and dependency audits.
 
-### Theaters
-```
-GET    /api/theaters
-GET    /api/theaters/{id}
-POST   /api/admin/theaters
-PUT    /api/admin/theaters/{id}
-DELETE /api/admin/theaters/{id}
-```
+## Operations
 
-### Showtimes
-```
-GET    /api/showtimes
-GET    /api/showtimes/{id}
-POST   /api/admin/showtimes
-PUT    /api/admin/showtimes/{id}
-DELETE /api/admin/showtimes/{id}
-```
+- Liveness: `GET /api/v1/health/live`
+- Readiness: `GET /api/v1/health/ready`
+- OpenAPI: `GET /api/v1/docs/openapi.json`
+- Metrics: `GET /api/v1/internal/metrics` with `Authorization: Bearer <METRICS_TOKEN>`
+- Queue monitor: `php artisan queue:monitor-health --json`
+- Scheduler: `php artisan schedule:work`
+- Redis worker: `php artisan queue:work redis --queue=payments,broadcasts,default,cleanup --tries=3`
 
-### Orders & Payments
-```
-POST   /api/orders
-GET    /api/orders/{id}
-GET    /api/orders/user/me
-PUT    /api/orders/{id}/cancel
-POST   /api/payments
-GET    /api/payments/{id}
-POST   /api/payments/{id}/verify
-```
+Laravel Horizon requires the Unix-only `pcntl` PHP extension and therefore is not installed in the Windows/XAMPP development environment. The application uses Redis queues and a cross-platform queue monitor locally; Horizon can be added on a Linux runtime without changing queue contracts.
 
-## 🔐 Bảo Mật
+## Documentation
 
-- ✅ JWT Token Authentication
-- ✅ Password Hashing (Bcrypt)
-- ✅ Role-based Authorization
-- ✅ Input Validation
-- ✅ CORS Protection
-- ✅ SQL Injection Prevention
-
-## 📊 Dữ Liệu Mẫu
-
-Seeder tạo sẵn:
-- 6 phim phổ biến
-- 5 rạp chiếu (Hà Nội & TP.HCM)
-- 45 phòng chiếu
-- 4,500 ghế ngồi
-- 3 suất chiếu mỗi ngày
-
-## 🎯 Quy Trình Phát Triển
-
-### Code Standards
-- ✅ PSR-12 PHP Coding Standard
-- ✅ Clean Code Principles
-- ✅ SOLID Principles
-- ✅ MVC Architecture
-- ✅ RESTful API Design
-
-### Best Practices
-- ✅ Eloquent ORM
-- ✅ Route Model Binding
-- ✅ Request Validation
-- ✅ Exception Handling
-- ✅ Middleware Pattern
-
-## 🧪 Testing
-
-### Test Login
-```bash
-curl -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password"}'
-```
-
-### Test Get Movies
-```bash
-curl http://localhost:8000/api/movies
-```
-
-## 📝 Ghi Chú
-
-- Tất cả responses là JSON
-- JWT token lưu trong localStorage
-- Seat locking có timeout
-- Payment status tracking
-- Order history management
-
-## 🐛 Troubleshooting
-
-| Vấn Đề | Giải Pháp |
-|--------|----------|
-| Database connection error | Kiểm tra MySQL & .env |
-| JWT token invalid | Chạy `php artisan key:generate` |
-| CORS error | Kiểm tra config/cors.php |
-| Port 8000 đang dùng | Dùng port khác: `--port=8001` |
-
-## 📞 Liên Hệ & Hỗ Trợ
-
-- 📧 Email: support@cinema.local
-- 🐛 Issues: GitHub Issues
-- 📖 Docs: Xem SETUP_GUIDE.md
-
-## 📄 License
-
-MIT License - Tự do sử dụng cho mục đích cá nhân & thương mại
-
-## 👨‍💻 Tác Giả
-
-**Cinema Development Team**  
-Phiên bản: 1.0.0  
-Cập nhật: 2026-05-29
-
----
-
-**Hãy bắt đầu xây dựng ứng dụng đặt vé xem phim của bạn ngay hôm nay! 🎬**
+- Architecture: `ARCHITECTURE.md`
+- API contract: `docs/api/README.md`
+- Remediation closure: `REVIEWS/SYSTEM_STRUCTURE_REVIEW.md`
+- Execution tracker: `REVIEWS/REMEDIATION_EXECUTION_TRACKER.md`

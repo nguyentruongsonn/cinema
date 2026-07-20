@@ -5,7 +5,7 @@
 
 @push('styles')
 <link href="{{ asset('vendor/summernote/summernote-lite.min.css') }}" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('css/admin/posts.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/admin/posts.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @section('content')
@@ -210,11 +210,10 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
 <script src="{{ asset('vendor/summernote/jquery-3.6.0.min.js') }}"></script>
 <script src="{{ asset('vendor/summernote/summernote-lite.min.js') }}"></script>
-<script src="{{ asset('js/admin/pages/posts.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/admin/pages/posts.js') }}?v={{ config('app.asset_version') }}"></script>
 @endpush

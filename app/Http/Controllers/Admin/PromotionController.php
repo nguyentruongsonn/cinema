@@ -25,6 +25,7 @@ class PromotionController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', Rule::in(['all', 'active', 'inactive'])],
             'category' => ['nullable', 'string', 'max:50'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
         ]);
 
         $query = Promotion::query();
@@ -47,7 +48,7 @@ class PromotionController extends Controller
             $query->where('category', $filters['category']);
         }
 
-        $promotions = $query->orderBy('created_at', 'desc')->paginate(10);
+        $promotions = $query->orderBy('created_at', 'desc')->paginate($filters['per_page'] ?? 10);
 
         return $this->paginatedResponse($promotions, 'Promotions retrieved successfully');
     }

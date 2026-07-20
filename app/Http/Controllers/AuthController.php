@@ -248,20 +248,12 @@ class AuthController extends Controller
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
         try {
-            $status = $this->authService->sendPasswordResetLink($request->validated('email'));
-
-            if ($status === Password::RESET_LINK_SENT) {
-                return $this->successResponse(null, 'Password reset link sent to your email');
-            }
-
-            return $this->errorResponse('Failed to send reset link', 400);
+            $this->authService->sendPasswordResetLink($request->validated('email'));
         } catch (\Throwable $e) {
             report($e);
-
-            // Do not expose password reset internals or infrastructure failures to clients.
-            // This also avoids user enumeration and reset-token leakage in API responses.
-            return $this->successResponse(null, 'If the email exists, a password reset link will be sent');
         }
+
+        return $this->successResponse(null, 'If the email exists, a password reset link will be sent');
     }
 
     /**

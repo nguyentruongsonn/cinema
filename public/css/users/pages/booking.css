@@ -3858,8 +3858,56 @@ body {
     border-radius: 16px;
     padding: 32px;
     width: 100%;
-    max-width: 500px;
+    max-width: 720px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+.result-line-items {
+    display: grid;
+    gap: 10px;
+}
+
+.result-line-item,
+.result-price-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    color: #b8b8b8;
+    font-size: 14px;
+}
+
+.result-line-item strong,
+.result-price-row strong {
+    color: #fff;
+    white-space: nowrap;
+}
+
+.result-price-summary {
+    display: grid;
+    gap: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 20px;
+}
+
+.result-price-row:not(.result-price-total) strong {
+    color: #ff8b94;
+}
+
+.result-price-total {
+    border-top: 1px dashed rgba(255, 255, 255, 0.12);
+    padding-top: 14px;
+    color: #fff;
+    font-size: 16px;
+}
+
+.result-price-total strong {
+    color: #e50914;
+    font-size: 20px;
+}
+
+.result-meta-row {
+    color: #777;
+    font-size: 12px;
 }
 
 .ticket-poster {

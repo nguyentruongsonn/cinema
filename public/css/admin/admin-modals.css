@@ -325,18 +325,7 @@
 }
 
 /* Cancel button */
-#branchModal .modal-footer .btn,
-#theaterModal .modal-footer .btn,
-#screenModal .modal-footer .btn,
-#formatModal .modal-footer .btn,
-#soundModal .modal-footer .btn,
-#seatLayoutTemplateModal .modal-footer .btn,
-#seatLayoutTemplateModal .slt-btn-cancel,
-#movieModal .modal-footer .btn,
-#comboModal .modal-footer .btn,
-#productModal .modal-footer .btn,
-#addShowtimeModal .modal-footer .btn,
-#editShowtimeModal .modal-footer .btn {
+.modal .modal-footer :where(.btn-modal-cancel, [data-bs-dismiss="modal"], .slt-btn-cancel) {
     background: rgba(255, 255, 255, 0.07) !important;
     color: #d4d4d8 !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -347,18 +336,7 @@
     transition: background 0.2s !important;
 }
 
-#branchModal .modal-footer .btn:hover,
-#theaterModal .modal-footer .btn:hover,
-#screenModal .modal-footer .btn:hover,
-#formatModal .modal-footer .btn:hover,
-#soundModal .modal-footer .btn:hover,
-#seatLayoutTemplateModal .modal-footer .btn:hover,
-#seatLayoutTemplateModal .slt-btn-cancel:hover,
-#movieModal .modal-footer .btn:hover,
-#comboModal .modal-footer .btn:hover,
-#productModal .modal-footer .btn:hover,
-#addShowtimeModal .modal-footer .btn:hover,
-#editShowtimeModal .modal-footer .btn:hover {
+.modal .modal-footer :where(.btn-modal-cancel, [data-bs-dismiss="modal"], .slt-btn-cancel):hover {
     background: rgba(255, 255, 255, 0.12) !important;
 }
 
@@ -411,4 +389,96 @@
 /* ── Backdrop ────────────────────────────────────────────────────────── */
 .modal-backdrop.show {
     opacity: 0.72 !important;
+}
+
+/* Shared Bootstrap modal pattern for every admin page */
+.modal {
+    --bs-modal-zindex: 1060;
+}
+
+.modal .modal-dialog {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.modal .modal-content {
+    background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
+    color: #f1f1f3 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 32px 96px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+    overflow: hidden;
+}
+
+.modal .modal-header {
+    min-height: 68px;
+    padding: 1.25rem 1.5rem !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.modal .modal-title {
+    margin: 0;
+    color: #ffffff !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em;
+}
+
+.modal .modal-title i {
+    color: #a1a1aa;
+}
+
+.modal .modal-body {
+    padding: 1.5rem !important;
+    background: transparent !important;
+    overflow-y: auto;
+}
+
+.modal .modal-footer {
+    min-height: 64px;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+.modal .modal-footer .btn-primary,
+.modal .modal-footer .btn-primary-custom,
+.modal .modal-footer button[type="submit"]:not(.btn-modal-cancel) {
+    min-height: 38px;
+    padding: 0.5rem 1.5rem !important;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #e50914 0%, #b8070f 100%) !important;
+    border: 1px solid #e50914 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 16px rgba(229, 9, 20, 0.3) !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+}
+
+.modal .btn-close {
+    flex: 0 0 auto;
+    opacity: 0.75;
+}
+
+.modal .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-backdrop {
+    --bs-backdrop-zindex: 1050;
+}
+
+@media (max-width: 767px) {
+    .modal .modal-dialog {
+        margin: 0.75rem;
+    }
+
+    .modal .modal-header,
+    .modal .modal-body,
+    .modal .modal-footer {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
 }

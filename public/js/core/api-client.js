@@ -44,14 +44,6 @@
         );
     }
 
-    function getBearerToken() {
-        try {
-            return window.localStorage?.getItem('auth_token') || '';
-        } catch (error) {
-            return '';
-        }
-    }
-
     function isFormData(value) {
         return typeof FormData !== 'undefined' && value instanceof FormData;
     }
@@ -127,11 +119,6 @@
                 ...this.defaultHeaders,
                 ...(options.headers || {}),
             };
-
-            const token = getBearerToken();
-            if (token && !headers.Authorization) {
-                headers.Authorization = `Bearer ${token}`;
-            }
 
             if (isUnsafeMethod(method) && !headers['X-CSRF-TOKEN']) {
                 const csrfToken = getCsrfToken();

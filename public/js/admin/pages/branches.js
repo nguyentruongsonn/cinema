@@ -5,6 +5,12 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
     const els = {
         tableBody: document.getElementById('branchesTableBody'),
         pagination: document.getElementById('paginationContainer'),
@@ -42,15 +48,16 @@
             url.searchParams.append('page', page);
             if (currentSearch) url.searchParams.append('search', currentSearch);
 
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'branches:list' });
             if (res && res.ok) {
                 const data = await res.json();
-                renderTable(data.data, data.from);
-                renderPagination(data);
+                renderTable(data.data, data.pagination?.from || data.from);
+                renderPagination(data.pagination || data);
             } else {
                 throw new Error('Failed to fetch');
             }
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Error loading data:', error);
             els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -72,11 +79,11 @@
             
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
-                <td class="fw-medium text-white">${branch.name}</td>
+                <td class="fw-medium text-white">${escapeHtml(branch.name)}</td>
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
                         <input class="form-check-input toggle-active-btn m-0" type="checkbox" role="switch"
-                            data-id="${branch.id}" ${branch.is_active ? 'checked' : ''} style="cursor:pointer;">
+                            data-id="${escapeHtml(branch.id)}" ${branch.is_active ? 'checked' : ''} style="cursor:pointer;">
                     </div>
                 </td>
                 <td class="text-light small">${dCreated.toLocaleDateString('vi-VN')}</td>
@@ -85,12 +92,12 @@
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-edit-branch"
                             style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
-                            data-branch='${JSON.stringify(branch).replace(/'/g, "&#39;")}'
+                            data-branch='${escapeHtml(JSON.stringify(branch))}'
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button type="button" class="btn btn-sm ms-1 btn-delete-branch"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${branch.id}" title="Xóa">
+                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${escapeHtml(branch.id)}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -113,7 +120,7 @@
             html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
         }
 
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             if (i === meta.current_page) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
             } else {
@@ -248,7 +255,7 @@
     }
 
     /* ── Init ──────────────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', () => {
+    window.onAdminPageLoad(() => {
         loadData(1);
     });
 

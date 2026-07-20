@@ -58,18 +58,19 @@
             if (search) url.searchParams.append('search', search);
             if (status !== 'all') url.searchParams.append('status', status);
 
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'seat-layout-templates:list' });
             if (res && res.ok) {
                 const data = await res.json();
-                renderTable(data.data, data.from);
-                renderPagination(data);
+                renderTable(data.data, data.pagination?.from || data.from);
+                renderPagination(data.pagination || data);
                 
                 // Cập nhật số lượng của tab hiện tại
-                if (status === 'all') els.countAll.textContent = data.total;
-                else if (status === 'published') els.countPublished.textContent = data.total;
-                else if (status === 'draft') els.countDraft.textContent = data.total;
+                els.countAll.textContent = data.counts?.all ?? 0;
+                els.countPublished.textContent = data.counts?.published ?? 0;
+                els.countDraft.textContent = data.counts?.draft ?? 0;
             }
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Error loading data:', error);
             els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -151,7 +152,7 @@
             html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
         }
 
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             if (i === meta.current_page) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
             } else {
@@ -291,12 +292,7 @@
                     getModalInstance()?.hide();
                     window.showAdminToast?.(isEdit ? 'Cập nhật thành công!' : 'Thêm mới thành công!', 'success');
                     
-                    // Reload all counters to keep them fresh
-                    loadData(1, '', 'all');
-                    loadData(1, '', 'published');
-                    loadData(1, '', 'draft');
-                    // Switch back to 'all' or keep current? Let's keep current
-                    setTimeout(() => loadData(currentPage, currentSearch, currentStatus), 500);
+                    loadData(currentPage, currentSearch, currentStatus);
                 } else {
                     const errData = await res.json();
                     alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message));
@@ -326,11 +322,8 @@
     });
 
     /* ── Init ──────────────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', () => {
-        // Pre-load counters by triggering loads in background
-        loadData(1, '', 'published');
-        loadData(1, '', 'draft');
-        loadData(1, '', 'all'); // Leave this last so it renders 'all' first
+    window.onAdminPageLoad(() => {
+        loadData(1, '', 'all');
     });
 
 })();

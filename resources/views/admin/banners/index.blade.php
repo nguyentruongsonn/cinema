@@ -5,7 +5,6 @@
 @section('header_subtitle', 'Quản lý banner quảng cáo hiển thị trên website.')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/admin-modals.css') }}?v={{ time() }}">
 @endpush
 
 @section('content')
@@ -241,9 +240,8 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/components/skeleton.css') }}?v={{ time() }}">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/admin/pages/banners.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/admin/pages/banners.js') }}?v={{ config('app.asset_version') }}"></script>
 @endpush

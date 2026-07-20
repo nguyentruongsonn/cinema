@@ -14,7 +14,8 @@
     let state = {
         revenueFilter: 'month',
         topMoviesFilter: 'month',
-        pollInterval: null
+        pollInterval: null,
+        statsController: null
     };
 
     let charts = {
@@ -385,6 +386,10 @@
 
     async function fetchStats(target = 'all') {
         if (typeof authManager === 'undefined') return;
+
+        state.statsController?.abort();
+        const controller = new AbortController();
+        state.statsController = controller;
         
         try {
             if (target === 'all' || target === 'cards') showStatsSkeleton();
@@ -394,17 +399,17 @@
             const params = new URLSearchParams();
             
             if (els.dashboardFilterStart && els.dashboardFilterStart.value) {
-                params.append('start', els.dashboardFilterStart.value);
+                params.append('start_date', els.dashboardFilterStart.value);
             }
             if (els.dashboardFilterEnd && els.dashboardFilterEnd.value) {
-                params.append('end', els.dashboardFilterEnd.value);
+                params.append('end_date', els.dashboardFilterEnd.value);
             }
             
             if (params.toString()) {
                 url += '?' + params.toString();
             }
             
-            const response = await authManager.fetchAPI(url, { silentAuth: true });
+            const response = await authManager.fetchAPI(url, { silentAuth: true, signal: controller.signal });
             
             if (response && response.success) {
                 const data = response.data;
@@ -412,36 +417,13 @@
                 if (target === 'all' || target === 'cards') renderCards(data.cards);
                 if (target === 'all' || target === 'revenue') updateRevenueChart(data.revenue_by_day);
                 if (target === 'all' || target === 'heatmap') updateHeatmapChart(data.traffic_heatmap);
+                if (target === 'all' || target === 'topMovies') renderTopMovies(data.top_movies);
             }
         } catch (e) {
+            if (e.name === 'AbortError') return;
             console.warn('Dashboard sync error:', e);
-        }
-    }
-
-    async function fetchTopMovies() {
-        if (typeof authManager === 'undefined') return;
-        try {
-            // Build URL with date range filters
-            let url = API_ENDPOINTS.stats;
-            const params = new URLSearchParams();
-            
-            if (els.dashboardFilterStart && els.dashboardFilterStart.value) {
-                params.append('start', els.dashboardFilterStart.value);
-            }
-            if (els.dashboardFilterEnd && els.dashboardFilterEnd.value) {
-                params.append('end', els.dashboardFilterEnd.value);
-            }
-            
-            if (params.toString()) {
-                url += '?' + params.toString();
-            }
-            
-            const response = await authManager.fetchAPI(url, { silentAuth: true });
-            if (response && response.success) {
-                renderTopMovies(response.data.top_movies);
-            }
-        } catch (e) {
-            console.warn('Top movies sync error:', e);
+        } finally {
+            if (state.statsController === controller) state.statsController = null;
         }
     }
 
@@ -460,7 +442,6 @@
                     // Set date range and fetch
                     setDateRange(btn.dataset.range);
                     fetchStats('all');
-                    fetchTopMovies();
                 });
             });
         }
@@ -474,7 +455,6 @@
                 }
                 
                 fetchStats('all');
-                fetchTopMovies();
             });
         }
         
@@ -497,7 +477,7 @@
             </div>`;
                 }
                 els.topMoviesContainer.innerHTML = skeletonHtml;
-                fetchTopMovies();
+                fetchStats('topMovies');
             });
         }
     }
@@ -512,16 +492,18 @@
         
         // Initial load
         fetchStats('all');
-        fetchTopMovies();
         
         // Start polling every 30 seconds
         state.pollInterval = setInterval(() => {
             fetchStats('all');
-            fetchTopMovies();
         }, 30000);
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    window.onAdminPageCleanup(function () {
+        if (state.pollInterval) clearInterval(state.pollInterval);
+    });
+
+    window.onAdminPageLoad(function () {
         cacheDoms();
         init();
     });

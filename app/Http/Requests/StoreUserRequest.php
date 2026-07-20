@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreUserRequest extends FormRequest
@@ -27,6 +28,40 @@ class StoreUserRequest extends FormRequest
             'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'status' => ['nullable', 'boolean'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $normalized = [];
+
+        if (is_string($this->input('email'))) {
+            $normalized['email'] = mb_strtolower(trim($this->input('email')));
+        }
+
+        if (is_string($this->input('username'))) {
+            $normalized['username'] = mb_strtolower(trim($this->input('username')));
+        }
+
+        if ($normalized !== []) {
+            $this->merge($normalized);
+        }
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $roleId = $this->input('role_id');
+
+            if ($roleId === null) {
+                return;
+            }
+
+            $role = Role::query()->find($roleId);
+            if ($role?->slug && in_array($role->slug, ['admin', 'super-admin'], true)
+                && !($this->user()?->hasRole('super-admin') ?? false)) {
+                $validator->errors()->add('role_id', 'Only a super-admin may assign administrative roles.');
+            }
+        });
     }
 
     public function userData(): array

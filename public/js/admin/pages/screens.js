@@ -1,10 +1,20 @@
 /**
  * Screens Management - screens.js
  * Pattern: IIFE, SPA Architecture
- * FIXED: Removed all Sound references (sound model/table no longer exists)
+ * Manages screens, projection formats, and sound formats.
  */
 (function () {
     'use strict';
+
+    const pageRoot = document.getElementById('screensTableBody');
+    if (!pageRoot || pageRoot.dataset.adminPageInitialized === 'true') return;
+    pageRoot.dataset.adminPageInitialized = 'true';
+
+    const lifecycleController = new AbortController();
+    window.onAdminPageCleanup(() => {
+        lifecycleController.abort();
+        delete pageRoot.dataset.adminPageInitialized;
+    });
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -20,11 +30,13 @@
         // Tables
         screensTableBody: document.getElementById('screensTableBody'),
         formatsTableBody: document.getElementById('formatsTableBody'),
+        soundsTableBody: document.getElementById('soundsTableBody'),
         pagination: document.getElementById('paginationContainer'),
 
         // Badges
         countScreens: document.getElementById('count-screens'),
         countFormats: document.getElementById('count-formats'),
+        countSounds: document.getElementById('count-sounds'),
 
         // Search
         searchForm: document.getElementById('screenSearchForm'),
@@ -33,11 +45,13 @@
         // Selects
         screenTheater: document.getElementById('screenTheater'),
         screenFormat: document.getElementById('screenFormat'),
+        screenSound: document.getElementById('screenSound'),
         screenTemplate: document.getElementById('screenTemplate'),
     };
 
     let currentPage = 1;
     let currentSearch = '';
+    let referencesLoaded = false;
 
     /* ── Dynamic header button per active tab ────────────────────── */
     const HEADER_BTNS = {
@@ -46,6 +60,9 @@
         </button>`,
         'pane-formats': `<button type="button" class="btn-primary-custom border-0" id="btnCreateFormat">
             <i class="bi bi-plus-lg"></i> Thêm định dạng chiếu
+        </button>`,
+        'pane-sounds': `<button type="button" class="btn-primary-custom border-0" id="btnCreateSound">
+            <i class="bi bi-plus-lg"></i> Thêm định dạng âm thanh
         </button>`,
     };
 
@@ -69,24 +86,29 @@
             const url = new URL(window.location.origin + '/api/v1/admin/screens');
             url.searchParams.append('page', page);
             if (search) url.searchParams.append('search', search);
+            if (!referencesLoaded) url.searchParams.append('include_references', '1');
 
-            const res = await window.AdminCore.apiFetch(url.toString());
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'screens:list' });
             if (res && res.ok) {
                 const data = await res.json();
 
                 // Render UI
                 renderScreens(data.screens.data, data.screens.from);
                 renderPagination(data.screens);
-                renderFormats(data.formats);
-
-                // Populate Dropdowns
-                populateDropdowns(data.theaters, data.formats, data.templates);
+                if (data.formats && data.sounds && data.theaters && data.templates) {
+                    renderFormats(data.formats);
+                    renderSounds(data.sounds);
+                    populateDropdowns(data.theaters, data.formats, data.sounds, data.templates);
+                    referencesLoaded = true;
+                }
 
                 // Update Badges
                 if (els.countScreens) els.countScreens.textContent = data.screens.total;
-                if (els.countFormats) els.countFormats.textContent = data.formats.length;
+                if (els.countFormats && data.formats) els.countFormats.textContent = data.formats.length;
+                if (els.countSounds && data.sounds) els.countSounds.textContent = data.sounds.length;
             }
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Error loading data:', error);
             els.screensTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
         }
@@ -149,6 +171,7 @@
                             data-code="${escapeHtml(screen.code)}"
                             data-theater-id="${screen.theater_id}"
                             data-format-id="${screen.format_id}"
+                            data-sound-id="${screen.sound_id}"
                             data-template-id="${screen.seat_layout_template_id}"
                             data-status="${screen.status ? '1' : '0'}"
                             title="Sửa">
@@ -195,12 +218,42 @@
         });
     }
 
-    function populateDropdowns(theaters, formats, templates) {
+    function renderSounds(sounds) {
+        if (!els.soundsTableBody) return;
+        if (!sounds || sounds.length === 0) {
+            els.soundsTableBody.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted">Chưa có định dạng âm thanh nào.</td></tr>';
+            return;
+        }
+
+        els.soundsTableBody.innerHTML = sounds.map((sound, index) => `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td class="text-center text-white-50">${index + 1}</td>
+                <td class="fw-medium text-white">${escapeHtml(sound.name)}</td>
+                <td class="text-center">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-edit-sound"
+                            style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
+                            data-id="${sound.id}" data-name="${escapeHtml(sound.name)}" title="Sửa">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-sound"
+                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${sound.id}" title="Xóa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>`).join('');
+    }
+
+    function populateDropdowns(theaters, formats, sounds, templates) {
         if (els.screenTheater) {
             replaceOptions(els.screenTheater, '-- Chọn rạp --', theaters, 'id', item => item.name);
         }
         if (els.screenFormat) {
             replaceOptions(els.screenFormat, '-- Chọn định dạng --', formats, 'id', item => `${item.name} (+${parseInt(item.surcharge || 0, 10).toLocaleString()}đ)`);
+        }
+        if (els.screenSound) {
+            replaceOptions(els.screenSound, '-- Chọn âm thanh --', sounds, 'id', item => item.name);
         }
         if (els.screenTemplate) {
             replaceOptions(els.screenTemplate, '-- Chọn mẫu --', templates, 'id', item => `${item.template_name} (${item.seat_matrix})`, item => ({
@@ -243,7 +296,7 @@
             html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
         }
 
-        for (let i = 1; i <= meta.last_page; i++) {
+        for (const i of window.AdminCore.paginationPages(meta)) {
             if (i === meta.current_page) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
             } else {
@@ -289,6 +342,15 @@
         document.getElementById('formatModalLabel').innerHTML = '<i class="bi bi-camera-reels me-2" style="color:var(--accent-color);"></i>Thêm định dạng chiếu';
     }
 
+    function resetSoundForm() {
+        const form = document.getElementById('soundForm');
+        if (!form) return;
+        form.reset();
+        form.dataset.id = '';
+        document.getElementById('soundFormMethod').value = 'POST';
+        document.getElementById('soundModalLabel').innerHTML = '<i class="bi bi-volume-up me-2"></i>Thêm định dạng âm thanh';
+    }
+
     function updateTemplateInfo(selectEl) {
         const badgesEl  = document.getElementById('templateDetailBadges');
         const option    = selectEl.options[selectEl.selectedIndex];
@@ -311,6 +373,10 @@
             resetFormatForm();
             getModal('formatModal')?.show();
         });
+        document.getElementById('btnCreateSound')?.addEventListener('click', () => {
+            resetSoundForm();
+            getModal('soundModal')?.show();
+        });
     }
 
     /* ── Event Delegation for Actions ────────────────────────────── */
@@ -327,6 +393,7 @@
             document.getElementById('screenCode').value       = editScreen.dataset.code    || '';
             document.getElementById('screenTheater').value    = editScreen.dataset.theaterId || '';
             document.getElementById('screenFormat').value     = editScreen.dataset.formatId  || '';
+            document.getElementById('screenSound').value      = editScreen.dataset.soundId || '';
 
             const tplSelect = document.getElementById('screenTemplate');
             tplSelect.value = editScreen.dataset.templateId || '';
@@ -373,13 +440,43 @@
         if (delFormat) {
             if(!confirm('Bạn có chắc muốn xóa định dạng này?')) return;
             try {
+                referencesLoaded = false;
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/formats/${delFormat.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) { window.showAdminToast?.('Xóa thành công', 'success'); loadData(currentPage, currentSearch); }
                 else { window.showAdminToast?.((await res.json()).message, 'error'); }
             } catch (err) {}
             return;
         }
-    });
+
+        const editSound = e.target.closest('.btn-edit-sound');
+        if (editSound) {
+            resetSoundForm();
+            document.getElementById('soundFormMethod').value = 'PUT';
+            document.getElementById('soundForm').dataset.id = editSound.dataset.id;
+            document.getElementById('soundName').value = editSound.dataset.name || '';
+            document.getElementById('soundModalLabel').innerHTML = '<i class="bi bi-volume-up me-2"></i>Cập nhật định dạng âm thanh';
+            getModal('soundModal')?.show();
+            return;
+        }
+
+        const deleteSound = e.target.closest('.btn-delete-sound');
+        if (deleteSound) {
+            if (!confirm('Bạn có chắc muốn xóa định dạng âm thanh này?')) return;
+            try {
+                referencesLoaded = false;
+                const res = await window.AdminCore.apiFetch(`/api/v1/admin/sounds/${deleteSound.dataset.id}`, { method: 'DELETE' });
+                const data = await res?.json();
+                if (res?.ok) {
+                    window.showAdminToast?.(data.message || 'Xóa thành công', 'success');
+                    loadData(currentPage, currentSearch);
+                } else {
+                    window.showAdminToast?.(data?.message || 'Xóa thất bại', 'error');
+                }
+            } catch (error) {
+                window.showAdminToast?.('Xóa thất bại', 'error');
+            }
+        }
+    }, { signal: lifecycleController.signal });
 
     els.screensTableBody.addEventListener('change', async (e) => {
         const toggle = e.target.closest('.toggle-screen-active');
@@ -387,7 +484,10 @@
             const id = toggle.getAttribute('data-id');
             const isActive = toggle.checked;
             try {
-                const res = await window.AdminCore.apiFetch(`/api/v1/admin/screens/${id}/toggle-active`, { method: 'POST' });
+                const res = await window.AdminCore.apiFetch(`/api/v1/admin/screens/${id}/toggle-active`, {
+                    method: 'POST',
+                    body: JSON.stringify({ status: isActive }),
+                });
                 if (!res || !res.ok) throw new Error();
                 window.showAdminToast?.('Cập nhật trạng thái thành công', 'success');
                 loadData(currentPage, currentSearch);
@@ -434,6 +534,7 @@
         const formData = new FormData(e.target);
         const body = {};
         formData.forEach((v, k) => body[k] = v);
+        referencesLoaded = false;
 
         try {
             const res = await window.AdminCore.apiFetch(url, { method, body: JSON.stringify(body) });
@@ -447,6 +548,29 @@
             }
         } catch (err) {
             console.error(err);
+            window.showAdminToast?.('Có lỗi xảy ra', 'error');
+        }
+    });
+
+    document.getElementById('soundForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const method = document.getElementById('soundFormMethod').value;
+        const id = e.currentTarget.dataset.id;
+        const url = method === 'POST' ? '/api/v1/admin/sounds' : `/api/v1/admin/sounds/${id}`;
+        const body = { name: document.getElementById('soundName').value.trim() };
+        referencesLoaded = false;
+
+        try {
+            const res = await window.AdminCore.apiFetch(url, { method, body: JSON.stringify(body) });
+            const data = await res?.json();
+            if (res?.ok) {
+                window.showAdminToast?.(data.message || 'Thành công', 'success');
+                getModal('soundModal')?.hide();
+                loadData(currentPage, currentSearch);
+            } else {
+                window.showAdminToast?.(data?.message || 'Có lỗi xảy ra', 'error');
+            }
+        } catch (error) {
             window.showAdminToast?.('Có lỗi xảy ra', 'error');
         }
     });

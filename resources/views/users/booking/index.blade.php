@@ -3,8 +3,8 @@
 @section('title', 'Đặt vé - ' . $showtime->movie->title)
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/users/pages/booking.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('css/users/booking-toast.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('css/users/pages/booking.css') }}?v={{ config('app.asset_version') }}">
+<link rel="stylesheet" href="{{ asset('css/users/booking-toast.css') }}?v={{ config('app.asset_version') }}">
 <link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}">
 @endpush
 
@@ -295,12 +295,12 @@
 
                 <!-- Step 5: Success Screen -->
                 <div class="tab-content" id="tab-success">
-                    <div class="booking-result-screen text-center">
+                    <div class="booking-result-screen text-center" aria-live="polite">
                         <div class="result-icon-wrapper success mb-4 mx-auto">
-                            <i class="bi bi-check-lg"></i>
+                            <i class="bi bi-hourglass-split" id="successStatusIcon"></i>
                         </div>
-                        <h2 class="result-title mb-2">Thanh toán thành công</h2>
-                        <p class="result-subtitle mb-5">Vé của bạn đã được xác nhận!</p>
+                        <h2 class="result-title mb-2" id="successStatusTitle">Đang xác minh thanh toán</h2>
+                        <p class="result-subtitle mb-5" id="successStatusMessage">Đang tải dữ liệu vé đã được xác thực...</p>
                         
                         <div class="result-ticket-card mx-auto text-start">
                             <div class="d-flex mb-4">
@@ -308,17 +308,17 @@
                                     <img src="{{ asset('storage/' . $showtime->movie->poster_url) }}" alt="{{ $showtime->movie->title }}" class="img-fluid rounded">
                                 </div>
                                 <div class="ticket-details flex-grow-1">
-                                    <h4 class="ticket-movie-title mb-2">{{ $showtime->movie->title }}</h4>
-                                    <span class="ticket-format-badge mb-4 d-inline-block">{{ $showtime->format->name ?? '2D' }}</span>
+                                    <h4 class="ticket-movie-title mb-2" id="successMovieTitle">{{ $showtime->movie->title }}</h4>
+                                    <span class="ticket-format-badge mb-4 d-inline-block" id="successMovieFormat">{{ $showtime->format->name ?? '2D' }}</span>
                                     
                                     <div class="row g-3">
                                         <div class="col-6">
-                                            <div class="ticket-label mb-1">NGÀY</div>
-                                            <div class="ticket-value">{{ \Carbon\Carbon::parse($showtime->start_date)->format('d M, Y') }}</div>
+                                            <div class="ticket-label mb-1">THỜI GIAN</div>
+                                            <div class="ticket-value" id="successShowtime">---</div>
                                         </div>
                                         <div class="col-6">
-                                            <div class="ticket-label mb-1">GIỜ</div>
-                                            <div class="ticket-value">{{ \Carbon\Carbon::parse($showtime->start_time)->format('H:i') }}</div>
+                                            <div class="ticket-label mb-1">MÃ ĐƠN</div>
+                                            <div class="ticket-value" id="successOrderCode">---</div>
                                         </div>
                                     </div>
                                 </div>
@@ -326,20 +326,34 @@
                             
                             <div class="ticket-divider mb-4"></div>
                             
-                            <div class="d-flex justify-content-between align-items-end">
-                                <div>
-                                    <div class="ticket-label mb-1">RẠP</div>
-                                    <div class="ticket-value mb-3">{{ $showtime->screen->theater->name }}</div>
-                                    
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="ticket-label mb-1">RẠP / PHÒNG</div>
+                                    <div class="ticket-value" id="successTheater">---</div>
+                                </div>
+                                <div class="col-md-6">
                                     <div class="ticket-label mb-1">GHẾ</div>
                                     <div class="ticket-value text-danger fs-5 fw-bold" id="successSeatsInfo">---</div>
                                 </div>
-                                <div class="ticket-qr bg-white rounded p-1">
-                                    <div id="successQrCode" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
-                                        <!-- Placeholder QR for visual mapping -->
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=TICKET" alt="QR" style="width: 100%; height: auto;">
-                                    </div>
+                                <div class="col-12">
+                                    <div class="ticket-label mb-1">ĐỊA CHỈ</div>
+                                    <div class="ticket-value" id="successTheaterAddress">---</div>
                                 </div>
+                            </div>
+
+                            <div class="ticket-divider my-4"></div>
+
+                            <div class="ticket-label mb-2">SẢN PHẨM</div>
+                            <div id="successProductsList" class="result-line-items mb-4">
+                                <div class="ticket-value text-muted">Không có sản phẩm đi kèm</div>
+                            </div>
+
+                            <div class="result-price-summary">
+                                <div class="result-price-row"><span>Tạm tính</span><strong id="successSubtotal">---</strong></div>
+                                <div class="result-price-row d-none" id="successVoucherRow"><span id="successVoucherLabel">Voucher</span><strong id="successVoucherDiscount">---</strong></div>
+                                <div class="result-price-row d-none" id="successPointsRow"><span id="successPointsLabel">Điểm thành viên</span><strong id="successPointsDiscount">---</strong></div>
+                                <div class="result-price-row result-price-total"><span>Tổng thanh toán</span><strong id="successTotalAmount">---</strong></div>
+                                <div class="result-price-row result-meta-row"><span>Ngày đặt</span><span id="successDate">---</span></div>
                             </div>
                         </div>
 
@@ -426,44 +440,6 @@
             </div>
         </div>
     </div>
-    </div>
-
-    <!-- Payment Result Screens (Hidden by default, populated via JS) -->
-    <div id="successScreen" class="payment-result-screen d-none">
-        <div class="result-content">
-            <h1 class="brand-title">CINEMA PREMIUM</h1>
-
-            <div class="status-icon success-icon">
-                <i class="bi bi-check-circle"></i>
-            </div>
-
-            <h2 class="status-title">Đặt vé thành công!</h2>
-
-            <p class="status-message">
-                Cảm ơn bạn đã đặt vé. Chúng tôi sẽ gửi thông tin vé qua email. Vui lòng có mặt tại rạp trước 15 phút.
-            </p>
-
-            <a href="{{ route('home') }}" class="btn-action-primary">
-                Về trang chủ <i class="bi bi-arrow-right"></i>
-            </a>
-
-            <div class="transaction-info">
-                <div class="info-block">
-                    <span class="info-label">MÃ GIAO DỊCH</span>
-                    <span class="info-value" id="successOrderCode">---</span>
-                </div>
-                <div class="info-divider"></div>
-                <div class="info-block">
-                    <span class="info-label">TỔNG TIỀN</span>
-                    <span class="info-value" id="successTotalAmount">---</span>
-                </div>
-                <div class="info-divider"></div>
-                <div class="info-block">
-                    <span class="info-label">NGÀY ĐẶT</span>
-                    <span class="info-value" id="successDate">---</span>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Failure Screen -->
@@ -642,6 +618,6 @@
         startTime: @json($showtime->start_time ?? $showtime->scheduled_at),
     };
 </script>
-<script src="{{ asset('js/users/components/bottom-sheet.js') }}?v={{ time() }}"></script>
-<script src="{{ asset('js/users/pages/booking.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/users/components/bottom-sheet.js') }}?v={{ config('app.asset_version') }}"></script>
+@vite('resources/js/pages/booking.js')
 @endpush

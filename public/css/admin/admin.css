@@ -107,4 +107,66 @@
    - Remove legacy CSS after full migration
 
    ═══════════════════════════════════════════════════════════════════════════ */
-@import './dashboard-redesign.css';
+@view-transition {
+    navigation: auto;
+}
+
+.turbo-progress-bar {
+    display: none !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+}
+
+::view-transition-group(admin-content) {
+    animation-duration: 200ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(admin-content) {
+    animation: admin-page-out 120ms ease-out both;
+}
+
+::view-transition-new(admin-content) {
+    animation: admin-page-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.admin-navigating .admin-main {
+    opacity: 0.94;
+    transform: translate3d(0, 2px, 0);
+    pointer-events: none;
+}
+
+.admin-main {
+    view-transition-name: admin-content;
+    transition-property: opacity, transform;
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.table-responsive,
+.admin-table-container {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 640px;
+}
+
+@keyframes admin-page-out {
+    to { opacity: 0; transform: translate3d(0, -2px, 0); }
+}
+
+@keyframes admin-page-in {
+    from { opacity: 0; transform: translate3d(0, 3px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(admin-content),
+    ::view-transition-new(admin-content) {
+        animation: none;
+    }
+
+    .admin-main {
+        transition: none;
+    }
+}

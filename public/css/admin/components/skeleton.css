@@ -61,6 +61,16 @@
     height: 100px;
 }
 
+.admin-skeleton-chart {
+    width: 100%;
+    min-height: 300px;
+    border-radius: var(--admin-radius-md);
+}
+
+.admin-skeleton-chart-lg {
+    min-height: 350px;
+}
+
 /* ── Skeleton Sizes ──────────────────────────────────────────────────── */
 .admin-skeleton-xs {
     height: 16px;

@@ -22,16 +22,14 @@ class BranchResource extends JsonResource
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
 
-            // Include theater count when requested
             'theaters_count' => $this->when(
-                $this->relationLoaded('theaters'),
-                fn() => $this->theaters->count()
+                isset($this->theaters_count),
+                fn () => (int) $this->theaters_count
             ),
 
-            // Include active theater count when requested
             'active_theaters_count' => $this->when(
-                $this->relationLoaded('theaters'),
-                fn() => $this->theaters->where('is_active', true)->count()
+                isset($this->active_theaters_count),
+                fn () => (int) $this->active_theaters_count
             ),
         ];
     }

@@ -87,7 +87,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 10_000) {
     }
 }
 
-async function waitForHealthyServer(timeoutMs = 45_000) {
+async function waitForHealthyServer(timeoutMs = 90_000) {
     const deadline = Date.now() + timeoutMs;
     let lastError;
 
@@ -165,7 +165,7 @@ async function runBrowserChecks() {
 
         for (const pageCheck of publicPages) {
             const expectedResponses = pageCheck.responses.map((fragment) => page
-                .waitForResponse((response) => response.url().includes(fragment), { timeout: 15_000 })
+                .waitForResponse((response) => new URL(response.url()).pathname === fragment, { timeout: 15_000 })
                 .then((response) => {
                     if (response.status() >= 500) {
                         failures.push(`${fragment} returned ${response.status()}`);

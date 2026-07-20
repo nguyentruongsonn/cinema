@@ -11,8 +11,8 @@ class Sound extends Model
         'name',
     ];
 
-    public function showtimes(): HasMany
+    public function screens(): HasMany
     {
-        return $this->hasMany(Showtime::class, 'sound_id');
+        return $this->hasMany(Screen::class);
     }
 }

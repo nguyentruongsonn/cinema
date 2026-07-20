@@ -38,6 +38,22 @@ class OrderResource extends JsonResource
                 'total_price' => (float) $item->total_price,
                 'metadata' => $item->metadata,
             ])),
+            'tickets' => $this->whenLoaded('tickets', fn () => $this->tickets->map(fn ($ticket) => [
+                'id' => $ticket->id,
+                'ticket_code' => $ticket->ticket_code,
+                'status' => $ticket->status,
+                'checked_in_at' => $ticket->checked_in_at?->toISOString(),
+                'seat' => $ticket->relationLoaded('seat') && $ticket->seat ? [
+                    'id' => $ticket->seat->id,
+                    'label' => $ticket->seat->label,
+                    'row' => $ticket->seat->row,
+                    'number' => $ticket->seat->number,
+                    'seat_type' => $ticket->seat->relationLoaded('seatType') && $ticket->seat->seatType ? [
+                        'id' => $ticket->seat->seatType->id,
+                        'name' => $ticket->seat->seatType->name,
+                    ] : null,
+                ] : null,
+            ])),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

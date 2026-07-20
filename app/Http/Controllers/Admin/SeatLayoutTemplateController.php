@@ -55,8 +55,31 @@ class SeatLayoutTemplateController extends Controller
 
             $perPage = $filters['per_page'] ?? 10;
             $templates = $query->latest()->paginate($perPage);
+            $counts = SeatLayoutTemplate::query()
+                ->selectRaw('COUNT(*) as all_count')
+                ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as published_count')
+                ->selectRaw('SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as draft_count')
+                ->first();
 
-            return $this->paginatedResponse($templates, 'Seat layout templates retrieved successfully');
+            return response()->json([
+                'success' => true,
+                'message' => 'Seat layout templates retrieved successfully',
+                'data' => $templates->items(),
+                'pagination' => [
+                    'total' => $templates->total(),
+                    'per_page' => $templates->perPage(),
+                    'current_page' => $templates->currentPage(),
+                    'last_page' => $templates->lastPage(),
+                    'from' => $templates->firstItem(),
+                    'to' => $templates->lastItem(),
+                ],
+                'counts' => [
+                    'all' => (int) ($counts->all_count ?? 0),
+                    'published' => (int) ($counts->published_count ?? 0),
+                    'draft' => (int) ($counts->draft_count ?? 0),
+                ],
+                'request_id' => $request->attributes->get('request_id'),
+            ]);
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
             return $this->errorResponse('Unauthorized to view seat layout templates', 403);
         } catch (\Illuminate\Validation\ValidationException $e) {
