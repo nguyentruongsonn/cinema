@@ -30,19 +30,19 @@ class ScreenResource extends JsonResource
             'seat_layout_template_id' => $this->seat_layout_template_id,
             'format_id' => $this->format_id,
             'format' => $this->whenLoaded('format', function () {
-                return [
+                return $this->format ? [
                     'id' => $this->format->id,
                     'name' => $this->format->name,
                     'code' => $this->format->code,
-                ];
+                ] : null;
             }),
             'sound_id' => $this->sound_id,
             'sound' => $this->whenLoaded('sound', function () {
-                return [
+                return $this->sound ? [
                     'id' => $this->sound->id,
                     'name' => $this->sound->name,
                     'code' => $this->sound->code,
-                ];
+                ] : null;
             }),
             'status' => match ((int) $this->getRawOriginal('status')) {
                 1 => 'active',

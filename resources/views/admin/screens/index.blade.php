@@ -190,15 +190,15 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label text-secondary">Định dạng chiếu <span class="text-danger">*</span></label>
-                            <select class="form-select bg-dark text-white border-secondary" id="screenFormat" name="format_id" required>
+                            <label class="form-label text-secondary">Định dạng chiếu</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="screenFormat" name="format_id">
                                 <option value="">-- Chọn định dạng --</option>
                                 <!-- JS populated -->
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-secondary">Âm thanh <span class="text-danger">*</span></label>
-                            <select class="form-select bg-dark text-white border-secondary" id="screenSound" name="sound_id" required>
+                            <label class="form-label text-secondary">Âm thanh</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="screenSound" name="sound_id">
                                 <option value="">-- Chọn âm thanh --</option>
                                 <!-- JS populated -->
                             </select>

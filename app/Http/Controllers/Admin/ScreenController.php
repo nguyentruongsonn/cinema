@@ -369,17 +369,28 @@ class ScreenController extends Controller
         $vipType = $seatTypes->get('VIP') ?? $standardType;
         $coupleType = $seatTypes->get('Couple') ?? $vipType;
 
-        // Validate seat matrix format
-        if (!preg_match('/^\d+x\d+$/', $template->seat_matrix)) {
-            throw new \RuntimeException('Invalid seat matrix format. Expected format: ROWSxCOLS (e.g., 10x12)');
+        // Validate and parse seat matrix format
+        $rows = 0;
+        $cols = 0;
+
+        if (preg_match('/^\d+x\d+$/', $template->seat_matrix)) {
+            $parts = explode('x', $template->seat_matrix);
+            $rows = (int) $parts[0];
+            $cols = (int) $parts[1];
+        } else {
+            // Try to parse format: A=11111, B=11111, C=11111, D=11111
+            $parts = array_filter(array_map('trim', explode(',', $template->seat_matrix)));
+            if (!empty($parts)) {
+                $rows = count($parts);
+                $firstPart = explode('=', $parts[0]);
+                if (count($firstPart) === 2) {
+                    $cols = strlen(trim($firstPart[1]));
+                }
+            }
         }
 
-        $parts = explode('x', $template->seat_matrix);
-        $rows = (int) $parts[0];
-        $cols = (int) $parts[1];
-
         if ($rows < 1 || $rows > 30 || $cols < 1 || $cols > 30) {
-            throw new \RuntimeException('Seat matrix dimensions must be between 1-30 rows and 1-30 columns.');
+            throw new \RuntimeException('Invalid seat matrix format or dimensions. Expected format: ROWSxCOLS (e.g., 10x12) or A=11111, B=11111. Dimensions must be between 1-30.');
         }
 
         $seatsToInsert = [];
