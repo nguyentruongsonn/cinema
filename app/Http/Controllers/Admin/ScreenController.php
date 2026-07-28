@@ -251,6 +251,10 @@ class ScreenController extends Controller
                 }
             });
 
+            // Recalculate and update screen capacity based on active seats
+            $activeCount = $screen->seats()->where('status', 1)->count();
+            $screen->update(['capacity' => $activeCount]);
+
             Log::info('Screen seats updated', ['screen_id' => $screen->id, 'seat_count' => count($validated['seats']), 'admin' => auth()->id()]);
             return response()->json(['success' => true, 'message' => 'Cập nhật trạng thái ghế thành công.']);
         } catch (\Exception $e) {

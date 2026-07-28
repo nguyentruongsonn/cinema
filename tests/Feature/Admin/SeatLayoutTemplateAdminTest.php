@@ -227,4 +227,67 @@ class SeatLayoutTemplateAdminTest extends TestCase
             'capacity' => 20, // 4 rows * 5 cols
         ]);
     }
+
+    public function test_updating_screen_seats_updates_capacity(): void
+    {
+        $this->seed(\Database\Seeders\SeatTypeSeeder::class);
+
+        $user = User::factory()->create();
+        $role = Role::firstOrCreate(
+            ['slug' => 'admin'],
+            ['name' => 'Admin', 'description' => 'Administrator']
+        );
+        $user->assignRole($role->id);
+
+        $theater = \App\Models\Theater::factory()->create();
+        $template = \App\Models\SeatLayoutTemplate::query()->create([
+            'template_name' => 'Test Capacity Template',
+            'seat_matrix' => '3x3',
+            'regular_seat_rows' => 3,
+            'vip_seat_rows' => 0,
+            'couple_seat_rows' => 0,
+            'status' => true,
+        ]);
+
+        $screen = \App\Models\Screen::create([
+            'theater_id' => $theater->id,
+            'name' => 'Screen Capacity Test',
+            'code' => 'SCT01',
+            'seat_layout_template_id' => $template->id,
+            'capacity' => 9,
+        ]);
+
+        // Seed 9 seats
+        $seatType = \App\Models\SeatType::first();
+        $seats = [];
+        for ($i = 0; $i < 9; $i++) {
+            $seats[] = \App\Models\Seat::create([
+                'screen_id' => $screen->id,
+                'seat_type_id' => $seatType->id,
+                'row' => 'A',
+                'number' => (string)($i + 1),
+                'row_index' => intdiv($i, 3),
+                'column_index' => $i % 3,
+                'label' => 'A' . ($i + 1),
+                'status' => 1,
+            ]);
+        }
+
+        // Disable 2 seats
+        $payload = [
+            'seats' => [
+                ['id' => $seats[0]->id, 'status' => false],
+                ['id' => $seats[1]->id, 'status' => false],
+            ]
+        ];
+
+        $this->actingAs($user)
+            ->postJson("/api/v1/admin/screens/{$screen->id}/seats/update", $payload)
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        // Verify capacity is updated to 7 (9 - 2)
+        $screen->refresh();
+        $this->assertEquals(7, $screen->capacity);
+    }
 }
