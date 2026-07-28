@@ -5,6 +5,22 @@
 (function () {
     'use strict';
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function safeImageUrl(value) {
+        const candidate = String(value || '').trim();
+        if (/^\/(?!\/)[A-Za-z0-9_./?=&%-]+$/.test(candidate) && !candidate.includes('..')) return candidate;
+        if (/^https?:\/\/[^\s"'<>]+$/i.test(candidate)) return candidate;
+        return '';
+    }
+
     const els = {
         tableBody: document.getElementById('combosTableBody'),
         pagination: document.getElementById('paginationContainer'),
@@ -48,6 +64,8 @@
     let currentSearch = '';
     let currentStatus = 'all';
     let availableProductsData = [];
+    let availableProductsLoaded = false;
+    let availableProductsPromise = null;
     let comboItems = [];
 
     function getModalInstance() {
@@ -99,9 +117,10 @@
             const priceFmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(combo.price);
 
             // Use original_price from database, or calculate as fallback
+            const items = combo.items || combo.combo_items || [];
             let originalPrice = combo.original_price || 0;
-            if (!originalPrice && combo.combo_items && combo.combo_items.length > 0) {
-                originalPrice = combo.combo_items.reduce((sum, item) => {
+            if (!originalPrice && items.length > 0) {
+                originalPrice = items.reduce((sum, item) => {
                     return sum + ((item.product?.price || 0) * (item.quantity || 0));
                 }, 0);
             }
@@ -111,20 +130,25 @@
                 ? `<span class="${combo.available_stock > 0 ? 'text-success' : 'text-danger'}">${combo.available_stock}</span>`
                 : '<span class="text-muted">N/A</span>';
 
+            const imageUrl = safeImageUrl(combo.image_url);
+            const imageHtml = imageUrl
+                ? `<img src="${escapeHtml(imageUrl)}" alt="Image" loading="lazy" onerror="this.outerHTML='<i class=\'bi bi-box-seam text-white-50 fs-3\'></i>'">`
+                : `<i class="bi bi-box-seam text-white-50 fs-3"></i>`;
+
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td class="text-center">
-                    ${combo.image_url
-                        ? `<img src="${combo.image_url}" alt="Image" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: rgba(255,255,255,0.1);">`
-                        : `<div style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 4px; display:flex; align-items:center; justify-content:center;"><i class="bi bi-image text-white-50"></i></div>`}
+                    <div class="movie-poster-container admin-media-thumb">
+                        ${imageHtml}
+                    </div>
                 </td>
                 <td>
                     <div class="fw-medium text-white fs-6">${combo.name}</div>
-                    ${combo.description ? `<div class="small text-white-50 text-truncate mt-1" style="max-width: 300px;">${combo.description}</div>` : ''}
+                    ${combo.description ? `<div class="small text-white-50 text-truncate mt-1 admin-text-truncate-300">${combo.description}</div>` : ''}
                 </td>
                 <td>
                     <div class="fw-medium">${stockDisplay}</div>
-                    ${combo.combo_items && combo.combo_items.length > 0 ? `<div class="small text-white-50 mt-1">${combo.combo_items.length} sản phẩm</div>` : ''}
+                    ${items.length > 0 ? `<div class="small text-white-50 mt-1">${items.length} sản phẩm</div>` : ''}
                 </td>
                 <td>
                     <div class="fw-medium text-white-50">${originalPriceFmt}</div>
@@ -134,20 +158,20 @@
                 </td>
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input toggle-active-btn m-0" type="checkbox" role="switch"
-                            data-id="${combo.id}" ${combo.status ? 'checked' : ''} style="cursor:pointer;" title="Bật/Tắt trạng thái">
+                        <input class="form-check-input toggle-active-btn m-0 admin-toggle-pointer" type="checkbox" role="switch"
+                            data-id="${combo.id}" ${combo.status ? 'checked' : ''} title="Bật/Tắt trạng thái">
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-edit-combo"
-                            style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
+                        <button type="button" class="btn btn-sm btn-edit-combo admin-table-action-edit"
+
                             data-combo='${JSON.stringify(combo).replace(/'/g, "&#39;")}'
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-combo"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${combo.id}" title="Xóa">
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-combo admin-table-action-delete"
+                            data-id="${combo.id}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -158,40 +182,8 @@
     }
 
     function renderPagination(meta) {
-        if (!meta || meta.last_page <= 1) {
-            els.pagination.innerHTML = '';
-            return;
-        }
-
-        let html = '<ul class="pagination pagination-sm m-0">';
-        if (meta.current_page > 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        }
-
-        for (const i of window.AdminCore.paginationPages(meta)) {
-            if (i === meta.current_page) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-            } else {
-                html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-            }
-        }
-
-        if (meta.current_page < meta.last_page) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-        }
-        html += '</ul>';
-
-        els.pagination.innerHTML = html;
-        els.pagination.querySelectorAll('a.page-link').forEach(a => {
-            a.addEventListener('click', (e) => {
-                e.preventDefault();
-                currentPage = parseInt(a.getAttribute('data-page'));
-                loadData(currentPage);
-            });
+        window.AdminCore.renderAdminPagination(els.pagination, meta, (page) => {
+            currentPage = page; loadData(page);
         });
     }
 
@@ -211,17 +203,38 @@
     }
 
     /* ── Combo Items Management ────────────────────────────────────── */
-    async function loadAvailableProducts() {
-        try {
-            const res = await window.AdminCore.apiFetch('/api/v1/admin/combos/available-products');
-            if (res && res.ok) {
-                const json = await res.json();
-                availableProductsData = json.data || [];
-                renderAvailableProducts();
-            }
-        } catch (error) {
-            console.error('Error loading products:', error);
+    async function loadAvailableProducts(force = false) {
+        if (availableProductsLoaded && !force) {
+            renderAvailableProducts();
+            return availableProductsData;
         }
+
+        if (availableProductsPromise && !force) {
+            return availableProductsPromise;
+        }
+
+        availableProductsPromise = (async () => {
+            try {
+                const res = await window.AdminCore.apiFetch('/api/v1/admin/combos/available-products', {
+                    requestKey: 'combos:available-products',
+                    cacheTtl: 300000
+                });
+                if (res && res.ok) {
+                    const json = await res.json();
+                    availableProductsData = json.data || [];
+                    availableProductsLoaded = true;
+                    renderAvailableProducts();
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+            } finally {
+                availableProductsPromise = null;
+            }
+
+            return availableProductsData;
+        })();
+
+        return availableProductsPromise;
     }
 
     function renderAvailableProducts() {
@@ -353,7 +366,8 @@
 
         if (combo.image_url) showImagePreview(combo.image_url);
 
-        comboItems = (combo.combo_items || []).map(item => ({
+        const items = combo.items || combo.combo_items || [];
+        comboItems = items.map(item => ({
             product_id: item.product_id,
             quantity: item.quantity,
             product: item.product || availableProductsData.find(p => p.id == item.product_id)
@@ -454,6 +468,7 @@
                 if (res && res.ok) {
                     window.showAdminToast?.('Xóa combo thành công', 'success');
                     loadData(currentPage);
+                    loadAvailableProducts(true);
                 } else {
                     const err = await res.json();
                     window.showAdminToast?.(err.message || 'Xóa thất bại', 'error');
@@ -515,6 +530,7 @@
                     getModalInstance()?.hide();
                     window.showAdminToast?.(isEdit ? (pageConfig.updateSuccess || 'Cập nhật combo thành công!') : (pageConfig.createSuccess || 'Thêm combo thành công!'), 'success');
                     loadData(currentPage);
+                    loadAvailableProducts(true);
                 } else {
                     const errData = await res.json();
                     alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message));

@@ -8,18 +8,20 @@
     const els = {
         tableBody: document.getElementById('theatersTableBody'),
         pagination: document.getElementById('paginationContainer'),
-        
+
         searchForm: document.getElementById('searchForm'),
         searchInput: document.getElementById('search'),
+        branchFilter: document.getElementById('branchFilter'),
+        statusFilter: document.getElementById('statusFilter'),
 
         btnCreate: document.getElementById('btnCreateTheater'),
         modalEl: document.getElementById('theaterModal'),
         form: document.getElementById('theaterForm'),
         modalLabel: document.getElementById('theaterModalLabel'),
-        
+
         formMethod: document.getElementById('formMethod'),
         idInput: document.getElementById('theaterIdInput'),
-        
+
         // Form inputs
         name: document.getElementById('theaterName'),
         branchId: document.getElementById('theaterBranch'),
@@ -32,6 +34,8 @@
 
     let currentPage = 1;
     let currentSearch = '';
+    let currentBranchId = '';
+    let currentStatus = 'all';
 
     function getModalInstance() {
         if (!els.modalEl) return null;
@@ -46,19 +50,31 @@
             if (res && res.ok) {
                 const data = await res.json();
                 const branches = data.data || [];
-                
-                const fragment = document.createDocumentFragment();
-                const emptyOption = document.createElement('option');
-                emptyOption.value = '';
-                emptyOption.textContent = '-- Chọn chi nhánh --';
-                fragment.appendChild(emptyOption);
+
+                const formFragment = document.createDocumentFragment();
+                const formEmptyOption = document.createElement('option');
+                formEmptyOption.value = '';
+                formEmptyOption.textContent = '-- Chọn chi nhánh --';
+                formFragment.appendChild(formEmptyOption);
+
+                const filterFragment = document.createDocumentFragment();
+                const filterEmptyOption = document.createElement('option');
+                filterEmptyOption.value = '';
+                filterEmptyOption.textContent = 'Tất cả chi nhánh';
+                filterFragment.appendChild(filterEmptyOption);
+
                 branches.forEach(b => {
-                    const option = document.createElement('option');
-                    option.value = String(b.id);
-                    option.textContent = String(b.name ?? '');
-                    fragment.appendChild(option);
+                    const formOption = document.createElement('option');
+                    formOption.value = String(b.id);
+                    formOption.textContent = String(b.name ?? '');
+                    formFragment.appendChild(formOption);
+
+                    const filterOption = formOption.cloneNode(true);
+                    filterFragment.appendChild(filterOption);
                 });
-                els.branchId.replaceChildren(fragment);
+
+                els.branchId.replaceChildren(formFragment);
+                els.branchFilter?.replaceChildren(filterFragment);
             }
         } catch (error) {
             console.error('Error fetching branches:', error);
@@ -70,10 +86,12 @@
         try {
             // Skeleton loading is now handled in HTML blade template
             // els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
-            
+
             const url = new URL(window.location.origin + '/api/v1/admin/theaters');
             url.searchParams.append('page', page);
             if (currentSearch) url.searchParams.append('search', currentSearch);
+            if (currentBranchId) url.searchParams.append('branch_id', currentBranchId);
+            if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
 
             const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'theaters:list' });
             if (res && res.ok) {
@@ -100,7 +118,7 @@
         theaters.forEach((theater, index) => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-            
+
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td>
@@ -109,26 +127,26 @@
                 </td>
                 <td class="text-white-50">${theater.branch ? theater.branch.name : '—'}</td>
                 <td class="text-white-50">
-                    <div class="text-truncate" style="max-width:250px;" title="${theater.address}">
+                    <div class="text-truncate admin-text-truncate-250" title="${theater.address}">
                         ${theater.address}
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input toggle-active-btn m-0" type="checkbox" role="switch"
-                            data-id="${theater.id}" ${theater.is_active ? 'checked' : ''} style="cursor:pointer;">
+                        <input class="form-check-input toggle-active-btn m-0 admin-toggle-pointer" type="checkbox" role="switch"
+                            data-id="${theater.id}" ${theater.status ? 'checked' : ''}>
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-edit-theater"
-                            style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
+                        <button type="button" class="btn btn-sm btn-edit-theater admin-table-action-edit"
+
                             data-theater='${JSON.stringify(theater).replace(/'/g, "&#39;")}'
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-theater"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${theater.id}" title="Xóa">
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-theater admin-table-action-delete"
+                            data-id="${theater.id}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -139,40 +157,8 @@
     }
 
     function renderPagination(meta) {
-        if (!meta || meta.last_page <= 1) {
-            els.pagination.innerHTML = '';
-            return;
-        }
-        
-        let html = '<ul class="pagination pagination-sm m-0">';
-        if (meta.current_page > 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        }
-
-        for (const i of window.AdminCore.paginationPages(meta)) {
-            if (i === meta.current_page) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-            } else {
-                html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-            }
-        }
-
-        if (meta.current_page < meta.last_page) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-        }
-        html += '</ul>';
-        
-        els.pagination.innerHTML = html;
-        els.pagination.querySelectorAll('a.page-link').forEach(a => {
-            a.addEventListener('click', (e) => {
-                e.preventDefault();
-                currentPage = parseInt(a.getAttribute('data-page'));
-                loadData(currentPage);
-            });
+        window.AdminCore.renderAdminPagination(els.pagination, meta, (page) => {
+            currentPage = page; loadData(page);
         });
     }
 
@@ -198,18 +184,18 @@
         if (btnEdit) {
             resetForm();
             els.formMethod.value = 'PUT';
-            
+
             const theater = JSON.parse(btnEdit.dataset.theater);
             els.idInput.value = theater.id;
             els.modalLabel.textContent = 'Cập nhật rạp chiếu';
-            
+
             els.name.value = theater.name || '';
             els.branchId.value = theater.branch_id || '';
             els.address.value = theater.address || '';
             els.description.value = theater.description || '';
             els.phone.value = theater.phone || '';
             els.email.value = theater.email || '';
-            els.isActive.checked = theater.is_active === 1 || theater.is_active === true;
+            els.isActive.checked = theater.status === 1 || theater.status === true;
 
             getModalInstance()?.show();
             return;
@@ -240,11 +226,16 @@
             const isActive = toggle.checked;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/theaters/${id}/toggle-active`, { method: 'POST' });
-                if (!res || !res.ok) throw new Error();
-                window.showAdminToast?.('Cập nhật trạng thái thành công', 'success');
+                if (!res) throw new Error('Không thể kết nối đến máy chủ.');
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Cập nhật trạng thái thất bại.');
+                }
+                const result = await res.json();
+                window.showAdminToast?.(result.message || 'Cập nhật trạng thái thành công', 'success');
                 loadData(currentPage);
             } catch (error) {
-                window.showAdminToast?.('Cập nhật trạng thái thất bại', 'error');
+                window.showAdminToast?.(error.message || 'Cập nhật trạng thái thất bại', 'error');
                 toggle.checked = !isActive;
             }
         }
@@ -256,17 +247,17 @@
             const isEdit = els.formMethod.value === 'PUT';
             const id = els.idInput.value;
             const url = isEdit ? `/api/v1/admin/theaters/${id}` : `/api/v1/admin/theaters`;
-            
+
             const formData = new FormData(els.form);
             const data = Object.fromEntries(formData.entries());
-            data.is_active = els.isActive.checked ? 1 : 0;
+            data.status = els.isActive.checked ? 1 : 0;
 
             try {
                 const res = await window.AdminCore.apiFetch(url, {
                     method: isEdit ? 'PUT' : 'POST',
                     body: JSON.stringify(data)
                 });
-                
+
                 if (res && res.ok) {
                     getModalInstance()?.hide();
                     window.showAdminToast?.(isEdit ? 'Cập nhật thành công!' : 'Tạo rạp chiếu thành công!', 'success');
@@ -285,13 +276,27 @@
         els.searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
             currentSearch = els.searchInput.value.trim();
+            currentStatus = els.statusFilter?.value || 'all';
+            currentPage = 1;
+            loadData(currentPage);
+        });
+
+        els.statusFilter?.addEventListener('change', () => {
+            currentStatus = els.statusFilter.value || 'all';
             currentPage = 1;
             loadData(currentPage);
         });
     }
 
+    els.branchFilter?.addEventListener('change', () => {
+        currentBranchId = els.branchFilter.value;
+        currentPage = 1;
+        loadData(currentPage);
+    });
+
     /* ── Init ──────────────────────────────────────────────────────── */
     window.onAdminPageLoad(async () => {
+        if (window.location.pathname !== '/admin/theaters' || !els.tableBody) return;
         await fetchPrerequisites();
         loadData(1);
     });

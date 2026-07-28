@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTheaterRequest;
@@ -136,12 +138,12 @@ class TheaterController extends Controller
      *
      * Public endpoint - no authentication required.
      */
-    public function show(int $id): JsonResponse
+    public function show($id): JsonResponse
     {
         try {
             $this->authorize('view', Theater::class);
 
-            $theater = $this->theaterService->getTheater($id);
+            $theater = $this->theaterService->getTheater((int) $id);
 
             return $this->successResponse(
                 new TheaterResource($theater),
@@ -175,7 +177,7 @@ class TheaterController extends Controller
      *
      * Public endpoint - no authentication required.
      */
-    public function screens(int $theaterId, Request $request): JsonResponse
+    public function screens($theaterId, Request $request): JsonResponse
     {
         try {
             $filters = $request->validate([
@@ -183,7 +185,7 @@ class TheaterController extends Controller
                 'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
             ]);
 
-            $screens = $this->theaterService->getTheaterScreens($theaterId, $filters);
+            $screens = $this->theaterService->getTheaterScreens((int) $theaterId, $filters);
 
             return $this->paginatedResponse(
                 ScreenResource::collection($screens),
@@ -213,13 +215,13 @@ class TheaterController extends Controller
      *
      * Requires admin authentication and theater_manage permission.
      */
-    public function update(UpdateTheaterRequest $request, int $id): JsonResponse
+    public function update(UpdateTheaterRequest $request, $id): JsonResponse
     {
         try {
-            $theater = Theater::findOrFail($id);
+            $theater = Theater::findOrFail((int) $id);
             $this->authorize('update', $theater);
 
-            $theater = $this->theaterService->updateTheater($id, $request->validated());
+            $theater = $this->theaterService->updateTheater((int) $id, $request->validated());
 
             Log::info('Theater updated via API', [
                 'theater_id' => $id,
@@ -264,13 +266,13 @@ class TheaterController extends Controller
      * Requires admin authentication and theater_manage permission.
      * Service layer enforces business rules (e.g., cannot delete theaters with active screens/showtimes).
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy($id): JsonResponse
     {
         try {
-            $theater = Theater::findOrFail($id);
+            $theater = Theater::findOrFail((int) $id);
             $this->authorize('delete', $theater);
 
-            $this->theaterService->deleteTheater($id);
+            $this->theaterService->deleteTheater((int) $id);
 
             Log::warning('Theater deleted via API', [
                 'theater_id' => $id,

@@ -7,12 +7,27 @@
 
 {{-- ── Filter Bar ─────────────────────────────────────────── --}}
 <div class="admin-filter-container">
-    <div class="d-flex align-items-center w-100 gap-3 flex-wrap">
-        <h5 class="mb-0 text-white fw-bold flex-no-shrink">
-            Danh sách Sản phẩm
-        </h5>
+    <div class="admin-filter-bar">
+        <div class="admin-filter-fields">
+            <div class="admin-filter-group auto-width">
+                <select id="typeFilter" class="admin-filter-select filter-select-sm">
+                    <option value="all">Tất cả loại</option>
+                    <option value="combo">Combo</option>
+                    <option value="food">Đồ ăn</option>
+                    <option value="drink">Đồ uống</option>
+                </select>
+            </div>
+            <div class="admin-filter-group auto-width">
+                <select id="statusFilter" class="admin-filter-select filter-select-md">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="active">Đang bán</option>
+                    <option value="inactive">Ngừng bán</option>
+                </select>
+            </div>
+        </div>
 
-        <form id="searchForm" class="flex-grow-1 search-container">
+        <form id="searchForm" class="admin-filter-search">
+            {{-- Search --}}
             <div class="input-group">
                 <input type="text" id="search" name="search" class="admin-filter-input search-input-rounded-left" placeholder="Tên sản phẩm...">
                 <button class="admin-filter-btn search-btn-rounded-right" type="submit">
@@ -21,25 +36,11 @@
             </div>
         </form>
 
-        <select id="typeFilter" class="admin-filter-select filter-select-sm filter-rounded">
-            <option value="all">Tất cả loại</option>
-            <option value="combo">Combo</option>
-            <option value="food">Đồ ăn</option>
-            <option value="drink">Đồ uống</option>
-        </select>
-
-        <select id="statusFilter" class="admin-filter-select filter-select-md filter-rounded">
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang bán</option>
-            <option value="inactive">Ngừng bán</option>
-        </select>
-
-        <button type="button" id="btnOpenCreateProduct" class="admin-action-btn ms-auto">
+        <button type="button" id="btnOpenCreateProduct" class="admin-action-btn admin-filter-primary-action">
             <i class="bi bi-plus-lg"></i> Thêm Sản phẩm
         </button>
     </div>
 </div>
-
 {{-- ── Table ─────────────────────────────────────────────────── --}}
 <div class="admin-table-container">
     <div class="admin-table-wrapper">
@@ -56,57 +57,12 @@
                 </tr>
             </thead>
             <tbody id="productsTableBody">
-                <!-- Skeleton Loading Rows -->
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-55"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img skeleton-img-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
+                <x-admin.skeleton-table cols="7" rows="5" :hasImage="true" />
             </tbody>
         </table>
     </div>
 
-    <div class="d-flex justify-content-end mt-4 pt-3" id="paginationContainer"></div>
+    <div class="d-flex justify-content-center mt-4 pt-3" id="paginationContainer"></div>
 </div>
 
 {{-- ── Modal: Thêm / Sửa Sản phẩm ─────────────────────────────── --}}

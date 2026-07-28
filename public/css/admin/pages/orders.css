@@ -172,3 +172,388 @@
         border-top: 1px solid rgba(255,255,255,0.05);
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * ENTERPRISE ORDER DETAIL MODAL STYLE (GIAO DIỆN QUẢN TRỊ ĐƠN HÀNG PHẲNG)
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+.order-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(8, 8, 12, 0.8);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.order-modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.order-modal-dashboard {
+    width: min(840px, 95vw);
+    max-height: 90vh;
+    border-radius: 12px;
+    background: #15151f;
+    border: 1px solid #28283c;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(10px) scale(0.99);
+    transition: transform 0.2s ease;
+}
+
+.order-modal-dashboard .ticket-modal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+    height: 100%;
+}
+
+.order-modal-overlay.show .order-modal-dashboard {
+    transform: translateY(0) scale(1);
+}
+
+.admin-order-modal-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    background: #15151f;
+}
+
+.admin-order-modal-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+.admin-order-modal-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+.admin-order-modal-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+}
+
+/* ── 1. Header Bar ────────────────────────────────────────────────────── */
+
+.admin-order-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #28283c;
+    background: #181826;
+}
+
+.admin-order-title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.admin-order-title {
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.admin-order-date {
+    font-size: 0.78rem;
+    color: #85859d;
+}
+
+.btn-copy-order-code {
+    background: transparent;
+    border: 0;
+    color: #85859d;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.2rem;
+    transition: color 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-copy-order-code:hover {
+    color: #ffffff;
+}
+
+.admin-order-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn-admin-order-print {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e4e4e7;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-admin-order-print:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-admin-order-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #a1a1aa;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-admin-order-close:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* ── 2. Grid Layout ───────────────────────────────────────────────────── */
+
+.admin-order-grid {
+    display: grid;
+    grid-template-columns: 1.7fr 1fr;
+    gap: 1.25rem;
+    padding: 1.5rem;
+}
+
+/* ── 3. Cards & Sections ──────────────────────────────────────────────── */
+
+.admin-order-card {
+    background: #1c1c2b;
+    border: 1px solid #28283c;
+    border-radius: 8px;
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-order-card-header {
+    color: #85859d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+}
+
+/* ── 4. Itemized Table ────────────────────────────────────────────────── */
+
+.admin-order-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.admin-order-table th {
+    color: #85859d;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.6rem 0.5rem;
+    border-bottom: 1px solid #28283c;
+}
+
+.admin-order-table td {
+    padding: 0.85rem 0.5rem;
+    color: #e4e4e7;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.admin-order-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.item-title-text {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.85rem;
+}
+
+.item-subtitle-text {
+    font-size: 0.72rem;
+    color: #85859d;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.item-subtitle-text code {
+    background: rgba(255, 255, 255, 0.06);
+    color: #e4e4e7;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+}
+
+/* ── 5. Payment Summary ───────────────────────────────────────────────── */
+
+.admin-order-summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.admin-order-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+}
+
+.admin-order-summary-item .label {
+    color: #85859d;
+}
+
+.admin-order-summary-item .value {
+    color: #e4e4e7;
+    font-weight: 500;
+}
+
+.admin-order-summary-divider {
+    border-top: 1px solid #28283c;
+    margin: 0.35rem 0;
+}
+
+.admin-order-summary-item.total {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.admin-order-summary-item.total .label {
+    color: #ffffff;
+}
+
+.admin-order-summary-item.total .highlight-price {
+    color: #ef4444;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+/* ── 6. Sidebar details ────────────────────────────────────────────────── */
+
+.admin-order-detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.detail-item .label {
+    font-size: 0.62rem;
+    color: #71717a;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.detail-item .value {
+    font-size: 0.8rem;
+    color: #e4e4e7;
+}
+
+.text-warning-highlight {
+    color: #fbbf24 !important;
+}
+
+/* ── Responsive Adjustments ───────────────────────────────────────────── */
+
+@media (max-width: 800px) {
+    .admin-order-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Print Optimization ───────────────────────────────────────────────── */
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #orderDetailModal, #orderDetailModal * {
+        visibility: visible;
+    }
+    #orderDetailModal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .order-modal-dashboard, .admin-order-modal-wrapper {
+        border: 0 !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .admin-order-header {
+        border-bottom: 2px solid #000000 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .admin-order-title, .item-title-text, .admin-order-summary-item.total .label {
+        color: #000000 !important;
+    }
+    .admin-order-card {
+        background: #ffffff !important;
+        border: 1px solid #dddddd !important;
+        color: #000000 !important;
+    }
+    .admin-order-table th {
+        border-bottom: 2px solid #000000 !important;
+        color: #000000 !important;
+        background: #f4f4f5 !important;
+    }
+    .admin-order-table td {
+        border-bottom: 1px solid #dddddd !important;
+        color: #000000 !important;
+    }
+    .admin-order-summary-item.total .highlight-price {
+        color: #000000 !important;
+    }
+    .btn-admin-order-print, .btn-admin-order-close, .btn-copy-order-code {
+        display: none !important;
+    }
+}

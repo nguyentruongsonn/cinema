@@ -7,12 +7,66 @@
 
 .hero-section {
     position: relative;
-    min-height: 100dvh;
-    min-height: 100vh;
+    height: clamp(520px, 42vw, 720px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+}
+
+.hero-carousel-controls {
+    position: absolute;
+    inset: 50% 24px auto;
+    z-index: 4;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.hero-carousel-arrow {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
+    background: rgba(12, 12, 14, 0.48);
+    color: #fff;
+    font-size: 1.2rem;
+    pointer-events: auto;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.hero-carousel-arrow:hover,
+.hero-carousel-arrow:focus-visible {
+    background: rgba(255, 20, 31, 0.85);
+    border-color: transparent;
+}
+
+.hero-carousel-dots {
+    position: absolute;
+    z-index: 4;
+    left: 50%;
+    bottom: 28px;
+    display: flex;
+    gap: 8px;
+    transform: translateX(-50%);
+}
+
+.hero-carousel-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.42);
+    transition: width 0.2s ease, background 0.2s ease;
+}
+
+.hero-carousel-dot.active {
+    width: 26px;
+    background: var(--primary-color, #ff141f);
 }
 
 /* Backdrop image — set via JS */
@@ -639,7 +693,7 @@
 
 @media (max-width: 991px) {
     .hero-section {
-        min-height: 85vh;
+        height: 600px;
     }
 
     .hero-title {
@@ -671,7 +725,16 @@
 
 @media (max-width: 767px) {
     .hero-section {
-        min-height: 75vh;
+        height: 560px;
+    }
+
+    .hero-carousel-controls {
+        inset-inline: 12px;
+    }
+
+    .hero-carousel-arrow {
+        width: 38px;
+        height: 38px;
     }
 
     .hero-content {

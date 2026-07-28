@@ -33,12 +33,22 @@
         {{-- Gradient overlays --}}
         <div class="hero-gradient-overlay"></div>
 
+        <div class="hero-carousel-controls d-none" aria-label="Điều khiển banner">
+            <button id="heroPrevious" class="hero-carousel-arrow" type="button" aria-label="Banner trước">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button id="heroNext" class="hero-carousel-arrow" type="button" aria-label="Banner tiếp theo">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+
         {{-- Actual Hero Content (hidden until loaded) --}}
         <div id="heroContent" class="hero-content d-none">
             <div class="container">
                 <div class="hero-inner"></div>
             </div>
         </div>
+        <div id="heroDots" class="hero-carousel-dots" role="tablist" aria-label="Chọn banner"></div>
     </section>
 
     {{-- Quick Booking Widget --}}

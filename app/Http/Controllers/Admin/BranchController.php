@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -203,10 +205,16 @@ class BranchController extends Controller
 
                 $oldStatus = (bool) $locked->is_active;
 
-                if ($oldStatus && $locked->theaters()->where('status', true)->exists()) {
+                $hasFutureShowtimes = $locked->theaters()
+                    ->whereHas('screens.showtimes', function ($query) {
+                        $query->where('scheduled_at', '>=', now());
+                    })
+                    ->exists();
+
+                if ($oldStatus && $hasFutureShowtimes) {
                     abort(response()->json([
                         'success' => false,
-                        'message' => 'Cannot deactivate branch with active theaters',
+                        'message' => 'Cannot deactivate branch with future showtimes',
                     ], 409));
                 }
                 $locked->update(['is_active' => !$oldStatus]);

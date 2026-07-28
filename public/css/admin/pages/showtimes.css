@@ -444,6 +444,21 @@
     min-width: 320px;
 }
 
+.showtime-movie-poster-container {
+    width: 60px;
+    height: 90px;
+    min-height: 90px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.showtime-movie-poster-container img,
 .movie-poster-thumb {
     width: 60px;
     height: 90px;
@@ -452,6 +467,12 @@
     border-radius: 6px;
     flex-shrink: 0;
     display: block;
+}
+
+.showtime-movie-poster-container img {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
 }
 
 .movie-text-info {
@@ -492,9 +513,11 @@
     min-width: 140px;
 }
 
-.showtime-time {
+.showtime-time,
+.admin-table .showtime-time,
+.showtimes-management-page .showtime-time {
     font-weight: 700;
-    color: #818cf8;
+    color: #f8f9fa !important;
     font-size: 1.1rem;
     margin-bottom: 2px;
 }
@@ -697,6 +720,107 @@
 
 .pagination-border {
     border-top: 1px solid var(--border-color);
+}
+
+.showtimes-filter-title {
+    min-width: 120px;
+}
+
+.showtimes-panel,
+.showtimes-panel-hidden {
+    display: none;
+}
+
+.showtimes-panel-visible {
+    display: block;
+}
+
+.showtimes-selected-movie-title {
+    color: #f8f9fa;
+}
+
+.showtimes-modal-body {
+    max-height: 75vh;
+    overflow-y: auto;
+}
+
+.showtimes-cancel-btn {
+    background: rgba(255,255,255,0.1);
+}
+
+.skeleton-text-xs-center {
+    width: 30px;
+    margin: 0 auto;
+}
+
+.skeleton-text-sm-center {
+    width: 40px;
+    margin: 0 auto;
+}
+
+.skeleton-text-md-center {
+    width: 50px;
+    margin: 0 auto;
+}
+
+.skeleton-flex-fill {
+    flex: 1;
+}
+
+.skeleton-w-42 {
+    width: 42%;
+}
+
+.skeleton-w-45 {
+    width: 45%;
+}
+
+.skeleton-w-48 {
+    width: 48%;
+}
+
+.skeleton-w-50 {
+    width: 50%;
+}
+
+.skeleton-w-55 {
+    width: 55%;
+}
+
+.skeleton-w-60 {
+    width: 60%;
+}
+
+.skeleton-w-65 {
+    width: 65%;
+}
+
+.skeleton-w-70 {
+    width: 70%;
+}
+
+.skeleton-w-75 {
+    width: 75%;
+}
+
+.skeleton-w-80 {
+    width: 80%;
+}
+
+.skeleton-w-85 {
+    width: 85%;
+}
+
+.skeleton-mb-sm {
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-badge-md {
+    width: 80px;
+}
+
+.skeleton-center {
+    margin: 0 auto;
 }
 
 /* ── Showtimes Table Header Widths ──────────────────────── */

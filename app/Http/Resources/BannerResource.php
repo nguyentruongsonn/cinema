@@ -14,18 +14,22 @@ class BannerResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $images = $this->images->map(fn ($image) => [
+            'id' => $image->id,
+            'image_path' => $image->image_path,
+            'image_url' => asset('storage/' . $image->image_path),
+        ])->values();
+
         return [
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
-            'image_path' => $this->image_path,
-            'image_url' => $this->image_path ? asset('storage/' . $this->image_path) : null,
+            'images' => $images,
+            'image_url' => $images->first()['image_url'] ?? null,
             'link_url' => $this->link_url,
-            'position' => $this->position,
-            'display_order' => $this->display_order,
             'is_active' => (bool) $this->is_active,
-            'start_date' => $this->start_date?->format('Y-m-d'),
-            'end_date' => $this->end_date?->format('Y-m-d'),
+            'start_date' => $this->start_date?->format('Y-m-d\TH:i'),
+            'end_date' => $this->end_date?->format('Y-m-d\TH:i'),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

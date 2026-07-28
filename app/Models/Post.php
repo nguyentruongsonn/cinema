@@ -61,6 +61,29 @@ class Post extends Model
                      ->where('published_at', '<=', now());
     }
 
+    public function scopeScheduled($query)
+    {
+        return $query->where('is_published', true)
+            ->whereNotNull('published_at')
+            ->where('published_at', '>', now());
+    }
+
+    public function isPubliclyVisible(): bool
+    {
+        return (bool) $this->is_published
+            && $this->published_at !== null
+            && $this->published_at->isPast();
+    }
+
+    public function publicationStatus(): string
+    {
+        if (! $this->is_published) {
+            return 'draft';
+        }
+
+        return $this->published_at?->isFuture() ? 'scheduled' : 'published';
+    }
+
     /**
      * Scope a query to filter by category.
      */

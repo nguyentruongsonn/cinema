@@ -5,6 +5,9 @@ namespace Tests\Feature\Admin;
 use App\Models\Branch;
 use App\Models\Role;
 use App\Models\Theater;
+use App\Models\Screen;
+use App\Models\Showtime;
+use App\Models\Movie;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -116,25 +119,35 @@ class BranchControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_blocks_deactivate_branch_with_active_theaters()
+    public function it_blocks_deactivate_branch_with_future_showtimes()
     {
         $branch = Branch::factory()->create(['is_active' => true]);
-        Theater::factory()->create(['branch_id' => $branch->id, 'status' => 1]);
+        $theater = Theater::factory()->create(['branch_id' => $branch->id, 'status' => 1]);
+        $screen = Screen::factory()->create(['theater_id' => $theater->id, 'status' => 1]);
+        $movie = Movie::factory()->create(['status' => 1]);
+        Showtime::factory()->create([
+            'screen_id' => $screen->id,
+            'movie_id' => $movie->id,
+            'scheduled_at' => now()->addDays(1),
+            'status' => 1,
+        ]);
 
         $response = $this->actingAs($this->admin)
             ->postJson("/api/v1/admin/branches/{$branch->id}/toggle-active");
 
         $response->assertStatus(409)
-            ->assertJson(['success' => false, 'message' => 'Cannot deactivate branch with active theaters']);
+            ->assertJson(['success' => false, 'message' => 'Cannot deactivate branch with future showtimes']);
 
         $this->assertDatabaseHas('branches', ['id' => $branch->id, 'is_active' => true]);
     }
 
     #[Test]
-    public function it_allows_toggle_if_no_active_theaters()
+    public function it_allows_toggle_if_no_future_showtimes()
     {
         $branch = Branch::factory()->create(['is_active' => true]);
-        Theater::factory()->create(['branch_id' => $branch->id, 'status' => 0]);
+        $theater = Theater::factory()->create(['branch_id' => $branch->id, 'status' => 1]);
+        $screen = Screen::factory()->create(['theater_id' => $theater->id, 'status' => 1]);
+        // No showtimes created
 
         $response = $this->actingAs($this->admin)
             ->postJson("/api/v1/admin/branches/{$branch->id}/toggle-active");

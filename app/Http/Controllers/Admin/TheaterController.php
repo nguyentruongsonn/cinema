@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -30,9 +32,14 @@ class TheaterController extends Controller
             $filters = $request->validate([
                 'search' => ['nullable', 'string', 'max:100'],
                 'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
+                'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
+                'status' => ['nullable', 'string', 'in:all,active,inactive'],
+                'options' => ['nullable', 'boolean'],
             ]);
 
-            $query = Theater::with('branch');
+            $query = Theater::with('branch')
+                ->when($filters['branch_id'] ?? null, fn ($query, $branchId) => $query->where('branch_id', $branchId))
+                ->when(($filters['status'] ?? 'all') !== 'all', fn ($query) => $query->where('status', $filters['status'] === 'active'));
 
             if (!empty($filters['search'])) {
                 $search = trim($filters['search']);
@@ -41,6 +48,14 @@ class TheaterController extends Controller
                       ->orWhere('address', 'like', '%' . $search . '%')
                       ->orWhere('email', 'like', '%' . $search . '%');
                 });
+            }
+
+            if ($request->boolean('options')) {
+                $theaters = $query->select(['id', 'branch_id', 'name'])
+                    ->orderBy('name')
+                    ->get();
+
+                return $this->successResponse($theaters, 'Theater options retrieved successfully');
             }
 
             $perPage = $filters['per_page'] ?? 10;

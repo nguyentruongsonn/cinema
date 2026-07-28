@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Movie;
 use App\Models\Showtime;
 use App\Models\Theater;
+use App\Models\Banner;
 use App\Traits\ApiResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +22,7 @@ class HomeController extends Controller
     private const HOME_MOVIE_LIMIT = 8;
     private const MOVIE_OPTION_LIMIT = 100;
     private const AVAILABLE_DATE_LIMIT = 7;
-    private const HOME_CACHE_KEY = 'home:data:v1';
+    private const HOME_CACHE_KEY = 'home:data:v2';
     private const HOME_CACHE_TTL_SECONDS = 300;
 
     private const MOVIE_COLUMNS = [
@@ -52,8 +55,33 @@ class HomeController extends Controller
         return $this->successResponse($data, 'Home data loaded successfully');
     }
 
+    public static function flushCachedData(): void
+    {
+        Cache::forget(self::HOME_CACHE_KEY);
+    }
+
     private function composeHomeData(): array
     {
+        $featuredBanners = Banner::query()
+            ->with('images')
+            ->active()
+            ->ordered()
+            ->limit(5)
+            ->get();
+
+        $featuredSlides = $featuredBanners
+            ->flatMap(fn (Banner $banner) => $banner->images->map(fn ($image) => [
+                'id' => $banner->id . '-' . $image->id,
+                'title' => strip_tags((string) $banner->title),
+                'description' => strip_tags((string) $banner->description),
+                'image_url' => asset('storage/' . $image->image_path),
+                'link_url' => $banner->link_url,
+            ]))
+            ->take(5)
+            ->values();
+
+        $featuredBanner = $featuredSlides->first();
+
         $featuredMovie = Movie::query()
             ->select(self::MOVIE_COLUMNS)
             ->with('categories:id,name')
@@ -136,6 +164,8 @@ class HomeController extends Controller
         }
 
         return [
+            'featured_banners' => $featuredSlides,
+            'featured_banner' => $featuredBanner,
             'featured_movie' => $this->transformMovie($featuredMovie),
             'now_showing_movies' => $nowShowingMovies
                 ->map(fn (Movie $movie) => $this->transformMovie($movie))

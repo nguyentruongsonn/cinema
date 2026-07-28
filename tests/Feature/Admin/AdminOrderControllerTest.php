@@ -29,7 +29,22 @@ class AdminOrderControllerTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.meta.per_page', 1)
             ->assertJsonPath('data.meta.total', 2)
-            ->assertJsonCount(1, 'data.data');
+            ->assertJsonCount(1, 'data.data')
+            ->assertJsonStructure([
+                'data' => [
+                    'data' => [[
+                        'id',
+                        'code',
+                        'total_amount',
+                        'payment_status',
+                        'user' => ['id', 'name', 'email', 'phone'],
+                        'showtime' => ['id', 'scheduled_at', 'movie', 'screen'],
+                        'items',
+                    ]],
+                ],
+            ])
+            ->assertJsonMissingPath('data.data.0.tickets')
+            ->assertJsonMissingPath('data.data.0.payment');
     }
 
     #[Test]

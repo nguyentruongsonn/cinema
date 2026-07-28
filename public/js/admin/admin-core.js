@@ -4,6 +4,7 @@
 
 const AdminCore = {
     _cachePrefix: 'admin_api_cache:',
+    _memoryCache: new Map(),
     _pendingRequests: new Map(),
     _requestControllers: new Map(),
 
@@ -23,6 +24,43 @@ const AdminCore = {
         return [...pages].sort((left, right) => left - right);
     },
 
+    renderAdminPagination(container, meta, onPageChange) {
+        if (!container) return;
+
+        const total = Number(meta?.total || 0);
+        const perPage = Number(meta?.per_page || 10);
+        const lastPage = Number(meta?.last_page || Math.ceil(total / perPage));
+
+        if (!meta || lastPage <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const normalizedPagination = {
+            ...meta,
+            current_page: Number(meta.current_page || 1),
+            last_page: lastPage,
+        };
+
+        let html = '<nav><ul class="pagination mb-0">';
+        for (const page of this.paginationPages(normalizedPagination)) {
+            const active = page === normalizedPagination.current_page ? 'active' : '';
+            html += `<li class="page-item ${active}"><a class="page-link" href="#" data-page="${page}">${page}</a></li>`;
+        }
+        html += '</ul></nav>';
+
+        container.innerHTML = html;
+        container.querySelectorAll('.page-link').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const page = Number.parseInt(link.dataset.page, 10);
+                if (Number.isFinite(page) && typeof onPageChange === 'function') {
+                    onPageChange(page);
+                }
+            });
+        });
+    },
+
     debounce(callback, wait = 300) {
         let timeoutId;
 
@@ -33,6 +71,7 @@ const AdminCore = {
     },
 
     clearGetCache() {
+        this._memoryCache.clear();
         Object.keys(sessionStorage)
             .filter((key) => key.startsWith(this._cachePrefix))
             .forEach((key) => sessionStorage.removeItem(key));
@@ -60,7 +99,6 @@ const AdminCore = {
             '/api/v1/admin/users/roles',
             '/api/v1/admin/combos/available-products',
             '/api/v1/admin/promotions/categories',
-            '/api/v1/admin/banners/positions',
         ];
 
         const isScreenReferencePayload = pathname === '/api/v1/admin/screens'
@@ -70,6 +108,12 @@ const AdminCore = {
     },
 
     _readCachedResponse(key) {
+        const memoryEntry = this._memoryCache.get(key);
+        if (memoryEntry) {
+            if (memoryEntry.expiresAt > Date.now()) return memoryEntry.response.clone();
+            this._memoryCache.delete(key);
+        }
+
         try {
             const storageKey = this._cacheStorageKey(key);
             const cached = JSON.parse(sessionStorage.getItem(storageKey) || 'null');
@@ -188,6 +232,10 @@ const AdminCore = {
             }
 
             if (cacheKey && response.ok && !skipCache && cacheTtl > 0) {
+                this._memoryCache.set(cacheKey, {
+                    response: response.clone(),
+                    expiresAt: Date.now() + cacheTtl,
+                });
                 void this._writeCachedResponse(cacheKey, response, cacheTtl);
             } else if (!cacheKey && response.ok) {
                 this.clearGetCache();
@@ -240,9 +288,30 @@ window.onAdminPageLoad = function (callback) {
     }
 };
 
-window.onAdminPageCleanup = function (callback) {
-    if (window.Turbo) {
-        document.addEventListener('turbo:before-cache', callback, { once: true });
-    }
-    window.addEventListener('pagehide', callback, { once: true });
+const adminPageCleanupCallbacks = window.__adminPageCleanupCallbacks || new Set();
+window.__adminPageCleanupCallbacks = adminPageCleanupCallbacks;
+
+window.runAdminPageCleanup = function () {
+    const callbacks = [...adminPageCleanupCallbacks];
+    adminPageCleanupCallbacks.clear();
+
+    callbacks.forEach((callback) => {
+        try {
+            callback();
+        } catch (error) {
+            console.error('Admin page cleanup failed:', error);
+        }
+    });
 };
+
+window.onAdminPageCleanup = function (callback) {
+    if (typeof callback !== 'function') return () => {};
+    adminPageCleanupCallbacks.add(callback);
+    return () => adminPageCleanupCallbacks.delete(callback);
+};
+
+if (!window.__adminPageCleanupInstalled) {
+    window.__adminPageCleanupInstalled = true;
+    document.addEventListener('turbo:before-cache', window.runAdminPageCleanup);
+    window.addEventListener('pagehide', window.runAdminPageCleanup);
+}

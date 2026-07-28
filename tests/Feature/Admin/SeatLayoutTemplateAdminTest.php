@@ -29,8 +29,8 @@ class SeatLayoutTemplateAdminTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Quản lý mẫu sơ đồ ghế');
-        $response->assertSee('data-bs-toggle="tab"', false);
-        $response->assertSee('data-bs-target="#pane-table"', false);
+        $response->assertSee('id="templatesTableBody"', false);
+        $response->assertSee('id="statusFilter"', false);
     }
 
     public function test_admin_list_returns_all_status_counts_in_one_response(): void

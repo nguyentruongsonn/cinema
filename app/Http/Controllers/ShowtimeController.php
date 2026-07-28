@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\BulkCreateShowtimeRequest;
@@ -81,17 +83,17 @@ class ShowtimeController extends Controller
     /**
      * Display the specified showtime
      */
-    public function show(int $id)
+    public function show($id)
     {
         try {
-            $showtime = $this->showtimeService->getById($id);
+            $showtime = $this->showtimeService->getById((int) $id);
 
             return $this->successResponse($showtime, 'Showtime retrieved successfully');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Showtime not found', 404);
         } catch (\Throwable $e) {
             Log::error('Failed to retrieve showtime', [
-                'showtime_id' => $id,
+                'showtime_id' => (int) $id,
                 'exception' => $e,
             ]);
 
@@ -219,6 +221,35 @@ class ShowtimeController extends Controller
             ]);
 
             return $this->errorResponse('Failed to retrieve showtimes', 500);
+        }
+    }
+
+    /**
+     * Update the status of a showtime
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'boolean'],
+        ]);
+
+        try {
+            $showtime = Showtime::findOrFail((int) $id);
+            $this->authorize('update', $showtime);
+
+            $showtime->update(['status' => (bool) $validated['status']]);
+
+            return $this->successResponse($showtime, 'Cập nhật trạng thái suất chiếu thành công');
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Showtime not found', 404);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse('Forbidden', 403);
+        } catch (\Throwable $e) {
+            Log::error('Failed to update showtime status', [
+                'showtime_id' => (int) $id,
+                'exception' => $e,
+            ]);
+            return $this->errorResponse('Failed to update showtime status', 500);
         }
     }
 }

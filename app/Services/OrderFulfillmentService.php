@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Events\OrderPaid;
@@ -173,12 +175,12 @@ class OrderFulfillmentService
                 $orderItem = OrderItem::createFromTicket(
                     $order,
                     $ticket,
-                    $seatData['price'],
+                    (string) $seatData['price'],
                     [
                         'seat_label' => $seatData['name'],
-                        'row' => $seatData['row'] ?? null,
-                        'number' => $seatData['number'] ?? null,
-                        'seat_type' => $seatData['type'] ?? null,
+                        'row'        => $seatData['row'] ?? null,
+                        'number'     => $seatData['number'] ?? null,
+                        'seat_type'  => $seatData['type'] ?? null,
                     ]
                 );
                 $orderItem->save();
@@ -224,11 +226,11 @@ class OrderFulfillmentService
                     $order,
                     $product,
                     $quantity,
-                    $productData['price'],
+                    (string) $productData['price'],
                     [
                         'product_name' => $productData['name'],
                         'product_type' => $productData['type'] ?? null,
-                        'image_url' => $productData['image_url'] ?? null,
+                        'image_url'    => $productData['image_url'] ?? null,
                     ]
                 );
                 $orderItem->save();

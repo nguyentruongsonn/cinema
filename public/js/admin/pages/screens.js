@@ -42,6 +42,11 @@
         searchForm: document.getElementById('screenSearchForm'),
         searchInput: document.querySelector('input[name="search"]'),
 
+        // Filters
+        branchFilter: document.getElementById('branchFilter'),
+        theaterFilter: document.getElementById('theaterFilter'),
+        statusFilter: document.getElementById('statusFilter'),
+
         // Selects
         screenTheater: document.getElementById('screenTheater'),
         screenFormat: document.getElementById('screenFormat'),
@@ -51,7 +56,12 @@
 
     let currentPage = 1;
     let currentSearch = '';
+    let currentBranchId = '';
+    let currentTheaterId = '';
+    let currentStatus = 'all';
     let referencesLoaded = false;
+    let branchOptions = [];
+    let theaterOptions = [];
 
     /* ── Dynamic header button per active tab ────────────────────── */
     const HEADER_BTNS = {
@@ -86,6 +96,9 @@
             const url = new URL(window.location.origin + '/api/v1/admin/screens');
             url.searchParams.append('page', page);
             if (search) url.searchParams.append('search', search);
+            if (currentBranchId) url.searchParams.append('branch_id', currentBranchId);
+            if (currentTheaterId) url.searchParams.append('theater_id', currentTheaterId);
+            if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
             if (!referencesLoaded) url.searchParams.append('include_references', '1');
 
             const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'screens:list' });
@@ -98,7 +111,7 @@
                 if (data.formats && data.sounds && data.theaters && data.templates) {
                     renderFormats(data.formats);
                     renderSounds(data.sounds);
-                    populateDropdowns(data.theaters, data.formats, data.sounds, data.templates);
+                    populateDropdowns(data.branches || [], data.theaters, data.formats, data.sounds, data.templates);
                     referencesLoaded = true;
                 }
 
@@ -142,15 +155,14 @@
                     <span class="small text-white-50">Mã: ${escapeHtml(screen.code)}</span>
                     <div class="mt-1">
                         <a href="/admin/screens/${screen.id}/seats"
-                            class="small fw-semibold text-decoration-none d-inline-flex align-items-center gap-1"
-                            style="color: var(--accent-color);">
+                            class="small fw-semibold text-decoration-none d-inline-flex align-items-center gap-1 admin-accent-icon">
                             <i class="bi bi-grid-3x3"></i> Xem & chỉnh sơ đồ ghế
                         </a>
                     </div>
                 </td>
                 <td class="text-white-50 small">${escapeHtml(theaterName)}</td>
                 <td>
-                    <span class="badge" style="background: rgba(96,165,250,0.12); color:#60a5fa;">${escapeHtml(formatName)}</span>
+                    <span class="badge admin-badge-format">${escapeHtml(formatName)}</span>
                 </td>
                 <td class="text-white-50 small">${screen.capacity} chỗ</td>
                 <td>
@@ -158,14 +170,14 @@
                 </td>
                 <td class="text-center">
                     <div class="form-check form-switch d-inline-block">
-                        <input class="form-check-input toggle-screen-active" type="checkbox" role="switch"
-                            data-id="${screen.id}" ${screen.status ? 'checked' : ''} style="cursor:pointer;">
+                        <input class="form-check-input toggle-screen-active admin-toggle-pointer" type="checkbox" role="switch"
+                            data-id="${screen.id}" ${screen.status ? 'checked' : ''}>
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-edit-screen"
-                            style="color: var(--text-secondary); background: rgba(255,255,255,0.05);"
+                        <button type="button" class="btn btn-sm btn-edit-screen admin-table-action-edit"
+
                             data-id="${screen.id}"
                             data-name="${escapeHtml(screen.name)}"
                             data-code="${escapeHtml(screen.code)}"
@@ -177,8 +189,8 @@
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-screen"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);"
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-screen admin-table-action-delete"
+
                             data-id="${screen.id}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -197,19 +209,19 @@
         els.formatsTableBody.innerHTML = '';
         formats.forEach((f, i) => {
             els.formatsTableBody.innerHTML += `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <tr class="admin-row-divider">
                     <td class="text-center text-white-50">${i + 1}</td>
                     <td class="fw-medium text-white">${escapeHtml(f.name)}</td>
                     <td class="text-white-50 small">+${parseInt(f.surcharge).toLocaleString('vi-VN')} đ</td>
                     <td class="text-center">
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-edit-format"
-                                style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
+                            <button type="button" class="btn btn-sm btn-edit-format admin-table-action-edit"
+
                                 data-id="${f.id}" data-name="${escapeHtml(f.name)}" data-surcharge="${escapeHtml(f.surcharge)}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button type="button" class="btn btn-sm ms-1 btn-delete-format"
-                                style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${f.id}">
+                            <button type="button" class="btn btn-sm ms-1 btn-delete-format admin-table-action-delete"
+                                data-id="${f.id}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -226,18 +238,18 @@
         }
 
         els.soundsTableBody.innerHTML = sounds.map((sound, index) => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <tr class="admin-row-divider">
                 <td class="text-center text-white-50">${index + 1}</td>
                 <td class="fw-medium text-white">${escapeHtml(sound.name)}</td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-edit-sound"
-                            style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
+                        <button type="button" class="btn btn-sm btn-edit-sound admin-table-action-edit"
+
                             data-id="${sound.id}" data-name="${escapeHtml(sound.name)}" title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-sound"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${sound.id}" title="Xóa">
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-sound admin-table-action-delete"
+                            data-id="${sound.id}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -245,9 +257,20 @@
             </tr>`).join('');
     }
 
-    function populateDropdowns(theaters, formats, sounds, templates) {
+    function populateDropdowns(branches, theaters, formats, sounds, templates) {
+        branchOptions = branches;
+        theaterOptions = theaters;
+
+        if (els.branchFilter) {
+            replaceOptions(els.branchFilter, 'Tất cả chi nhánh', branchOptions, 'id', item => item.name);
+        }
+
+        populateTheaterFilter();
+
         if (els.screenTheater) {
-            replaceOptions(els.screenTheater, '-- Chọn rạp --', theaters, 'id', item => item.name);
+            replaceOptions(els.screenTheater, '-- Chọn rạp --', theaterOptions, 'id', item => item.name, item => ({
+                branchId: item.branch_id,
+            }));
         }
         if (els.screenFormat) {
             replaceOptions(els.screenFormat, '-- Chọn định dạng --', formats, 'id', item => `${item.name} (+${parseInt(item.surcharge || 0, 10).toLocaleString()}đ)`);
@@ -256,12 +279,24 @@
             replaceOptions(els.screenSound, '-- Chọn âm thanh --', sounds, 'id', item => item.name);
         }
         if (els.screenTemplate) {
-            replaceOptions(els.screenTemplate, '-- Chọn mẫu --', templates, 'id', item => `${item.template_name} (${item.seat_matrix})`, item => ({
-                matrix: item.seat_matrix,
-                regular: item.regular_seat_rows,
-                vip: item.vip_seat_rows,
-                couple: item.couple_seat_rows,
-            }));
+            replaceOptions(els.screenTemplate, '-- Chọn mẫu --', templates, 'id', item => item.template_name);
+        }
+    }
+
+    function populateTheaterFilter() {
+        if (!els.theaterFilter) return;
+
+        const filteredTheaters = currentBranchId
+            ? theaterOptions.filter(theater => String(theater.branch_id) === String(currentBranchId))
+            : theaterOptions;
+
+        replaceOptions(els.theaterFilter, 'Tất cả rạp', filteredTheaters, 'id', item => item.name);
+
+        if (currentTheaterId && !filteredTheaters.some(theater => String(theater.id) === String(currentTheaterId))) {
+            currentTheaterId = '';
+            els.theaterFilter.value = '';
+        } else {
+            els.theaterFilter.value = currentTheaterId;
         }
     }
 
@@ -284,40 +319,8 @@
     }
 
     function renderPagination(meta) {
-        if (!meta || meta.last_page <= 1) {
-            els.pagination.innerHTML = '';
-            return;
-        }
-
-        let html = '<ul class="pagination pagination-sm m-0">';
-        if (meta.current_page > 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        }
-
-        for (const i of window.AdminCore.paginationPages(meta)) {
-            if (i === meta.current_page) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-            } else {
-                html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-            }
-        }
-
-        if (meta.current_page < meta.last_page) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-        }
-        html += '</ul>';
-
-        els.pagination.innerHTML = html;
-        els.pagination.querySelectorAll('a.page-link').forEach(a => {
-            a.addEventListener('click', (e) => {
-                e.preventDefault();
-                currentPage = parseInt(a.getAttribute('data-page'));
-                loadData(currentPage, currentSearch);
-            });
+        window.AdminCore.renderAdminPagination(els.pagination, meta, (page) => {
+            currentPage = page; loadData(page, currentSearch);
         });
     }
 
@@ -328,8 +331,7 @@
         form.reset();
         document.getElementById('screenFormMethod').value = 'POST';
         document.getElementById('screenIdInput').value = '';
-        document.getElementById('screenModalLabel').innerHTML = '<i class="bi bi-display me-2" style="color:var(--accent-color);"></i>Tạo phòng chiếu mới';
-        document.getElementById('templateDetailBadges')?.classList.add('d-none');
+        document.getElementById('screenModalLabel').innerHTML = '<i class="bi bi-display me-2 admin-accent-icon"></i>Tạo phòng chiếu mới';
         document.getElementById('templateEditWarning')?.classList.add('d-none');
         document.getElementById('screenStatus').checked = true;
     }
@@ -339,7 +341,7 @@
         if (!form) return;
         form.reset();
         document.getElementById('formatFormMethod').value = 'POST';
-        document.getElementById('formatModalLabel').innerHTML = '<i class="bi bi-camera-reels me-2" style="color:var(--accent-color);"></i>Thêm định dạng chiếu';
+        document.getElementById('formatModalLabel').innerHTML = '<i class="bi bi-camera-reels me-2 admin-accent-icon"></i>Thêm định dạng chiếu';
     }
 
     function resetSoundForm() {
@@ -349,19 +351,6 @@
         form.dataset.id = '';
         document.getElementById('soundFormMethod').value = 'POST';
         document.getElementById('soundModalLabel').innerHTML = '<i class="bi bi-volume-up me-2"></i>Thêm định dạng âm thanh';
-    }
-
-    function updateTemplateInfo(selectEl) {
-        const badgesEl  = document.getElementById('templateDetailBadges');
-        const option    = selectEl.options[selectEl.selectedIndex];
-        if (!option || !option.value) {
-            badgesEl?.classList.add('d-none');
-            return;
-        }
-        document.getElementById('tplRegular').textContent = option.getAttribute('data-regular') || '0';
-        document.getElementById('tplVip').textContent     = option.getAttribute('data-vip')     || '0';
-        document.getElementById('tplCouple').textContent  = option.getAttribute('data-couple')  || '0';
-        badgesEl?.classList.remove('d-none');
     }
 
     function bindModalOpeners() {
@@ -387,7 +376,7 @@
             resetScreenForm();
             document.getElementById('screenFormMethod').value = 'PUT';
             document.getElementById('screenIdInput').value   = editScreen.dataset.id;
-            document.getElementById('screenModalLabel').innerHTML = '<i class="bi bi-display me-2" style="color:var(--accent-color);"></i>Cập nhật phòng chiếu';
+            document.getElementById('screenModalLabel').innerHTML = '<i class="bi bi-display me-2 admin-accent-icon"></i>Cập nhật phòng chiếu';
 
             document.getElementById('screenName').value       = editScreen.dataset.name    || '';
             document.getElementById('screenCode').value       = editScreen.dataset.code    || '';
@@ -397,7 +386,6 @@
 
             const tplSelect = document.getElementById('screenTemplate');
             tplSelect.value = editScreen.dataset.templateId || '';
-            updateTemplateInfo(tplSelect);
 
             document.getElementById('screenStatus').checked   = editScreen.dataset.status === '1';
             document.getElementById('templateEditWarning')?.classList.remove('d-none');
@@ -428,7 +416,7 @@
             resetFormatForm();
             document.getElementById('formatFormMethod').value = 'PUT';
             document.getElementById('formatForm').dataset.id = editFormat.dataset.id;
-            document.getElementById('formatModalLabel').innerHTML = '<i class="bi bi-camera-reels me-2" style="color:var(--accent-color);"></i>Cập nhật định dạng chiếu';
+            document.getElementById('formatModalLabel').innerHTML = '<i class="bi bi-camera-reels me-2 admin-accent-icon"></i>Cập nhật định dạng chiếu';
             document.getElementById('formatName').value       = editFormat.dataset.name      || '';
             document.getElementById('formatSurcharge').value  = editFormat.dataset.surcharge || '0';
             getModal('formatModal')?.show();
@@ -488,11 +476,16 @@
                     method: 'POST',
                     body: JSON.stringify({ status: isActive }),
                 });
-                if (!res || !res.ok) throw new Error();
-                window.showAdminToast?.('Cập nhật trạng thái thành công', 'success');
+                if (!res) throw new Error('Không thể kết nối đến máy chủ.');
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Cập nhật trạng thái thất bại.');
+                }
+                const result = await res.json();
+                window.showAdminToast?.(result.message || 'Cập nhật trạng thái thành công', 'success');
                 loadData(currentPage, currentSearch);
             } catch (error) {
-                window.showAdminToast?.('Cập nhật trạng thái thất bại', 'error');
+                window.showAdminToast?.(error.message || 'Cập nhật trạng thái thất bại', 'error');
                 toggle.checked = !isActive;
             }
         }
@@ -575,17 +568,32 @@
         }
     });
 
-    /* ── Search ────────────────────────────────────────────────── */
+    /* ── Search & Filters ───────────────────────────────────────── */
     els.searchForm?.addEventListener('submit', (e) => {
         e.preventDefault();
         currentSearch = els.searchInput.value.trim();
+        currentStatus = els.statusFilter?.value || 'all';
         currentPage = 1;
         loadData(currentPage, currentSearch);
     });
 
-    /* ── Template select onChange ────────────────────────────────── */
-    document.getElementById('screenTemplate')?.addEventListener('change', function() {
-        updateTemplateInfo(this);
+    els.statusFilter?.addEventListener('change', () => {
+        currentStatus = els.statusFilter.value || 'all';
+        currentPage = 1;
+        loadData(currentPage, currentSearch);
+    });
+
+    els.branchFilter?.addEventListener('change', () => {
+        currentBranchId = els.branchFilter.value;
+        currentPage = 1;
+        populateTheaterFilter();
+        loadData(currentPage, currentSearch);
+    });
+
+    els.theaterFilter?.addEventListener('change', () => {
+        currentTheaterId = els.theaterFilter.value;
+        currentPage = 1;
+        loadData(currentPage, currentSearch);
     });
 
     /* ── Tabs change => reload header button ──────────────────────── */

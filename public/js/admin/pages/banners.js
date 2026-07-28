@@ -29,7 +29,6 @@
         pagination: document.getElementById('paginationContainer'),
         searchForm: document.getElementById('searchForm'),
         searchInput: document.getElementById('search'),
-        positionFilter: document.getElementById('positionFilter'),
         statusFilter: document.getElementById('statusFilter'),
         btnCreate: document.getElementById('btnCreateBanner'),
         modalEl: document.getElementById('bannerModal'),
@@ -40,9 +39,7 @@
         title: document.getElementById('bannerTitle'),
         description: document.getElementById('bannerDescription'),
         image: document.getElementById('bannerImage'),
-        position: document.getElementById('bannerPosition'),
         link: document.getElementById('bannerLink'),
-        order: document.getElementById('bannerDisplayOrder'),
         startDate: document.getElementById('bannerStartDate'),
         endDate: document.getElementById('bannerEndDate'),
         isActive: document.getElementById('bannerIsActive'),
@@ -51,8 +48,10 @@
         previewWrap: document.querySelector('.preview-wrap'),
     };
 
-    let currentPage = 1, currentSearch = '', currentStatus = 'all', currentPosition = 'all';
+    let currentPage = 1, currentSearch = '', currentStatus = 'all';
     let selectedFiles = [];
+    const MAX_BANNER_IMAGES = 5;
+    const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
     function getModalInstance() {
         return bootstrap.Modal.getOrCreateInstance(els.modalEl);
@@ -66,7 +65,6 @@
             url.searchParams.append('page', page);
             if (currentSearch) url.searchParams.append('search', currentSearch);
             if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
-            if (currentPosition !== 'all') url.searchParams.append('position', currentPosition);
             const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'banners:list' });
             if (res && res.ok) {
                 const json = await res.json();
@@ -75,58 +73,50 @@
             } else throw new Error();
         } catch (error) {
             if (error.name === 'AbortError') return;
-            els.tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-danger">Lỗi tải dữ liệu</td></tr>`;
+            els.tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">Lỗi tải dữ liệu</td></tr>`;
         }
     }
 
     function renderTable(banners, startIndex) {
         if (!banners || banners.length === 0) {
-            els.tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-muted">Không tìm thấy banner nào</td></tr>`;
+            els.tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">Không tìm thấy banner nào</td></tr>`;
             return;
         }
 
-        const positionLabels = { home_slider: 'Slider trang chủ', sidebar: 'Sidebar', popup: 'Popup', top_bar: 'Thanh trên', footer: 'Footer' };
         const formatDate = (d) => { if (!d) return '-'; const date = new Date(d); return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`; };
-        const getDateRange = (start, end) => {
-            const now = new Date();
-            const s = start ? new Date(start) : null, e = end ? new Date(end) : null;
-            if (!s && !e) return '<span class="date-range">Không giới hạn</span>';
-            if (s && e) {
-                const active = now >= s && now <= e;
-                const expired = e < now;
-                const cls = expired ? 'expired' : (active ? 'active' : '');
-                return `<span class="date-range ${cls}">${formatDate(start)} - ${formatDate(end)}</span>`;
-            }
-            if (s) return `<span class="date-range">Từ ${formatDate(start)}</span>`;
-            return `<span class="date-range">Đến ${formatDate(end)}</span>`;
-        };
-
         els.tableBody.innerHTML = '';
         banners.forEach((banner, index) => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-            const safePosition = Object.hasOwn(positionLabels, banner.position) ? banner.position : 'sidebar';
-            const positionBadge = `<span class="badge-position badge-position-${safePosition}">${escapeHtml(positionLabels[banner.position] || banner.position)}</span>`;
-            const imgSrc = banner.image_path ? storageImageUrl(banner.image_path) : '/images/placeholder.png';
+            const safeTitle = escapeHtml(String(banner.title || ''));
+            const description = String(banner.description || '');
+            const safeDescription = escapeHtml(description.substring(0, 50));
+            const images = Array.isArray(banner.images) ? banner.images : [];
+            const imagesHtml = images.length
+                ? images.map((image, imageIndex) => `
+                    <img src="${escapeHtml(image.image_url || storageImageUrl(image.image_path))}"
+                         alt="${safeTitle} - ${imageIndex + 1}"
+                         class="banner-image-preview">
+                `).join('')
+                : '<span class="text-white-50">Chưa có ảnh</span>';
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
-                <td><img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(banner.title)}" class="banner-image-preview"></td>
+                <td><div class="banner-images-row">${imagesHtml}</div></td>
                 <td>
-                    <div class="banner-title">${escapeHtml(banner.title)}</div>
-                    ${banner.description ? `<small class="banner-description">${escapeHtml(banner.description.substring(0, 50))}${banner.description.length > 50 ? '...' : ''}</small>` : ''}
+                    <div class="banner-title">${safeTitle}</div>
+                    ${description ? `<small class="banner-description">${safeDescription}${description.length > 50 ? '...' : ''}</small>` : ''}
                 </td>
-                <td class="text-center">${positionBadge}</td>
-                <td class="text-center"><span class="order-badge">${escapeHtml(banner.display_order || 0)}</span></td>
-                <td class="text-center small">${getDateRange(banner.start_date, banner.end_date)}</td>
+                <td class="text-center small">${formatDate(banner.start_date)}</td>
+                <td class="text-center small">${formatDate(banner.end_date)}</td>
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input toggle-active-btn m-0" type="checkbox" data-id="${escapeHtml(banner.id)}" ${banner.is_active ? 'checked' : ''} style="cursor:pointer;">
+                        <input class="form-check-input toggle-active-btn m-0 admin-toggle-pointer" type="checkbox" data-id="${escapeHtml(banner.id)}" ${banner.is_active ? 'checked' : ''}>
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-sm btn-edit-banner" style="color: var(--text-secondary); background:rgba(255,255,255,0.05);" data-banner='${escapeHtml(JSON.stringify(banner))}' title="Sửa"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-banner" style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${escapeHtml(banner.id)}" title="Xóa"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-edit-banner admin-table-action-edit" data-banner='${escapeHtml(JSON.stringify(banner))}' title="Sửa"><i class="bi bi-pencil"></i></button>
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-banner admin-table-action-delete" data-id="${escapeHtml(banner.id)}" title="Xóa"><i class="bi bi-trash"></i></button>
                     </div>
                 </td>
             `;
@@ -135,16 +125,9 @@
     }
 
     function renderPagination(meta) {
-        if (!meta || meta.last_page <= 1) { els.pagination.innerHTML = ''; return; }
-        let html = '<ul class="pagination pagination-sm m-0">';
-        html += meta.current_page > 1 ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>` : `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        for (const i of window.AdminCore.paginationPages(meta)) {
-            html += i === meta.current_page ? `<li class="page-item active"><span class="page-link">${i}</span></li>` : `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-        }
-        html += meta.current_page < meta.last_page ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>` : `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-        html += '</ul>';
-        els.pagination.innerHTML = html;
-        els.pagination.querySelectorAll('a.page-link').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); currentPage = parseInt(a.getAttribute('data-page')); loadData(currentPage); }));
+        window.AdminCore.renderAdminPagination(els.pagination, meta, (page) => {
+            currentPage = page; loadData(page);
+        });
     }
 
     function resetForm() {
@@ -154,6 +137,9 @@
         els.isActive.checked = true;
         els.statusLabel.textContent = 'Đang hoạt động';
         els.image.required = true;
+        selectedFiles = [];
+        els.previewWrap?.replaceChildren();
+        els.previewContainer?.classList.add('d-none');
     }
 
     function formatDateTimeLocal(dateString) {
@@ -172,13 +158,14 @@
     if (els.isActive && els.statusLabel) els.isActive.addEventListener('change', () => { els.statusLabel.textContent = els.isActive.checked ? 'Đang hoạt động' : 'Tạm dừng'; });
 
     function renderPreviews() {
-        els.previewContainer.style.display = 'none';
+        els.previewContainer.classList.add('d-none');
         els.previewWrap.innerHTML = '';
 
         if (selectedFiles.length > 0) {
-            els.previewContainer.style.display = 'block';
+            els.previewContainer.classList.remove('d-none');
             els.previewWrap.style.display = 'flex';
-            els.previewWrap.style.flexWrap = 'wrap';
+            els.previewWrap.style.flexWrap = 'nowrap';
+            els.previewWrap.style.overflowX = 'auto';
             els.previewWrap.style.gap = '10px';
 
             selectedFiles.forEach((file, index) => {
@@ -232,8 +219,19 @@
 
     els.image.addEventListener('change', function () {
         if (this.files && this.files.length > 0) {
+            const incomingCount = this.files.length;
+            const previousCount = selectedFiles.length;
+            const validFiles = Array.from(this.files).filter(file => file.size <= MAX_FILE_SIZE_BYTES);
+            if (validFiles.length !== incomingCount) {
+                window.showAdminToast?.('Ảnh banner không được vượt quá 5MB', 'warning');
+            }
             // Append new files to existing selection
-            Array.from(this.files).forEach(f => selectedFiles.push(f));
+            validFiles.forEach(f => {
+                if (selectedFiles.length < MAX_BANNER_IMAGES) selectedFiles.push(f);
+            });
+            if (previousCount + validFiles.length > MAX_BANNER_IMAGES) {
+                window.showAdminToast?.('Mỗi lần tạo tối đa 5 ảnh banner', 'warning');
+            }
             renderPreviews();
         }
     });
@@ -249,19 +247,19 @@
             els.title.value = banner.title || '';
             els.description.value = banner.description || '';
 
-            // Show single image for edit
+            // Show all current images on one row.
             els.previewWrap.replaceChildren();
-            const preview = document.createElement('img');
-            preview.src = storageImageUrl(banner.image_path);
-            preview.alt = '';
-            preview.style.cssText = 'height:80px;width:120px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);';
-            els.previewWrap.appendChild(preview);
-            els.previewContainer.style.display = 'block';
+            (banner.images || []).forEach((image) => {
+                const preview = document.createElement('img');
+                preview.src = image.image_url || storageImageUrl(image.image_path);
+                preview.alt = '';
+                preview.style.cssText = 'height:80px;width:120px;flex:0 0 auto;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);';
+                els.previewWrap.appendChild(preview);
+            });
+            els.previewContainer.classList.toggle('d-none', !banner.images?.length);
             selectedFiles = [];
 
-            els.position.value = banner.position || '';
             els.link.value = banner.link_url || '';
-            els.order.value = banner.display_order || 0;
             els.startDate.value = formatDateTimeLocal(banner.start_date);
             els.endDate.value = formatDateTimeLocal(banner.end_date);
             els.isActive.checked = banner.is_active === 1 || banner.is_active === true;
@@ -303,18 +301,11 @@
             formData.append('title', els.title.value.trim());
             if (els.description.value.trim()) formData.append('description', els.description.value.trim());
 
-            if (isEdit) {
-                if (els.image.files[0]) formData.append('image_path', els.image.files[0]);
-                else if (selectedFiles.length > 0) formData.append('image_path', selectedFiles[selectedFiles.length - 1]);
-            } else {
-                selectedFiles.forEach(file => {
-                    formData.append('image_paths[]', file);
-                });
-            }
+            selectedFiles.forEach(file => {
+                formData.append('image_paths[]', file);
+            });
 
-            formData.append('position', els.position.value);
             if (els.link.value.trim()) formData.append('link_url', els.link.value.trim());
-            formData.append('display_order', els.order.value || 0);
             if (els.startDate.value) formData.append('start_date', els.startDate.value);
             if (els.endDate.value) formData.append('end_date', els.endDate.value);
             formData.append('is_active', els.isActive.checked ? '1' : '0');
@@ -329,28 +320,22 @@
     }
 
     if (els.searchForm) {
-        els.searchForm.addEventListener('submit', (e) => { e.preventDefault(); currentSearch = els.searchInput.value.trim(); currentStatus = els.statusFilter.value; currentPosition = els.positionFilter.value; currentPage = 1; loadData(currentPage); });
+        els.searchForm.addEventListener('submit', (e) => { e.preventDefault(); currentSearch = els.searchInput.value.trim(); currentStatus = els.statusFilter.value; currentPage = 1; loadData(currentPage); });
         if (els.statusFilter) els.statusFilter.addEventListener('change', () => els.searchForm.dispatchEvent(new Event('submit')));
-        if (els.positionFilter) els.positionFilter.addEventListener('change', () => els.searchForm.dispatchEvent(new Event('submit')));
     }
 
-    async function loadPositions() {
-        try {
-            const res = await window.AdminCore.apiFetch('/api/v1/admin/banners/positions');
-            if (res && res.ok) {
-                const json = await res.json(), positions = json.data || [];
-                const positionLabels = { home_slider: 'Slider trang chủ', sidebar: 'Sidebar', popup: 'Popup', top_bar: 'Thanh trên', footer: 'Footer' };
-                if (els.positionFilter) {
-                    els.positionFilter.innerHTML = '<option value="all">Tất cả vị trí</option>';
-                    positions.forEach(pos => { const opt = document.createElement('option'); opt.value = pos; opt.textContent = positionLabels[pos] || pos; els.positionFilter.appendChild(opt); });
-                }
-                if (els.position) {
-                    els.position.innerHTML = '';
-                    positions.forEach(pos => { const opt = document.createElement('option'); opt.value = pos; opt.textContent = positionLabels[pos] || pos; els.position.appendChild(opt); });
-                }
-            }
-        } catch (error) { console.error('Error loading positions:', error); }
-    }
+    const registerPageLoad = (callback) => {
+        if (typeof window.onAdminPageLoad === 'function') {
+            window.onAdminPageLoad(callback);
+            return;
+        }
 
-    window.onAdminPageLoad(() => { loadPositions(); loadData(1); });
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', callback, { once: true });
+        } else {
+            queueMicrotask(callback);
+        }
+    };
+
+    registerPageLoad(() => loadData(1));
 })();

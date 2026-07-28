@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Events\SeatStatusUpdated;
@@ -455,6 +457,21 @@ class SeatService
 
     private function getBookedSeatIds(int $showtimeId, ?array $seatIds = null, bool $lockForUpdate = false): array
     {
+        // After successful payment, OrderItem item_type changes from Seat::class → Ticket::class
+        // We must check BOTH to correctly mark seats as booked on the seat map
+        $ticketSeatIds = \App\Models\Ticket::query()
+            ->where('showtime_id', $showtimeId)
+            ->when($seatIds, fn ($q) => $q->whereIn('seat_id', $seatIds))
+            ->whereHas('order', fn ($q) => $q
+                ->where('status', self::STATUS_CONFIRMED)
+                ->orWhere('payment_status', 'paid')
+            )
+            ->pluck('seat_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
         $query = OrderItem::query()
             ->where('item_type', Seat::class)
             ->when($seatIds, fn ($query) => $query->whereIn('item_id', $seatIds, 'and', false))
@@ -476,12 +493,14 @@ class SeatService
             $query->lockForUpdate();
         }
 
-        return $query
+        $seatItemIds = $query
             ->pluck('item_id')
             ->map(fn ($id) => (int) $id)
             ->unique()
             ->values()
             ->all();
+
+        return array_values(array_unique(array_merge($ticketSeatIds, $seatItemIds)));
     }
 
     private function isDoubleSeat(string $name, string $slug): bool

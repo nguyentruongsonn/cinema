@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Banner extends Model
 {
@@ -12,10 +13,7 @@ class Banner extends Model
     protected $fillable = [
         'title',
         'description',
-        'image_path',
         'link_url',
-        'position',
-        'display_order',
         'is_active',
         'start_date',
         'end_date',
@@ -26,9 +24,13 @@ class Banner extends Model
         'is_active' => 'boolean',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
-        'display_order' => 'integer',
         'click_count' => 'integer',
     ];
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(BannerImage::class)->orderBy('id');
+    }
 
     /**
      * Scope a query to only include active banners.
@@ -47,20 +49,12 @@ class Banner extends Model
     }
 
     /**
-     * Scope a query to filter by position.
-     */
-    public function scopePosition($query, $position)
-    {
-        return $query->where('position', $position);
-    }
-
-    /**
      * Scope a query to order by display order.
      */
     public function scopeOrdered($query)
     {
-        return $query->orderBy('display_order', 'asc')
-                     ->orderBy('created_at', 'desc');
+        return $query->orderBy('created_at', 'asc')
+                     ->orderBy('id', 'asc');
     }
 
     /**

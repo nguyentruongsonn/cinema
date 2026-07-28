@@ -1,27 +1,45 @@
 @props([
     'id',
-    'labelledBy' => null,
-    'size' => null,
-    'backdrop' => null,
+    'titleId' => null,
+    'title' => '',
+    'icon' => 'bi-pencil-square',
+    'size' => 'modal-lg',
+    'formId' => null,
+    'formAction' => null,
+    'formMethod' => 'POST',
+    'submitLabel' => 'Lưu thay đổi',
+    'submitIcon' => 'bi-check-circle',
+    'submitBtnId' => null,
 ])
 
-<div
-    {{ $attributes->class(['modal', 'fade']) }}
-    id="{{ $id }}"
-    tabindex="-1"
-    @if($labelledBy) aria-labelledby="{{ $labelledBy }}" @endif
-    aria-hidden="true"
-    @if($backdrop) data-bs-backdrop="{{ $backdrop }}" @endif
->
-    <div @class(['modal-dialog', 'modal-dialog-centered', $size => $size])>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" @if($labelledBy) id="{{ $labelledBy }}" @endif>
-                    {{ $title }}
+<div class="modal fade" id="{{ $id }}" tabindex="-1" @if($titleId) aria-labelledby="{{ $titleId }}" @endif aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered {{ $size }}">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title d-flex align-items-center gap-2" @if($titleId) id="{{ $titleId }}" @endif>
+                    <i class="bi {{ $icon }} text-danger"></i>
+                    <span>{{ $title }}</span>
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            {{ $slot }}
+            @if($formId)
+                <form id="{{ $formId }}" @if($formAction) action="{{ $formAction }}" @endif method="{{ $formMethod }}" novalidate>
+            @endif
+                <div class="modal-body">
+                    {{ $slot }}
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Hủy</button>
+                    @if($submitLabel)
+                        <button type="submit" @if($submitBtnId) id="{{ $submitBtnId }}" @endif class="btn btn-danger d-flex align-items-center gap-2">
+                            <i class="bi {{ $submitIcon }}"></i>
+                            <span>{{ $submitLabel }}</span>
+                        </button>
+                    @endif
+                </div>
+            @if($formId)
+                </form>
+            @endif
         </div>
     </div>
 </div>

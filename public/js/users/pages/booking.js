@@ -446,8 +446,8 @@ class BookingManager {
         // Release an uncommitted hold when the page lifecycle ends. A checkout
         // intent that already has a gateway link must keep its hold alive.
         window.addEventListener('pagehide', () => {
-            if (this._pollInterval) clearInterval(this._pollInterval);
-            this._pollInterval = null;
+            // Stop timer + polling + close WebSocket channels cleanly
+            this.destroy();
             const holdId = this.getCurrentHoldId();
             if (!holdId || ['created', 'redirecting'].includes(this.checkoutIntent?.state)) return;
 
@@ -1043,8 +1043,14 @@ class BookingManager {
             this.selectedSeats.add(seatId);
         }
 
-        // Re-render seat map
-        this.renderSeatMap();
+        // Re-render only the clicked seat element to avoid full map DOM reflows
+        const seatEl = this.seatMapContainer?.querySelector(`[data-seat-id="${seatId}"]`);
+        if (seatEl) {
+            const newSeatEl = this.createSeat(seat);
+            seatEl.replaceWith(newSeatEl);
+        } else {
+            this.renderSeatMap();
+        }
 
         // Update summary
         this.updateSummary();
@@ -2291,25 +2297,42 @@ class BookingManager {
                     // Skip seats the current user has selected
                     if (this.selectedSeats.has(freshSeat.id)) return;
 
-                    // If status changed → update in memory + re-render that seat
+                    // If status changed → update in memory + re-render that seat incrementally
                     if (currentSeat.status !== freshSeat.status) {
                         console.log(`[Polling] Seat ${freshSeat.id} changed: ${currentSeat.status} → ${freshSeat.status}`);
-                        currentSeat.status = freshSeat.status;
-                        currentSeat.is_locked = freshSeat.is_locked;
-                        currentSeat.is_available = freshSeat.is_available;
-                        changed = true;
+                        this.applyRealtimeSeatStatus(freshSeat.id, freshSeat.status);
                     }
                 });
-
-                if (changed) {
-                    this.renderSeatMap();
-                }
             } catch (e) {
                 // Silent fail — polling is best-effort
             } finally {
                 this._pollInFlight = false;
             }
         }, 5000); // Poll every 5 seconds
+    }
+
+    destroy() {
+        this.stopTimer();
+        if (this._pollInterval) {
+            clearInterval(this._pollInterval);
+            this._pollInterval = null;
+        }
+        // Unsubscribe from Reverb channels to prevent memory/connection leaks
+        const showtimeId = this.config.showtimeId;
+        if (window.Echo && showtimeId) {
+            try {
+                window.Echo.leave(`showtime.${showtimeId}`);
+            } catch (e) {
+                console.warn('[Booking] Error leaving showtime channel:', e);
+            }
+        }
+        if (window.Echo && this.currentOrderCode) {
+            try {
+                window.Echo.leave(`order.${this.currentOrderCode}`);
+            } catch (e) {
+                console.warn('[Booking] Error leaving order channel:', e);
+            }
+        }
     }
 
     createSeatMapSkeleton() {

@@ -114,22 +114,26 @@
 
             const priceFmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(prod.price);
             const imageUrl = safeImageUrl(prod.image_url);
+            const iconClass = prod.type === 'drink' ? 'bi-cup-straw' : (prod.type === 'food' ? 'bi-egg-fried' : 'bi-box-seam');
+            const imageHtml = imageUrl
+                ? `<img src="${escapeHtml(imageUrl)}" alt="Image" loading="lazy" onerror="this.outerHTML='<i class=\'bi ${iconClass} text-white-50 fs-3\'></i>'">`
+                : `<i class="bi ${iconClass} text-white-50 fs-3"></i>`;
 
             let typeHtml = '';
-            if (prod.type === 'combo') typeHtml = '<span class="badge" style="background:rgba(236,72,153,0.12);color:#ec4899;">Combo</span>';
-            else if (prod.type === 'food') typeHtml = '<span class="badge" style="background:rgba(245,158,11,0.12);color:#f59e0b;">Đồ ăn</span>';
-            else if (prod.type === 'drink') typeHtml = '<span class="badge" style="background:rgba(96,165,250,0.12);color:#60a5fa;">Đồ uống</span>';
+            if (prod.type === 'combo') typeHtml = '<span class="badge admin-badge-combo">Combo</span>';
+            else if (prod.type === 'food') typeHtml = '<span class="badge admin-badge-food">Đồ ăn</span>';
+            else if (prod.type === 'drink') typeHtml = '<span class="badge admin-badge-blue">Đồ uống</span>';
 
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td class="text-center">
-                    ${imageUrl
-                        ? `<img src="${escapeHtml(imageUrl)}" alt="Image" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: rgba(255,255,255,0.1);">`
-                        : `<div style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 4px; display:flex; align-items:center; justify-content:center;"><i class="bi bi-image text-white-50"></i></div>`}
+                    <div class="movie-poster-container admin-media-thumb">
+                        ${imageHtml}
+                    </div>
                 </td>
                 <td>
                     <div class="fw-medium text-white fs-6">${escapeHtml(prod.name)}</div>
-                    ${prod.description ? `<div class="small text-white-50 text-truncate mt-1" style="max-width: 200px;">${escapeHtml(prod.description)}</div>` : ''}
+                    ${prod.description ? `<div class="small text-white-50 text-truncate mt-1 admin-text-truncate-200">${escapeHtml(prod.description)}</div>` : ''}
                 </td>
                 <td>
                     <div>${typeHtml}</div>
@@ -140,20 +144,20 @@
                 </td>
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input toggle-active-btn m-0" type="checkbox" role="switch"
-                            data-id="${escapeHtml(prod.id)}" ${prod.status ? 'checked' : ''} style="cursor:pointer;" title="Bật/Tắt trạng thái">
+                        <input class="form-check-input toggle-active-btn m-0 admin-toggle-pointer" type="checkbox" role="switch"
+                            data-id="${escapeHtml(prod.id)}" ${prod.status ? 'checked' : ''} title="Bật/Tắt trạng thái">
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-edit-product"
-                            style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
+                        <button type="button" class="btn btn-sm btn-edit-product admin-table-action-edit"
+
                             data-product='${escapeHtml(JSON.stringify(prod))}'
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-product"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${escapeHtml(prod.id)}" title="Xóa">
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-product admin-table-action-delete"
+                            data-id="${escapeHtml(prod.id)}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -164,40 +168,8 @@
     }
 
     function renderPagination(meta) {
-        if (!meta || meta.last_page <= 1) {
-            els.pagination.innerHTML = '';
-            return;
-        }
-
-        let html = '<ul class="pagination pagination-sm m-0">';
-        if (meta.current_page > 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        }
-
-        for (const i of window.AdminCore.paginationPages(meta)) {
-            if (i === meta.current_page) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-            } else {
-                html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-            }
-        }
-
-        if (meta.current_page < meta.last_page) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-        }
-        html += '</ul>';
-
-        els.pagination.innerHTML = html;
-        els.pagination.querySelectorAll('a.page-link').forEach(a => {
-            a.addEventListener('click', (e) => {
-                e.preventDefault();
-                currentPage = parseInt(a.getAttribute('data-page'));
-                loadData(currentPage);
-            });
+        window.AdminCore.renderAdminPagination(els.pagination, meta, (page) => {
+            currentPage = page; loadData(page);
         });
     }
 

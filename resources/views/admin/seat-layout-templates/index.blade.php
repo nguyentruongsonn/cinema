@@ -8,17 +8,26 @@
 
 {{-- ── Dòng 1 + Dòng 2: Header & Filter Bar ────────────────────────── --}}
 <div class="admin-filter-container">
-    <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold flex-no-shrink">Danh sách mẫu sơ đồ ghế</h5>
+    <div class="admin-filter-bar">
+        <div class="admin-filter-fields">
+            <div class="admin-filter-group auto-width">
+                <select id="statusFilter" class="admin-filter-select filter-select-md">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="1">Đã xuất bản</option>
+                    <option value="0">Bản nháp</option>
+                </select>
+            </div>
+        </div>
 
-        <form id="searchForm" class="flex-grow-1 search-container-lg">
+        <form id="searchForm" class="admin-filter-search">
+            {{-- Search --}}
             <div class="input-group">
                 <input
-                    type="text"
-                    id="search"
-                    name="search"
-                    class="admin-filter-input"
-                    placeholder="Tên mẫu sơ đồ ghế..."
+                type="text"
+                id="search"
+                name="search"
+                class="admin-filter-input"
+                placeholder="Tên mẫu sơ đồ ghế..."
                 >
                 <button class="admin-filter-btn search-btn-rounded-right" type="submit" aria-label="Tìm kiếm">
                     <i class="bi bi-search"></i>
@@ -26,33 +35,13 @@
             </div>
         </form>
 
-        <button type="button" id="btnOpenCreateSeatLayoutTemplate" class="admin-action-btn ms-auto">
+        <button type="button" id="btnOpenCreateSeatLayoutTemplate" class="admin-action-btn admin-filter-primary-action">
             <i class="bi bi-plus-lg"></i> Tạo mẫu sơ đồ ghế
         </button>
     </div>
 </div>
-
 {{-- ── Dòng 3: Tabs + Table ─────────────────────────────────────────── --}}
 <div class="admin-table-container">
-    {{-- Tabs: client-side Bootstrap --}}
-    <ul class="nav nav-tabs combo-tabs mb-4" id="sltTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-all" data-status="all" data-bs-toggle="tab" data-bs-target="#pane-table" type="button" role="tab" aria-selected="true">
-                Tất cả <span class="badge bg-secondary ms-1" id="count-all">0</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-published" data-status="published" data-bs-toggle="tab" data-bs-target="#pane-table" type="button" role="tab" aria-selected="false">
-                Đã xuất bản <span class="badge bg-secondary ms-1" id="count-published">0</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-draft" data-status="draft" data-bs-toggle="tab" data-bs-target="#pane-table" type="button" role="tab" aria-selected="false">
-                Bản nháp <span class="badge bg-secondary ms-1" id="count-draft">0</span>
-            </button>
-        </li>
-    </ul>
-
     <div class="tab-content" id="sltTabContent">
         <div class="tab-pane fade show active" id="pane-table" role="tabpanel">
             <div class="table-responsive">
@@ -68,52 +57,12 @@
                         </tr>
                     </thead>
                     <tbody id="templatesTableBody">
-                        <!-- Skeleton Loading Rows -->
-                        <tr class="skeleton-row">
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                        </tr>
-                        <tr class="skeleton-row">
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 60%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                        </tr>
-                        <tr class="skeleton-row">
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 68%;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                        </tr>
-                        <tr class="skeleton-row">
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 55%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 72%;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                        </tr>
-                        <tr class="skeleton-row">
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 68%;"></div></td>
-                            <td><div class="admin-skeleton admin-skeleton-text" style="width: 77%;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                            <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                        </tr>
+                        <x-admin.skeleton-table cols="6" rows="5" :hasImage="false" />
                     </tbody>
                 </table>
             </div>
 
-            <div class="d-flex justify-content-end mt-4 pt-3" style="border-top: 1px solid var(--border-color);" id="paginationContainer">
+            <div class="d-flex justify-content-center mt-4 pt-3" id="paginationContainer">
             </div>
         </div>
     </div>

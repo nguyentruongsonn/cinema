@@ -46,11 +46,16 @@
     gap: 10px;
 }
 .btn-scroll {
+    align-items: center;
     background: transparent;
     border: none;
     color: #888;
+    display: inline-flex;
     font-size: 1.2rem;
     cursor: pointer;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
     transition: color 0.2s;
 }
 .btn-scroll:hover {

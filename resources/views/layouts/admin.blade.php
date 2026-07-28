@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="view-transition" content="same-origin">
+    <meta name="turbo-cache-control" content="no-preview">
     <title>@yield('title', 'Admin Dashboard') - Cinema Premium</title>
 
     <!-- Google Fonts -->
@@ -107,7 +107,7 @@
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('admin.combos.stats') }}" class="nav-link {{ request()->routeIs('admin.combos.stats') ? 'active' : '' }}">
-                                    Thống kê combo
+                                    Thống kê sản phẩm
                                 </a>
                             </li>
                         </ul>
@@ -266,7 +266,7 @@
             </header>
 
             <!-- Page Content -->
-            <div class="container-fluid px-4 pb-4 flex-grow-1">
+            <div id="adminPageContent" class="admin-page-content container-fluid px-4 pb-4 flex-grow-1">
                 @yield('content')
             </div>
         </main>
@@ -276,7 +276,7 @@
     <div id="adminSidebarOverlay" class="sidebar-overlay d-lg-none" data-turbo-permanent></div>
 
     <!-- Toast Container -->
-    <div id="adminToastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;" data-turbo-permanent></div>
+    <div id="adminToastContainer" class="admin-toast-container" data-turbo-permanent></div>
 
     <!-- Ticket Scanner Modal -->
     <div class="modal fade" id="ticketScannerModal" tabindex="-1" aria-labelledby="ticketScannerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-turbo-permanent>

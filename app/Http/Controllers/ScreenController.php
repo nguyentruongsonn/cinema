@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ScreenResource;
@@ -88,10 +90,10 @@ class ScreenController extends Controller
     /**
      * Display the specified screen.
      */
-    public function show(int $id): JsonResponse
+    public function show($id): JsonResponse
     {
         try {
-            $screen = $this->screenService->getById($id);
+            $screen = $this->screenService->getById((int) $id);
             $this->authorize('view', $screen);
 
             return $this->successResponse(
@@ -106,16 +108,16 @@ class ScreenController extends Controller
     /**
      * Update the specified screen.
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
         try {
-            $screen = Screen::findOrFail($id);
+            $screen = Screen::findOrFail((int) $id);
             $this->authorize('update', $screen);
 
             // Check for active/future showtimes if layout or capacity changes
             if ($request->hasAny(['capacity', 'seat_layout_template_id'])) {
                 $hasFutureShowtimes = $screen->showtimes()
-                    ->where('start_time', '>', now())
+                    ->where('scheduled_at', '>', now())
                     ->exists();
 
                 if ($hasFutureShowtimes) {
@@ -142,7 +144,7 @@ class ScreenController extends Controller
                 $validated['status'] = $validated['status'] === 'active' ? 1 : 0;
             }
 
-            $screen = $this->screenService->update($id, $validated);
+            $screen = $this->screenService->update((int) $id, $validated);
             
             return $this->successResponse(
                 new ScreenResource($screen),
@@ -162,10 +164,10 @@ class ScreenController extends Controller
     /**
      * Remove the specified screen.
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy($id): JsonResponse
     {
         try {
-            $screen = Screen::findOrFail($id);
+            $screen = Screen::findOrFail((int) $id);
             $this->authorize('delete', $screen);
 
             // Prevent deletion if screen has any showtimes (past or future)
@@ -176,7 +178,7 @@ class ScreenController extends Controller
                 );
             }
 
-            $this->screenService->delete($id);
+            $this->screenService->delete((int) $id);
             
             return $this->successResponse(null, 'Screen deleted successfully');
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {

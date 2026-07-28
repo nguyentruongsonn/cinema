@@ -4,6 +4,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ContentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -27,6 +28,8 @@ Route::get('/payment/{order}', [PaymentController::class, 'index'])->name('payme
 // Profile routes - auth handled by SSR (@guest/@auth directives in views)
 // AuthenticateFromCookie middleware auto-authenticates from JWT cookie
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+Route::get('/posts', [ContentController::class, 'postsPage'])->name('posts.index');
+Route::get('/posts/{post:slug}', [ContentController::class, 'postPage'])->name('posts.show');
 
 
 // PayOS Payment Gateway Callbacks

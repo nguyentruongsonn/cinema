@@ -23,6 +23,7 @@ class AdminOrdersManager {
         
         this.orders = [];
         this.lastPage = 1;
+        this.theaterOptions = [];
         this.loadRequest = null;
         this.loadRequestId = 0;
         this.detailRequest = null;
@@ -78,7 +79,16 @@ class AdminOrdersManager {
         // Branch filter cascade
         this.els.branchFilter?.addEventListener('change', (e) => {
             this.filters.branch_id = e.target.value;
-            this.loadTheaters(e.target.value);
+            this.filters.theater_id = '';
+            this.populateTheaterFilter(e.target.value);
+            this.currentPage = 1;
+            this.loadOrders();
+        });
+
+        this.els.theaterFilter?.addEventListener('change', (e) => {
+            this.filters.theater_id = e.target.value;
+            this.currentPage = 1;
+            this.loadOrders();
         });
         
         // Apply filters button
@@ -105,17 +115,20 @@ class AdminOrdersManager {
     
     async loadFiltersData() {
         try {
-            // Load branches
-            const branchesRes = await this.apiRequest('/branches');
-            if (branchesRes?.success) {
-                const branches = branchesRes.data || [];
-                this.populateSelect(this.els.branchFilter, branches, 'id', 'name');
-            }
-            
-            // Load movies
-            const moviesRes = await this.apiRequest('/movies');
+            const [branchesRes, theatersRes, moviesRes] = await Promise.all([
+                this.apiRequest('/admin/branches?options=1', { cacheTtl: 300000 }),
+                this.apiRequest('/admin/theaters?options=1', { cacheTtl: 300000 }),
+                this.apiRequest('/movies?per_page=100&status=all', { cacheTtl: 300000 }),
+            ]);
+
+            const branches = branchesRes?.data || [];
+            this.populateSelect(this.els.branchFilter, branches, 'id', 'name');
+
+            this.theaterOptions = Array.isArray(theatersRes?.data) ? theatersRes.data : (theatersRes?.data?.data || []);
+            this.populateTheaterFilter(this.filters.branch_id);
+
             if (moviesRes?.success) {
-                const movies = moviesRes.data || [];
+                const movies = Array.isArray(moviesRes.data) ? moviesRes.data : (moviesRes.data?.data || []);
                 this.populateSelect(this.els.movieFilter, movies, 'id', 'title');
             }
         } catch (err) {
@@ -123,21 +136,12 @@ class AdminOrdersManager {
         }
     }
     
-    async loadTheaters(branchId) {
-        if (!branchId) {
-            this.els.theaterFilter.innerHTML = '<option value="">Tất cả rạp</option>';
-            return;
-        }
-        
-        try {
-            const res = await this.apiRequest(`/theaters?branch_id=${branchId}`);
-            if (res?.success) {
-                const theaters = res.data || [];
-                this.populateSelect(this.els.theaterFilter, theaters, 'id', 'name');
-            }
-        } catch (err) {
-            console.error('[Orders] Load theaters error:', err);
-        }
+    populateTheaterFilter(branchId = '') {
+        const theaters = branchId
+            ? this.theaterOptions.filter(theater => String(theater.branch_id ?? theater.branch?.id ?? '') === String(branchId))
+            : this.theaterOptions;
+
+        this.populateSelect(this.els.theaterFilter, theaters, 'id', 'name');
     }
     
     populateSelect(select, items, valueKey, labelKey) {
@@ -186,6 +190,7 @@ class AdminOrdersManager {
             this.orders = result.data.data || [];
             this.currentPage = result.data.meta?.current_page || 1;
             this.lastPage = result.data.meta?.last_page || 1;
+            this.totalOrders = result.data.meta?.total || 0;
             
             this.renderOrders();
             this.renderPagination();
@@ -215,11 +220,6 @@ class AdminOrdersManager {
         this.els.grid.innerHTML = this.orders.map(order => this.buildOrderCard(order)).join('');
         this.els.grid.querySelectorAll('[data-order-id]').forEach((button) => {
             button.addEventListener('click', () => this.showOrderDetail(button.dataset.orderId));
-        });
-        this.els.grid.querySelectorAll('img').forEach((image) => {
-            image.addEventListener('error', () => {
-                image.src = '/images/placeholder.jpg';
-            }, { once: true });
         });
     }
     
@@ -253,7 +253,9 @@ class AdminOrdersManager {
         return `
         <article class="ticket-card">
             <div class="ticket-poster">
-                <img class="ticket-poster-img" src="${this.esc(poster)}" alt="${title}" loading="lazy">
+                ${poster
+                    ? `<img class="ticket-poster-img" src="${this.esc(poster)}" alt="${title}" loading="lazy" onerror="this.outerHTML='<div class=\'movie-poster-container text-center d-flex align-items-center justify-content-center w-100 h-100\'><i class=\'bi bi-film text-white-50 fs-2\'></i></div>'">`
+                    : `<div class="movie-poster-container text-center d-flex align-items-center justify-content-center w-100 h-100"><i class="bi bi-film text-white-50 fs-2"></i></div>`}
                 ${rating ? `<div class="ticket-formats"><span class="ticket-format-badge">${this.esc(rating)}</span></div>` : ''}
             </div>
             
@@ -325,6 +327,77 @@ class AdminOrdersManager {
         }
     }
     
+    getInitials(name) {
+        if (!name) return 'KH';
+        const parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        return name.substring(0, 2).toUpperCase();
+    }
+
+    getTicketItemsList(order) {
+        if (Array.isArray(order.tickets) && order.tickets.length > 0) {
+            return order.tickets.map(t => {
+                const seat = t.seat || {};
+                const seatType = seat.seat_type?.name || 'Thường';
+                const seatLabel = seat.label || (seat.row && seat.number ? `${seat.row}${seat.number}` : 'N/A');
+                return {
+                    seatLabel,
+                    seatType,
+                    ticketCode: t.ticket_code || 'N/A',
+                    unitPrice: t.unit_price || 0,
+                    status: t.status || 'confirmed'
+                };
+            });
+        }
+        const items = Array.isArray(order?.items) ? order.items : [];
+        return items.filter(item => {
+            const type = String(item?.type || item?.item_type || '').toLowerCase();
+            return type.includes('seat') || type.includes('ticket') || Boolean(item?.metadata?.seat_label);
+        }).map(item => {
+            const metadata = item.metadata || {};
+            return {
+                seatLabel: metadata.seat_label || metadata.seat_number || 'N/A',
+                seatType: metadata.seat_type || metadata.seat_type_name || 'Thường',
+                ticketCode: metadata.ticket_code || item.ticket_code || 'N/A',
+                unitPrice: item.unit_price || 0,
+                status: 'confirmed'
+            };
+        });
+    }
+
+    getFoodComboItemsList(order) {
+        const items = Array.isArray(order?.items) ? order.items : [];
+        return items.filter(item => {
+            const type = String(item?.type || item?.item_type || '').toLowerCase();
+            return type.includes('combo') || type.includes('food') || type.includes('product') || Boolean(item?.metadata?.combo_name || item?.metadata?.product_name);
+        }).map(item => {
+            const metadata = item.metadata || {};
+            return {
+                name: metadata.combo_name || metadata.product_name || item.name || 'Sản phẩm đi kèm',
+                quantity: item.quantity || 1,
+                unitPrice: item.unit_price || 0,
+                totalPrice: item.total_price || ((item.unit_price || 0) * (item.quantity || 1)) || 0
+            };
+        });
+    }
+
+    formatCGVDate(datetime) {
+        if (!datetime) return 'N/A';
+        const d = new Date(datetime);
+        if (isNaN(d.getTime())) return 'N/A';
+        const days = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+        const dayName = days[d.getDay()];
+        const dateStr = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return `${dayName}, ${dateStr}`;
+    }
+
+    formatCGVTime(datetime) {
+        if (!datetime) return 'N/A';
+        const d = new Date(datetime);
+        if (isNaN(d.getTime())) return 'N/A';
+        return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    }
+
     renderOrderModal(order) {
         if (!this.els.modalBody) return;
         
@@ -333,73 +406,213 @@ class AdminOrdersManager {
         const movie = showtime.movie || {};
         const screen = showtime.screen || {};
         const theater = screen.theater || {};
-        const { label: statusLabel, cls } = this.getStatusMeta(this.normalizeStatus(order));
+        const normalizedStatus = this.normalizeStatus(order);
+        const { label: statusLabel, badge: statusBadgeClass } = this.getStatusMeta(normalizedStatus);
         
-        // Build tickets list
-        const ticketsHtml = this.getTicketItems(order).map((item) => {
-            const metadata = item.metadata || {};
-            const seatLabel = metadata.seat_label || metadata.seat_number || 'N/A';
-            const seatType = metadata.seat_type || metadata.seat_type_name || 'Thường';
-            const ticketCode = metadata.ticket_code || item.ticket_code || 'N/A';
+        const tickets = this.getTicketItemsList(order);
+        const foodCombos = this.getFoodComboItemsList(order);
+        
+        const modalPosterUrl = this.safeImageUrl(movie.poster_url);
+        const modalPosterHtml = modalPosterUrl
+            ? `<img src="${this.esc(modalPosterUrl)}" alt="${this.esc(movie.title || '')}" loading="lazy" onerror="this.style.display='none'">`
+            : '';
+        
+        // Build Refined Table Rows
+        const ticketsTableRows = tickets.map((t) => {
+            const price = t.unitPrice || (order.total_amount && tickets.length ? Math.round(order.total_amount / tickets.length) : 0);
             return `
-            <div class="ticket-modal-row">
-                <span>Ghế ${this.esc(seatLabel)}</span>
-                <span>${this.esc(seatType)} · ${this.esc(ticketCode)}</span>
-            </div>`;
+            <tr>
+                <td class="text-start align-middle">
+                    <div class="item-title-text">Vé xem phim: <strong>Ghế ${this.esc(t.seatLabel)}</strong></div>
+                    <div class="item-subtitle-text">
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle px-1.5 py-0.5 me-1" style="font-size: 0.65rem;">${this.esc(t.seatType)}</span>
+                        <span>Mã vé: <code>${this.esc(t.ticketCode)}</code></span>
+                    </div>
+                </td>
+                <td class="text-center align-middle font-monospace fw-bold">1</td>
+                <td class="text-end align-middle font-monospace text-muted">${this.formatCurrency(price)}</td>
+                <td class="text-end align-middle font-monospace fw-bold">${this.formatCurrency(price)}</td>
+            </tr>`;
         }).join('');
-        
+
+        const combosTableRows = foodCombos.map(f => {
+            const unit = f.unitPrice || (f.quantity ? Math.round(f.totalPrice / f.quantity) : f.totalPrice);
+            return `
+            <tr>
+                <td class="text-start align-middle">
+                    <div class="item-title-text">${this.esc(f.name)}</div>
+                    <div class="item-subtitle-text text-muted">Bắp nước & Combo tại rạp</div>
+                </td>
+                <td class="text-center align-middle font-monospace fw-bold">${f.quantity}</td>
+                <td class="text-end align-middle font-monospace text-muted">${this.formatCurrency(unit)}</td>
+                <td class="text-end align-middle font-monospace fw-bold">${this.formatCurrency(f.totalPrice)}</td>
+            </tr>`;
+        }).join('');
+
+        const subtotal = (order.total_amount || 0);
+        const dateFormatted = this.formatCGVDate(showtime.scheduled_at);
+        const timeFormatted = this.formatCGVTime(showtime.scheduled_at);
+
         this.els.modalBody.innerHTML = `
-        <div class="ticket-modal-hero">
-            <img src="${this.esc(this.safeImageUrl(movie.poster_url))}"
-                 alt="${this.esc(movie.title || '')}"
-                 loading="lazy">
-            <div class="ticket-modal-hero-info">
-                <span class="badge ${cls} mb-2">${statusLabel}</span>
-                <h2>${this.esc(movie.title || 'Chưa rõ')}</h2>
-                ${movie.age_rating ? `<span class="ticket-format-badge">${this.esc(movie.age_rating)}</span>` : ''}
-                ${movie.duration ? `<small class="text-muted ms-2">${this.esc(movie.duration)} phút</small>` : ''}
+        <div class="admin-order-modal-wrapper">
+            <!-- 1. Header Bar -->
+            <div class="admin-order-header">
+                <div class="admin-order-title-section">
+                    <div class="d-flex align-items-center gap-2">
+                        <h2 class="admin-order-title">Chi tiết đơn hàng #${this.esc(order.code || 'N/A')}</h2>
+                        <button type="button" class="btn-copy-order-code" id="btnCopyOrderCode" title="Sao chép mã đơn hàng">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                    </div>
+                    <span class="admin-order-date">Thời gian đặt: ${this.formatDateTime(order.created_at)}</span>
+                </div>
+                <div class="admin-order-actions">
+                    <span class="badge ${statusBadgeClass} align-middle text-uppercase px-2.5 py-1.5" style="font-size:0.75rem;">
+                        ${statusLabel}
+                    </span>
+                    <button type="button" class="btn-admin-order-print" id="btnPrintOrderInvoice" title="In vé / hóa đơn">
+                        <i class="bi bi-printer me-1"></i> In Hóa Đơn
+                    </button>
+                    <button type="button" class="btn-admin-order-close" data-close-order-modal aria-label="Đóng">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
             </div>
-        </div>
-        
-        <div class="ticket-modal-grid">
-            <div class="ticket-modal-section">
-                <h6 class="ticket-modal-section-title"><i class="bi bi-person"></i> Thông tin khách hàng</h6>
-                <div class="ticket-modal-row"><span>Tên</span><strong>${this.esc(user.name || 'N/A')}</strong></div>
-                <div class="ticket-modal-row"><span>Email</span><strong>${this.esc(user.email || 'N/A')}</strong></div>
-                ${user.phone ? `<div class="ticket-modal-row"><span>SĐT</span><strong>${this.esc(user.phone)}</strong></div>` : ''}
+
+            <!-- 2. Main Grid Layout -->
+            <div class="admin-order-grid">
+                <!-- Left Column: Itemized list & Payment breakdown -->
+                <div class="admin-order-main-col">
+                    <!-- Table Card -->
+                    <div class="admin-order-card">
+                        <div class="admin-order-card-header">Chi tiết Vé & Combo dịch vụ</div>
+                        <div class="table-responsive">
+                            <table class="admin-order-table">
+                                <thead>
+                                    <tr>
+                                        <th class="text-start">Chi tiết mô tả</th>
+                                        <th class="text-center" style="width: 60px;">SL</th>
+                                        <th class="text-end" style="width: 120px;">Đơn giá</th>
+                                        <th class="text-end" style="width: 130px;">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${ticketsTableRows || `<tr><td colspan="4" class="text-center text-muted py-3">Không có chi tiết vé</td></tr>`}
+                                    ${combosTableRows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Payment summary card -->
+                    <div class="admin-order-card mt-3">
+                        <div class="admin-order-card-header">Chi tiết thanh toán</div>
+                        <div class="admin-order-summary-list">
+                            <div class="admin-order-summary-item">
+                                <span class="label">Tạm tính</span>
+                                <span class="value font-monospace">${this.formatCurrency(subtotal)}</span>
+                            </div>
+                            <div class="admin-order-summary-item">
+                                <span class="label">Giảm giá / Ưu đãi</span>
+                                <span class="value font-monospace text-success">-0 ₫</span>
+                            </div>
+                            <div class="admin-order-summary-divider"></div>
+                            <div class="admin-order-summary-item total">
+                                <span class="label">Tổng tiền thanh toán</span>
+                                <span class="value font-monospace highlight-price">${this.formatCurrency(subtotal)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Sidebar metadata -->
+                <div class="admin-order-side-col">
+                    <!-- Customer Profile Card -->
+                    <div class="admin-order-card">
+                        <div class="admin-order-card-header"><i class="bi bi-person me-1.5"></i>Khách hàng</div>
+                        <div class="admin-order-detail-list">
+                            <div class="detail-item">
+                                <span class="label">Họ tên</span>
+                                <strong class="value text-white">${this.esc(user.name || 'Khách vãng lai')}</strong>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Email</span>
+                                <span class="value">${this.esc(user.email || 'N/A')}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Số điện thoại</span>
+                                <span class="value">${this.esc(user.phone || 'N/A')}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Screening Info Card -->
+                    <div class="admin-order-card mt-3">
+                        <div class="admin-order-card-header"><i class="bi bi-film me-1.5"></i>Thông tin Suất chiếu</div>
+                        <div class="admin-order-detail-list">
+                            <div class="detail-item">
+                                <span class="label">Phim</span>
+                                <strong class="value text-white d-flex align-items-center gap-1.5 flex-wrap">
+                                    ${movie.age_rating ? `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-1.5 py-0.5" style="font-size:0.65rem;">${this.esc(movie.age_rating)}</span>` : ''}
+                                    ${this.esc(movie.title || 'N/A')}
+                                </strong>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Thời lượng</span>
+                                <span class="value">${movie.duration ? `${this.esc(movie.duration)} phút` : 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Rạp / Phòng</span>
+                                <span class="value">${this.esc(theater.name || 'N/A')} · ${this.esc(screen.name || 'N/A')}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Thời gian</span>
+                                <strong class="value text-warning">${dateFormatted} · ${timeFormatted}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Metadata Card -->
+                    <div class="admin-order-card mt-3">
+                        <div class="admin-order-card-header"><i class="bi bi-credit-card me-1.5"></i>Giao dịch</div>
+                        <div class="admin-order-detail-list">
+                            <div class="detail-item">
+                                <span class="label">Cổng thanh toán</span>
+                                <span class="value text-info fw-semibold">${this.esc(order.payment_method || 'Online PayOS')}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Trạng thái giao dịch</span>
+                                <span class="value text-white">${statusLabel}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Ngày thanh toán</span>
+                                <span class="value">${order.paid_at ? this.formatDateTime(order.paid_at) : 'Chưa ghi nhận'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <div class="ticket-modal-section">
-                <h6 class="ticket-modal-section-title"><i class="bi bi-film"></i> Suất chiếu</h6>
-                <div class="ticket-modal-row"><span>Thời gian</span><strong>${this.formatDateTime(showtime.scheduled_at)}</strong></div>
-                <div class="ticket-modal-row"><span>Rạp</span><strong>${this.esc(theater.name || 'N/A')}</strong></div>
-                <div class="ticket-modal-row"><span>Phòng</span><strong>${this.esc(screen.name || 'N/A')}</strong></div>
-            </div>
-            
-            <div class="ticket-modal-section">
-                <h6 class="ticket-modal-section-title"><i class="bi bi-ticket-perforated"></i> Vé đã đặt</h6>
-                ${ticketsHtml}
-            </div>
-            
-            <div class="ticket-modal-section">
-                <h6 class="ticket-modal-section-title"><i class="bi bi-receipt"></i> Thanh toán</h6>
-                <div class="ticket-modal-row"><span>Mã đơn</span><code>${this.esc(order.code || 'N/A')}</code></div>
-                <div class="ticket-modal-row"><span>Tổng tiền</span><strong class="text-danger">${this.formatCurrency(order.total_amount || 0)}</strong></div>
-                <div class="ticket-modal-row"><span>Ngày đặt</span><span>${this.formatDateTime(order.created_at)}</span></div>
-                ${order.payment_method ? `<div class="ticket-modal-row"><span>Phương thức</span><span>${this.esc(order.payment_method)}</span></div>` : ''}
-            </div>
-        </div>
-        
-        <div class="ticket-modal-footer">
-            <button class="ticket-primary-btn" type="button" data-close-order-modal>
-                Đóng
-            </button>
         </div>`;
-        this.els.modalBody.querySelector('[data-close-order-modal]')?.addEventListener('click', () => this.closeModal());
-        this.els.modalBody.querySelectorAll('img').forEach((image) => {
-            image.addEventListener('error', () => {
-                image.src = '/images/placeholder.jpg';
-            }, { once: true });
+
+        // Bind copy button event
+        this.els.modalBody.querySelector('#btnCopyOrderCode')?.addEventListener('click', () => {
+            if (order.code) {
+                navigator.clipboard.writeText(order.code).then(() => {
+                    this.showToast('Đã sao chép mã đơn hàng!', 'success');
+                }).catch(() => {
+                    this.showToast('Mã đơn: ' + order.code, 'info');
+                });
+            }
+        });
+
+        // Bind print button event
+        this.els.modalBody.querySelector('#btnPrintOrderInvoice')?.addEventListener('click', () => {
+            window.print();
+        });
+
+        // Bind close button
+        this.els.modalBody.querySelectorAll('[data-close-order-modal]').forEach(btn => {
+            btn.addEventListener('click', () => this.closeModal());
         });
     }
     
@@ -415,51 +628,15 @@ class AdminOrdersManager {
     // ─── Pagination ──────────────────────────────────────────────────────────
     
     renderPagination() {
-        if (!this.els.pagination || this.lastPage <= 1) {
-            if (this.els.pagination) this.els.pagination.innerHTML = '';
-            return;
-        }
-        
-        const pages = [];
-        const maxPages = 7;
-        let start = Math.max(1, this.currentPage - 3);
-        let end = Math.min(this.lastPage, start + maxPages - 1);
-        
-        if (end - start < maxPages - 1) {
-            start = Math.max(1, end - maxPages + 1);
-        }
-        
-        if (start > 1) pages.push(1, '...');
-        for (let i = start; i <= end; i++) pages.push(i);
-        if (end < this.lastPage) pages.push('...', this.lastPage);
-        
-        this.els.pagination.innerHTML = `
-        <nav>
-            <ul class="pagination justify-content-center">
-                <li class="page-item ${this.currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" data-page="${this.currentPage - 1}">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                </li>
-                ${pages.map(p => p === '...' 
-                    ? '<li class="page-item disabled"><span class="page-link">...</span></li>'
-                    : `<li class="page-item ${p === this.currentPage ? 'active' : ''}">
-                         <a class="page-link" href="#" data-page="${p}">${p}</a>
-                       </li>`
-                ).join('')}
-                <li class="page-item ${this.currentPage === this.lastPage ? 'disabled' : ''}">
-                    <a class="page-link" href="#" data-page="${this.currentPage + 1}">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>`;
-        this.els.pagination.querySelectorAll('[data-page]').forEach((link) => {
-            link.addEventListener('click', (event) => {
-                event.preventDefault();
-                const page = Number(link.dataset.page);
-                if (Number.isInteger(page) && page >= 1 && page <= this.lastPage) this.loadOrders(page);
-            });
+        window.AdminCore.renderAdminPagination(this.els.pagination, {
+            current_page: this.currentPage,
+            last_page: this.lastPage,
+            total: this.totalOrders || 0,
+            per_page: this.perPage || 10,
+        }, (page) => {
+            this.currentPage = page;
+            this.loadOrders(page);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
     
@@ -558,26 +735,19 @@ class AdminOrdersManager {
     }
 
     safeImageUrl(value) {
-        const candidate = String(value || '');
-        if (/^\/[A-Za-z0-9_./?=&%-]*$/.test(candidate)) return candidate;
+        const candidate = String(value || '').trim();
+        if (/^\/(?!\/)[A-Za-z0-9_./?=&%-]+$/.test(candidate) && !candidate.includes('..')) return candidate;
         if (/^https?:\/\/[^\s"'<>]+$/i.test(candidate)) return candidate;
-        return '/images/placeholder.jpg';
+        return '';
     }
     
     async apiRequest(endpoint, options = {}) {
         const baseUrl = window.APP_CONFIG?.apiUrl || '/api/v1';
         const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
-        
-        const defaultOptions = {
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': window.APP_CONFIG?.csrfToken || ''
-            },
-            credentials: 'include'
-        };
-        
-        const response = await fetch(url, { ...defaultOptions, ...options });
+
+        if (!window.AdminCore) throw new Error('Admin API client is not ready');
+        const response = await window.AdminCore.apiFetch(url, options);
+        if (!response) throw new Error('Request was rejected');
         if (!response.ok) {
             const error = await response.json().catch(() => ({ message: 'Request failed' }));
             throw new Error(error.message || `HTTP ${response.status}`);
@@ -603,6 +773,7 @@ class AdminOrdersManager {
 // ─── Initialize ──────────────────────────────────────────────────────────────
 
 window.onAdminPageLoad(() => {
+    if (window.location.pathname !== '/admin/orders' || !document.getElementById('ordersGrid')) return;
     const manager = new AdminOrdersManager();
     window.adminOrdersManager = manager;
     window.onAdminPageCleanup(() => manager.destroy());

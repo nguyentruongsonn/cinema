@@ -30,6 +30,8 @@
         excerpt: document.getElementById('postExcerpt'),
         content: document.getElementById('postContent'),
         image: document.getElementById('postImage'),
+        imagePreviewContainer: document.getElementById('postImagePreviewContainer'),
+        imagePreview: document.getElementById('postImagePreview'),
         publishedAt: document.getElementById('postPublishedAt'),
         isPublished: document.getElementById('postIsPublished'),
         statusLabel: document.getElementById('postStatusLabel'),
@@ -92,13 +94,13 @@
                 <td class="text-center text-light small">${formatDate(post.created_at)}</td>
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input toggle-publish-btn m-0" type="checkbox" data-id="${escapeHtml(post.id)}" ${post.is_published ? 'checked' : ''} style="cursor:pointer;">
+                        <input class="form-check-input toggle-publish-btn m-0 admin-toggle-pointer" type="checkbox" data-id="${escapeHtml(post.id)}" ${post.is_published ? 'checked' : ''}>
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-sm btn-edit-post" style="color: var(--text-secondary); background:rgba(255,255,255,0.05);" data-post='${escapeHtml(JSON.stringify(post))}' title="Sửa"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-post" style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${escapeHtml(post.id)}" title="Xóa"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-edit-post admin-table-action-edit" data-post='${escapeHtml(JSON.stringify(post))}' title="Sửa"><i class="bi bi-pencil"></i></button>
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-post admin-table-action-delete" data-id="${escapeHtml(post.id)}" title="Xóa"><i class="bi bi-trash"></i></button>
                     </div>
                 </td>
             `;
@@ -107,16 +109,9 @@
     }
 
     function renderPagination(meta) {
-        if (!meta || meta.last_page <= 1) { els.pagination.innerHTML = ''; return; }
-        let html = '<ul class="pagination pagination-sm m-0">';
-        html += meta.current_page > 1 ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>` : `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        for (const i of window.AdminCore.paginationPages(meta)) {
-            html += i === meta.current_page ? `<li class="page-item active"><span class="page-link">${i}</span></li>` : `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-        }
-        html += meta.current_page < meta.last_page ? `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>` : `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-        html += '</ul>';
-        els.pagination.innerHTML = html;
-        els.pagination.querySelectorAll('a.page-link').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); currentPage = parseInt(a.getAttribute('data-page')); loadData(currentPage); }));
+        window.AdminCore.renderAdminPagination(els.pagination, meta, (page) => {
+            currentPage = page; loadData(page);
+        });
     }
 
     function resetForm() {
@@ -129,6 +124,8 @@
             window.jQuery('#summernoteEditor').summernote('code', '');
         }
         els.content.value = '';
+        els.imagePreviewContainer?.classList.add('d-none');
+        if (els.imagePreview) els.imagePreview.src = '';
     }
 
     function formatDateTimeLocal(dateString) {
@@ -139,7 +136,26 @@
 
     if (els.btnCreate) els.btnCreate.addEventListener('click', () => { resetForm(); els.modalLabel.innerHTML = '<i class="bi bi-file-text me-2"></i>Tạo bài viết mới'; getModalInstance()?.show(); });
 
-    if (els.isPublished && els.statusLabel) els.isPublished.addEventListener('change', () => { els.statusLabel.textContent = els.isPublished.checked ? 'Xuất bản ngay' : 'Lưu nháp'; });
+    function updatePublicationLabel() {
+        if (!els.statusLabel) return;
+        if (!els.isPublished.checked) {
+            els.statusLabel.textContent = 'Lưu nháp';
+            return;
+        }
+        const scheduledAt = els.publishedAt.value ? new Date(els.publishedAt.value) : null;
+        els.statusLabel.textContent = scheduledAt && scheduledAt > new Date() ? 'Xuất bản theo lịch' : 'Xuất bản ngay';
+    }
+
+    if (els.isPublished) els.isPublished.addEventListener('change', updatePublicationLabel);
+    if (els.publishedAt) els.publishedAt.addEventListener('change', updatePublicationLabel);
+    if (els.image) els.image.addEventListener('change', () => {
+        const file = els.image.files?.[0];
+        if (!file || !els.imagePreview || !els.imagePreviewContainer) return;
+        const url = URL.createObjectURL(file);
+        els.imagePreview.src = url;
+        els.imagePreview.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
+        els.imagePreviewContainer.classList.remove('d-none');
+    });
 
     els.tableBody.addEventListener('click', async (e) => {
         const btnEdit = e.target.closest('.btn-edit-post');
@@ -159,7 +175,11 @@
             }
             els.publishedAt.value = formatDateTimeLocal(post.published_at);
             els.isPublished.checked = post.is_published === 1 || post.is_published === true;
-            els.statusLabel.textContent = els.isPublished.checked ? 'Xuất bản ngay' : 'Lưu nháp';
+            updatePublicationLabel();
+            if (post.featured_image_url && els.imagePreview && els.imagePreviewContainer) {
+                els.imagePreview.src = post.featured_image_url;
+                els.imagePreviewContainer.classList.remove('d-none');
+            }
             getModalInstance()?.show();
             return;
         }
@@ -251,7 +271,7 @@
                     ['color', ['color']],
                     ['para', ['ul', 'ol', 'paragraph']],
                     ['table', ['table']],
-                    ['insert', ['link', 'picture', 'video']],
+                    ['insert', ['link']],
                     ['view', ['fullscreen', 'codeview', 'help']]
                 ],
                 callbacks: {

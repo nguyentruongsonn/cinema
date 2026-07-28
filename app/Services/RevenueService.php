@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Order;
@@ -161,7 +163,7 @@ class RevenueService
 
         return [
             'name'       => $top->name,
-            'revenue'    => (string) number_format($top->revenue, 2, '.', ''),
+            'revenue'    => (string) number_format((float) $top->revenue, 2, '.', ''),
             'percentage' => $pct,
         ];
     }
@@ -195,7 +197,7 @@ class RevenueService
 
         return [
             'title'   => $top->title,
-            'revenue' => (string) number_format($top->revenue, 2, '.', ''),
+            'revenue' => (string) number_format((float) $top->revenue, 2, '.', ''),
             'tickets' => (int) $top->tickets,
         ];
     }
@@ -237,14 +239,14 @@ class RevenueService
         return [
             'top_method'        => $topMethod->method ?? 'N/A',
             'top_method_count'  => (int) $topMethod->count,
-            'top_method_amount' => (string) number_format($topMethod->amount, 2, '.', ''),
+            'top_method_amount' => (string) number_format((float) $topMethod->amount, 2, '.', ''),
             'top_method_pct'    => $pct,
             'total_count'       => (int) $totalCount,
-            'total_amount'      => (string) number_format($totalAmount, 2, '.', ''),
+            'total_amount'      => (string) number_format((float) $totalAmount, 2, '.', ''),
             'breakdown'         => $methods->map(fn($m) => [
                 'method'        => $m->method ?? 'Khác',
                 'count'         => (int) $m->count,
-                'amount'        => (string) number_format($m->amount, 2, '.', ''),
+                'amount'        => (string) number_format((float) $m->amount, 2, '.', ''),
                 'count_percent' => $totalCount > 0 ? round(($m->count / $totalCount) * 100, 1) : 0,
                 'amount_percent' => $totalAmount > 0 ? round(($m->amount / $totalAmount) * 100, 1) : 0,
             ])->values()->toArray(),
@@ -274,7 +276,7 @@ class RevenueService
             ->get()
             ->map(fn($r) => [
                 'name' => $r->name,
-                'revenue' => (string) number_format($r->revenue, 2, '.', ''),
+                'revenue' => (string) number_format((float) $r->revenue, 2, '.', ''),
             ])
             ->toArray();
     }
@@ -303,7 +305,7 @@ class RevenueService
             ->get()
             ->map(fn($r) => [
                 'title'   => $r->title,
-                'revenue' => (string) number_format($r->revenue, 2, '.', ''),
+                'revenue' => (string) number_format((float) $r->revenue, 2, '.', ''),
                 'tickets' => (int) $r->tickets,
             ])
             ->toArray();
@@ -338,7 +340,7 @@ class RevenueService
             ->get()
             ->map(fn($r) => [
                 'period'  => $r->period,
-                'revenue' => (string) number_format($r->revenue, 2, '.', ''),
+                'revenue' => (string) number_format((float) $r->revenue, 2, '.', ''),
                 'orders'  => (int) $r->orders,
             ])
             ->toArray();

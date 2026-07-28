@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Exceptions\PaymentGatewayException;
@@ -251,14 +253,14 @@ class PaymentService
             try {
                 $response = $this->gateway->createPaymentLink([
                 'orderCode'   => $order->gateway_order_code,
-                'amount'      => (int) round($order->total_amount),
+                'amount'      => (int) round((float) $order->total_amount),
                 'description' => substr('DH ' . $order->code, 0, 25),
                 'cancelUrl'   => $baseUrl . '/payment/payos/cancel?orderCode=' . $order->gateway_order_code,
                 'returnUrl'   => $baseUrl . '/payment/payos/callback?orderCode=' . $order->gateway_order_code,
                 'items'       => [[
                     'name'     => 'Don hang ' . $order->code,
                     'quantity' => 1,
-                    'price'    => (int) round($order->total_amount),
+                    'price'    => (int) round((float) $order->total_amount),
                 ]],
             ]);
             } catch (PaymentGatewayException $e) {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CancelOrderRequest;
@@ -8,10 +10,12 @@ use App\Services\OrderService;
 use App\Models\Order;
 use App\Models\IdempotencyKey;
 use App\Http\Resources\OrderResource;
+use App\Http\Resources\AdminOrderSummaryResource;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class OrderController extends Controller
 {
@@ -127,7 +131,7 @@ class OrderController extends Controller
             $validated = $request->validate([
                 'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
             ]);
-            $perPage = $validated['per_page'] ?? 15;
+            $perPage = (int) ($validated['per_page'] ?? 15);
 
             $orders = $this->orderService->getUserOrders($user, $perPage);
 
@@ -162,15 +166,23 @@ class OrderController extends Controller
         ]);
 
         $query = Order::query()
+            ->select([
+                'id',
+                'code',
+                'user_id',
+                'showtime_id',
+                'total_amount',
+                'status',
+                'payment_status',
+                'created_at',
+            ])
             ->with([
                 'user:id,name,email,phone',
+                'showtime:id,movie_id,screen_id,scheduled_at',
                 'showtime.movie:id,title,poster_url,duration,age_rating',
                 'showtime.screen:id,name,theater_id',
-                'showtime.screen.theater:id,name,branch_id',
-                'showtime.screen.theater.branch:id,name',
-                'orderItems',
-                'tickets.seat.seatType',
-                'payment',
+                'showtime.screen.theater:id,name',
+                'orderItems:id,order_id,item_type,metadata',
             ])
             ->when(($validated['status'] ?? 'all') !== 'all', function ($query) use ($validated) {
                 $status = $validated['status'];
@@ -181,7 +193,10 @@ class OrderController extends Controller
             ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime.screen.theater', fn ($theater) => $theater->where('branch_id', $id)))
             ->when($validated['theater_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime.screen', fn ($screen) => $screen->where('theater_id', $id)))
             ->when($validated['movie_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime', fn ($showtime) => $showtime->where('movie_id', $id)))
-            ->when($validated['date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', $date))
+            ->when($validated['date'] ?? null, fn ($q, $date) => $q->whereBetween('created_at', [
+                Carbon::createFromFormat('Y-m-d', $date)->startOfDay(),
+                Carbon::createFromFormat('Y-m-d', $date)->endOfDay(),
+            ]))
             ->when($validated['search'] ?? null, function ($q, $search) {
                 $q->where(function ($searchQuery) use ($search) {
                     $searchQuery->where('code', 'like', "%{$search}%")
@@ -193,7 +208,7 @@ class OrderController extends Controller
         $orders = $query->paginate($validated['per_page'] ?? 15);
 
         return $this->successResponse([
-            'data' => OrderResource::collection($orders->items())->resolve(),
+            'data' => AdminOrderSummaryResource::collection($orders->items())->resolve(),
             'meta' => [
                 'current_page' => $orders->currentPage(),
                 'last_page' => $orders->lastPage(),

@@ -33,31 +33,105 @@
     };
 
     /**
-     * Hiển thị Bootstrap Toast thông báo.
+     * Hiển thị Custom Toast thông báo cao cấp (Premium Toast).
      * @param {string} message
-     * @param {'success'|'danger'|'warning'|'info'} type
+     * @param {'success'|'danger'|'warning'|'info'|'error'} type
      */
     window.showAdminToast = function (message, type = 'info') {
         const toastContainer = document.getElementById('adminToastContainer');
         if (!toastContainer) return;
 
+        // Đồng bộ class của container để áp dụng đúng CSS grid & positioning từ alerts.css
+        if (!toastContainer.classList.contains('admin-toast-container')) {
+            toastContainer.className = 'admin-toast-container';
+            toastContainer.removeAttribute('style');
+        }
+
         const id = 'toast-' + Date.now();
+        const duration = 4000; // 4 giây hiển thị
+
+        // Bản đồ icon Bootstrap
+        const icons = {
+            success: 'bi-check-circle-fill',
+            danger: 'bi-x-circle-fill',
+            error: 'bi-x-circle-fill',
+            warning: 'bi-exclamation-triangle-fill',
+            info: 'bi-info-circle-fill'
+        };
+        const iconClass = icons[type] || icons.info;
+
+        // Bản đồ tiêu đề
+        const titles = {
+            success: 'Thành công',
+            danger: 'Lỗi nghiêm trọng',
+            error: 'Lỗi',
+            warning: 'Cảnh báo',
+            info: 'Thông báo'
+        };
+        const titleText = titles[type] || titles.info;
+
+        // Đổi type 'error' thành 'danger' để khớp class CSS trong alerts.css (.admin-toast-danger / .admin-toast-error)
+        const cssType = type === 'error' ? 'error' : type;
+
         const div = document.createElement('div');
         div.innerHTML = `
-            <div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">${message}</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <div id="${id}" class="admin-toast admin-toast-${cssType}" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="admin-toast-icon">
+                    <i class="bi ${iconClass}"></i>
+                </div>
+                <div class="admin-toast-content">
+                    <div class="admin-toast-title">${titleText}</div>
+                    <div class="admin-toast-message">${message}</div>
+                </div>
+                <div class="admin-toast-close" aria-label="Đóng">
+                    <i class="bi bi-x-lg"></i>
+                </div>
+                <div class="admin-toast-progress">
+                    <div class="admin-toast-progress-bar" style="width: 100%;"></div>
                 </div>
             </div>`;
         
         const toastEl = div.firstElementChild;
         toastContainer.appendChild(toastEl);
-        
-        const bsToast = new bootstrap.Toast(toastEl, { delay: 3500 });
-        bsToast.show();
-        
-        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+
+        const progressBar = toastEl.querySelector('.admin-toast-progress-bar');
+        if (progressBar) {
+            // Thiết lập màu sắc thừa hưởng từ color của lớp cha (currentColor)
+            progressBar.style.transition = `width ${duration}ms linear`;
+            // Buộc trình duyệt reflow để kích hoạt transition
+            progressBar.offsetHeight;
+            progressBar.style.width = '0%';
+        }
+
+        // Tự động đóng toast sau 4 giây
+        const autoCloseTimeout = setTimeout(() => {
+            closeToast();
+        }, duration);
+
+        // Đóng thủ công khi bấm nút X
+        const closeBtn = toastEl.querySelector('.admin-toast-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                clearTimeout(autoCloseTimeout);
+                closeToast();
+            });
+        }
+
+        function closeToast() {
+            toastEl.classList.add('hiding');
+            toastEl.addEventListener('animationend', (e) => {
+                // Chỉ xóa khi hoàn tất hiệu ứng slide-out (toast-slide-out)
+                if (e.animationName === 'toast-slide-out') {
+                    toastEl.remove();
+                }
+            });
+            // Fallback phòng khi animationend không kích hoạt
+            setTimeout(() => {
+                if (toastEl.parentNode) {
+                    toastEl.remove();
+                }
+            }, 350);
+        }
     };
 
     /* ------------------------------------------------------------------ */

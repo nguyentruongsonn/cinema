@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Order;
@@ -122,7 +124,7 @@ class FoodAnalyticsService
 
         // Return money as string to avoid float precision issues
         return [
-            'total_revenue'   => number_format($totals->total_revenue ?? 0, 2, '.', ''),
+            'total_revenue'   => number_format((float) ($totals->total_revenue ?? 0), 2, '.', ''),
             'total_quantity'  => (int) ($totals->total_qty ?? 0),
             'best_combo_name' => $best?->name ?? '—',  // "combo" for frontend compatibility
             'best_combo_qty'  => (int) ($best?->qty ?? 0),
@@ -166,7 +168,7 @@ class FoodAnalyticsService
                 'type'          => $r->type,
                 'type_label'    => self::TYPE_LABELS[$r->type] ?? $r->type,
                 'total_qty'     => (int) $r->total_qty,
-                'total_revenue' => number_format($r->total_revenue, 2, '.', ''),
+                'total_revenue' => number_format((float) $r->total_revenue, 2, '.', ''),
             ])->toArray();
     }
 

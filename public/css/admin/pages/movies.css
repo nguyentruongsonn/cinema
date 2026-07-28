@@ -154,6 +154,64 @@
     box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
+.admin-modal-scroll {
+    max-height: 75vh;
+    overflow-y: auto;
+}
+
+.movie-upload-box {
+    border: 2px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.movie-upload-box-poster {
+    min-height: 200px;
+}
+
+.movie-upload-box-banner {
+    min-height: 90px;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.movie-upload-preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    display: none;
+}
+
+.movie-upload-help {
+    font-size: 0.72rem;
+}
+
+.movie-upload-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+.movie-upload-clear {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #a1a1aa !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 6px !important;
+    font-size: 0.78rem !important;
+}
+
 /* Footer */
 #movieModal .modal-footer {
     background: rgba(255, 255, 255, 0.02) !important;
@@ -199,4 +257,8 @@
 /* Backdrop */
 .modal-backdrop.show {
     opacity: 0.72 !important;
+}
+
+.admin-pagination-container {
+    border-top: 1px solid var(--border-color);
 }

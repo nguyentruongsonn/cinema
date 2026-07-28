@@ -110,7 +110,7 @@
                     <option value="year">Năm nay</option>
                 </select>
             </div>
-            <div id="revenueChart" style="min-height: 300px;"></div>
+            <div id="revenueChart" style="min-height:300px;"></div>
         </div>
     </div>
 </div>
@@ -122,7 +122,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Lượng Khách Hàng Theo Giờ & Tuần</h3>
             </div>
-            <div id="trafficHeatmap" style="min-height: 350px;"></div>
+            <div id="trafficHeatmap" style="min-height:350px;"></div>
         </div>
     </div>
 </div>

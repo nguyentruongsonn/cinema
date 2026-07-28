@@ -12,6 +12,8 @@ import Modal from '../components/modal.js';
     'use strict';
 
     let homeData = null;
+    let heroIndex = 0;
+    let heroTimer = null;
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
@@ -24,6 +26,7 @@ import Modal from '../components/modal.js';
         try {
             await loadHomeData();
             renderHero();
+            initializeHeroCarousel();
             renderBookingForm();
             renderMoviesGrid();
         } catch (error) {
@@ -46,18 +49,37 @@ import Modal from '../components/modal.js';
         const heroSkeleton = document.getElementById('heroSkeleton');
         const heroContent = document.getElementById('heroContent');
         const heroBackdrop = document.getElementById('heroBackdrop');
+        const banners = homeData?.featured_banners || (homeData?.featured_banner ? [homeData.featured_banner] : []);
 
-        if (!homeData || !homeData.featured_movie) {
+        if (!homeData || (!banners.length && !homeData.featured_movie)) {
             if (heroSkeleton) heroSkeleton.style.display = 'none';
             return;
         }
 
+        const banner = banners.length ? banners[Math.min(heroIndex, banners.length - 1)] : null;
         const movie = homeData.featured_movie;
-        const bannerUrl = movie.backdrop_url || movie.poster_url || '/images/default-banner.jpg';
+        const bannerUrl = banner?.image_url || movie?.backdrop_url || movie?.poster_url || '/images/default-banner.jpg';
 
         // Set backdrop image
         if (heroBackdrop) {
-            heroBackdrop.style.backgroundImage = `url('${escapeHtml(bannerUrl)}')`;
+            const safeBannerUrl = safeImageUrl(bannerUrl);
+            heroBackdrop.style.backgroundImage = safeBannerUrl ? `url("${safeBannerUrl}")` : '';
+        }
+
+        if (banner) {
+            const heroInner = heroContent.querySelector('.hero-inner');
+            if (!heroInner) return;
+            const safeLink = safeHttpsUrl(banner.link_url);
+            heroInner.innerHTML = `
+                <div class="hero-meta-row"><span class="hero-age-badge">NỔI BẬT</span></div>
+                <h1 id="heroTitle" class="hero-title">${escapeHtml(banner.title)}</h1>
+                ${banner.description ? `<p class="hero-description">${escapeHtml(banner.description)}</p>` : ''}
+                ${safeLink ? `<div class="hero-actions"><a class="btn-book-now" href="${escapeHtml(safeLink)}"><i class="bi bi-arrow-right-circle"></i> Xem chi tiết</a></div>` : ''}
+            `;
+            if (heroSkeleton) heroSkeleton.style.display = 'none';
+            heroContent.classList.remove('d-none');
+            renderHeroDots(banners.length);
+            return;
         }
 
         // Build genre text
@@ -124,6 +146,53 @@ import Modal from '../components/modal.js';
 
         if (heroSkeleton) heroSkeleton.style.display = 'none';
         heroContent.classList.remove('d-none');
+    }
+
+    function initializeHeroCarousel() {
+        const banners = homeData?.featured_banners || (homeData?.featured_banner ? [homeData.featured_banner] : []);
+        const previous = document.getElementById('heroPrevious');
+        const next = document.getElementById('heroNext');
+
+        if (banners.length <= 1) return;
+
+        previous?.addEventListener('click', () => changeHero(-1));
+        next?.addEventListener('click', () => changeHero(1));
+        heroTimer = window.setInterval(() => changeHero(1), 5000);
+    }
+
+    function changeHero(direction) {
+        const banners = homeData?.featured_banners || [];
+        if (banners.length <= 1) return;
+        heroIndex = (heroIndex + direction + banners.length) % banners.length;
+        renderHero();
+        renderHeroDots(banners.length);
+        window.clearInterval(heroTimer);
+        heroTimer = window.setInterval(() => changeHero(1), 5000);
+    }
+
+    function renderHeroDots(count) {
+        const dots = document.getElementById('heroDots');
+        const controls = document.querySelector('.hero-carousel-controls');
+        if (!dots) return;
+        if (count <= 1) {
+            dots.innerHTML = '';
+            controls?.classList.add('d-none');
+            return;
+        }
+        controls?.classList.remove('d-none');
+        dots.innerHTML = Array.from({ length: count }, (_, index) => `
+            <button class="hero-carousel-dot${index === heroIndex ? ' active' : ''}" type="button"
+                    role="tab" aria-label="Chuyển đến banner ${index + 1}" aria-selected="${index === heroIndex}"></button>
+        `).join('');
+        dots.querySelectorAll('.hero-carousel-dot').forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                heroIndex = index;
+                renderHero();
+                renderHeroDots(count);
+                window.clearInterval(heroTimer);
+                heroTimer = window.setInterval(() => changeHero(1), 5000);
+            });
+        });
     }
 
     function renderBookingForm() {
@@ -357,6 +426,18 @@ import Modal from '../components/modal.js';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function safeImageUrl(value) {
+        const candidate = String(value || '').trim();
+        if (/^\/(?!\/)[A-Za-z0-9_./?=&%-]+$/.test(candidate) && !candidate.includes('..')) return candidate;
+        if (/^https?:\/\/[^\s"'<>]+$/i.test(candidate)) return candidate.replace(/[()\\]/g, encodeURIComponent);
+        return null;
+    }
+
+    function safeHttpsUrl(value) {
+        const candidate = String(value || '').trim();
+        return /^https:\/\/[^\s"'<>]+$/i.test(candidate) ? candidate : null;
     }
 
     function showError() {

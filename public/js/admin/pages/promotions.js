@@ -48,6 +48,8 @@
     let currentSearch = '';
     let currentStatus = 'all';
     let currentCategory = 'all';
+    let categoriesLoaded = false;
+    let categoriesPromise = null;
 
     function getModalInstance() {
         if (!els.modalEl) return null;
@@ -66,7 +68,7 @@
             if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
             if (currentCategory !== 'all') url.searchParams.append('category', currentCategory);
 
-            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'promotions:list' });
+            const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'promotions:list', cacheTtl: 30000 });
             if (res && res.ok) {
                 const json = await res.json();
                 renderTable(json.data, json.pagination?.from || json.from);
@@ -130,27 +132,27 @@
                     <div class="fw-medium text-white">${escapeHtml(promo.name)}</div>
                     ${promo.description ? `<small class="text-white-50">${escapeHtml(promo.description.substring(0, 50))}${promo.description.length > 50 ? '...' : ''}</small>` : ''}
                 </td>
-                <td class="text-center" style="white-space: nowrap;">${categoryBadge}</td>
+                <td class="text-center admin-nowrap">${categoryBadge}</td>
                 <td class="text-center text-warning fw-medium">${discountText}</td>
-                <td class="text-center text-light small" style="line-height: 1.3;">${dateRangeText}</td>
+                <td class="text-center text-light small admin-leading-tight">${dateRangeText}</td>
                 <td class="text-center text-light small">${minOrderText}</td>
                 <td class="text-center text-light small">${usageText}</td>
                 <td class="text-center">
                     <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input toggle-active-btn m-0" type="checkbox" role="switch"
-                            data-id="${escapeHtml(promo.id)}" ${promo.status ? 'checked' : ''} style="cursor:pointer;">
+                        <input class="form-check-input toggle-active-btn m-0 admin-toggle-pointer" type="checkbox" role="switch"
+                            data-id="${escapeHtml(promo.id)}" ${promo.status ? 'checked' : ''}>
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-edit-promotion"
-                            style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
+                        <button type="button" class="btn btn-sm btn-edit-promotion admin-table-action-edit"
+
                             data-promotion='${escapeHtml(JSON.stringify(promo))}'
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-promotion"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);"
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-promotion admin-table-action-delete"
+
                             data-id="${escapeHtml(promo.id)}"
                             data-used="${escapeHtml(promo.usage_count || 0)}"
                             title="Xóa">
@@ -164,40 +166,8 @@
     }
 
     function renderPagination(meta) {
-        if (!meta || meta.last_page <= 1) {
-            els.pagination.innerHTML = '';
-            return;
-        }
-
-        let html = '<ul class="pagination pagination-sm m-0">';
-        if (meta.current_page > 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        }
-
-        for (const i of window.AdminCore.paginationPages(meta)) {
-            if (i === meta.current_page) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-            } else {
-                html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-            }
-        }
-
-        if (meta.current_page < meta.last_page) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-        }
-        html += '</ul>';
-
-        els.pagination.innerHTML = html;
-        els.pagination.querySelectorAll('a.page-link').forEach(a => {
-            a.addEventListener('click', (e) => {
-                e.preventDefault();
-                currentPage = parseInt(a.getAttribute('data-page'));
-                loadData(currentPage);
-            });
+        window.AdminCore.renderAdminPagination(els.pagination, meta, (page) => {
+            currentPage = page; loadData(page);
         });
     }
 
@@ -393,26 +363,44 @@
     }
 
     /* ── Load Categories ────────────────────────────────────────────── */
-    async function loadCategories() {
-        try {
-            const res = await window.AdminCore.apiFetch('/api/v1/admin/promotions/categories');
-            if (res && res.ok) {
-                const json = await res.json();
-                const categories = json.data || [];
+    async function loadCategories(force = false) {
+        if (categoriesLoaded && !force) return categoriesPromise;
 
-                // Populate filter dropdown
-                if (els.categoryFilter) {
-                    populateCategoryOptions(categories, els.categoryFilter, true);
-                }
+        if (categoriesPromise && !force) return categoriesPromise;
 
-                // Populate modal dropdown
-                if (els.category) {
-                    populateCategoryOptions(categories, els.category, false);
+        categoriesPromise = (async () => {
+            try {
+                const res = await window.AdminCore.apiFetch('/api/v1/admin/promotions/categories', {
+                    requestKey: 'promotions:categories',
+                    cacheTtl: 300000
+                });
+                if (res && res.ok) {
+                    const json = await res.json();
+                    const categories = json.data || [];
+
+                    // Populate filter dropdown
+                    if (els.categoryFilter) {
+                        populateCategoryOptions(categories, els.categoryFilter, true);
+                    }
+
+                    // Populate modal dropdown
+                    if (els.category) {
+                        populateCategoryOptions(categories, els.category, false);
+                    }
+
+                    categoriesLoaded = true;
+                    return categories;
                 }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            } finally {
+                categoriesPromise = null;
             }
-        } catch (error) {
-            console.error('Error loading categories:', error);
-        }
+
+            return [];
+        })();
+
+        return categoriesPromise;
     }
 
     function populateCategoryOptions(categories, selectElement, includeAll = true) {

@@ -13,6 +13,7 @@
         "test:browser:matrix": "node scripts/browser-security-matrix.mjs",
         "test:browser:admin-users-xss": "node scripts/admin-users-xss-regression.mjs",
         "test:browser:admin-dashboard": "node scripts/admin-dashboard-regression.mjs",
+        "test:ux-ui": "node scripts/ux-ui-audit.mjs",
         "test:browser:theaters-xss": "node scripts/theaters-xss-regression.mjs",
         "test:browser:smoke": "node scripts/release-browser-smoke.mjs",
         "test:load:smoke": "node scripts/release-load-smoke.mjs",

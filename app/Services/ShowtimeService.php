@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Movie;
@@ -223,6 +225,18 @@ class ShowtimeService
             throw new HttpException(403, 'Suất chiếu này không khả dụng.');
         }
 
+        if (!$showtime->screen || (int) $showtime->screen->status !== 1) {
+            throw new HttpException(403, 'Phòng chiếu của suất chiếu này tạm thời ngưng hoạt động.');
+        }
+
+        if (!$showtime->screen->theater || (int) $showtime->screen->theater->status !== 1) {
+            throw new HttpException(403, 'Rạp chiếu của suất chiếu này tạm thời ngưng hoạt động.');
+        }
+
+        if (!$showtime->screen->theater->branch || !$showtime->screen->theater->branch->is_active) {
+            throw new HttpException(403, 'Chi nhánh của suất chiếu này tạm thời ngưng hoạt động.');
+        }
+
         if ($showtime->scheduled_at === null || $showtime->scheduled_at->isPast()) {
             throw new HttpException(403, 'Suất chiếu này đã bắt đầu hoặc kết thúc. Không thể đặt vé.');
         }
@@ -263,17 +277,26 @@ class ShowtimeService
         $now = Carbon::now();
         $endDate = $now->copy()->addDays(5)->endOfDay();
 
-        return Showtime::with([
+        return Showtime::where('movie_id', $movieId)
+            ->where('status', 1)
+            ->where('scheduled_at', '>', $now)
+            ->where('scheduled_at', '<=', $endDate)
+            ->whereHas('screen', function ($q) {
+                $q->where('status', 1);
+            })
+            ->whereHas('screen.theater', function ($q) {
+                $q->where('status', 1);
+            })
+            ->whereHas('screen.theater.branch', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->with([
                 'screen.theater:id,name,address,branch_id',
                 'screen.theater.branch:id,name',
                 'screen:id,name,code,theater_id',
                 'format:id,name,surcharge',
                 'versionType:id,name,slug',
             ])
-            ->where('movie_id', $movieId)
-            ->where('status', 1)
-            ->where('scheduled_at', '>', $now)
-            ->where('scheduled_at', '<=', $endDate)
             ->orderBy('scheduled_at')
             ->get();
     }

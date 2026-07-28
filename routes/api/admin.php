@@ -92,6 +92,7 @@ Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin'])->grou
         Route::post('bulk-single', [ShowtimeController::class, 'bulkSingleDay']);
         Route::put('{id}', [ShowtimeController::class, 'update']);
         Route::delete('{id}', [ShowtimeController::class, 'destroy']);
+        Route::put('{id}/status', [ShowtimeController::class, 'updateStatus']);
     });
 
     Route::prefix('products')->group(function () {
@@ -139,7 +140,6 @@ Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin'])->grou
 
     Route::prefix('banners')->group(function () {
         Route::get('/', [BannerController::class, 'list']);
-        Route::get('positions', [BannerController::class, 'positions']);
         Route::post('/', [BannerController::class, 'store']);
         Route::put('{banner}', [BannerController::class, 'update']);
         Route::post('{banner}/update', [BannerController::class, 'update']);

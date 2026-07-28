@@ -1,9 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Http\Resources\PostResource;
+use App\Services\AuditLogService;
+use App\Services\HtmlContentSanitizer;
 use App\Services\PublicFileStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +21,8 @@ use Illuminate\View\View;
 class PostController extends Controller
 {
     public function __construct(
-        private readonly PublicFileStorageService $publicFiles
+        private readonly PublicFileStorageService $publicFiles,
+        private readonly HtmlContentSanitizer $htmlSanitizer
     ) {
     }
 
@@ -40,7 +46,7 @@ class PostController extends Controller
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'category' => ['nullable', 'string', 'in:all,news,blog,announcement,event,promotion'],
-            'status' => ['nullable', 'string', 'in:all,published,draft'],
+            'status' => ['nullable', 'string', 'in:all,published,scheduled,draft'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
@@ -62,14 +68,18 @@ class PostController extends Controller
         }
 
         $status = $validated['status'] ?? null;
-        if ($status !== null && $status !== 'all') {
-            $query->where('is_published', $status === 'published');
+        if ($status === 'published') {
+            $query->published();
+        } elseif ($status === 'scheduled') {
+            $query->scheduled();
+        } elseif ($status === 'draft') {
+            $query->where('is_published', false);
         }
 
         $posts = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return response()->json([
-            'data' => $posts->items(),
+            'data' => PostResource::collection($posts->getCollection())->resolve(),
             'pagination' => [
                 'current_page' => $posts->currentPage(),
                 'last_page' => $posts->lastPage(),
@@ -106,6 +116,7 @@ class PostController extends Controller
         try {
             $post = DB::transaction(function () use (&$validated, $request, &$imagePath) {
                 $validated['slug'] = $this->uniqueSlug($validated['slug'] ?? $validated['title']);
+                $validated = $this->preparePostData($validated);
 
                 if ($request->hasFile('featured_image')) {
                     $imagePath = $this->publicFiles->store($request->file('featured_image'), 'posts');
@@ -114,17 +125,29 @@ class PostController extends Controller
 
                 $validated['author_id'] = Auth::id();
 
-                if (($validated['is_published'] ?? false) && empty($validated['published_at'])) {
-                    $validated['published_at'] = now();
-                }
+                $post = Post::create($validated);
 
-                return Post::create($validated);
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'post.created',
+                    $post,
+                    [],
+                    $this->auditPostValues($post)
+                );
+
+                return $post;
             });
 
             return response()->json([
                 'message' => 'Tạo bài viết thành công',
-                'data' => $post->load('author:id,name'),
+                'data' => (new PostResource($post->load('author:id,name')))->resolve(),
             ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($imagePath) {
+                $this->publicFiles->deleteMany([$imagePath]);
+            }
+
+            throw $e;
         } catch (\Throwable $e) {
             if ($imagePath) {
                 $this->publicFiles->deleteMany([$imagePath]);
@@ -167,24 +190,24 @@ class PostController extends Controller
 
         try {
             DB::transaction(function () use (&$validated, $request, $post, &$newImagePath) {
-                if (empty($validated['slug'])) {
-                    $validated['slug'] = $this->uniqueSlug($validated['title'], $post->id);
-                }
+                $oldValues = $this->auditPostValues($post);
+                $validated['slug'] = $this->uniqueSlug($validated['slug'] ?? $validated['title'], $post->id);
+                $validated = $this->preparePostData($validated, $post);
 
                 if ($request->hasFile('featured_image')) {
                     $newImagePath = $this->publicFiles->store($request->file('featured_image'), 'posts');
                     $validated['featured_image'] = $newImagePath;
                 }
 
-                if (
-                    ($validated['is_published'] ?? false)
-                    && empty($validated['published_at'])
-                    && ! $post->is_published
-                ) {
-                    $validated['published_at'] = now();
-                }
-
                 $post->update($validated);
+
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'post.updated',
+                    $post,
+                    $oldValues,
+                    $this->auditPostValues($post->fresh())
+                );
             });
 
             if ($newImagePath && $oldImagePath && $oldImagePath !== $newImagePath) {
@@ -193,8 +216,14 @@ class PostController extends Controller
 
             return response()->json([
                 'message' => 'Cập nhật bài viết thành công',
-                'data' => $post->fresh(['author:id,name']),
+                'data' => (new PostResource($post->fresh(['author:id,name'])))->resolve(),
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($newImagePath) {
+                $this->publicFiles->deleteMany([$newImagePath]);
+            }
+
+            throw $e;
         } catch (\Throwable $e) {
             if ($newImagePath) {
                 $this->publicFiles->deleteMany([$newImagePath]);
@@ -224,6 +253,13 @@ class PostController extends Controller
 
         try {
             DB::transaction(function () use ($post) {
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'post.deleted',
+                    $post,
+                    $this->auditPostValues($post),
+                    []
+                );
                 Post::whereKey($post->getKey())->delete();
             });
 
@@ -257,18 +293,32 @@ class PostController extends Controller
 
         try {
             DB::transaction(function () use ($post) {
-                $post->is_published = ! $post->is_published;
+                $locked = Post::query()->whereKey($post->id)->lockForUpdate()->firstOrFail();
+                $oldValues = $this->auditPostValues($locked);
+                $locked->is_published = ! $locked->is_published;
 
-                if ($post->is_published && ! $post->published_at) {
-                    $post->published_at = now();
+                if ($locked->is_published && ! $locked->published_at) {
+                    $locked->published_at = now();
                 }
 
-                $post->save();
+                if (! $locked->is_published) {
+                    $locked->published_at = null;
+                }
+
+                $locked->save();
+
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'post.publication_toggled',
+                    $locked,
+                    $oldValues,
+                    $this->auditPostValues($locked)
+                );
             });
 
             return response()->json([
                 'message' => 'Cập nhật trạng thái thành công',
-                'data' => $post->fresh(['author:id,name']),
+                'data' => (new PostResource($post->fresh(['author:id,name'])))->resolve(),
             ]);
         } catch (\Throwable $e) {
             Log::error('Failed to toggle post publish status', [
@@ -328,5 +378,47 @@ class PostController extends Controller
         }
 
         return $query->exists();
+    }
+
+    private function preparePostData(array $data, ?Post $existingPost = null): array
+    {
+        $data['title'] = trim(strip_tags((string) $data['title']));
+        $data['excerpt'] = isset($data['excerpt'])
+            ? trim(strip_tags((string) $data['excerpt']))
+            : null;
+        $data['content'] = $this->htmlSanitizer->sanitize((string) $data['content']);
+        $data['is_published'] = (bool) ($data['is_published'] ?? false);
+
+        if ($data['title'] === '') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'title' => ['Tiêu đề bài viết không được để trống.'],
+            ]);
+        }
+
+        if ($data['content'] === '' || trim(strip_tags($data['content'])) === '') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'content' => ['Nội dung bài viết không được để trống sau khi kiểm tra an toàn.'],
+            ]);
+        }
+
+        if (! $data['is_published']) {
+            $data['published_at'] = null;
+        } elseif (empty($data['published_at'])) {
+            $data['published_at'] = $existingPost?->published_at ?? now();
+        }
+
+        return $data;
+    }
+
+    private function auditPostValues(Post $post): array
+    {
+        return [
+            'title' => $post->title,
+            'slug' => $post->slug,
+            'category' => $post->category,
+            'publication_status' => $post->publicationStatus(),
+            'published_at' => $post->published_at?->toISOString(),
+            'featured_image' => $post->featured_image ? '[image]' : null,
+        ];
     }
 }

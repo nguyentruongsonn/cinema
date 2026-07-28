@@ -26,13 +26,32 @@ class SecurityHeaders
         $response->headers->set('X-XSS-Protection', '0');
 
         // Content Security Policy
+        $reverbEnabled = (bool) env('REVERB_ENABLED', false);
+        $reverbHost = trim((string) env('REVERB_HOST', 'localhost'));
+        $reverbPort = (int) env('REVERB_PORT', 8080);
+        $reverbScheme = env('REVERB_SCHEME', 'http') === 'https' ? 'wss' : 'ws';
+        $reverbOrigin = $reverbEnabled && $reverbHost !== ''
+            ? sprintf('%s://%s:%d', $reverbScheme, $reverbHost, $reverbPort)
+            : null;
+        $connectSources = [
+            "'self'",
+            'https://api-merchant.payos.vn',
+            'https://api.payos.vn',
+            'https://cdn.jsdelivr.net',
+        ];
+        if ($reverbOrigin) {
+            $connectSources[] = $reverbOrigin;
+            $reverbWsScheme = $reverbScheme === 'wss' ? 'ws' : 'wss';
+            $connectSources[] = sprintf('%s://%s:%d', $reverbWsScheme, $reverbHost, $reverbPort);
+        }
+
         $csp = [
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
             "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
             "img-src 'self' data: https: blob:",
-            "connect-src 'self' https://api-merchant.payos.vn https://api.payos.vn https://cdn.jsdelivr.net",
+            'connect-src ' . implode(' ', $connectSources),
             "frame-src 'self' https://sandbox.vnpayment.vn",
             "object-src 'none'",
             "base-uri 'self'",

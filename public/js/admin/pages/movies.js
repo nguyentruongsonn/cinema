@@ -21,19 +21,19 @@
     const els = {
         tableBody: document.getElementById('moviesTableBody'),
         pagination: document.getElementById('paginationContainer'),
-        
+
         searchForm: document.getElementById('searchForm'),
         searchInput: document.getElementById('search'),
-        movieTabs: document.getElementById('movieTabs'),
+        statusFilter: document.getElementById('statusFilter'),
 
         btnCreate: document.getElementById('btnOpenCreateMovie'),
         modalEl: document.getElementById('movieModal'),
         form: document.getElementById('movieForm'),
         modalLabel: document.getElementById('movieModalLabel'),
-        
+
         formMethod: document.getElementById('movieFormMethod'),
         idInput: document.getElementById('movieIdInput'),
-        
+
         // Form fields
         title: document.getElementById('movieTitle'),
         originalTitle: document.getElementById('movieOriginalTitle'),
@@ -52,7 +52,7 @@
         posterUrl: document.getElementById('moviePosterUrl'),
         bannerUrl: document.getElementById('movieBannerUrl'),
         isHot: document.getElementById('movieIsHot'),
-        
+
         posterPreview: document.getElementById('posterPreview'),
         posterPlaceholder: document.getElementById('posterPlaceholder'),
         posterFile: document.getElementById('moviePosterFile'),
@@ -79,7 +79,7 @@
         try {
             // Skeleton loading is now handled in HTML blade template
             // els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
-            
+
             const url = new URL(window.location.origin + '/api/v1/movies');
             url.searchParams.append('page', page);
             if (search) url.searchParams.append('q', search);
@@ -111,10 +111,10 @@
         movies.forEach((movie, index) => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-            
+
             const rDateObj = new Date(movie.release_date);
             const rDate = rDateObj.toLocaleDateString('vi-VN');
-            
+
             // Computed status
             let statusHtml = '';
             if (!movie.status) {
@@ -126,16 +126,16 @@
                     statusHtml = '<span class="badge bg-success">Đã xuất bản</span>';
                 }
             }
-            
+
             const isHotChecked = movie.is_hot ? 'checked' : '';
             const isActiveChecked = movie.status ? 'checked' : '';
             const posterSrc = safeImageUrl(movie.poster_display_url || movie.poster_url);
-            
+
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td class="text-center">
                     <div class="movie-poster-container">
-                        ${posterSrc 
+                        ${posterSrc
                             ? `<img src="${escapeHtml(posterSrc)}" alt="Poster" loading="lazy">`
                             : `<i class="bi bi-image text-white-50 fs-3"></i>`}
                     </div>
@@ -148,26 +148,26 @@
                 <td class="text-center">${statusHtml}</td>
                 <td class="text-center">
                     <div class="form-check form-switch d-inline-block">
-                        <input class="form-check-input toggle-active-btn" type="checkbox" role="switch"
-                            data-id="${escapeHtml(movie.id)}" ${isActiveChecked} style="cursor:pointer;">
+                        <input class="form-check-input toggle-active-btn admin-toggle-pointer" type="checkbox" role="switch"
+                            data-id="${escapeHtml(movie.id)}" ${isActiveChecked}>
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="form-check form-switch d-inline-block">
-                        <input class="form-check-input toggle-hot-btn" type="checkbox" role="switch"
-                            data-id="${escapeHtml(movie.id)}" ${isHotChecked} style="cursor:pointer;">
+                        <input class="form-check-input toggle-hot-btn admin-toggle-pointer" type="checkbox" role="switch"
+                            data-id="${escapeHtml(movie.id)}" ${isHotChecked}>
                     </div>
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-edit-movie"
-                            style="color: var(--text-secondary); background:rgba(255,255,255,0.05);"
+                        <button type="button" class="btn btn-sm btn-edit-movie admin-table-action-edit"
+
                             data-movie='${escapeHtml(JSON.stringify(movie))}'
                             title="Sửa">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button type="button" class="btn btn-sm ms-1 btn-delete-movie"
-                            style="color:#ef4444; background:rgba(239,68,68,0.1);" data-id="${escapeHtml(movie.id)}" title="Xóa">
+                        <button type="button" class="btn btn-sm ms-1 btn-delete-movie admin-table-action-delete"
+                            data-id="${escapeHtml(movie.id)}" title="Xóa">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -178,40 +178,8 @@
     }
 
     function renderPagination(meta) {
-        if (!meta || meta.last_page <= 1) {
-            els.pagination.innerHTML = '';
-            return;
-        }
-        
-        let html = '<ul class="pagination pagination-sm m-0">';
-        if (meta.current_page > 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page - 1}">&laquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-        }
-
-        for (const i of window.AdminCore.paginationPages(meta)) {
-            if (i === meta.current_page) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-            } else {
-                html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-            }
-        }
-
-        if (meta.current_page < meta.last_page) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${meta.current_page + 1}">&raquo;</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-        }
-        html += '</ul>';
-        
-        els.pagination.innerHTML = html;
-        els.pagination.querySelectorAll('a.page-link').forEach(a => {
-            a.addEventListener('click', (e) => {
-                e.preventDefault();
-                currentPage = parseInt(a.getAttribute('data-page'));
-                loadData(currentPage, currentSearch, currentStatus);
-            });
+        window.AdminCore.renderAdminPagination(els.pagination, meta, (page) => {
+            currentPage = page; loadData(page);
         });
     }
 
@@ -313,11 +281,11 @@
         if (btnEdit) {
             resetForm();
             els.formMethod.value = 'PUT';
-            
+
             const movie = JSON.parse(btnEdit.dataset.movie);
             els.idInput.value = movie.id;
             els.modalLabel.innerHTML = '<i class="bi bi-film me-2"></i>Cập nhật phim';
-            
+
             // Điền các field cơ bản
             els.title.value = movie.title || '';
             if (els.originalTitle) els.originalTitle.value = movie.original_title || '';
@@ -488,21 +456,12 @@
             loadData(currentPage, currentSearch, currentStatus);
         });
     }
-    
-    if (els.movieTabs) {
-        els.movieTabs.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                els.movieTabs.querySelectorAll('button').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                e.target.classList.add('active');
-                
-                currentStatus = e.target.getAttribute('data-status');
-                currentPage = 1;
-                loadData(currentPage, currentSearch, currentStatus);
-            }
-        });
-    }
+
+    els.statusFilter?.addEventListener('change', () => {
+        currentStatus = els.statusFilter.value || 'all';
+        currentPage = 1;
+        loadData(currentPage, currentSearch, currentStatus);
+    });
 
     /* ── Init ──────────────────────────────────────────────────────── */
     window.onAdminPageLoad(() => {

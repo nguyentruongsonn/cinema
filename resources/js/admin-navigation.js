@@ -5,6 +5,13 @@ Turbo.session.drive = false;
 
 const html = document.documentElement;
 let navigationCompletionFrame = null;
+let contentEntryTimer = null;
+let navigationVisualTimer = null;
+let contentSizeReleaseTimer = null;
+let navigationStartedAt = null;
+let navigationPrepared = false;
+
+const NAVIGATION_BUSY_DELAY = 1200;
 
 function normalizePath(pathname) {
     const normalized = pathname.replace(/\/+$/, '');
@@ -26,11 +33,11 @@ function adminUrlForLink(link) {
     return url;
 }
 
-function syncSidebar() {
+function syncSidebar(pathname = window.location.pathname) {
     const sidebar = document.getElementById('adminSidebar');
     if (!sidebar) return;
 
-    const currentPath = normalizePath(window.location.pathname);
+    const currentPath = normalizePath(pathname);
     const links = [...sidebar.querySelectorAll('a.nav-link')];
     let activeLink = null;
 
@@ -72,18 +79,71 @@ function resetAdminModalState({ dispose = false } = {}) {
     document.body.style.removeProperty('padding-right');
 }
 
-function finishNavigation() {
+function getAdminPageContent() {
+    return document.getElementById('adminPageContent');
+}
+
+function lockCurrentContentSize() {
+    // Avoid locking adminPageContent height during Turbo swaps.
+    // The previous min-height lock made skeleton placeholders flash as boxed frames
+    // and caused visible jank when moving quickly between admin sections.
+}
+
+function releaseContentSizeLock() {
+    clearTimeout(contentSizeReleaseTimer);
+    const content = getAdminPageContent();
+    if (!content) return;
+
+    content.classList.remove('is-navigation-sizing-locked');
+    content.style.removeProperty('--admin-page-loading-min-height');
+}
+
+function showNavigationBusyState() {
+    clearTimeout(navigationVisualTimer);
+    navigationVisualTimer = setTimeout(() => {
+        lockCurrentContentSize();
+        html.classList.add('admin-navigating');
+    }, NAVIGATION_BUSY_DELAY);
+}
+
+function prepareForNavigation() {
+    if (navigationPrepared) return;
+    navigationPrepared = true;
+    lockCurrentContentSize();
+    getAdminPageContent()?.setAttribute('aria-busy', 'true');
+    window.runAdminPageCleanup?.();
+    window.AdminCore?.abortAllRequests?.();
+    window.ticketScanner?.cleanup?.();
+    resetAdminModalState({ dispose: true });
+}
+
+function finishNavigation({ animate = false } = {}) {
+    navigationPrepared = false;
     syncSidebar();
+    getAdminPageContent()?.removeAttribute('aria-busy');
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     if (csrfToken && window.APP_CONFIG) window.APP_CONFIG.csrfToken = csrfToken;
 
     cancelAnimationFrame(navigationCompletionFrame);
-    navigationCompletionFrame = requestAnimationFrame(() => {
+    clearTimeout(contentEntryTimer);
+    clearTimeout(navigationVisualTimer);
+    html.classList.remove('admin-navigating', 'admin-content-enter');
+    releaseContentSizeLock();
+
+    if (animate && !window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
         navigationCompletionFrame = requestAnimationFrame(() => {
-            html.classList.remove('admin-navigating');
+            html.classList.add('admin-content-enter');
+            contentEntryTimer = setTimeout(() => {
+                html.classList.remove('admin-content-enter');
+            }, 70);
         });
-    });
+    }
+
+    if (navigationStartedAt !== null) {
+        window.__lastAdminNavigationDuration = Math.round((performance.now() - navigationStartedAt) * 10) / 10;
+        navigationStartedAt = null;
+    }
 }
 
 document.addEventListener('click', (event) => {
@@ -96,16 +156,18 @@ document.addEventListener('click', (event) => {
     if (!url || url.href === window.location.href) return;
 
     event.preventDefault();
+    navigationStartedAt = performance.now();
+    navigationPrepared = false;
+    syncSidebar(url.pathname);
+    showNavigationBusyState();
     Turbo.visit(url.href, { action: link.dataset.turboAction || 'advance' });
 }, true);
 
 document.addEventListener('turbo:before-visit', () => {
-    html.classList.add('admin-navigating');
+    showNavigationBusyState();
 });
 
 document.addEventListener('turbo:before-cache', () => {
-    window.AdminCore?.abortAllRequests?.();
-    window.ticketScanner?.cleanup?.();
     resetAdminModalState({ dispose: true });
 });
 
@@ -128,14 +190,28 @@ document.addEventListener('hidden.bs.modal', () => {
     });
 });
 
-document.addEventListener('turbo:render', finishNavigation);
+document.addEventListener('turbo:before-render', (event) => {
+    prepareForNavigation();
+
+    if (event.detail?.newBody) {
+        event.detail.newBody.classList.add('admin-turbo-rendering');
+    }
+});
+
+document.addEventListener('turbo:render', () => finishNavigation());
 document.addEventListener('turbo:load', () => {
     window.__adminTurboLoadedUrl = window.location.href;
-    finishNavigation();
+    syncSidebar();
 });
 document.addEventListener('turbo:fetch-request-error', () => {
     cancelAnimationFrame(navigationCompletionFrame);
-    html.classList.remove('admin-navigating');
+    clearTimeout(contentEntryTimer);
+    clearTimeout(navigationVisualTimer);
+    navigationStartedAt = null;
+    navigationPrepared = false;
+    getAdminPageContent()?.removeAttribute('aria-busy');
+    releaseContentSizeLock();
+    html.classList.remove('admin-navigating', 'admin-content-enter');
 });
 
 finishNavigation();

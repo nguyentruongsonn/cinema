@@ -150,16 +150,14 @@
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
 
             const dCreated = new Date(user.created_at);
-            const roleNames = Array.isArray(user.roles)
-                ? user.roles.map(role => String(role.name || '')).filter(Boolean).join(', ')
-                : '';
+            const roleName = user.role ? String(user.role.name || '') : '';
             const isVerified = user.email_verified_at !== null;
 
             tr.appendChild(createTextCell(firstIndex + index, 'text-center text-white-50'));
             tr.appendChild(createTextCell(user.name, 'fw-medium text-white', 'N/A'));
             tr.appendChild(createTextCell(user.email, 'text-white-50'));
             tr.appendChild(createTextCell(user.phone, 'text-white-50', '-'));
-            tr.appendChild(createTextCell(roleNames, 'text-white-50', 'Chưa có'));
+            tr.appendChild(createTextCell(roleName, 'text-white-50', 'Chưa có'));
 
             const statusCell = document.createElement('td');
             statusCell.className = 'text-center';
@@ -227,68 +225,9 @@
         return button;
     }
 
-    function renderPagination(pagination) {
-        if (!pagination || pagination.last_page <= 1) {
-            els.pagination.innerHTML = '';
-            return;
-        }
-
-        let html = '<nav><ul class="pagination pagination-sm mb-0">';
-        
-        // Previous button
-        if (pagination.current_page > 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.current_page - 1}">«</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">«</span></li>`;
-        }
-
-        // Page numbers
-        const maxVisible = 5;
-        let startPage = Math.max(1, pagination.current_page - Math.floor(maxVisible / 2));
-        let endPage = Math.min(pagination.last_page, startPage + maxVisible - 1);
-        
-        if (endPage - startPage < maxVisible - 1) {
-            startPage = Math.max(1, endPage - maxVisible + 1);
-        }
-
-        if (startPage > 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
-            if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === pagination.current_page) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-            } else {
-                html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-            }
-        }
-
-        if (endPage < pagination.last_page) {
-            if (endPage < pagination.last_page - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.last_page}">${pagination.last_page}</a></li>`;
-        }
-
-        // Next button
-        if (pagination.current_page < pagination.last_page) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.current_page + 1}">»</a></li>`;
-        } else {
-            html += `<li class="page-item disabled"><span class="page-link">»</span></li>`;
-        }
-
-        html += '</ul></nav>';
-        els.pagination.innerHTML = html;
-
-        // Attach click events
-        els.pagination.querySelectorAll('a.page-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const page = parseInt(link.dataset.page);
-                if (page) {
-                    currentPage = page;
-                    loadData(page);
-                }
-            });
+    function renderPagination(meta) {
+        window.AdminCore.renderAdminPagination(els.pagination, meta, (page) => {
+            currentPage = page; loadData(page);
         });
     }
 
@@ -297,8 +236,8 @@
         const formData = new FormData(els.form);
         const data = Object.fromEntries(formData.entries());
         
-        // Convert roles to array
-        data.roles = Array.from(els.roles.selectedOptions).map(opt => opt.value);
+        // Set role_id
+        data.role_id = els.roles.value ? parseInt(els.roles.value, 10) : null;
         
         // Convert status to boolean
         data.status = els.status.checked ? 1 : 0;
@@ -329,8 +268,8 @@
         const data = Object.fromEntries(formData.entries());
         const userId = els.idInput.value;
         
-        // Convert roles to array
-        data.roles = Array.from(els.roles.selectedOptions).map(opt => opt.value);
+        // Set role_id
+        data.role_id = els.roles.value ? parseInt(els.roles.value, 10) : null;
         
         // Convert status to boolean
         data.status = els.status.checked ? 1 : 0;
@@ -384,10 +323,10 @@
                 els.address.value = user.address || '';
                 els.status.checked = user.status;
 
-                // Select roles
-                const userRoleIds = user.roles?.map(r => r.id.toString()) || [];
+                // Select role
+                const userRoleId = user.role_id || user.role?.id;
                 Array.from(els.roles.options).forEach(opt => {
-                    opt.selected = userRoleIds.includes(opt.value);
+                    opt.selected = userRoleId && opt.value == userRoleId.toString();
                 });
 
                 // Update modal UI

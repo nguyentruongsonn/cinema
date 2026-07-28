@@ -53,35 +53,35 @@
 <div id="ordersLoading" class="tickets-list">
     <div class="admin-skeleton-card">
         <div class="admin-skeleton-card-header">
-            <div class="admin-skeleton admin-skeleton-text" style="width: 120px;"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-100"></div>
             <div class="admin-skeleton admin-skeleton-badge"></div>
         </div>
         <div class="admin-skeleton-card-body">
-            <div class="admin-skeleton admin-skeleton-text" style="width: 80%; margin-bottom: 8px;"></div>
-            <div class="admin-skeleton admin-skeleton-text" style="width: 60%; margin-bottom: 12px;"></div>
-            <div class="admin-skeleton admin-skeleton-text" style="width: 40%;"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-80 skeleton-mb-sm"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-60 skeleton-mb-md"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-40"></div>
         </div>
     </div>
     <div class="admin-skeleton-card">
         <div class="admin-skeleton-card-header">
-            <div class="admin-skeleton admin-skeleton-text" style="width: 110px;"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-100"></div>
             <div class="admin-skeleton admin-skeleton-badge"></div>
         </div>
         <div class="admin-skeleton-card-body">
-            <div class="admin-skeleton admin-skeleton-text" style="width: 75%; margin-bottom: 8px;"></div>
-            <div class="admin-skeleton admin-skeleton-text" style="width: 65%; margin-bottom: 12px;"></div>
-            <div class="admin-skeleton admin-skeleton-text" style="width: 45%;"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-75 skeleton-mb-sm"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-65 skeleton-mb-md"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-45"></div>
         </div>
     </div>
     <div class="admin-skeleton-card">
         <div class="admin-skeleton-card-header">
-            <div class="admin-skeleton admin-skeleton-text" style="width: 130px;"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-100"></div>
             <div class="admin-skeleton admin-skeleton-badge"></div>
         </div>
         <div class="admin-skeleton-card-body">
-            <div class="admin-skeleton admin-skeleton-text" style="width: 70%; margin-bottom: 8px;"></div>
-            <div class="admin-skeleton admin-skeleton-text" style="width: 55%; margin-bottom: 12px;"></div>
-            <div class="admin-skeleton admin-skeleton-text" style="width: 50%;"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-70 skeleton-mb-sm"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-55 skeleton-mb-md"></div>
+            <div class="admin-skeleton admin-skeleton-text skeleton-w-50"></div>
         </div>
     </div>
 </div>
@@ -95,21 +95,12 @@
 {{-- Orders List (Card-based) --}}
 <div id="ordersGrid" class="tickets-list"></div>
 
-{{-- Pagination --}}
-<div id="ordersPagination" class="mt-4"></div>
+<div class="d-flex justify-content-center mt-4 pt-3" id="ordersPagination"></div>
 
 {{-- Order Detail Modal --}}
-<div id="orderDetailModal" class="ticket-modal-overlay" role="dialog" aria-modal="true" aria-label="Chi tiết đơn hàng">
-    <div class="ticket-modal">
-        <div class="ticket-modal-header">
-            <span class="ticket-modal-title">
-                <i class="bi bi-receipt me-2"></i>Chi tiết đơn hàng
-            </span>
-            <button id="orderModalClose" class="ticket-modal-close" aria-label="Đóng">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        </div>
-        <div class="ticket-modal-body"></div>
+<div id="orderDetailModal" class="ticket-modal-overlay order-modal-overlay" role="dialog" aria-modal="true" aria-label="Chi tiết đơn hàng">
+    <div class="ticket-modal order-modal-dashboard">
+        <div class="ticket-modal-body p-0"></div>
     </div>
 </div>
 

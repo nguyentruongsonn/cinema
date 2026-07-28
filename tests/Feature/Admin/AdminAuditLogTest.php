@@ -95,8 +95,6 @@ class AdminAuditLogTest extends TestCase
                 'title' => 'Audit Banner',
                 'description' => '<strong>Banner description</strong>',
                 'image_paths' => [UploadedFile::fake()->image('banner.jpg')],
-                'position' => 'home_slider',
-                'display_order' => 3,
                 'is_active' => true,
             ], ['Accept' => 'application/json']);
 
@@ -107,7 +105,7 @@ class AdminAuditLogTest extends TestCase
         $this->assertSame($admin->id, $createAudit->user_id);
         $this->assertSame([], $createAudit->old_values);
         $this->assertSame('Audit Banner', $createAudit->new_values['title']);
-        $this->assertSame('[image]', $createAudit->new_values['image_path']);
+        $this->assertSame(1, $createAudit->new_values['image_count']);
 
         $toggleResponse = $this->actingAs($admin, 'api')->postJson("/api/v1/admin/banners/{$banner->id}/toggle-active");
 

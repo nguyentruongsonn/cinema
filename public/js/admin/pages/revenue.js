@@ -98,7 +98,7 @@
             els.btnApply.disabled = true;
             els.btnApply.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cập nhật...';
         }
-        document.querySelectorAll('.stat-value, .stat-trend span, #chartTheaterPie, #chartMovieBar, #chartPaymentDonut, #chartRevenueTrend').forEach(el => {
+        document.querySelectorAll('#adminPageContent .stat-value[id], #adminPageContent .stat-trend span[id], #chartTheaterPie, #chartMovieBar, #chartPaymentDonut, #chartRevenueTrend').forEach(el => {
             el.classList.add('admin-skeleton');
             if (!el.id.startsWith('chart')) el.classList.add('admin-skeleton-text');
         });
@@ -109,7 +109,7 @@
             els.btnApply.disabled = false;
             els.btnApply.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Cập nhật';
         }
-        document.querySelectorAll('.skeleton, .admin-skeleton').forEach(el => {
+        document.querySelectorAll('#adminPageContent .admin-skeleton').forEach(el => {
             el.classList.remove('skeleton', 'skeleton-text', 'skeleton-chart', 'admin-skeleton', 'admin-skeleton-text');
         });
     }
@@ -313,21 +313,8 @@
     }
 
     /* ── Wait for authManager ────────────────────────────────────────── */
-    function waitForAuth(callback, retries = 50) {
-        if (typeof authManager !== 'undefined' && authManager.authChecked) {
-            callback();
-            return;
-        }
-        if (retries <= 0) {
-            console.error('[Revenue] authManager check timed out. loadStats aborted.');
-            return;
-        }
-        setTimeout(() => waitForAuth(callback, retries - 1), 150);
-    }
-
     /* ── API call ───────────────────────────────────────────────────── */
     async function loadStats() {
-        if (typeof authManager === 'undefined') return;
         const start = els.filterStart?.value;
         const end   = els.filterEnd?.value;
         if (!start || !end) return;
@@ -335,9 +322,12 @@
         showLoading();
         try {
             const url = `${API}?start_date=${start}&end_date=${end}`;
-            console.log('[Revenue] Fetching:', url);
-            const res = await authManager.fetchAPI(url, { silentAuth: true });
-            console.log('[Revenue] Response:', res);
+            const response = await window.AdminCore.apiFetch(`/api/v1${url}`, {
+                requestKey: 'revenue:stats',
+                cacheTtl: 30000,
+            });
+            if (!response?.ok) throw new Error('Không thể tải thống kê doanh thu.');
+            const res = await response.json();
 
             if (res?.success) {
                 const d = res.data;
@@ -348,6 +338,7 @@
                 renderTrend(d.by_trend);
             }
         } catch (e) {
+            if (e?.name === 'AbortError') return;
             console.error('[Revenue] Error:', e);
         } finally {
             hideLoading();
@@ -383,12 +374,16 @@
         initPaymentDonut();
         initTrendArea();
         bindEvents();
-        // Wait for authManager to finish auth check before first API call
-        waitForAuth(loadStats);
+        loadStats();
     }
 
     window.onAdminPageLoad(() => {
         cacheDoms();
         init();
+        window.onAdminPageCleanup?.(() => {
+            Object.values(charts).forEach((chart) => chart?.destroy?.());
+            charts = { theater: null, movie: null, payment: null, trend: null };
+            els = {};
+        });
     });
 })();

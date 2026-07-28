@@ -109,8 +109,8 @@ body {
 
 /* Sidebar Toggle Button */
 .sidebar-toggle-btn {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
     background: rgba(255, 255, 255, 0.05);
@@ -831,32 +831,58 @@ body {
     background-color: transparent;
 }
 
-/* Common Admin Pagination & Table */
+/* Common Admin Pagination & Table - Showtime Pattern */
 .table-dark {
     --bs-table-bg: transparent;
 }
+#paginationContainer .pagination,
+#ordersPagination .pagination,
+.admin-table-container .pagination,
 .pagination {
+    gap: 0.5rem;
     margin-bottom: 0;
 }
+#paginationContainer .page-link,
+#ordersPagination .page-link,
+.admin-table-container .page-link,
 .page-link {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #d4d4d8;
+    padding: 0.65rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    min-width: 45px;
+    text-align: center;
+    text-decoration: none;
 }
+#paginationContainer .page-link:hover,
+#ordersPagination .page-link:hover,
+.admin-table-container .page-link:hover,
 .page-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(229, 9, 20, 0.5);
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.2);
 }
+#paginationContainer .page-item.active .page-link,
+#ordersPagination .page-item.active .page-link,
+.admin-table-container .page-item.active .page-link,
 .page-item.active .page-link {
-    background-color: #e50914;
+    background: linear-gradient(135deg, #e50914 0%, #ff1a1a 100%);
     border-color: #e50914;
     color: #fff;
+    box-shadow: 0 2px 8px rgba(229, 9, 20, 0.3);
 }
+#paginationContainer .page-item.disabled .page-link,
+#ordersPagination .page-item.disabled .page-link,
+.admin-table-container .page-item.disabled .page-link,
 .page-item.disabled .page-link {
-    background-color: transparent;
+    background: transparent;
     border-color: rgba(255, 255, 255, 0.05);
     color: rgba(255, 255, 255, 0.2);
+    cursor: not-allowed;
 }
 
 /* Fix select dropdown options visibility - CRITICAL FIX */

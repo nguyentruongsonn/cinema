@@ -7,35 +7,48 @@
 
 {{-- ── Dòng 1: Header, Filters & Add Button ─────────────────── --}}
 <div class="admin-filter-container">
-    <div class="d-flex align-items-center justify-content-between w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold flex-no-shrink" style="min-width: 120px;">
-            Lịch chiếu
-        </h5>
+    <div class="admin-filter-bar">
+        <div class="admin-filter-title-fixed">
+            <h5 class="mb-0 text-white fw-bold showtimes-filter-title">
+                Lịch chiếu
+            </h5>
+        </div>
 
-        <form id="filterForm" class="d-flex flex-grow-1 align-items-center gap-2 filter-form-wide">
-            <select id="branchFilter" class="admin-filter-select filter-select-md">
-                <option value="">Tất cả chi nhánh</option>
-            </select>
+        <div class="admin-filter-fields">
+            <div class="admin-filter-group auto-width">
+                <select id="branchFilter" class="admin-filter-select filter-select-md">
+                    <option value="">Tất cả chi nhánh</option>
+                </select>
+            </div>
 
-            <select id="theaterFilter" class="admin-filter-select filter-select-md">
-                <option value="">Tất cả rạp</option>
-            </select>
+            <div class="admin-filter-group auto-width">
+                <select id="theaterFilter" class="admin-filter-select filter-select-md">
+                    <option value="">Tất cả rạp</option>
+                </select>
+            </div>
 
-            <input type="date" id="dateFilter" class="admin-filter-input" style="width: 150px;">
+            <div class="admin-filter-group auto-width">
+                <input type="date" id="dateFilter" class="admin-filter-input filter-date-md">
+            </div>
 
-            <select id="statusFilter" class="admin-filter-select filter-select-sm">
-                <option value="">Trạng thái</option>
-                <option value="1">Mở bán</option>
-                <option value="0">Đóng</option>
-            </select>
+            <div class="admin-filter-group auto-width">
+                <select id="statusFilter" class="admin-filter-select filter-select-sm">
+                    <option value="">Trạng thái</option>
+                    <option value="active">Mở bán</option>
+                    <option value="inactive">Đóng</option>
+                </select>
+            </div>
+        </div>
 
+        <form id="filterForm" class="admin-filter-search">
             <button class="admin-filter-btn" type="submit">
                 <i class="bi bi-search"></i>
+                <span>Tìm kiếm</span>
             </button>
         </form>
 
-        <button type="button" class="admin-action-btn ms-auto flex-no-shrink" id="addShowtimeBtn">
-            <i class="bi bi-plus-circle"></i> Thêm suất chiếu
+        <button type="button" class="admin-action-btn admin-filter-primary-action" id="addShowtimeBtn">
+            <i class="bi bi-plus-lg"></i> Thêm suất chiếu
         </button>
     </div>
 </div>
@@ -59,74 +72,74 @@
             <tbody id="moviesTableBody">
                 <!-- Skeleton Loading Rows -->
                 <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
                     <td>
                         <div class="d-flex align-items-center gap-3">
                             <div class="admin-skeleton admin-skeleton-img-movie"></div>
-                            <div style="flex: 1;">
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 75%; margin-bottom: 0.5rem;"></div>
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 50%;"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-75 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-50"></div>
                             </div>
                         </div>
                     </td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 60%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
                 </tr>
                 <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
                     <td>
                         <div class="d-flex align-items-center gap-3">
                             <div class="admin-skeleton admin-skeleton-img-movie"></div>
-                            <div style="flex: 1;">
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 80%; margin-bottom: 0.5rem;"></div>
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 45%;"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-80 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-45"></div>
                             </div>
                         </div>
                     </td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
                 </tr>
                 <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
                     <td>
                         <div class="d-flex align-items-center gap-3">
                             <div class="admin-skeleton admin-skeleton-img-movie"></div>
-                            <div style="flex: 1;">
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 65%; margin-bottom: 0.5rem;"></div>
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 55%;"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-65 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-55"></div>
                             </div>
                         </div>
                     </td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
                 </tr>
                 <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
                     <td>
                         <div class="d-flex align-items-center gap-3">
                             <div class="admin-skeleton admin-skeleton-img-movie"></div>
-                            <div style="flex: 1;">
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 70%; margin-bottom: 0.5rem;"></div>
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 48%;"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-70 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-48"></div>
                             </div>
                         </div>
                     </td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
                 </tr>
                 <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
                     <td>
                         <div class="d-flex align-items-center gap-3">
                             <div class="admin-skeleton admin-skeleton-img-movie"></div>
-                            <div style="flex: 1;">
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 85%; margin-bottom: 0.5rem;"></div>
-                                <div class="admin-skeleton admin-skeleton-text" style="width: 42%;"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-85 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-42"></div>
                             </div>
                         </div>
                     </td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 50px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
                 </tr>
             </tbody>
         </table>
@@ -134,10 +147,10 @@
 </div>
 
 {{-- ── Dòng 3: Bảng danh sách suất chiếu của phim ──────── --}}
-<div class="admin-table-container" id="showtimesPanel" style="display: none;">
+<div class="admin-table-container showtimes-panel" id="showtimesPanel">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="text-white fw-semibold mb-0">
-            <i class="bi bi-clock-history me-2"></i>Suất chiếu: <span id="selectedMovieTitle" class="text-primary"></span>
+            <span id="selectedMovieTitle" class="showtimes-selected-movie-title"></span>
         </h6>
         <div class="d-flex align-items-center gap-2">
             <span class="admin-badge admin-badge-info" id="showtimeCount"></span>
@@ -160,52 +173,7 @@
                 </tr>
             </thead>
             <tbody id="showtimesTableBody">
-                <!-- Skeleton Loading Rows -->
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 40px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-badge" style="width: 80px;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 40px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-badge" style="width: 80px;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 60%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 40px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-badge" style="width: 80px;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 40px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-badge" style="width: 80px;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 40px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-badge" style="width: 80px;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
+                <x-admin.skeleton-table cols="7" rows="5" :hasImage="false" />
             </tbody>
         </table>
     </div>
@@ -224,7 +192,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
-            <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+            <div class="modal-body showtimes-modal-body">
                 {{-- Tabs --}}
                 <ul class="nav nav-tabs combo-tabs mb-4" id="addModeTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -522,7 +490,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white showtimes-cancel-btn" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0" id="editShowtimeSubmitBtn">Lưu thay đổi</button>
                 </div>
             </form>

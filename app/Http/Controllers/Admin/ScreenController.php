@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Screen;
 use App\Models\Theater;
+use App\Models\Branch;
 use App\Models\Format;
 use App\Models\Sound;
 use App\Models\VersionType;
@@ -31,7 +34,9 @@ class ScreenController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
             'include_references' => ['nullable', 'boolean'],
+            'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'theater_id' => ['nullable', 'integer', 'exists:theaters,id'],
+            'status' => ['nullable', 'string', 'in:all,active,inactive'],
         ]);
 
         $search = $validated['search'] ?? null;
@@ -39,12 +44,14 @@ class ScreenController extends Controller
 
         $screens = Screen::query()
             ->with([
-                'theater:id,name',
+                'theater:id,branch_id,name',
                 'format:id,name',
                 'sound:id,name',
                 'seatLayoutTemplate:id,template_name',
             ])
+            ->when($validated['branch_id'] ?? null, fn ($query, $branchId) => $query->whereHas('theater', fn ($theaterQuery) => $theaterQuery->where('branch_id', $branchId)))
             ->when($validated['theater_id'] ?? null, fn ($query, $theaterId) => $query->where('theater_id', $theaterId))
+            ->when(($validated['status'] ?? 'all') !== 'all', fn ($query) => $query->where('status', $validated['status'] === 'active'))
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -74,19 +81,16 @@ class ScreenController extends Controller
                 ->select(['id', 'name'])
                 ->orderBy('name')
                 ->get();
-            $response['theaters'] = Theater::active()
+            $response['branches'] = Branch::query()
                 ->select(['id', 'name'])
                 ->orderBy('name')
                 ->get();
+            $response['theaters'] = Theater::active()
+                ->select(['id', 'branch_id', 'name'])
+                ->orderBy('name')
+                ->get();
             $response['templates'] = SeatLayoutTemplate::active()
-                ->select([
-                    'id',
-                    'template_name',
-                    'seat_matrix',
-                    'regular_seat_rows',
-                    'vip_seat_rows',
-                    'couple_seat_rows',
-                ])
+                ->select(['id', 'template_name'])
                 ->orderBy('template_name')
                 ->get();
         }
@@ -168,7 +172,7 @@ class ScreenController extends Controller
         ]);
 
         // Block deactivation when screen has future showtimes
-        if (!$validated['status'] && $screen->showtimes()->where('start_time', '>=', now())->exists()) {
+        if (!$validated['status'] && $screen->showtimes()->where('scheduled_at', '>=', now())->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Không thể tắt phòng chiếu đang có lịch chiếu trong tương lai.'

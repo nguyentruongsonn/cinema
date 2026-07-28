@@ -8,10 +8,19 @@
 
 {{-- ── Dòng 1 + Dòng 2: Header & Filter Bar ────────────────────────── --}}
 <div class="admin-filter-container">
-    <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold flex-no-shrink">Danh sách chi nhánh</h5>
+    <div class="admin-filter-bar">
+        <div class="admin-filter-fields">
+            <div class="admin-filter-group auto-width">
+                <select id="statusFilter" class="admin-filter-select filter-select-md">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="1">Đang hoạt động</option>
+                    <option value="0">Ngừng hoạt động</option>
+                </select>
+            </div>
+        </div>
 
-        <form id="searchForm" class="flex-grow-1 search-container-lg">
+        <form id="searchForm" class="admin-filter-search">
+            {{-- Search --}}
             <div class="input-group">
                 <input type="text" id="search" class="admin-filter-input search-input-rounded-left" placeholder="Tìm chi nhánh...">
                 <button class="admin-filter-btn search-btn-rounded-right" type="submit">
@@ -20,12 +29,11 @@
             </div>
         </form>
 
-        <button type="button" class="admin-action-btn ms-auto" id="btnCreateBranch">
+        <button type="button" class="admin-action-btn admin-filter-primary-action" id="btnCreateBranch">
             <i class="bi bi-plus-lg"></i> Tạo chi nhánh
         </button>
     </div>
 </div>
-
 {{-- ── Dòng 3: Table ───────────────────────────────────────────────── --}}
 <div class="admin-table-container">
     <div class="admin-table-wrapper">
@@ -41,52 +49,12 @@
                 </tr>
             </thead>
             <tbody id="branchesTableBody">
-                <!-- Skeleton Loading Rows -->
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
+                <x-admin.skeleton-table cols="6" rows="5" :hasImage="false" />
             </tbody>
         </table>
     </div>
 
-    <div class="d-flex justify-content-end mt-4 pt-3" id="paginationContainer"></div>
+    <div class="d-flex justify-content-center mt-4 pt-3" id="paginationContainer"></div>
 </div>
 
 {{-- Modal Thêm/Sửa --}}

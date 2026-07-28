@@ -5,17 +5,14 @@
     /*  Configuration & State                                              */
     /* ------------------------------------------------------------------ */
 
-    // fetchAPI trong auth.js tự động prepend this.apiUrl (/api/v1)
-    // nên ta chỉ cần truyền path bắt đầu từ sau /api/v1
     const API_ENDPOINTS = {
-        stats: '/admin/dashboard/stats'
+        stats: '/api/v1/admin/dashboard/stats'
     };
     
     let state = {
         revenueFilter: 'month',
         topMoviesFilter: 'month',
-        pollInterval: null,
-        statsController: null
+        pollInterval: null
     };
 
     let charts = {
@@ -132,7 +129,11 @@
         if (!els.revenueChart) return;
         
         const options = {
-            series: [{ name: 'Doanh thu', data: [] }],
+            series: [{ name: 'Doanh thu', data: [0] }],
+            noData: {
+                text: 'Chưa có dữ liệu',
+                style: { color: '#a1a1aa', fontSize: '14px' }
+            },
             chart: {
                 type: 'area',
                 height: 300,
@@ -166,7 +167,7 @@
                 enabled: false
             },
             xaxis: {
-                categories: [],
+                categories: [''],
                 labels: {
                     style: { colors: '#a1a1aa', fontSize: '12px' }
                 },
@@ -179,7 +180,7 @@
             },
             yaxis: {
                 min: 0,
-                max: (max) => { return max < 500000 ? 500000 : max; },
+                max: (max) => Number.isFinite(max) && max > 0 ? Math.max(max, 500000) : 500000,
                 title: {
                     text: 'Doanh thu (₫)',
                     style: { color: '#a1a1aa', fontSize: '12px' }
@@ -215,7 +216,11 @@
         if (!els.trafficHeatmap) return;
 
         const options = {
-            series: [],
+            series: [{ name: 'Chủ nhật', data: new Array(17).fill(0) }],
+            noData: {
+                text: 'Chưa có dữ liệu',
+                style: { color: '#a1a1aa', fontSize: '14px' }
+            },
             chart: {
                 height: 350,
                 type: 'heatmap',
@@ -384,15 +389,11 @@
         els.statRetention.innerHTML = skeletonHtml;
     }
 
-    async function fetchStats(target = 'all') {
-        if (typeof authManager === 'undefined') return;
+    async function fetchStats(target = 'all', { showSkeleton = true, skipCache = false } = {}) {
+        if (!window.AdminCore) return;
 
-        state.statsController?.abort();
-        const controller = new AbortController();
-        state.statsController = controller;
-        
         try {
-            if (target === 'all' || target === 'cards') showStatsSkeleton();
+            if (showSkeleton && (target === 'all' || target === 'cards')) showStatsSkeleton();
             
             // Build URL with date range filters
             let url = API_ENDPOINTS.stats;
@@ -409,10 +410,16 @@
                 url += '?' + params.toString();
             }
             
-            const response = await authManager.fetchAPI(url, { silentAuth: true, signal: controller.signal });
-            
-            if (response && response.success) {
-                const data = response.data;
+            const response = await window.AdminCore.apiFetch(url, {
+                requestKey: 'dashboard:stats',
+                cacheTtl: 30000,
+                skipCache,
+            });
+            if (!response?.ok) return;
+
+            const payload = await response.json();
+            if (payload.success) {
+                const data = payload.data;
                 
                 if (target === 'all' || target === 'cards') renderCards(data.cards);
                 if (target === 'all' || target === 'revenue') updateRevenueChart(data.revenue_by_day);
@@ -422,8 +429,6 @@
         } catch (e) {
             if (e.name === 'AbortError') return;
             console.warn('Dashboard sync error:', e);
-        } finally {
-            if (state.statsController === controller) state.statsController = null;
         }
     }
 
@@ -493,14 +498,20 @@
         // Initial load
         fetchStats('all');
         
-        // Start polling every 30 seconds
+        // Refresh quietly only while the dashboard is visible.
         state.pollInterval = setInterval(() => {
-            fetchStats('all');
-        }, 30000);
+            if (!document.hidden) {
+                fetchStats('all', { showSkeleton: false, skipCache: true });
+            }
+        }, 60000);
     }
 
     window.onAdminPageCleanup(function () {
         if (state.pollInterval) clearInterval(state.pollInterval);
+        state.pollInterval = null;
+        charts.revenue?.destroy?.();
+        charts.heatmap?.destroy?.();
+        charts = { revenue: null, heatmap: null };
     });
 
     window.onAdminPageLoad(function () {

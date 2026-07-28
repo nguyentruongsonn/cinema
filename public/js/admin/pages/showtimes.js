@@ -235,7 +235,11 @@
 
             const posterUrl = movie.poster_path
                 ? `/storage/${movie.poster_path}`
-                : (movie.poster_url || '/images/default-poster.jpg');
+                : (movie.poster_url || '');
+
+            const posterHtml = posterUrl
+                ? `<img src="${escapeHtml(posterUrl)}" alt="${escapeHtml(movie.title)}" class="movie-poster-thumb" loading="lazy">`
+                : '<i class="bi bi-image text-white-50 fs-3" aria-hidden="true"></i>';
 
             const categories = movie.categories && movie.categories.length > 0
                 ? movie.categories.map(c => c.name).join(', ')
@@ -245,7 +249,7 @@
                 <td class="text-center text-white-50 movie-stt">${index + 1}</td>
                 <td class="movie-info-cell">
                     <div class="d-flex align-items-center gap-3">
-                        <img src="${escapeHtml(posterUrl)}" alt="${escapeHtml(movie.title)}" class="movie-poster-thumb">
+                        <div class="showtime-movie-poster-container">${posterHtml}</div>
                         <div class="movie-text-info">
                             <div class="movie-title">${escapeHtml(movie.title)}</div>
                             <div class="movie-release">${formatDate(movie.release_date)}</div>
@@ -268,8 +272,9 @@
     /* ── Show Showtimes for Selected Movie ───────────────── */
     async function showMovieShowtimes(movie) {
         // Hide movies table, show showtimes panel
-        document.getElementById('moviesPanel').style.display = 'none';
-        els.showtimesPanel.style.display = 'block';
+        document.getElementById('moviesPanel').classList.add('d-none');
+        els.showtimesPanel.classList.remove('showtimes-panel-hidden');
+        els.showtimesPanel.classList.add('showtimes-panel-visible');
         els.selectedMovieTitle.textContent = movie.title;
 
         // Load showtimes
@@ -284,13 +289,19 @@
         try {
             const url = new URL(window.location.origin + '/api/v1/admin/showtimes');
             url.searchParams.append('page', page);
+            url.searchParams.append('per_page', '10');
             url.searchParams.append('movie_id', movieId);
-            url.searchParams.append('status', 'all');
+            const rawStatusValue = els.statusFilter?.value || '';
+            const statusValue = rawStatusValue === '1'
+                ? 'active'
+                : rawStatusValue === '0'
+                    ? 'inactive'
+                    : rawStatusValue;
+            if (statusValue) url.searchParams.append('status', statusValue);
 
             // Apply filters
             if (els.dateFilter?.value) url.searchParams.append('date', els.dateFilter.value);
             if (els.theaterFilter?.value) url.searchParams.append('theater_id', els.theaterFilter.value);
-            if (els.statusFilter?.value) url.searchParams.append('status', els.statusFilter.value);
 
             const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'showtimes:list' });
             if (!res || !res.ok) throw new Error();
@@ -306,7 +317,9 @@
         } catch (err) {
             if (err.name === 'AbortError') return;
             console.error(err);
-            els.showtimesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger">Lỗi tải dữ liệu.</td></tr>`;
+            els.showtimesTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-exclamation-circle fs-1 d-block mb-3 opacity-50"></i>Không thể tải suất chiếu lúc này.</td></tr>`;
+            els.showtimeCount.textContent = '0 suất chiếu';
+            renderPagination({});
         }
     }
 
@@ -345,7 +358,7 @@
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td class="showtime-time-cell">
-                    <div class="showtime-time">${startTimeStr} - ${endTimeStr}</div>
+                    <div class="showtime-time text-white">${startTimeStr} - ${endTimeStr}</div>
                     <div class="showtime-date">${dateStr}</div>
                 </td>
                 <td>
@@ -355,8 +368,9 @@
                 <td class="text-center text-white">${capacity}</td>
                 <td class="format-display">${escapeHtml(formatDisplay)}</td>
                 <td class="text-center">
-                    <div class="form-check form-switch d-inline-block">
-                        <input class="form-check-input status-toggle" type="checkbox" id="${toggleId}" ${checked} data-id="${st.id}">
+                    <div class="form-check form-switch mb-0 d-flex justify-content-center">
+                        <input class="form-check-input toggle-active-btn m-0 admin-toggle-pointer" type="checkbox" role="switch"
+                            data-id="${st.id}" ${checked} title="Bật/Tắt trạng thái">
                     </div>
                 </td>
                 <td class="text-center">
@@ -374,36 +388,23 @@
         });
     }
 
-    function renderPagination(pag) {
-        if (!els.paginationContainer) return;
-        if (!pag || pag.total <= pag.per_page) {
-            els.paginationContainer.innerHTML = '';
-            return;
-        }
-
-        let html = '<nav><ul class="pagination mb-0">';
-        for (const i of window.AdminCore.paginationPages(pag)) {
-            const active = i === pag.current_page ? 'active' : '';
-            html += `<li class="page-item ${active}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-        }
-        html += '</ul></nav>';
-        els.paginationContainer.innerHTML = html;
-
-        els.paginationContainer.querySelectorAll('.page-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const page = parseInt(link.dataset.page);
-                if (selectedMovieId) {
-                    loadShowtimesForMovie(selectedMovieId, page);
-                }
-            });
+    function renderPagination(pagination) {
+        const normalizedPagination = pagination || {};
+        window.AdminCore.renderAdminPagination(els.pagination, normalizedPagination, (page) => {
+            if (selectedMovieId) {
+                selectMovieAndLoadShowtimes(selectedMovieId, page);
+            } else {
+                currentPage = page;
+                loadData(page);
+            }
         });
     }
 
     /* ── Back to Movies Button ────────────────────────────── */
     function backToMoviesList() {
-        els.showtimesPanel.style.display = 'none';
-        document.getElementById('moviesPanel').style.display = 'block';
+        els.showtimesPanel.classList.add('showtimes-panel-hidden');
+        els.showtimesPanel.classList.remove('showtimes-panel-visible');
+        document.getElementById('moviesPanel').classList.remove('d-none');
         selectedMovieId = null;
     }
 
@@ -847,37 +848,39 @@
         }, { signal: lifecycleController.signal });
 
         // Event delegation for status toggle switches
-        document.addEventListener('change', async (e) => {
-            if (e.target.classList.contains('status-toggle')) {
-                const toggle = e.target;
-                const id = toggle.dataset.id;
-                const newStatus = toggle.checked ? 1 : 0;
+        if (els.showtimesTableBody) {
+            els.showtimesTableBody.addEventListener('change', async (e) => {
+                const toggle = e.target.closest('.toggle-active-btn');
+                if (toggle) {
+                    const id = toggle.getAttribute('data-id');
+                    const isActive = toggle.checked;
+                    const newStatus = isActive ? 1 : 0;
+                    try {
+                        const formData = new FormData();
+                        formData.append('status', newStatus);
 
-                try {
-                    const formData = new FormData();
-                    formData.append('status', newStatus);
+                        const res = await window.AdminCore.apiFetch(`/api/v1/admin/showtimes/${id}/status`, {
+                            method: 'PUT',
+                            body: formData
+                        });
 
-                    const res = await window.AdminCore.apiFetch(`/api/v1/admin/showtimes/${id}/status`, {
-                        method: 'PUT',
-                        body: formData
-                    });
+                        if (!res) throw new Error('Không thể kết nối đến máy chủ.');
+                        if (!res.ok) {
+                            const errData = await res.json().catch(() => ({}));
+                            throw new Error(errData.message || 'Cập nhật trạng thái thất bại.');
+                        }
 
-                    if (!res || !res.ok) {
-                        // Revert toggle if failed
-                        toggle.checked = !toggle.checked;
-                        throw new Error('Failed to update status');
+                        const json = await res.json();
+                        window.AdminCore.showToast(json.message || 'Cập nhật trạng thái thành công!', 'success');
+                    } catch (err) {
+                        console.error('Toggle status error:', err);
+                        window.AdminCore.showToast(err.message || 'Lỗi cập nhật trạng thái!', 'error');
+                        // Revert toggle on error
+                        toggle.checked = !isActive;
                     }
-
-                    const json = await res.json();
-                    window.AdminCore.showToast(json.message || 'Cập nhật trạng thái thành công!', 'success');
-                } catch (err) {
-                    console.error('Toggle status error:', err);
-                    window.AdminCore.showToast('Lỗi cập nhật trạng thái!', 'error');
-                    // Revert toggle on error
-                    toggle.checked = !toggle.checked;
                 }
-            }
-        }, { signal: lifecycleController.signal });
+            });
+        }
     }
 
     /* ── Initialize ──────────────────────────────────────── */

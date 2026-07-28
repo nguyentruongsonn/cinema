@@ -30,7 +30,6 @@
 @import './components/badges.css';
 @import './components/forms.css';
 @import './components/modals.css';
-@import './components/filters.css';
 @import './components/alerts.css';
 @import './components/pagination.css';
 @import './components/skeleton.css';
@@ -60,6 +59,9 @@
 @import './admin-common.css';
 @import './admin-modals.css';
 @import './style.css';
+
+/* Keep filter component last so the unified admin filter pattern overrides legacy filter styles. */
+@import './components/filters.css';
 /* Individual page CSS will be refactored later:
 - branches.css
 - combos.css

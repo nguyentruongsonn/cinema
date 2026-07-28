@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMovieRequest;
@@ -211,7 +213,7 @@ class MovieController extends Controller
                     $newUploadedPaths[] = $data['banner_path'];
                 }
 
-                $updatedMovie = $this->movieService->updateMovie($id, $data);
+                $updatedMovie = $this->movieService->updateMovie((int) $id, $data);
 
                 app(AuditLogService::class)->record(
                     Auth::user(),
@@ -262,7 +264,7 @@ class MovieController extends Controller
             $oldValues = $this->auditMovieValues($movie);
 
             DB::transaction(function () use ($id, $movie, $oldValues): void {
-                $this->movieService->deleteMovie($id);
+                $this->movieService->deleteMovie((int) $id);
 
                 app(AuditLogService::class)->record(
                     Auth::user(),
@@ -306,7 +308,7 @@ class MovieController extends Controller
             $updatedMovie = null;
 
             DB::transaction(function () use ($movie, $oldValues, &$updatedMovie) {
-                $newStatus = $movie->status === 'hidden' ? 'active' : 'hidden';
+                $newStatus = $movie->status ? 0 : 1;
                 
                 $movie->lockForUpdate()->update(['status' => $newStatus]);
                 $updatedMovie = $movie->fresh();

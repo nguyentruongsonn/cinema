@@ -9,7 +9,8 @@
 {{-- Shared statistics controls - cards and charts update when the scope changes --}}
 
 {{-- ── Row 1: Date Range Filter ─────────────────────────────────────── --}}
-<x-admin.filter-bar>
+<div class="filter-bar mb-4">
+    <div class="filter-bar-inner">
         <div class="filter-group stats-type-filter">
             <span class="filter-label" id="statsTypeLabel">Loại thống kê</span>
             <div class="admin-segmented-tabs" role="tablist" aria-labelledby="statsTypeLabel">
@@ -42,7 +43,8 @@
         <button id="btnApplyFilter" class="btn-primary-custom ms-auto">
             <i class="bi bi-arrow-clockwise"></i> Cập nhật
         </button>
-</x-admin.filter-bar>
+    </div>
+</div>
 
 {{-- ── Row 2: 4 Summary Cards ───────────────────────────────────────── --}}
 <div class="row g-4 mb-4">

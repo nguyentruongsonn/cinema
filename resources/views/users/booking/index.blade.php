@@ -296,20 +296,20 @@
                 <!-- Step 5: Success Screen -->
                 <div class="tab-content" id="tab-success">
                     <div class="booking-result-screen text-center" aria-live="polite">
-                        <div class="result-icon-wrapper success mb-4 mx-auto">
+                        <div class="result-icon-wrapper success mb-3 mx-auto">
                             <i class="bi bi-hourglass-split" id="successStatusIcon"></i>
                         </div>
                         <h2 class="result-title mb-2" id="successStatusTitle">Đang xác minh thanh toán</h2>
-                        <p class="result-subtitle mb-5" id="successStatusMessage">Đang tải dữ liệu vé đã được xác thực...</p>
+                        <p class="result-subtitle mb-4" id="successStatusMessage">Đang tải dữ liệu vé đã được xác thực...</p>
                         
                         <div class="result-ticket-card mx-auto text-start">
-                            <div class="d-flex mb-4">
+                            <div class="d-flex mb-3">
                                 <div class="ticket-poster me-4">
                                     <img src="{{ asset('storage/' . $showtime->movie->poster_url) }}" alt="{{ $showtime->movie->title }}" class="img-fluid rounded">
                                 </div>
                                 <div class="ticket-details flex-grow-1">
                                     <h4 class="ticket-movie-title mb-2" id="successMovieTitle">{{ $showtime->movie->title }}</h4>
-                                    <span class="ticket-format-badge mb-4 d-inline-block" id="successMovieFormat">{{ $showtime->format->name ?? '2D' }}</span>
+                                    <span class="ticket-format-badge mb-3 d-inline-block" id="successMovieFormat">{{ $showtime->format->name ?? '2D' }}</span>
                                     
                                     <div class="row g-3">
                                         <div class="col-6">
@@ -324,7 +324,7 @@
                                 </div>
                             </div>
                             
-                            <div class="ticket-divider mb-4"></div>
+                            <div class="ticket-divider mb-3"></div>
                             
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -341,10 +341,10 @@
                                 </div>
                             </div>
 
-                            <div class="ticket-divider my-4"></div>
+                            <div class="ticket-divider my-3"></div>
 
-                            <div class="ticket-label mb-2">SẢN PHẨM</div>
-                            <div id="successProductsList" class="result-line-items mb-4">
+                            <div class="ticket-label mb-1">SẢN PHẨM</div>
+                            <div id="successProductsList" class="result-line-items mb-3">
                                 <div class="ticket-value text-muted">Không có sản phẩm đi kèm</div>
                             </div>
 
@@ -357,7 +357,7 @@
                             </div>
                         </div>
 
-                        <p class="result-note mt-5 mb-5 mx-auto">Cảm ơn bạn đã đặt vé. Thông báo đã được gửi đến email<br>của bạn, hãy để ý điện thoại nhé.</p>
+                        <p class="result-note mt-4 mb-4 mx-auto">Cảm ơn bạn đã đặt vé. Thông báo đã được gửi đến email<br>của bạn, hãy để ý điện thoại nhé.</p>
                         
                         <div class="d-flex justify-content-center gap-3 result-actions">
                             <a href="{{ route('home') }}" class="btn btn-result btn-home">Quay về trang chủ</a>

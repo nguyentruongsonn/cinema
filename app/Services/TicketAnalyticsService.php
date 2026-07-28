@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Order;
@@ -100,8 +102,8 @@ class TicketAnalyticsService
 
         // Format peak hour with proper midnight handling (avoid 24:00)
         if ($peakHourRow) {
-            $startHour = str_pad($peakHourRow->hour, 2, '0', STR_PAD_LEFT);
-            $endHour = str_pad(((int) $peakHourRow->hour + 1) % 24, 2, '0', STR_PAD_LEFT);
+            $startHour = str_pad((string) $peakHourRow->hour, 2, '0', STR_PAD_LEFT);
+            $endHour = str_pad((string) (((int) $peakHourRow->hour + 1) % 24), 2, '0', STR_PAD_LEFT);
             $peakHour = "{$startHour}:00 - {$endHour}:00";
         } else {
             $peakHour = 'N/A';

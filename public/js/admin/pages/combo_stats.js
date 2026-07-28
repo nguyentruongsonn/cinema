@@ -35,6 +35,12 @@
             chartComboTrend: document.getElementById('chartComboTrend'),
             chartTopCombos: document.getElementById('chartTopCombos'),
             chartComboRevenue: document.getElementById('chartComboRevenue'),
+            trendTitle: document.querySelector('#chartComboTrend')?.closest('.chart-card')?.querySelector('.chart-title'),
+            topTitle: document.querySelector('#chartTopCombos')?.closest('.chart-card')?.querySelector('.chart-title'),
+            revenueTitle: document.querySelector('#chartComboRevenue')?.closest('.chart-card')?.querySelector('.chart-title'),
+            totalTitle: document.getElementById('cardTotalCombos')?.closest('.stat-card')?.querySelector('.stat-title'),
+            revenueCardTitle: document.getElementById('cardRevenue')?.closest('.stat-card')?.querySelector('.stat-title'),
+            topCaption: document.getElementById('cardTopCombo')?.closest('.stat-card')?.querySelector('.trend-text, .text-secondary'),
         };
 
         currentType = document.querySelector('[data-stats-type].active')?.dataset.statsType || 'combo';
@@ -88,12 +94,55 @@
         els.filterEnd.value   = toDateStr(now);
     }
 
+    function getTypeLabels() {
+        const isCombo = currentType === 'combo';
+
+        return {
+            unit: isCombo ? 'combo' : 'sản phẩm',
+            totalTitle: isCombo ? 'TỔNG COMBO BÁN RA' : 'TỔNG ĐỒ ĂN & NƯỚC UỐNG BÁN RA',
+            revenueTitle: isCombo ? 'DOANH THU TỪ COMBO' : 'DOANH THU TỪ ĐỒ ĂN & NƯỚC UỐNG',
+            topCaption: isCombo ? 'combo bán chạy nhất' : 'sản phẩm bán chạy nhất',
+            trendTitle: isCombo ? 'Xu hướng lượng combo bán ra' : 'Xu hướng lượng đồ ăn & nước uống bán ra',
+            topTitle: isCombo ? 'Top combo bán chạy' : 'Top đồ ăn & nước uống bán chạy',
+            revenueChartTitle: isCombo ? 'Doanh thu theo combo' : 'Doanh thu theo đồ ăn & nước uống',
+            quantityAxis: isCombo ? 'Số lượng combo' : 'Số lượng sản phẩm',
+            seriesName: isCombo ? 'Combo bán ra' : 'Sản phẩm bán ra',
+        };
+    }
+
+    function applyTypeLabels() {
+        const labels = getTypeLabels();
+
+        if (els.totalTitle) els.totalTitle.textContent = labels.totalTitle;
+        if (els.revenueCardTitle) els.revenueCardTitle.textContent = labels.revenueTitle;
+        if (els.topCaption) els.topCaption.textContent = labels.topCaption;
+        if (els.trendTitle) els.trendTitle.textContent = labels.trendTitle;
+        if (els.topTitle) els.topTitle.textContent = labels.topTitle;
+        if (els.revenueTitle) els.revenueTitle.textContent = labels.revenueChartTitle;
+
+        charts.trend?.updateOptions({
+            yaxis: {
+                title: { text: labels.quantityAxis, style: { color: '#a1a1aa', fontSize: '11px' } },
+                labels: { style: { colors: '#a1a1aa', fontSize: '11px' } },
+                min: 0
+            }
+        });
+    }
+
+    function normalizeTopItem(item) {
+        return {
+            name: item?.name || 'N/A',
+            total_qty: Number(item?.total_qty ?? item?.qty ?? 0),
+            total_revenue: Number(item?.total_revenue ?? item?.revenue ?? 0),
+        };
+    }
+
     function showLoading() {
         if (els.btnApply) {
             els.btnApply.disabled = true;
             els.btnApply.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cập nhật...';
         }
-        document.querySelectorAll('.stat-value, #chartComboTrend, #chartTopCombos, #chartComboRevenue').forEach(el => {
+        document.querySelectorAll('#adminPageContent .stat-value[id], #chartComboTrend, #chartTopCombos, #chartComboRevenue').forEach(el => {
             el.classList.add('admin-skeleton');
             if (!el.id.startsWith('chart')) el.classList.add('admin-skeleton-text');
         });
@@ -104,7 +153,7 @@
             els.btnApply.disabled = false;
             els.btnApply.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Cập nhật';
         }
-        document.querySelectorAll('.stat-value').forEach(el => {
+        document.querySelectorAll('#adminPageContent .stat-value[id]').forEach(el => {
             el.classList.remove('admin-skeleton', 'admin-skeleton-text');
         });
         document.querySelectorAll('#chartComboTrend, #chartTopCombos, #chartComboRevenue').forEach(el => {
@@ -213,9 +262,11 @@
     }
 
     function renderTrendChart(trend) {
-        if (!charts.trend || !trend?.length) return;
-        const categories = trend.map(r => r.date);
-        const data       = trend.map(r => r.count);
+        if (!charts.trend) return;
+        const labels = getTypeLabels();
+        const rows = Array.isArray(trend) ? trend : [];
+        const categories = rows.map(r => r.date);
+        const data       = rows.map(r => Number(r.count || 0));
         let opts = { xaxis: { categories } };
         if (data.length === 1) {
             opts.markers = { size: 6, strokeWidth: 2, hover: { size: 8 } };
@@ -223,41 +274,31 @@
             opts.markers = { size: 0 };
         }
         charts.trend.updateOptions(opts);
-        charts.trend.updateSeries([{ name: 'Combo bán ra', data }]);
+        charts.trend.updateSeries([{ name: labels.seriesName, data }]);
     }
 
     function renderTopCombosChart(topCombos) {
-        if (!charts.topCombos || !topCombos?.length) return;
-        const labels = topCombos.map(d => d.name);
-        const series = topCombos.map(d => d.total_qty);
+        if (!charts.topCombos) return;
+        const items = Array.isArray(topCombos) ? topCombos.map(normalizeTopItem) : [];
+        const labels = items.map(d => d.name);
+        const series = items.map(d => d.total_qty);
         charts.topCombos.updateOptions({ labels });
         charts.topCombos.updateSeries(series);
     }
 
     function renderRevenueChart(topCombos) {
-        if (!charts.revenue || !topCombos?.length) return;
-        const categories = topCombos.map(d => d.name);
-        const data       = topCombos.map(d => d.total_revenue);
+        if (!charts.revenue) return;
+        const items = Array.isArray(topCombos) ? topCombos.map(normalizeTopItem) : [];
+        const categories = items.map(d => d.name);
+        const data       = items.map(d => d.total_revenue);
         charts.revenue.updateOptions({ xaxis: { categories } });
         charts.revenue.updateSeries([{ name: 'Doanh thu', data }]);
     }
 
-    /* ── Wait for authManager ────────────────────────────────────────── */
-    function waitForAuth(callback, retries = 50) {
-        if (typeof authManager !== 'undefined' && authManager.authChecked) {
-            callback();
-            return;
-        }
-        if (retries <= 0) {
-            console.error('[Combos] authManager check timed out. loadStats aborted.');
-            return;
-        }
-        setTimeout(() => waitForAuth(callback, retries - 1), 150);
-    }
+    /* ── Wait for authManager (No longer needed) ────────────────────── */
 
     /* ── API call ───────────────────────────────────────────────────── */
     async function loadStats() {
-        if (typeof authManager === 'undefined') return;
         const start = els.filterStart?.value;
         const end   = els.filterEnd?.value;
         if (!start || !end) return;
@@ -267,11 +308,17 @@
         const diffTime = Math.abs(endD - startD);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
 
+        applyTypeLabels();
         showLoading();
         try {
             const api = currentType === 'combo' ? API_COMBO : API_FOOD;
             const url = `${api}?start_date=${start}&end_date=${end}`;
-            const res = await authManager.fetchAPI(url, { silentAuth: true });
+            const response = await window.AdminCore.apiFetch(`/api/v1${url}`, {
+                requestKey: 'combos:stats',
+                cacheTtl: 30000,
+            });
+            if (!response?.ok) throw new Error('Không thể tải thống kê sản phẩm.');
+            const res = await response.json();
 
             if (res?.success) {
                 const d = res.data;
@@ -281,6 +328,7 @@
                 renderRevenueChart(d.top_combos);
             }
         } catch (e) {
+            if (e?.name === 'AbortError') return;
             console.error('[Combos] Error:', e);
         } finally {
             hideLoading();
@@ -315,6 +363,7 @@
                     item.setAttribute('aria-selected', String(isActive));
                 });
                 currentType = type;
+                applyTypeLabels();
                 loadStats();
             });
         });
@@ -326,8 +375,9 @@
         initTrendChart();
         initTopCombosChart();
         initRevenueChart();
+        applyTypeLabels();
         bindEvents();
-        waitForAuth(loadStats);
+        loadStats();
 
         // Auto polling every 30 seconds
         state.pollInterval = setInterval(loadStats, 30000);

@@ -8,32 +8,32 @@
 
 {{-- ── Filter Bar ─────────────────────────────────────────── --}}
 <div class="admin-filter-container">
-    <div class="d-flex align-items-center w-100 gap-3 flex-wrap">
-        <h5 class="mb-0 text-white fw-bold combo-page-title">
-            Danh sách Combo
-        </h5>
+    <div class="admin-filter-bar">
+        <div class="admin-filter-fields">
+            <div class="admin-filter-group auto-width">
+                <select id="statusFilter" class="admin-filter-select filter-select-md">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="active">Đang bán</option>
+                    <option value="inactive">Ngừng bán</option>
+                </select>
+            </div>
+        </div>
 
-        <form id="searchForm" class="flex-grow-1 combo-search-form">
+        <form id="searchForm" class="admin-filter-search combo-search-form">
+            {{-- Search --}}
             <div class="input-group">
-                <input type="text" id="search" name="search" class="admin-filter-input combo-search-input" placeholder="Tên combo...">
-                <button class="admin-filter-btn combo-search-btn" type="submit">
+                <input type="text" id="search" name="search" class="admin-filter-input search-input-rounded-left" placeholder="Tên combo...">
+                <button class="admin-filter-btn search-btn-rounded-right" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
         </form>
 
-        <select id="statusFilter" class="admin-filter-select combo-status-filter">
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang bán</option>
-            <option value="inactive">Ngừng bán</option>
-        </select>
-
-        <button type="button" id="btnOpenCreateCombo" class="admin-action-btn ms-auto">
+        <button type="button" id="btnOpenCreateCombo" class="admin-action-btn admin-filter-primary-action">
             <i class="bi bi-plus-lg"></i> Thêm Combo
         </button>
     </div>
 </div>
-
 {{-- ── Table ─────────────────────────────────────────────────── --}}
 <div class="admin-table-container">
     <div class="admin-table-wrapper">
@@ -51,62 +51,12 @@
                 </tr>
             </thead>
             <tbody id="combosTableBody">
-                <!-- Skeleton Loading Rows -->
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 70%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text" style="width: 30px; margin: 0 auto;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-img" style="width: 60px; height: 60px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 85%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 50px;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 80%;"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 75%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
+                <x-admin.skeleton-table cols="8" rows="5" :hasImage="true" />
             </tbody>
         </table>
     </div>
 
-    <div class="d-flex justify-content-end mt-4 pt-3" id="paginationContainer"></div>
+    <div class="d-flex justify-content-center mt-4 pt-3" id="paginationContainer"></div>
 </div>
 
 {{-- ── Modal: Thêm / Sửa Combo ─────────────────────────────── --}}

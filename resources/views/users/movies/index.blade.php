@@ -61,8 +61,8 @@
                 <div class="d-flex justify-content-between align-items-end mb-3">
                     <h2 class="section-title mb-0">Phim sắp chiếu</h2>
                     <div class="scroll-controls">
-                        <button class="btn-scroll" id="scrollPrev"><i class="bi bi-chevron-left"></i></button>
-                        <button class="btn-scroll" id="scrollNext"><i class="bi bi-chevron-right"></i></button>
+                        <button class="btn-scroll" id="scrollPrev" type="button" aria-label="Phim sắp chiếu trước"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+                        <button class="btn-scroll" id="scrollNext" type="button" aria-label="Phim sắp chiếu tiếp theo"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
                     </div>
                 </div>
 

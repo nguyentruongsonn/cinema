@@ -8,12 +8,19 @@
 
 {{-- ── Dòng 1: Header & Search ────────────────────────── --}}
 <div class="admin-filter-container">
-    <div class="d-flex align-items-center w-100 gap-3">
-        <h5 class="mb-0 text-white fw-bold flex-no-shrink">
-            Danh sách Phim
-        </h5>
+    <div class="admin-filter-bar">
+        <div class="admin-filter-fields">
+            <div class="admin-filter-group auto-width">
+                <select id="statusFilter" class="admin-filter-select filter-select-md">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="1">Đã xuất bản</option>
+                    <option value="0">Bản nháp</option>
+                </select>
+            </div>
+        </div>
 
-        <form id="searchForm" class="flex-grow-1 search-container-lg">
+        <form id="searchForm" class="admin-filter-search">
+            {{-- Search --}}
             <div class="input-group">
                 <input type="text" id="search" name="search" class="admin-filter-input search-input-rounded-left" placeholder="Tên phim...">
                 <button class="admin-filter-btn search-btn-rounded-right" type="submit">
@@ -22,26 +29,13 @@
             </div>
         </form>
 
-        <button type="button" id="btnOpenCreateMovie" class="admin-action-btn ms-auto">
+        <button type="button" id="btnOpenCreateMovie" class="admin-action-btn admin-filter-primary-action">
             <i class="bi bi-plus-lg"></i> Thêm phim
         </button>
     </div>
 </div>
-
 {{-- ── Dòng 2: Tabs + Content ─────────────────────────────────────── --}}
 <div class="admin-table-container">
-    <ul class="nav nav-tabs combo-tabs mb-4" id="movieTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" data-status="all" type="button" role="tab">Tất cả</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" data-status="published" type="button" role="tab">Đã xuất bản</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" data-status="draft" type="button" role="tab">Nháp</button>
-        </li>
-    </ul>
-
     <div class="admin-table-wrapper">
         <table class="admin-table">
             <thead>
@@ -56,58 +50,12 @@
                 </tr>
             </thead>
             <tbody id="moviesTableBody">
-                <!-- Skeleton Loading Rows -->
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-85"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text" style="width: 65%;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge" style="margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm" style="margin: 0 auto;"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
-                <tr class="skeleton-row">
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-img admin-skeleton-img-movie"></div></td>
-                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-badge skeleton-center"></div></td>
-                    <td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>
-                </tr>
+                <x-admin.skeleton-table cols="7" rows="5" :hasImage="true" />
             </tbody>
         </table>
     </div>
 
-    <div class="d-flex justify-content-end mt-4 pt-3" style="border-top: 1px solid var(--border-color);" id="paginationContainer">
-    </div>
+    <div class="d-flex justify-content-center mt-4 pt-3" id="paginationContainer"></div>
 </div>
 
 {{-- ── Modal: Thêm / Sửa Phim ─────────────────────────────── --}}
@@ -124,7 +72,7 @@
                 <input type="hidden" id="movieFormMethod" value="POST">
                 <input type="hidden" name="movie_id" id="movieIdInput" value="">
 
-                <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+                <div class="modal-body admin-modal-scroll">
                     <div class="row g-4">
                         {{-- Cột trái --}}
                         <div class="col-md-8">
@@ -224,22 +172,18 @@
                             {{-- Poster Upload --}}
                             <div class="mb-3">
                                 <label class="form-label text-secondary">Poster phim</label>
-                                <div class="poster-upload-box mb-2" id="posterUploadBox"
-                                     style="border: 2px dashed rgba(255,255,255,0.15); border-radius: 10px; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.2s;">
-                                    <img id="posterPreview" src="" alt="Poster"
-                                         style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: none;">
+                                <div class="poster-upload-box movie-upload-box movie-upload-box-poster mb-2" id="posterUploadBox">
+                                    <img id="posterPreview" class="movie-upload-preview" src="" alt="Poster">
                                     <div id="posterPlaceholder" class="text-center text-white-50 p-3">
                                         <i class="bi bi-cloud-arrow-up fs-2 d-block mb-1"></i>
                                         <div class="small fw-semibold">Kéo thả hoặc click để chọn</div>
-                                        <div style="font-size:0.72rem;">JPG, PNG, WEBP · Tối đa 5MB</div>
+                                        <div class="movie-upload-help">JPG, PNG, WEBP · Tối đa 5MB</div>
                                     </div>
-                                    <input type="file" id="moviePosterFile" name="poster_file"
-                                           accept="image/jpeg,image/png,image/webp"
-                                           style="position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;">
+                                    <input type="file" id="moviePosterFile" class="movie-upload-input" name="poster_file"
+                                           accept="image/jpeg,image/png,image/webp">
                                 </div>
                                 <button type="button" id="clearPosterBtn"
-                                        class="btn btn-sm w-100 d-none"
-                                        style="background: rgba(255,255,255,0.06); color:#a1a1aa; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size:0.78rem;">
+                                        class="btn btn-sm w-100 d-none movie-upload-clear">
                                     <i class="bi bi-x me-1"></i>Xóa ảnh
                                 </button>
                             </div>
@@ -247,21 +191,17 @@
                             {{-- Banner Upload --}}
                             <div class="mb-3">
                                 <label class="form-label text-secondary">Banner / Backdrop (tùy chọn)</label>
-                                <div class="banner-upload-box" id="bannerUploadBox"
-                                     style="border: 2px dashed rgba(255,255,255,0.1); border-radius: 10px; min-height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.2s;">
-                                    <img id="bannerPreview" src="" alt="Banner"
-                                         style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: none;">
+                                <div class="banner-upload-box movie-upload-box movie-upload-box-banner" id="bannerUploadBox">
+                                    <img id="bannerPreview" class="movie-upload-preview" src="" alt="Banner">
                                     <div id="bannerPlaceholder" class="text-center text-white-50 p-2">
                                         <i class="bi bi-panorama fs-4 d-block mb-1"></i>
-                                        <div style="font-size:0.72rem;">Ảnh nền rộng (16:9)</div>
+                                        <div class="movie-upload-help">Ảnh nền rộng (16:9)</div>
                                     </div>
-                                    <input type="file" id="movieBannerFile" name="banner_file"
-                                           accept="image/jpeg,image/png,image/webp"
-                                           style="position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;">
+                                    <input type="file" id="movieBannerFile" class="movie-upload-input" name="banner_file"
+                                           accept="image/jpeg,image/png,image/webp">
                                 </div>
                                 <button type="button" id="clearBannerBtn"
-                                        class="btn btn-sm w-100 d-none mt-1"
-                                        style="background: rgba(255,255,255,0.06); color:#a1a1aa; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size:0.78rem;">
+                                        class="btn btn-sm w-100 d-none mt-1 movie-upload-clear">
                                     <i class="bi bi-x me-1"></i>Xóa banner
                                 </button>
                             </div>
@@ -294,7 +234,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0" id="movieSubmitBtn">Lưu phim</button>
                 </div>
             </form>

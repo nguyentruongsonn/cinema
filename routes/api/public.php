@@ -11,9 +11,13 @@ use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\TheaterController;
+use App\Http\Controllers\ContentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('home', [HomeController::class, 'data']);
+Route::get('banners', [ContentController::class, 'banners']);
+Route::get('posts', [ContentController::class, 'posts']);
+Route::get('posts/{post:slug}', [ContentController::class, 'post']);
 Route::get('health/live', [OperationalHealthController::class, 'live']);
 Route::get('health/ready', [OperationalHealthController::class, 'ready']);
 Route::get('docs/openapi.json', [OperationalHealthController::class, 'openApi'])->name('api.docs.openapi');

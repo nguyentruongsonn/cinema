@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\HomeController;
 use App\Http\Resources\BannerResource;
 use App\Models\Banner;
 use App\Services\AuditLogService;
@@ -18,8 +21,6 @@ use Illuminate\Validation\Rule;
 
 class BannerController extends Controller
 {
-    private const POSITIONS = ['home_slider', 'sidebar', 'popup', 'top_bar', 'footer'];
-
     public function __construct(
         private readonly PublicFileStorageService $publicFiles
     ) {
@@ -45,12 +46,11 @@ class BannerController extends Controller
 
             $filters = $request->validate([
                 'search' => ['nullable', 'string', 'max:100'],
-                'position' => ['nullable', 'string', Rule::in(array_merge(['all'], self::POSITIONS))],
                 'status' => ['nullable', 'string', Rule::in(['all', '1', '0'])],
                 'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
             ]);
 
-            $query = Banner::query();
+            $query = Banner::query()->with('images');
 
             if (!empty($filters['search'])) {
                 $search = trim($filters['search']);
@@ -60,16 +60,12 @@ class BannerController extends Controller
                 });
             }
 
-            if (!empty($filters['position']) && $filters['position'] !== 'all') {
-                $query->where('position', $filters['position']);
-            }
-
             if (isset($filters['status']) && $filters['status'] !== 'all') {
                 $query->where('is_active', $filters['status'] === '1');
             }
 
-            $banners = $query->orderBy('display_order')
-                ->orderByDesc('created_at')
+            $banners = $query->orderBy('created_at')
+                ->orderBy('id')
                 ->paginate($filters['per_page'] ?? 15);
 
             return response()->json([
@@ -111,53 +107,50 @@ class BannerController extends Controller
             $validated = $request->validate([
                 'title' => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string', 'max:1000'],
-                'image_paths' => ['required', 'array', 'min:1', 'max:10'],
+                'image_paths' => ['required', 'array', 'min:1', 'max:5'],
                 'image_paths.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
                 'link_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//i'],
-                'position' => ['required', Rule::in(self::POSITIONS)],
-                'display_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
                 'is_active' => ['sometimes', 'boolean'],
                 'start_date' => ['nullable', 'date'],
                 'end_date' => ['nullable', 'date', 'after:start_date'],
             ]);
 
-            $banners = DB::transaction(function () use ($request, $validated, &$storedPaths) {
-                $created = [];
+            $banner = DB::transaction(function () use ($request, $validated, &$storedPaths) {
                 $baseData = $this->sanitizeBannerData($validated);
-                $baseData['display_order'] = $baseData['display_order'] ?? 0;
                 $baseData['is_active'] = $baseData['is_active'] ?? false;
                 unset($baseData['image_paths']);
+
+                $banner = Banner::create($baseData);
 
                 foreach ($request->file('image_paths') as $file) {
                     $path = $this->storeBannerImage($file);
                     $storedPaths[] = $path;
-
-                    $created[] = Banner::create(array_merge($baseData, [
-                        'image_path' => $path,
-                    ]));
-
-                    app(AuditLogService::class)->record(
-                        Auth::user(),
-                        'banner.created',
-                        $created[array_key_last($created)],
-                        [],
-                        $this->auditBannerValues($created[array_key_last($created)])
-                    );
+                    $banner->images()->create(['image_path' => $path]);
                 }
 
-                return $created;
+                $banner->load('images');
+                app(AuditLogService::class)->record(
+                    Auth::user(),
+                    'banner.created',
+                    $banner,
+                    [],
+                    $this->auditBannerValues($banner)
+                );
+
+                return $banner;
             });
 
-            Log::info('Banners created', [
+            Log::info('Banner created', [
                 'actor_id' => Auth::id(),
-                'banner_ids' => collect($banners)->pluck('id')->all(),
-                'count' => count($banners),
-                'position' => $validated['position'],
+                'banner_id' => $banner->id,
+                'image_count' => $banner->images->count(),
             ]);
+            HomeController::flushCachedData();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Tạo ' . count($banners) . ' banner thành công',
+                'message' => 'Tạo banner thành công',
+                'data' => (new BannerResource($banner))->resolve(),
             ], 201);
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
             $this->deleteStoredFiles($storedPaths);
@@ -184,8 +177,9 @@ class BannerController extends Controller
      */
     public function update(Request $request, Banner $banner): JsonResponse
     {
-        $newImagePath = null;
-        $oldImagePath = $banner->image_path;
+        $newImagePaths = [];
+        $oldImagePaths = [];
+        $replacedImages = false;
 
         try {
             $this->authorize('update', $banner);
@@ -193,36 +187,44 @@ class BannerController extends Controller
             $validated = $request->validate([
                 'title' => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string', 'max:1000'],
-                'image_path' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+                'image_paths' => ['nullable', 'array', 'min:1', 'max:5'],
+                'image_paths.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
                 'link_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//i'],
-                'position' => ['required', Rule::in(self::POSITIONS)],
-                'display_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
                 'is_active' => ['sometimes', 'boolean'],
                 'start_date' => ['nullable', 'date'],
                 'end_date' => ['nullable', 'date', 'after:start_date'],
             ]);
 
-            $updatedBanner = DB::transaction(function () use ($request, $banner, $validated, &$newImagePath) {
+            $updatedBanner = DB::transaction(function () use ($request, $banner, $validated, &$newImagePaths, &$oldImagePaths, &$replacedImages) {
                 $data = $this->sanitizeBannerData($validated);
+                unset($data['image_paths']);
+                $banner->load('images');
                 $oldValues = $this->auditBannerValues($banner);
 
-                if ($request->hasFile('image_path')) {
-                    $newImagePath = $this->storeBannerImage($request->file('image_path'));
-                    $data['image_path'] = $newImagePath;
+                if ($request->hasFile('image_paths')) {
+                    $oldImagePaths = $banner->images->pluck('image_path')->all();
+                    foreach ($request->file('image_paths') as $file) {
+                        $newImagePaths[] = $this->storeBannerImage($file);
+                    }
+                    $banner->images()->delete();
+                    foreach ($newImagePaths as $path) {
+                        $banner->images()->create(['image_path' => $path]);
+                    }
+                    $replacedImages = true;
                 }
 
                 $changes = [];
                 foreach ($data as $field => $value) {
                     if ($banner->$field != $value) {
                         $changes[$field] = [
-                            'old' => $field === 'image_path' ? '[image]' : $banner->$field,
-                            'new' => $field === 'image_path' ? '[image]' : $value,
+                            'old' => $banner->$field,
+                            'new' => $value,
                         ];
                     }
                 }
 
                 $banner->update($data);
-                $banner->refresh();
+                $banner->refresh()->load('images');
 
                 app(AuditLogService::class)->record(
                     Auth::user(),
@@ -241,25 +243,26 @@ class BannerController extends Controller
                 return $banner->fresh();
             });
 
-            if ($newImagePath && $oldImagePath) {
-                $this->publicFiles->deleteMany([$oldImagePath]);
+            if ($replacedImages) {
+                $this->publicFiles->deleteMany($oldImagePaths);
             }
+            HomeController::flushCachedData();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Cập nhật banner thành công',
-                'data' => $updatedBanner,
+                'data' => (new BannerResource($updatedBanner))->resolve(),
             ]);
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
-            $this->deleteStoredFiles(array_filter([$newImagePath]));
+            $this->deleteStoredFiles($newImagePaths);
 
             return response()->json(['success' => false, 'message' => 'Unauthorized to update this banner'], 403);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            $this->deleteStoredFiles(array_filter([$newImagePath]));
+            $this->deleteStoredFiles($newImagePaths);
 
             return response()->json(['success' => false, 'message' => 'Invalid banner data', 'errors' => $e->errors()], 422);
         } catch (\Throwable $e) {
-            $this->deleteStoredFiles(array_filter([$newImagePath]));
+            $this->deleteStoredFiles($newImagePaths);
 
             Log::error('Failed to update banner', [
                 'banner_id' => $banner->id,
@@ -279,7 +282,8 @@ class BannerController extends Controller
         try {
             $this->authorize('delete', $banner);
 
-            $imagePath = $banner->image_path;
+            $banner->load('images');
+            $imagePaths = $banner->images->pluck('image_path')->all();
 
             DB::transaction(function () use ($banner) {
                 app(AuditLogService::class)->record(
@@ -299,9 +303,8 @@ class BannerController extends Controller
                 ]);
             });
 
-            if ($imagePath) {
-                $this->publicFiles->deleteMany([$imagePath]);
-            }
+            $this->publicFiles->deleteMany($imagePaths);
+            HomeController::flushCachedData();
 
             return response()->json([
                 'success' => true,
@@ -354,6 +357,7 @@ class BannerController extends Controller
 
                 return $locked->fresh();
             });
+            HomeController::flushCachedData();
 
             return response()->json([
                 'success' => true,
@@ -371,19 +375,6 @@ class BannerController extends Controller
 
             return response()->json(['success' => false, 'message' => 'Failed to update banner status'], 500);
         }
-    }
-
-    /**
-     * Get positions for filter.
-     */
-    public function positions(): JsonResponse
-    {
-        $this->authorize('viewAny', Banner::class);
-
-        return response()->json([
-            'success' => true,
-            'data' => self::POSITIONS,
-        ]);
     }
 
     private function sanitizeBannerData(array $data): array
@@ -417,10 +408,8 @@ class BannerController extends Controller
     {
         return [
             'title' => $banner->title,
-            'position' => $banner->position,
-            'display_order' => $banner->display_order,
             'is_active' => (bool) $banner->is_active,
-            'image_path' => $banner->image_path ? '[image]' : null,
+            'image_count' => $banner->images->count(),
             'link_url' => $banner->link_url,
         ];
     }

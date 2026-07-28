@@ -94,7 +94,7 @@
             els.btnApply.disabled = true;
             els.btnApply.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cập nhật...';
         }
-        document.querySelectorAll('.stat-value, .stat-trend span, #chartTicketTrend, #chartTopMovies, #chartTheaterOccupancy').forEach(el => {
+        document.querySelectorAll('#adminPageContent .stat-value[id], #adminPageContent .stat-trend span[id], #chartTicketTrend, #chartTopMovies, #chartTheaterOccupancy').forEach(el => {
             el.classList.add('admin-skeleton');
             if (!el.id.startsWith('chart')) el.classList.add('admin-skeleton-text');
         });
@@ -105,7 +105,7 @@
             els.btnApply.disabled = false;
             els.btnApply.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Cập nhật';
         }
-        document.querySelectorAll('.skeleton, .admin-skeleton').forEach(el => {
+        document.querySelectorAll('#adminPageContent .admin-skeleton').forEach(el => {
             el.classList.remove('skeleton', 'skeleton-text', 'skeleton-chart', 'admin-skeleton', 'admin-skeleton-text');
         });
     }
@@ -221,7 +221,6 @@
 
     /* ── API call ───────────────────────────────────────────────────── */
     async function loadStats() {
-        if (typeof authManager === 'undefined') return;
         const start = els.filterStart?.value;
         const end   = els.filterEnd?.value;
         if (!start || !end) return;
@@ -229,7 +228,12 @@
         showLoading();
         try {
             const url = `${API}?start_date=${start}&end_date=${end}`;
-            const res = await authManager.fetchAPI(url, { silentAuth: true });
+            const response = await window.AdminCore.apiFetch(`/api/v1${url}`, {
+                requestKey: 'tickets:stats',
+                cacheTtl: 30000,
+            });
+            if (!response?.ok) throw new Error('Không thể tải thống kê vé.');
+            const res = await response.json();
 
             if (res?.success) {
                 const d = res.data;
@@ -239,6 +243,7 @@
                 renderTheaterOccupancyChart(d.theater_occupancy);
             }
         } catch (e) {
+            if (e?.name === 'AbortError') return;
             console.error('[Tickets] Error:', e);
         } finally {
             hideLoading();
@@ -246,18 +251,6 @@
     }
 
     /* ── Wait for authManager ────────────────────────────────────────── */
-    function waitForAuth(callback, retries = 50) {
-        if (typeof authManager !== 'undefined' && authManager.authChecked) {
-            callback();
-            return;
-        }
-        if (retries <= 0) {
-            console.error('[Tickets] authManager check timed out. loadStats aborted.');
-            return;
-        }
-        setTimeout(() => waitForAuth(callback, retries - 1), 150);
-    }
-
     /* ── Events ─────────────────────────────────────────────────────── */
     function bindEvents() {
         // Shortcut buttons
@@ -286,13 +279,16 @@
         initTopMoviesChart();
         initTheaterOccupancyChart();
         bindEvents();
-        // Wait for authManager to finish auth check before first API call
-        waitForAuth(loadStats);
+        loadStats();
     }
 
     window.onAdminPageLoad(() => {
         cacheDoms();
         init();
+        window.onAdminPageCleanup?.(() => {
+            Object.values(charts).forEach((chart) => chart?.destroy?.());
+            Object.keys(charts).forEach((key) => { charts[key] = null; });
+        });
     });
 
 })();
