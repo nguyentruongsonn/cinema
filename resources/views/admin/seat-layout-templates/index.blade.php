@@ -74,7 +74,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="seatLayoutTemplateModalLabel">
-                    <i class="bi bi-grid-3x3-gap me-2"></i>Tạo mẫu sơ đồ ghế
+                    <i class="bi bi-grid-3x3-gap me-2" style="color:var(--accent-color);"></i>Tạo mẫu sơ đồ ghế mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -145,7 +145,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white slt-btn-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn text-white slt-btn-cancel" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0" id="sltSubmitBtn">Lưu mẫu sơ đồ ghế</button>
                 </div>
             </form>

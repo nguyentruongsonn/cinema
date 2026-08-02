@@ -43,8 +43,9 @@
     /* ── Fetch & Render ────────────────────────────────────────────── */
     async function loadData(page = 1) {
         try {
-            // Skeleton loading is now handled in HTML blade template
-            // els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+            if (window.renderAdminTableSkeleton && els.tableBody) {
+                window.renderAdminTableSkeleton(els.tableBody, 6, 5, false);
+            }
 
             const url = new URL(window.location.origin + '/api/v1/admin/branches');
             url.searchParams.append('page', page);
@@ -127,7 +128,7 @@
     if (els.btnCreate) {
         els.btnCreate.addEventListener('click', () => {
             resetForm();
-            els.modalLabel.textContent = 'Tạo chi nhánh mới';
+            els.modalLabel.innerHTML = '<i class="bi bi-geo-alt me-2 admin-accent-icon"></i>Tạo chi nhánh mới';
             getModalInstance()?.show();
         });
     }
@@ -141,7 +142,7 @@
 
             const branch = JSON.parse(btnEdit.dataset.branch);
             els.idInput.value = branch.id;
-            els.modalLabel.textContent = 'Cập nhật chi nhánh';
+            els.modalLabel.innerHTML = '<i class="bi bi-geo-alt me-2 admin-accent-icon"></i>Cập nhật chi nhánh';
 
             els.name.value = branch.name || '';
             els.isActive.checked = branch.is_active === 1 || branch.is_active === true;

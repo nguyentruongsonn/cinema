@@ -64,8 +64,9 @@
 </div>
 
 {{-- ── Modal: Thêm / Sửa Rạp Chiếu ────────────────────────────────── --}}
+{{-- ── Modal: Thêm / Sửa Rạp Chiếu ────────────────────────────────── --}}
 <div class="modal fade" id="theaterModal" tabindex="-1" aria-labelledby="theaterModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="theaterModalLabel">Thêm rạp chiếu mới</h5>
@@ -97,6 +98,35 @@
                         <label for="theaterDescription" class="form-label text-secondary">Mô tả</label>
                         <textarea class="form-control bg-dark text-white border-secondary" id="theaterDescription" name="description" rows="3"></textarea>
                     </div>
+
+                    <div class="border-top border-secondary pt-3 mt-3 mb-3">
+                        <h6 class="text-white mb-3"><i class="bi bi-cash-coin me-2 text-primary"></i>Cấu hình bảng giá (VNĐ)</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="theaterBasePrice" class="form-label text-secondary">Giá vé cơ bản <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="theaterBasePrice" name="base_price" required min="0" value="70000">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="theaterHappyDayPrice" class="form-label text-secondary">Đồng giá Thứ 3 (Happy Day) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="theaterHappyDayPrice" name="happy_day_price" required min="0" value="50000">
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label for="theaterWeekendSurcharge" class="form-label text-secondary">Phụ thu cuối tuần <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="theaterWeekendSurcharge" name="weekend_surcharge" required min="0" value="10000">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="theaterHolidaySurcharge" class="form-label text-secondary">Phụ thu ngày lễ <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="theaterHolidaySurcharge" name="holiday_surcharge" required min="0" value="20000">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="theaterStudentDiscount" class="form-label text-secondary">Giảm giá HSSV/Trẻ em <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="theaterStudentDiscount" name="student_discount" required min="0" value="10000">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <div class="form-check form-switch">
                             <input class="form-check-input cursor-pointer" type="checkbox" id="theaterStatus" name="is_active" value="1" checked>
@@ -115,7 +145,7 @@
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu rạp chiếu</button>
                 </div>
             </form>

@@ -60,8 +60,14 @@ Route::prefix('admin')->middleware(['admin'])->group(function () {
     // Theaters
     Route::view('theaters', 'admin.theaters.index')->name('admin.theaters.index');
 
+    // Pricing Rules
+    Route::view('pricing-rules', 'admin.pricing-rules.index')->name('admin.pricing-rules.index');
+
     // Seat layout templates
     Route::view('seat-layout-templates', 'admin.seat-layout-templates.index')->name('admin.seat-layout-templates.index');
+    Route::get('seat-layout-templates/{template}/seats', function($template) {
+        return view('admin.seat-layout-templates.seats', ['templateId' => $template]);
+    })->name('admin.seat-layout-templates.seats');
 
     // Screens (Phòng chiếu)
     Route::view('screens', 'admin.screens.index')->name('admin.screens.index');

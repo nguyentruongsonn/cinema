@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\RevenueController;
 use App\Http\Controllers\Admin\ScreenController;
 use App\Http\Controllers\Admin\SeatLayoutTemplateController;
 use App\Http\Controllers\Admin\TheaterController;
+use App\Http\Controllers\Admin\PricingRuleController;
 use App\Http\Controllers\Admin\TicketStatController;
 use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\MovieController;
@@ -55,12 +56,31 @@ Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin'])->grou
         Route::post('{theater}/toggle-active', [TheaterController::class, 'toggleActive']);
     });
 
+    Route::prefix('pricing-rules')->group(function () {
+        Route::get('holidays', [PricingRuleController::class, 'getHolidays']);
+        Route::post('holidays', [PricingRuleController::class, 'storeHoliday']);
+        Route::put('holidays/{holiday}', [PricingRuleController::class, 'updateHoliday']);
+        Route::delete('holidays/{holiday}', [PricingRuleController::class, 'destroyHoliday']);
+        Route::post('holidays/{holiday}/toggle-active', [PricingRuleController::class, 'toggleHolidayActive']);
+
+        Route::get('day-rules', [PricingRuleController::class, 'getDayRules']);
+        Route::put('day-rules', [PricingRuleController::class, 'updateDayRules']);
+
+        Route::get('time-slots', [PricingRuleController::class, 'getTimeSlots']);
+        Route::post('time-slots', [PricingRuleController::class, 'storeTimeSlot']);
+        Route::put('time-slots/{timeSlot}', [PricingRuleController::class, 'updateTimeSlot']);
+        Route::delete('time-slots/{timeSlot}', [PricingRuleController::class, 'destroyTimeSlot']);
+        Route::post('time-slots/{timeSlot}/toggle-active', [PricingRuleController::class, 'toggleTimeSlotActive']);
+    });
+
     Route::prefix('seat-layout-templates')->group(function () {
         Route::get('/', [SeatLayoutTemplateController::class, 'index']);
         Route::post('/', [SeatLayoutTemplateController::class, 'store']);
         Route::put('{seatLayoutTemplate}', [SeatLayoutTemplateController::class, 'update']);
         Route::delete('{seatLayoutTemplate}', [SeatLayoutTemplateController::class, 'destroy']);
         Route::post('{seatLayoutTemplate}/toggle-active', [SeatLayoutTemplateController::class, 'toggleActive']);
+        Route::get('{seatLayoutTemplate}/seats', [SeatLayoutTemplateController::class, 'getSeats']);
+        Route::post('{seatLayoutTemplate}/seats/update', [SeatLayoutTemplateController::class, 'updateSeats']);
     });
 
     Route::prefix('screens')->group(function () {

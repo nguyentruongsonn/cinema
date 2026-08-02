@@ -227,6 +227,7 @@ class ScreenController extends Controller
 
         return response()->json([
             'screen' => $screen,
+            'hidden_rows' => $screen->hidden_rows ?? [],
             'seats' => $seats
         ]);
     }
@@ -236,26 +237,38 @@ class ScreenController extends Controller
         $this->authorize('manageSeats', $screen);
 
         $validated = $request->validate([
-            'seats' => ['required', 'array', 'max:500'],
-            'seats.*.id' => ['required', 'integer', 'exists:seats,id'],
-            'seats.*.status' => ['required', 'boolean'],
+            'seats' => ['nullable', 'array', 'max:500'],
+            'seats.*.id' => ['required_with:seats', 'integer', 'exists:seats,id'],
+            'seats.*.status' => ['required_with:seats', 'boolean'],
+            'hidden_rows' => ['nullable', 'array'],
         ]);
 
         try {
             DB::transaction(function () use ($screen, $validated) {
-                foreach ($validated['seats'] as $seat) {
-                    Seat::where('id', $seat['id'])
-                        ->where('screen_id', $screen->id)
-                        ->lockForUpdate()
-                        ->update(['status' => $seat['status']]);
+                if (isset($validated['seats']) && is_array($validated['seats'])) {
+                    foreach ($validated['seats'] as $seat) {
+                        Seat::where('id', $seat['id'])
+                            ->where('screen_id', $screen->id)
+                            ->lockForUpdate()
+                            ->update(['status' => $seat['status']]);
+                    }
                 }
             });
 
-            // Recalculate and update screen capacity based on active seats
-            $activeCount = $screen->seats()->where('status', 1)->count();
-            $screen->update(['capacity' => $activeCount]);
+            $hiddenRows = $validated['hidden_rows'] ?? [];
 
-            Log::info('Screen seats updated', ['screen_id' => $screen->id, 'seat_count' => count($validated['seats']), 'admin' => auth()->id()]);
+            // Recalculate and update screen capacity based on active seats not in hidden rows
+            $activeCount = $screen->seats()
+                ->where('status', 1)
+                ->whereNotIn('row_index', $hiddenRows)
+                ->count();
+
+            $screen->update([
+                'capacity' => $activeCount,
+                'hidden_rows' => $hiddenRows
+            ]);
+
+            Log::info('Screen seats updated', ['screen_id' => $screen->id, 'seat_count' => isset($validated['seats']) ? count($validated['seats']) : 0, 'admin' => auth()->id()]);
             return response()->json(['success' => true, 'message' => 'Cập nhật trạng thái ghế thành công.']);
         } catch (\Exception $e) {
             Log::error('Error updating screen seats', ['screen_id' => $screen->id, 'error' => $e->getMessage()]);
@@ -400,9 +413,26 @@ class ScreenController extends Controller
         $seatsToInsert = [];
         $totalCapacity = 0;
 
+        $customMatrix = $template->custom_matrix ? json_decode((string) $template->custom_matrix, true) : [];
+        if (!is_array($customMatrix)) {
+            $customMatrix = [];
+        }
+
+        $hiddenRows = $customMatrix['hidden_rows'] ?? [];
+        if (!is_array($hiddenRows)) {
+            $hiddenRows = [];
+        }
+
+        $visibleRowIndex = 0;
+
         for ($r = 0; $r < $rows; $r++) {
+            if (in_array($r, $hiddenRows)) {
+                continue;
+            }
+
             // Excel-style row labels: A-Z, AA-AZ, BA-BZ, etc.
-            $rowLabel = $this->generateRowLabel($r);
+            $rowLabel = $this->generateRowLabel($visibleRowIndex);
+            $visibleRowIndex++;
 
             if ($r < $regularCount) {
                 $type = $standardType;
@@ -414,6 +444,13 @@ class ScreenController extends Controller
 
             for ($c = 0; $c < $cols; $c++) {
                 $seatNumber = $c + 1;
+                $seatId = $r . '-' . $c;
+                $status = 1;
+                
+                if (isset($customMatrix[$seatId])) {
+                    $status = (int) $customMatrix[$seatId];
+                }
+
                 $seatsToInsert[] = [
                     'screen_id' => $screen->id,
                     'seat_type_id' => $type->id,
@@ -422,11 +459,13 @@ class ScreenController extends Controller
                     'row_index' => $r,
                     'column_index' => $c,
                     'label' => $rowLabel . $seatNumber,
-                    'status' => 1,
+                    'status' => $status,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
-                $totalCapacity++;
+                if ($status === 1) {
+                    $totalCapacity++;
+                }
             }
         }
 

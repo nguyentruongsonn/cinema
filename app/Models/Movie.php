@@ -75,7 +75,10 @@ class Movie extends Model
         if ($this->poster_path) {
             return asset('storage/' . $this->poster_path);
         }
-        return $this->poster_url ?: null;
+        if ($this->poster_url) {
+            return $this->poster_url;
+        }
+        return 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=600&q=80';
     }
 
     /**

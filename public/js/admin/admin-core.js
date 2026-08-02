@@ -8,20 +8,23 @@ const AdminCore = {
     _pendingRequests: new Map(),
     _requestControllers: new Map(),
 
-    paginationPages(meta, radius = 2) {
+    paginationPages(meta) {
         const lastPage = Math.max(1, Number.parseInt(meta?.last_page, 10) || 1);
         const currentPage = Math.min(lastPage, Math.max(1, Number.parseInt(meta?.current_page, 10) || 1));
 
         if (lastPage <= 7) {
-            return Array.from({ length: lastPage }, (_, index) => index + 1);
+            return Array.from({ length: lastPage }, (_, i) => i + 1);
         }
 
-        const pages = new Set([1, lastPage]);
-        for (let page = currentPage - radius; page <= currentPage + radius; page++) {
-            if (page > 1 && page < lastPage) pages.add(page);
+        if (currentPage <= 4) {
+            return [1, 2, 3, 4, 5, '...', lastPage];
         }
 
-        return [...pages].sort((left, right) => left - right);
+        if (currentPage >= lastPage - 3) {
+            return [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
+        }
+
+        return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
     },
 
     renderAdminPagination(container, meta, onPageChange) {
@@ -43,9 +46,13 @@ const AdminCore = {
         };
 
         let html = '<nav><ul class="pagination mb-0">';
-        for (const page of this.paginationPages(normalizedPagination)) {
-            const active = page === normalizedPagination.current_page ? 'active' : '';
-            html += `<li class="page-item ${active}"><a class="page-link" href="#" data-page="${page}">${page}</a></li>`;
+        for (const item of this.paginationPages(normalizedPagination)) {
+            if (item === '...') {
+                html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            } else {
+                const active = item === normalizedPagination.current_page ? 'active' : '';
+                html += `<li class="page-item ${active}"><a class="page-link" href="#" data-page="${item}">${item}</a></li>`;
+            }
         }
         html += '</ul></nav>';
 
@@ -53,6 +60,7 @@ const AdminCore = {
         container.querySelectorAll('.page-link').forEach((link) => {
             link.addEventListener('click', (event) => {
                 event.preventDefault();
+                if (!link.dataset.page) return;
                 const page = Number.parseInt(link.dataset.page, 10);
                 if (Number.isFinite(page) && typeof onPageChange === 'function') {
                     onPageChange(page);
@@ -315,3 +323,28 @@ if (!window.__adminPageCleanupInstalled) {
     document.addEventListener('turbo:before-cache', window.runAdminPageCleanup);
     window.addEventListener('pagehide', window.runAdminPageCleanup);
 }
+
+window.renderAdminTableSkeleton = function (tbody, cols = 6, rows = 5, hasImage = false) {
+    if (!tbody) return;
+    let html = '';
+    const midCols = Math.max(0, cols - (hasImage ? 3 : 2) - 1);
+    for (let r = 0; r < rows; r++) {
+        html += '<tr class="admin-table-skeleton-row">';
+        html += '<td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-30 skeleton-center"></div></td>';
+        if (hasImage) {
+            html += '<td class="text-center"><div class="admin-skeleton admin-skeleton-img skeleton-img-sm skeleton-center"></div></td>';
+        }
+        html += '<td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div><div class="admin-skeleton admin-skeleton-text skeleton-w-40"></div></td>';
+        for (let c = 0; c < midCols; c++) {
+            html += '<td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-w-65 skeleton-center"></div></td>';
+        }
+        html += '<td class="text-center"><div class="admin-skeleton admin-skeleton-button-sm skeleton-center"></div></td>';
+        html += '</tr>';
+    }
+    tbody.innerHTML = html;
+};
+
+if (typeof window.AdminCore === 'object' && window.AdminCore) {
+    window.AdminCore.renderTableSkeleton = window.renderAdminTableSkeleton;
+}
+

@@ -45,8 +45,9 @@
 
     async function loadData(page = 1) {
         try {
-            // Skeleton loading is now handled in HTML blade template
-            // els.tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-secondary"></div></td></tr>`;
+            if (window.renderAdminTableSkeleton && els.tableBody) {
+                window.renderAdminTableSkeleton(els.tableBody, 8, 5, false);
+            }
 
             const url = new URL(window.location.origin + '/api/v1/admin/posts');
             url.searchParams.append('page', page);
@@ -134,7 +135,7 @@
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
 
-    if (els.btnCreate) els.btnCreate.addEventListener('click', () => { resetForm(); els.modalLabel.innerHTML = '<i class="bi bi-file-text me-2"></i>Tạo bài viết mới'; getModalInstance()?.show(); });
+    if (els.btnCreate) els.btnCreate.addEventListener('click', () => { resetForm(); els.modalLabel.innerHTML = '<i class="bi bi-file-text me-2 admin-accent-icon"></i>Tạo bài viết mới'; getModalInstance()?.show(); });
 
     function updatePublicationLabel() {
         if (!els.statusLabel) return;
@@ -164,7 +165,7 @@
             els.formMethod.value = 'PUT';
             const post = JSON.parse(btnEdit.dataset.post);
             els.idInput.value = post.id;
-            els.modalLabel.innerHTML = '<i class="bi bi-file-text me-2"></i>Cập nhật bài viết';
+            els.modalLabel.innerHTML = '<i class="bi bi-file-text me-2 admin-accent-icon"></i>Cập nhật bài viết';
             els.title.value = post.title || '';
             els.slug.value = post.slug || '';
             els.category.value = post.category || '';
@@ -210,6 +211,10 @@
     if (els.form) {
         els.form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote && window.jQuery('#summernoteEditor').length) {
+                const codeContent = window.jQuery('#summernoteEditor').summernote('code');
+                els.content.value = (codeContent === '<p><br></p>' ? '' : codeContent);
+            }
             const isEdit = els.formMethod.value === 'PUT', id = els.idInput.value;
             const url = isEdit ? `/api/v1/admin/posts/${id}` : '/api/v1/admin/posts';
             const formData = new FormData();
@@ -255,31 +260,35 @@
         } catch (error) { console.error('Error loading categories:', error); }
     }
 
-    window.onAdminPageLoad(() => {
-        loadCategories();
-        loadData(1);
-
-        // Initialize Summernote
-        if (window.jQuery && window.jQuery.fn.summernote && window.jQuery('#summernoteEditor').length) {
+    function initSummernote(retries = 10) {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote && window.jQuery('#summernoteEditor').length) {
             window.jQuery('#summernoteEditor').summernote({
                 placeholder: 'Viết nội dung bài viết...',
                 tabsize: 2,
-                height: 250,
+                height: 280,
                 toolbar: [
                     ['style', ['style']],
                     ['font', ['bold', 'italic', 'underline', 'strikethrough', 'clear']],
                     ['color', ['color']],
                     ['para', ['ul', 'ol', 'paragraph']],
                     ['table', ['table']],
-                    ['insert', ['link']],
+                    ['insert', ['link', 'picture']],
                     ['view', ['fullscreen', 'codeview', 'help']]
                 ],
                 callbacks: {
-                    onChange: function(contents, $editable) {
+                    onChange: function(contents) {
                         els.content.value = contents === '<p><br></p>' ? '' : contents;
                     }
                 }
             });
+        } else if (retries > 0) {
+            setTimeout(() => initSummernote(retries - 1), 150);
         }
+    }
+
+    window.onAdminPageLoad(() => {
+        loadCategories();
+        loadData(1);
+        initSummernote();
     });
 })();

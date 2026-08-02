@@ -5,6 +5,7 @@
 @section('header_subtitle', 'Quản lý banner quảng cáo hiển thị trên website.')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/admin/pages/banners.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @section('content')
@@ -13,16 +14,6 @@
 <div class="admin-filter-container">
     <div class="admin-filter-bar">
         <div class="admin-filter-fields">
-            <div class="admin-filter-group auto-width">
-                <select id="positionFilter" class="admin-filter-select">
-                    <option value="all">Tất cả vị trí</option>
-                    <option value="home_slider">Slider trang chủ</option>
-                    <option value="sidebar">Sidebar</option>
-                    <option value="popup">Popup</option>
-                    <option value="top_bar">Top bar</option>
-                    <option value="footer">Footer</option>
-                </select>
-            </div>
             <div class="admin-filter-group auto-width">
                 <select id="statusFilter" class="admin-filter-select">
                     <option value="all">Tất cả trạng thái</option>
@@ -54,10 +45,8 @@
             <thead>
                 <tr>
                     <th class="text-center col-stt">STT</th>
-                    <th class="col-image">Hình ảnh</th>
+                    <th class="col-min-250" style="min-width: 340px;">Hình ảnh</th>
                     <th class="col-min-200">Tiêu đề</th>
-                    <th class="text-center col-category">Vị trí</th>
-                    <th class="text-center col-status">Thứ tự</th>
                     <th class="text-center col-date">Ngày bắt đầu</th>
                     <th class="text-center col-date">Ngày kết thúc</th>
                     <th class="text-center col-status">Trạng thái</th>
@@ -65,7 +54,7 @@
                 </tr>
             </thead>
             <tbody id="bannersTableBody">
-                <x-admin.skeleton-table cols="9" rows="5" :hasImage="true" />
+                <x-admin.skeleton-table cols="7" rows="5" :hasImage="true" />
             </tbody>
         </table>
     </div>
@@ -79,7 +68,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="bannerModalLabel">
-                    <i class="bi bi-badge-ad me-2"></i>Tạo banner mới
+                    <i class="bi bi-image me-2" style="color:var(--accent-color);"></i>Tạo banner mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -90,31 +79,15 @@
                 <div class="modal-body">
                     <div class="row g-3">
 
-                        {{-- Tiêu đề & Thứ tự --}}
-                        <div class="col-md-8">
+                        {{-- Tiêu đề --}}
+                        <div class="col-12">
                             <label class="form-label" for="bannerTitle">Tiêu đề <span class="text-danger">*</span></label>
                             <input type="text" class="form-control bg-dark border-secondary text-white"
                                    id="bannerTitle" required placeholder="Nhập tiêu đề banner...">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="bannerDisplayOrder">Thứ tự hiển thị</label>
-                            <input type="number" class="form-control bg-dark border-secondary text-white"
-                                   id="bannerDisplayOrder" value="0" min="0">
-                        </div>
 
-                        {{-- Vị trí & Hình ảnh --}}
-                        <div class="col-md-6">
-                            <label class="form-label" for="bannerPosition">Vị trí <span class="text-danger">*</span></label>
-                            <select class="form-select bg-dark border-secondary text-white" id="bannerPosition" required>
-                                <option value="">-- Chọn vị trí --</option>
-                                <option value="home_slider">Slider trang chủ</option>
-                                <option value="sidebar">Sidebar</option>
-                                <option value="popup">Popup</option>
-                                <option value="top_bar">Top bar</option>
-                                <option value="footer">Footer</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
+                        {{-- Hình ảnh --}}
+                        <div class="col-12">
                             <label class="form-label" for="bannerImage">Hình ảnh <span class="text-danger" id="bannerImageRequired">*</span></label>
                             <input type="file" class="form-control bg-dark border-secondary text-white"
                                    id="bannerImage" accept="image/*" multiple>
@@ -138,12 +111,12 @@
 
                         {{-- Link đích --}}
                         <div class="col-12">
-                            <label class="form-label" for="bannerLink">Link đích (URL)</label>
+                            <label class="form-label" for="bannerLink">Liên kết đích (URL)</label>
                             <input type="url" class="form-control bg-dark border-secondary text-white"
-                                   id="bannerLink" placeholder="https://...">
+                                   id="bannerLink" placeholder="https://example.com/promotion">
                         </div>
 
-                        {{-- Ngày bắt đầu & Kết thúc --}}
+                        {{-- Ngày bắt đầu & kết thúc --}}
                         <div class="col-md-6">
                             <label class="form-label" for="bannerStartDate">Ngày bắt đầu</label>
                             <input type="date" class="form-control bg-dark border-secondary text-white"
@@ -171,7 +144,6 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu banner</button>
                 </div>
             </form>

@@ -65,7 +65,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="comboModalLabel">
-                    <i class="bi bi-box-seam me-2"></i>Thêm combo mới
+                    <i class="bi bi-box-seam me-2" style="color:var(--accent-color);"></i>Tạo combo mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -115,11 +115,6 @@
                                 </div>
                                 <div id="comboItemsList"></div>
                             </div>
-
-                            <div class="alert alert-info mt-3 mb-0 combo-stock-alert">
-                                <i class="bi bi-info-circle me-2"></i>
-                                <small>Tồn kho combo sẽ được tính tự động dựa trên tồn kho của các sản phẩm bên trong.</small>
-                            </div>
                         </div>
 
                         {{-- Cột phải: Hình ảnh và trạng thái --}}
@@ -155,9 +150,8 @@
                     </div>
                 </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
-                    <button type="submit" class="btn-primary-custom" id="comboSubmitBtn">Lưu combo</button>
+                <div class="modal-footer border-secondary">
+                    <button type="submit" class="btn-primary-custom border-0" id="comboSubmitBtn">Lưu combo</button>
                 </div>
             </form>
         </div>
@@ -174,7 +168,7 @@
 @push('scripts')
 <script>
     window.ADMIN_COMBO_PAGE = {
-        createTitle: 'Thêm combo mới',
+        createTitle: 'Tạo combo mới',
         editTitle: 'Cập nhật combo',
         createSuccess: 'Thêm combo thành công!',
         updateSuccess: 'Cập nhật combo thành công!',

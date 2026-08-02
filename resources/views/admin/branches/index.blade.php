@@ -62,7 +62,9 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="branchModalLabel">Tạo chi nhánh mới</h5>
+                <h5 class="modal-title" id="branchModalLabel">
+                    <i class="bi bi-geo-alt me-2" style="color:var(--accent-color);"></i>Tạo chi nhánh mới
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <form id="branchForm">
@@ -72,20 +74,20 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="branchName" class="form-label text-secondary">Tên chi nhánh <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control bg-dark text-white border-secondary" id="branchName" name="name" required>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="branchName" name="name" required placeholder="VD: Cinema Quận 1">
                     </div>
 
                     <div class="mb-0">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="branchIsActive" name="is_active" value="1" checked>
+                            <input class="form-check-input" type="checkbox" id="branchIsActive" name="is_active" value="1" checked style="cursor: pointer;">
                             <label class="form-check-label text-white" for="branchIsActive">Kích hoạt hoạt động</label>
                         </div>
                     </div>
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn-primary-custom border-0">Lưu thông tin</button>
+                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="submit" class="btn-primary-custom border-0">Lưu chi nhánh</button>
                 </div>
             </form>
         </div>

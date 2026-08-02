@@ -1,399 +1,20 @@
-/* ── Admin Modals - Premium Dark Theme ────────────────────────────────────
-   Applies to: branchModal, theaterModal, screenModal, formatModal,
-               soundModal, seatLayoutTemplateModal, movieModal, comboModal,
-               productModal, addShowtimeModal, editShowtimeModal
+/* ── Admin Modals - Unified Premium Dark Theme ─────────────────────────────
+   This style sheet globally unifies all admin panel modal dialogs,
+   ensuring consistent layout, inputs, switches, labels, and buttons
+   without requiring redundant specific ID overrides.
    ─────────────────────────────────────────────────────────────────────── */
 
-#branchModal .modal-content,
-#theaterModal .modal-content,
-#screenModal .modal-content,
-#formatModal .modal-content,
-#soundModal .modal-content,
-#seatLayoutTemplateModal .modal-content,
-#movieModal .modal-content,
-#comboModal .modal-content,
-#productModal .modal-content,
-#addShowtimeModal .modal-content,
-#editShowtimeModal .modal-content {
-    background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 16px !important;
-    box-shadow:
-        0 32px 96px rgba(0, 0, 0, 0.75),
-        0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
-    color: #f1f1f3 !important;
-}
-
-/* ── Header ─────────────────────────────────────────────────────────── */
-#branchModal .modal-header,
-#theaterModal .modal-header,
-#screenModal .modal-header,
-#formatModal .modal-header,
-#soundModal .modal-header,
-#seatLayoutTemplateModal .modal-header,
-#movieModal .modal-header,
-#comboModal .modal-header,
-#productModal .modal-header,
-#addShowtimeModal .modal-header,
-#editShowtimeModal .modal-header {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 16px 16px 0 0 !important;
-    padding: 1.25rem 1.5rem !important;
-}
-
-#branchModal .modal-title,
-#theaterModal .modal-title,
-#screenModal .modal-title,
-#formatModal .modal-title,
-#soundModal .modal-title,
-#seatLayoutTemplateModal .modal-title,
-#movieModal .modal-title,
-#comboModal .modal-title,
-#productModal .modal-title,
-#addShowtimeModal .modal-title,
-#editShowtimeModal .modal-title {
-    font-size: 1.05rem !important;
-    font-weight: 700 !important;
-    color: #ffffff !important;
-    letter-spacing: 0.02em;
-}
-
-#branchModal .modal-title i,
-#theaterModal .modal-title i,
-#screenModal .modal-title i,
-#formatModal .modal-title i,
-#soundModal .modal-title i,
-#seatLayoutTemplateModal .modal-title i,
-#movieModal .modal-title i,
-#comboModal .modal-title i,
-#productModal .modal-title i,
-#addShowtimeModal .modal-title i,
-#editShowtimeModal .modal-title i {
-    color: #a1a1aa;
-}
-
-/* ── Body ────────────────────────────────────────────────────────────── */
-#branchModal .modal-body,
-#theaterModal .modal-body,
-#screenModal .modal-body,
-#formatModal .modal-body,
-#soundModal .modal-body,
-#seatLayoutTemplateModal .modal-body,
-#movieModal .modal-body,
-#comboModal .modal-body,
-#productModal .modal-body,
-#addShowtimeModal .modal-body,
-#editShowtimeModal .modal-body {
-    background: transparent !important;
-    padding: 1.5rem !important;
-}
-
-/* Scrollbar */
-#branchModal .modal-body::-webkit-scrollbar,
-#theaterModal .modal-body::-webkit-scrollbar,
-#screenModal .modal-body::-webkit-scrollbar,
-#formatModal .modal-body::-webkit-scrollbar,
-#soundModal .modal-body::-webkit-scrollbar,
-#seatLayoutTemplateModal .modal-body::-webkit-scrollbar,
-#movieModal .modal-body::-webkit-scrollbar,
-#comboModal .modal-body::-webkit-scrollbar,
-#productModal .modal-body::-webkit-scrollbar,
-#addShowtimeModal .modal-body::-webkit-scrollbar,
-#editShowtimeModal .modal-body::-webkit-scrollbar {
-    width: 5px;
-}
-#branchModal .modal-body::-webkit-scrollbar-track,
-#theaterModal .modal-body::-webkit-scrollbar-track,
-#screenModal .modal-body::-webkit-scrollbar-track,
-#formatModal .modal-body::-webkit-scrollbar-track,
-#soundModal .modal-body::-webkit-scrollbar-track,
-#seatLayoutTemplateModal .modal-body::-webkit-scrollbar-track,
-#movieModal .modal-body::-webkit-scrollbar-track,
-#comboModal .modal-body::-webkit-scrollbar-track,
-#addShowtimeModal .modal-body::-webkit-scrollbar-track,
-#editShowtimeModal .modal-body::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 4px;
-}
-#branchModal .modal-body::-webkit-scrollbar-thumb,
-#theaterModal .modal-body::-webkit-scrollbar-thumb,
-#screenModal .modal-body::-webkit-scrollbar-thumb,
-#formatModal .modal-body::-webkit-scrollbar-thumb,
-#soundModal .modal-body::-webkit-scrollbar-thumb,
-#seatLayoutTemplateModal .modal-body::-webkit-scrollbar-thumb,
-#movieModal .modal-body::-webkit-scrollbar-thumb,
-#comboModal .modal-body::-webkit-scrollbar-thumb,
-#addShowtimeModal .modal-body::-webkit-scrollbar-thumb,
-#editShowtimeModal .modal-body::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
-}
-
-/* ── Form Labels ─────────────────────────────────────────────────────── */
-#branchModal .form-label,
-#theaterModal .form-label,
-#screenModal .form-label,
-#formatModal .form-label,
-#soundModal .form-label,
-#seatLayoutTemplateModal .form-label,
-#comboModal .form-label,
-#productModal .form-label {
-    font-size: 0.75rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.07em !important;
-    text-transform: uppercase !important;
-    color: #71717a !important;
-    margin-bottom: 0.4rem !important;
-}
-
-/* ── Form Controls ───────────────────────────────────────────────────── */
-#branchModal .form-control,
-#branchModal .form-select,
-#theaterModal .form-control,
-#theaterModal .form-select,
-#screenModal .form-control,
-#screenModal .form-select,
-#formatModal .form-control,
-#formatModal .form-select,
-#soundModal .form-control,
-#soundModal .form-select,
-#seatLayoutTemplateModal .form-control,
-#seatLayoutTemplateModal .form-select,
-#comboModal .form-control,
-#comboModal .form-select,
-#productModal .form-control,
-#productModal .form-select {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: #f1f1f3 !important;
-    border-radius: 8px !important;
-    padding: 0.55rem 0.85rem !important;
-    font-size: 0.9rem !important;
-    transition: border-color 0.2s, box-shadow 0.2s !important;
-}
-
-#branchModal .form-control:focus,
-#branchModal .form-select:focus,
-#theaterModal .form-control:focus,
-#theaterModal .form-select:focus,
-#screenModal .form-control:focus,
-#screenModal .form-select:focus,
-#formatModal .form-control:focus,
-#formatModal .form-select:focus,
-#soundModal .form-control:focus,
-#soundModal .form-select:focus,
-#seatLayoutTemplateModal .form-control:focus,
-#seatLayoutTemplateModal .form-select:focus,
-#comboModal .form-control:focus,
-#comboModal .form-select:focus,
-#productModal .form-control:focus,
-#productModal .form-select:focus {
-    background: rgba(255, 255, 255, 0.07) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
-    color: #fff !important;
-    outline: none !important;
-}
-
-#branchModal .form-control::placeholder,
-#theaterModal .form-control::placeholder,
-#screenModal .form-control::placeholder,
-#formatModal .form-control::placeholder,
-#soundModal .form-control::placeholder,
-#seatLayoutTemplateModal .form-control::placeholder,
-#comboModal .form-control::placeholder,
-#productModal .form-control::placeholder {
-    color: rgba(255, 255, 255, 0.2) !important;
-}
-
-#branchModal textarea.form-control,
-#theaterModal textarea.form-control,
-#screenModal textarea.form-control,
-#formatModal textarea.form-control,
-#soundModal textarea.form-control,
-#seatLayoutTemplateModal textarea.form-control,
-#comboModal textarea.form-control,
-#productModal textarea.form-control {
-    resize: vertical;
-    min-height: 80px;
-}
-
-/* Dropdown options */
-#branchModal .form-select option,
-#theaterModal .form-select option,
-#screenModal .form-select option,
-#formatModal .form-select option,
-#soundModal .form-select option,
-#seatLayoutTemplateModal .form-select option,
-#comboModal .form-select option,
-#productModal .form-select option {
-    background: #1e1e24 !important;
-    color: #f1f1f3 !important;
-}
-
-/* ── HR divider ──────────────────────────────────────────────────────── */
-#branchModal hr,
-#theaterModal hr,
-#screenModal hr,
-#formatModal hr,
-#soundModal hr,
-#seatLayoutTemplateModal hr,
-#comboModal hr,
-#productModal hr {
-    border-color: rgba(255, 255, 255, 0.08) !important;
-    margin: 1rem 0 !important;
-}
-
-/* ── Toggle switches ─────────────────────────────────────────────────── */
-#branchModal .form-check-input[type="checkbox"],
-#theaterModal .form-check-input[type="checkbox"],
-#screenModal .form-check-input[type="checkbox"],
-#formatModal .form-check-input[type="checkbox"],
-#soundModal .form-check-input[type="checkbox"],
-#seatLayoutTemplateModal .form-check-input[type="checkbox"],
-#comboModal .form-check-input[type="checkbox"],
-#productModal .form-check-input[type="checkbox"] {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    border-color: rgba(255, 255, 255, 0.18) !important;
-    cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
-}
-
-#branchModal .form-check-input[type="checkbox"]:checked,
-#theaterModal .form-check-input[type="checkbox"]:checked,
-#screenModal .form-check-input[type="checkbox"]:checked,
-#formatModal .form-check-input[type="checkbox"]:checked,
-#soundModal .form-check-input[type="checkbox"]:checked,
-#seatLayoutTemplateModal .form-check-input[type="checkbox"]:checked,
-#comboModal .form-check-input[type="checkbox"]:checked,
-#productModal .form-check-input[type="checkbox"]:checked {
-    background-color: #e50914 !important;
-    border-color: #e50914 !important;
-}
-
-#branchModal .form-check-input[type="checkbox"][role="switch"],
-#theaterModal .form-check-input[type="checkbox"][role="switch"],
-#screenModal .form-check-input[type="checkbox"][role="switch"],
-#seatLayoutTemplateModal .form-check-input[type="checkbox"][role="switch"],
-#comboModal .form-check-input[type="checkbox"][role="switch"],
-#productModal .form-check-input[type="checkbox"][role="switch"] {
-    width: 2.4em !important;
-    height: 1.3em !important;
-}
-
-#branchModal .form-check-input:focus,
-#theaterModal .form-check-input:focus,
-#screenModal .form-check-input:focus,
-#formatModal .form-check-input:focus,
-#soundModal .form-check-input:focus,
-#seatLayoutTemplateModal .form-check-input:focus,
-#comboModal .form-check-input:focus,
-#productModal .form-check-input:focus {
-    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.18) !important;
-}
-
-/* Toggle / check labels */
-#branchModal .form-check-label,
-#theaterModal .form-check-label,
-#screenModal .form-check-label,
-#formatModal .form-check-label,
-#soundModal .form-check-label,
-#seatLayoutTemplateModal .form-check-label,
-#comboModal .form-check-label,
-#productModal .form-check-label {
-    color: #a1a1aa !important;
-    font-size: 0.85rem !important;
-    cursor: pointer;
-}
-
-/* ── Footer ──────────────────────────────────────────────────────────── */
-#branchModal .modal-footer,
-#theaterModal .modal-footer,
-#screenModal .modal-footer,
-#formatModal .modal-footer,
-#soundModal .modal-footer,
-#seatLayoutTemplateModal .modal-footer,
-#movieModal .modal-footer,
-#comboModal .modal-footer,
-#addShowtimeModal .modal-footer,
-#editShowtimeModal .modal-footer {
-    background: rgba(255, 255, 255, 0.02) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
-    border-radius: 0 0 16px 16px !important;
-    padding: 1rem 1.5rem !important;
-}
-
-/* Cancel button */
-.modal .modal-footer :where(.btn-modal-cancel, [data-bs-dismiss="modal"], .slt-btn-cancel) {
-    background: rgba(255, 255, 255, 0.07) !important;
-    color: #d4d4d8 !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px !important;
-    padding: 0.5rem 1.25rem !important;
-    font-size: 0.88rem !important;
-    font-weight: 600 !important;
-    transition: background 0.2s !important;
-}
-
-.modal .modal-footer :where(.btn-modal-cancel, [data-bs-dismiss="modal"], .slt-btn-cancel):hover {
-    background: rgba(255, 255, 255, 0.12) !important;
-}
-
-/* Submit / primary button */
-#branchModal .btn-primary-custom,
-#theaterModal .btn-primary-custom,
-#screenModal .btn-primary-custom,
-#formatModal .btn-primary-custom,
-#soundModal .btn-primary-custom,
-#seatLayoutTemplateModal .btn-primary-custom,
-#movieModal .btn-primary-custom,
-#comboModal .btn-primary-custom,
-#productModal .btn-primary-custom,
-#addShowtimeModal .btn-primary-custom,
-#editShowtimeModal .btn-primary-custom {
-    background: linear-gradient(135deg, #e50914 0%, #b8070f 100%) !important;
-    color: #fff !important;
-    border-radius: 8px !important;
-    padding: 0.5rem 1.5rem !important;
-    font-size: 0.88rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.04em !important;
-    box-shadow: 0 4px 16px rgba(229, 9, 20, 0.3) !important;
-    transition: all 0.2s !important;
-}
-
-#branchModal .btn-primary-custom:hover,
-#theaterModal .btn-primary-custom:hover,
-#screenModal .btn-primary-custom:hover,
-#formatModal .btn-primary-custom:hover,
-#soundModal .btn-primary-custom:hover,
-#seatLayoutTemplateModal .btn-primary-custom:hover,
-#movieModal .btn-primary-custom:hover,
-#comboModal .btn-primary-custom:hover,
-#productModal .btn-primary-custom:hover,
-#addShowtimeModal .btn-primary-custom:hover,
-#editShowtimeModal .btn-primary-custom:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.45) !important;
-}
-
-/* ── Alert inside modal (form errors) ───────────────────────────────── */
-#seatLayoutTemplateModal .alert-danger {
-    background: rgba(239, 68, 68, 0.1) !important;
-    border: 1px solid rgba(239, 68, 68, 0.25) !important;
-    color: #fca5a5 !important;
-    border-radius: 8px !important;
-}
-
-/* ── Backdrop ────────────────────────────────────────────────────────── */
-.modal-backdrop.show {
-    opacity: 0.72 !important;
-}
-
-/* Shared Bootstrap modal pattern for every admin page */
+/* ── Container & Backdrop ────────────────────────────────────────────── */
 .modal {
     --bs-modal-zindex: 1060;
+}
+
+.modal-backdrop {
+    --bs-backdrop-zindex: 1050;
+}
+
+.modal-backdrop.show {
+    opacity: 0.72 !important;
 }
 
 .modal .modal-dialog {
@@ -406,10 +27,13 @@
     color: #f1f1f3 !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 16px !important;
-    box-shadow: 0 32px 96px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+    box-shadow: 
+        0 32px 96px rgba(0, 0, 0, 0.75), 
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
     overflow: hidden;
 }
 
+/* ── Header ─────────────────────────────────────────────────────────── */
 .modal .modal-header {
     min-height: 68px;
     padding: 1.25rem 1.5rem !important;
@@ -425,36 +49,11 @@
     letter-spacing: 0.02em;
 }
 
-.modal .modal-title i {
-    color: #a1a1aa;
-}
-
-.modal .modal-body {
-    padding: 1.5rem !important;
-    background: transparent !important;
-    overflow-y: auto;
-}
-
-.modal .modal-footer {
-    min-height: 64px;
-    gap: 0.75rem;
-    padding: 1rem 1.5rem !important;
-    background: rgba(255, 255, 255, 0.02) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
-}
-
-.modal .modal-footer .btn-primary,
-.modal .modal-footer .btn-primary-custom,
-.modal .modal-footer button[type="submit"]:not(.btn-modal-cancel) {
-    min-height: 38px;
-    padding: 0.5rem 1.5rem !important;
-    color: #ffffff !important;
-    background: linear-gradient(135deg, #e50914 0%, #b8070f 100%) !important;
-    border: 1px solid #e50914 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 16px rgba(229, 9, 20, 0.3) !important;
-    font-size: 0.88rem !important;
-    font-weight: 700 !important;
+/* Accent Icon inside Header */
+.modal .modal-title i,
+.modal .modal-title .admin-accent-icon {
+    color: var(--accent-color) !important;
+    font-size: 1.15rem;
 }
 
 .modal .btn-close {
@@ -466,10 +65,173 @@
     opacity: 1;
 }
 
-.modal-backdrop {
-    --bs-backdrop-zindex: 1050;
+/* ── Body & Scrollbar ────────────────────────────────────────────────── */
+.modal .modal-body {
+    padding: 1.5rem !important;
+    background: transparent !important;
+    overflow-y: auto;
 }
 
+.modal .modal-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.modal .modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+.modal .modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+/* ── Form Labels ─────────────────────────────────────────────────────── */
+.modal .form-label {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.07em !important;
+    text-transform: uppercase !important;
+    color: #71717a !important;
+    margin-bottom: 0.4rem !important;
+}
+
+/* ── Form Inputs, Selects & Textareas ────────────────────────────────── */
+.modal .form-control,
+.modal .form-select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #f1f1f3 !important;
+    border-radius: 8px !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.9rem !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.modal .form-control:focus,
+.modal .form-select:focus {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
+    color: #fff !important;
+    outline: none !important;
+}
+
+.modal .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.modal textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Dropdown select options */
+.modal .form-select option {
+    background: #1e1e24 !important;
+    color: #f1f1f3 !important;
+}
+
+/* Divider inside form body */
+.modal hr {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    margin: 1rem 0 !important;
+}
+
+/* ── Toggle Switches & Checkboxes ───────────────────────────────────── */
+.modal .form-check-input[type="checkbox"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.modal .form-check-input[type="checkbox"]:checked {
+    background-color: #e50914 !important;
+    border-color: #e50914 !important;
+}
+
+.modal .form-check-input[type="checkbox"][role="switch"] {
+    width: 2.4em !important;
+    height: 1.3em !important;
+}
+
+.modal .form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.18) !important;
+}
+
+.modal .form-check-label {
+    color: #a1a1aa !important;
+    font-size: 0.85rem !important;
+    cursor: pointer;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+.modal .modal-footer {
+    min-height: 64px;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Cancel / Dismiss Buttons */
+.modal .modal-footer :where(.btn-modal-cancel, [data-bs-dismiss="modal"], .slt-btn-cancel, .btn-cancel, .showtimes-cancel-btn) {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #d4d4d8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.25rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    transition: background 0.2s !important;
+}
+
+.modal .modal-footer :where(.btn-modal-cancel, [data-bs-dismiss="modal"], .slt-btn-cancel, .btn-cancel, .showtimes-cancel-btn):hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+}
+
+/* Submit / Save Buttons */
+.modal .modal-footer .btn-primary,
+.modal .modal-footer .btn-primary-custom,
+.modal .modal-footer button[type="submit"]:not(.btn-modal-cancel) {
+    background: linear-gradient(135deg, #e50914 0%, #b8070f 100%) !important;
+    color: #fff !important;
+    border: 1px solid #e50914 !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.5rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    box-shadow: 0 4px 16px rgba(229, 9, 20, 0.3) !important;
+    transition: all 0.2s !important;
+}
+
+.modal .modal-footer .btn-primary:hover,
+.modal .modal-footer .btn-primary-custom:hover,
+.modal .modal-footer button[type="submit"]:not(.btn-modal-cancel):hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.45) !important;
+}
+
+/* ── Alert inside modal (Form errors) ───────────────────────────────── */
+.modal .alert-danger {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+    color: #fca5a5 !important;
+    border-radius: 8px !important;
+}
+
+/* ── Helper texts inside dark modals ────────────────────────────────── */
+.modal-content.bg-dark small,
+.modal-content.bg-dark .text-muted,
+.modal-content.bg-dark .form-text {
+    color: #cccccc !important;
+    opacity: 0.85 !important;
+}
+
+/* Responsive adjustments */
 @media (max-width: 767px) {
     .modal .modal-dialog {
         margin: 0.75rem;

@@ -277,4 +277,160 @@ class SeatLayoutTemplateController extends Controller
             return $this->errorResponse('Failed to delete seat layout template', 500);
         }
     }
+
+    /**
+     * Get the virtual seat layout for the template based on its matrix config and custom_matrix overrides.
+     */
+    public function getSeats(SeatLayoutTemplate $seatLayoutTemplate): JsonResponse
+    {
+        try {
+            $this->authorize('view', $seatLayoutTemplate);
+
+            $parts = explode('x', $seatLayoutTemplate->seat_matrix);
+            if (count($parts) !== 2) {
+                $rows = 10;
+                $cols = 10;
+            } else {
+                $rows = (int) $parts[0];
+                $cols = (int) $parts[1];
+            }
+
+            $regularCount = $seatLayoutTemplate->regular_seat_rows ?? 0;
+            $vipCount = $seatLayoutTemplate->vip_seat_rows ?? 0;
+            $coupleCount = $seatLayoutTemplate->couple_seat_rows ?? 0;
+
+            $customMatrix = $seatLayoutTemplate->custom_matrix ? json_decode((string) $seatLayoutTemplate->custom_matrix, true) : [];
+            if (!is_array($customMatrix)) {
+                $customMatrix = [];
+            }
+
+            $hiddenRows = $customMatrix['hidden_rows'] ?? [];
+            if (!is_array($hiddenRows)) {
+                $hiddenRows = [];
+            }
+
+            $seats = [];
+            $visibleRowIndex = 0;
+
+            for ($r = 0; $r < $rows; $r++) {
+                $isHidden = in_array($r, $hiddenRows);
+                
+                $rowLabel = '';
+                if (!$isHidden) {
+                    $rowLabel = $this->generateRowLabel($visibleRowIndex);
+                    $visibleRowIndex++;
+                }
+                
+                if ($r < $regularCount) {
+                    $typeName = 'Standard';
+                } elseif ($r < ($regularCount + $vipCount)) {
+                    $typeName = 'VIP';
+                } else {
+                    $typeName = 'Couple';
+                }
+
+                for ($c = 0; $c < $cols; $c++) {
+                    $seatId = $r . '-' . $c;
+                    $status = 1; // Default active
+                    
+                    if ($isHidden) {
+                        $status = 0;
+                    } elseif (isset($customMatrix[$seatId])) {
+                        $status = (int) $customMatrix[$seatId];
+                    }
+
+                    $seats[] = [
+                        'id' => $seatId,
+                        'row_index' => $r,
+                        'column_index' => $c,
+                        'row' => $rowLabel,
+                        'number' => (string) ($c + 1),
+                        'label' => $isHidden ? '' : ($rowLabel . ($c + 1)),
+                        'status' => $status,
+                        'seat_type' => ['name' => $typeName]
+                    ];
+                }
+            }
+
+            // Return a structure compatible with the frontend seat-layout renderer
+            return response()->json([
+                'screen' => [
+                    'name' => $seatLayoutTemplate->template_name,
+                    'code' => $seatLayoutTemplate->seat_matrix,
+                    'status' => $seatLayoutTemplate->status,
+                    'seat_layout_template' => $seatLayoutTemplate
+                ],
+                'seats' => $seats,
+                'hidden_rows' => $hiddenRows
+            ]);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return $this->errorResponse('Unauthorized', 403);
+        } catch (\Throwable $e) {
+            Log::error('Failed to get template seats', ['error' => $e->getMessage()]);
+            return $this->errorResponse('Failed to get template seats', 500);
+        }
+    }
+
+    /**
+     * Update the disabled/enabled status of specific seats in the template's custom_matrix.
+     */
+    public function updateSeats(Request $request, SeatLayoutTemplate $seatLayoutTemplate): JsonResponse
+    {
+        try {
+            $this->authorize('update', $seatLayoutTemplate);
+
+            $validated = $request->validate([
+                'seats' => ['nullable', 'array'],
+                'hidden_rows' => ['nullable', 'array'],
+            ]);
+
+            $customMatrix = $seatLayoutTemplate->custom_matrix ? json_decode((string) $seatLayoutTemplate->custom_matrix, true) : [];
+            if (!is_array($customMatrix)) {
+                $customMatrix = [];
+            }
+            
+            if (isset($validated['seats']) && is_array($validated['seats'])) {
+                foreach ($validated['seats'] as $seatId => $status) {
+                    $customMatrix[$seatId] = (int) $status;
+                }
+            }
+
+            if (isset($validated['hidden_rows'])) {
+                $customMatrix['hidden_rows'] = array_map('intval', $validated['hidden_rows']);
+            }
+
+            $seatLayoutTemplate->update([
+                'custom_matrix' => json_encode($customMatrix)
+            ]);
+
+            Log::info('Seat layout template custom matrix updated', [
+                'actor_id' => Auth::id(),
+                'template_id' => $seatLayoutTemplate->id
+            ]);
+
+            return $this->successResponse(null, 'Cập nhật cấu hình ghế mẫu thành công.');
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return $this->errorResponse('Unauthorized to update template seats', 403);
+        } catch (\Throwable $e) {
+            Log::error('Failed to update template seats', ['error' => $e->getMessage()]);
+            return $this->errorResponse('Failed to update template seats', 500);
+        }
+    }
+
+    /**
+     * Generate Excel-style row label for seat generation.
+     */
+    private function generateRowLabel(int $index): string
+    {
+        $label = '';
+        $index++; // Convert 0-based to 1-based for calculation
+        
+        while ($index > 0) {
+            $index--; // Adjust for 0-based alphabet indexing
+            $label = chr(65 + ($index % 26)) . $label;
+            $index = (int) ($index / 26);
+        }
+        
+        return $label;
+    }
 }

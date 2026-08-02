@@ -136,6 +136,10 @@ class ShowtimeController extends Controller
         try {
             $result = $this->showtimeService->bulkCreateDateRange($validated);
 
+            if ($result['created'] === 0 && $result['skipped'] > 0) {
+                return $this->errorResponse("Tạo thất bại: Tất cả các khung giờ ({$result['skipped']}) đều bị trùng lịch với suất chiếu khác.", 409);
+            }
+
             return $this->successResponse(
                 $result,
                 "Tạo thành công {$result['created']} suất chiếu"
@@ -161,6 +165,10 @@ class ShowtimeController extends Controller
 
         try {
             $result = $this->showtimeService->bulkCreateSingleDay($validated);
+
+            if ($result['created'] === 0 && $result['skipped'] > 0) {
+                return $this->errorResponse("Tạo thất bại: Tất cả các khung giờ ({$result['skipped']}) đều bị trùng lịch với suất chiếu khác.", 409);
+            }
 
             return $this->successResponse(
                 $result,

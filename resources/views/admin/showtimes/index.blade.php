@@ -7,14 +7,18 @@
 
 {{-- ── Dòng 1: Header, Filters & Add Button ─────────────────── --}}
 <div class="admin-filter-container">
-    <div class="admin-filter-bar">
-        <div class="admin-filter-title-fixed">
-            <h5 class="mb-0 text-white fw-bold showtimes-filter-title">
-                Lịch chiếu
-            </h5>
-        </div>
+    <div class="admin-filter-bar align-items-end">
+        <div class="admin-filter-fields align-items-end">
+            <div class="admin-filter-group auto-width">
+                <label for="dateFromFilter" class="filter-label mb-1">Từ ngày</label>
+                <input type="date" id="dateFromFilter" class="admin-filter-input filter-date-md" title="Từ ngày">
+            </div>
 
-        <div class="admin-filter-fields">
+            <div class="admin-filter-group auto-width">
+                <label for="dateToFilter" class="filter-label mb-1">Đến ngày</label>
+                <input type="date" id="dateToFilter" class="admin-filter-input filter-date-md" title="Đến ngày">
+            </div>
+
             <div class="admin-filter-group auto-width">
                 <select id="branchFilter" class="admin-filter-select filter-select-md">
                     <option value="">Tất cả chi nhánh</option>
@@ -28,10 +32,6 @@
             </div>
 
             <div class="admin-filter-group auto-width">
-                <input type="date" id="dateFilter" class="admin-filter-input filter-date-md">
-            </div>
-
-            <div class="admin-filter-group auto-width">
                 <select id="statusFilter" class="admin-filter-select filter-select-sm">
                     <option value="">Trạng thái</option>
                     <option value="active">Mở bán</option>
@@ -40,14 +40,18 @@
             </div>
         </div>
 
-        <form id="filterForm" class="admin-filter-search">
-            <button class="admin-filter-btn" type="submit">
+        <form id="filterForm" class="admin-filter-search d-flex gap-2">
+            <button class="admin-filter-btn" type="submit" title="Tìm kiếm">
                 <i class="bi bi-search"></i>
                 <span>Tìm kiếm</span>
             </button>
+            <button class="admin-filter-btn" type="button" id="resetFilterBtn" title="Đặt lại bộ lọc" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span>Đặt lại</span>
+            </button>
         </form>
 
-        <button type="button" class="admin-action-btn admin-filter-primary-action" id="addShowtimeBtn">
+        <button type="button" class="admin-action-btn admin-filter-primary-action ms-auto" id="addShowtimeBtn">
             <i class="bi bi-plus-lg"></i> Thêm suất chiếu
         </button>
     </div>
@@ -144,6 +148,7 @@
             </tbody>
         </table>
     </div>
+    <div class="d-flex justify-content-center mt-4 pt-3" id="moviesPaginationContainer"></div>
 </div>
 
 {{-- ── Dòng 3: Bảng danh sách suất chiếu của phim ──────── --}}
@@ -182,17 +187,17 @@
 </div>
 
 {{-- ── Modal: Thêm suất chiếu (2 tabs) ─────────────────── --}}
-<div class="modal fade" id="addShowtimeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade" id="addShowtimeModal" tabindex="-1" aria-labelledby="addShowtimeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title">
-                    <i class="bi bi-calendar-plus me-2"></i>Thêm suất chiếu
+                <h5 class="modal-title" id="addShowtimeModalLabel">
+                    <i class="bi bi-calendar-plus me-2" style="color:var(--accent-color);"></i>Tạo suất chiếu mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
-            <div class="modal-body showtimes-modal-body">
+            <div class="modal-body showtimes-modal-body admin-modal-scroll">
                 {{-- Tabs --}}
                 <ul class="nav nav-tabs combo-tabs mb-4" id="addModeTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -279,22 +284,17 @@
                                             </select>
                                         </div>
 
-                                        {{-- Submit --}}
-                                        <div class="col-12 d-flex justify-content-end">
-                                            <button type="button" id="previewMultiBtn" class="btn btn-preview me-2">
-                                                <i class="bi bi-eye me-1"></i> Xem trước
-                                            </button>
-                                            <button type="submit" class="btn-primary-custom border-0">
-                                                <i class="bi bi-calendar-plus me-1"></i> Tạo lịch chiếu
-                                            </button>
-                                        </div>
                                     </div>
                                 </div>
 
                                 {{-- Right Column: Movie Info (4 cols) --}}
                                 <div class="col-md-4">
                                     <div id="mMovieInfo" class="movie-info-sidebar">
-                                        <img id="mMoviePoster" class="movie-poster-sidebar" src="/images/default-poster.jpg" alt="Poster">
+                                        <div id="mMoviePosterPlaceholder" class="movie-poster-placeholder d-flex flex-column align-items-center justify-content-center">
+                                            <i class="bi bi-film" style="font-size: 3rem; opacity: 0.25; color: #fff;"></i>
+                                            <span class="text-secondary small mt-2">Chưa chọn phim</span>
+                                        </div>
+                                        <img id="mMoviePoster" class="movie-poster-sidebar d-none" src="" alt="Poster">
                                         <h6 class="movie-title-sidebar" id="mMovieTitle">Chọn phim để xem thông tin</h6>
                                         <div class="movie-meta-sidebar">
                                             <div class="meta-item">
@@ -320,6 +320,16 @@
                                     Xem trước lịch chiếu sẽ được tạo
                                 </div>
                                 <div id="multiPreviewList" class="d-flex flex-wrap gap-2"></div>
+                            </div>
+
+                            <div class="modal-footer border-secondary mt-4">
+                                <button type="button" class="btn text-white showtimes-cancel-btn" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                                <button type="button" id="previewMultiBtn" class="btn btn-preview">
+                                    <i class="bi bi-eye me-1"></i> Xem trước
+                                </button>
+                                <button type="submit" class="btn-primary-custom border-0">
+                                    <i class="bi bi-calendar-plus me-1"></i> Tạo lịch chiếu
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -378,19 +388,17 @@
                                             </button>
                                         </div>
 
-                                        {{-- Submit --}}
-                                        <div class="col-12 d-flex justify-content-end">
-                                            <button type="submit" class="btn-primary-custom border-0">
-                                                <i class="bi bi-calendar-plus me-1"></i> Tạo lịch chiếu
-                                            </button>
-                                        </div>
                                     </div>
                                 </div>
 
                                 {{-- Right Column: Movie Info (4 cols) --}}
                                 <div class="col-md-4">
                                     <div id="sMovieInfo" class="movie-info-sidebar">
-                                        <img id="sMoviePoster" class="movie-poster-sidebar" src="/images/default-poster.jpg" alt="Poster">
+                                        <div id="sMoviePosterPlaceholder" class="movie-poster-placeholder d-flex flex-column align-items-center justify-content-center">
+                                            <i class="bi bi-film" style="font-size: 3rem; opacity: 0.25; color: #fff;"></i>
+                                            <span class="text-secondary small mt-2">Chưa chọn phim</span>
+                                        </div>
+                                        <img id="sMoviePoster" class="movie-poster-sidebar d-none" src="" alt="Poster">
                                         <h6 class="movie-title-sidebar" id="sMovieTitle">Chọn phim để xem thông tin</h6>
                                         <div class="movie-meta-sidebar">
                                             <div class="meta-item">
@@ -409,6 +417,13 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="modal-footer border-secondary mt-4">
+                                <button type="button" class="btn text-white showtimes-cancel-btn" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                                <button type="submit" class="btn-primary-custom border-0">
+                                    <i class="bi bi-calendar-plus me-1"></i> Tạo lịch chiếu
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -418,12 +433,12 @@
 </div>
 
 {{-- ── Modal: Sửa lịch chiếu ─────────────────────────────── --}}
-<div class="modal fade" id="editShowtimeModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="editShowtimeModal" tabindex="-1" aria-labelledby="editShowtimeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title">
-                    <i class="bi bi-pencil-square me-2"></i>Cập nhật lịch chiếu
+                <h5 class="modal-title" id="editShowtimeModalLabel">
+                    <i class="bi bi-pencil-square me-2" style="color:var(--accent-color);"></i>Cập nhật lịch chiếu
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -431,11 +446,11 @@
                 <input type="hidden" id="editShowtimeFormMethod" value="PUT">
                 <input type="hidden" name="showtime_id" id="editShowtimeIdInput" value="">
 
-                <div class="modal-body">
+                <div class="modal-body admin-modal-scroll">
                     <div class="row mb-3 g-3">
                         <div class="col-md-12">
                             <label class="form-label text-secondary">Phim <span class="text-danger">*</span></label>
-                            <select class="form-select filter-input" id="editFormMovieId" name="movie_id" required>
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormMovieId" name="movie_id" required>
                                 <option value="">-- Chọn phim --</option>
                             </select>
                         </div>
@@ -444,13 +459,13 @@
                     <div class="row mb-3 g-3">
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Rạp chiếu <span class="text-danger">*</span></label>
-                            <select class="form-select filter-input" id="editFormTheaterId">
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormTheaterId">
                                 <option value="">-- Chọn rạp --</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Phòng chiếu <span class="text-danger">*</span></label>
-                            <select class="form-select filter-input" id="editFormScreenId" name="screen_id" required disabled>
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormScreenId" name="screen_id" required disabled>
                                 <option value="">-- Chọn phòng chiếu --</option>
                             </select>
                         </div>
@@ -459,20 +474,20 @@
                     <div class="row mb-3 g-3">
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Thời gian chiếu <span class="text-danger">*</span></label>
-                            <input type="datetime-local" class="filter-input w-100" id="editFormScheduledAt" name="scheduled_at" required>
+                            <input type="datetime-local" class="form-control bg-dark text-white border-secondary w-100" id="editFormScheduledAt" name="scheduled_at" required>
                         </div>
                     </div>
 
                     <div class="row mb-3 g-3">
                         <div class="col-md-12">
                             <label class="form-label text-secondary">Định dạng hình ảnh</label>
-                            <select class="form-select filter-input" id="editFormFormatId" name="format_id">
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormFormatId" name="format_id">
                                 <option value="">-- Mặc định --</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-secondary">Phiên bản phim</label>
-                            <select class="form-select filter-input" id="editFormVersionTypeId" name="version_type_id">
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormVersionTypeId" name="version_type_id">
                                 <option value="">-- Chọn phiên bản --</option>
                             </select>
                         </div>
@@ -490,8 +505,8 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white showtimes-cancel-btn" data-bs-dismiss="modal">Hủy bỏ</button>
-                    <button type="submit" class="btn-primary-custom border-0" id="editShowtimeSubmitBtn">Lưu thay đổi</button>
+                    <button type="button" class="btn text-white showtimes-cancel-btn" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="submit" class="btn-primary-custom border-0" id="editShowtimeSubmitBtn">Lưu lịch chiếu</button>
                 </div>
             </form>
         </div>

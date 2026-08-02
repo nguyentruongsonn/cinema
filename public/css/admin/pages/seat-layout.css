@@ -103,8 +103,6 @@
     height: 54px;
     min-width: 54px;
     min-height: 54px;
-    color: currentColor;
-    fill: currentColor;
     position: relative;
     z-index: 1;
 }
@@ -133,29 +131,26 @@
 
 /* ── Loại ghế và màu sắc ─────────────────────────────────────────────── */
 
-/* Ghế thường — xanh dương */
+/* Ghế thường */
 .seat.seat-standard,
 .seat.seat-available,
 .admin-seat.seat-standard,
 .admin-seat.seat-available {
     background: transparent;
-    color: #60a5fa;
     border: none;
 }
 
-/* Ghế VIP — vàng amber */
+/* Ghế VIP */
 .seat.seat-vip,
 .admin-seat.seat-vip {
     background: transparent;
-    color: #f59e0b;
     border: none;
 }
 
-/* Ghế đôi — hồng, chiếm 2 cột */
+/* Ghế đôi */
 .seat.seat-couple,
 .admin-seat.seat-couple {
     background: transparent;
-    color: #ec4899;
     border: none;
     width: 96px;
 }
@@ -172,13 +167,26 @@
     grid-column: span 2;
 }
 
+/* Hover glow theo loại ghế */
+.admin-seat.seat-standard:hover:not(.seat-disabled):not(.seat-empty) .seat-icon-shape,
+.admin-seat.seat-available:hover:not(.seat-disabled):not(.seat-empty) .seat-icon-shape {
+    filter: drop-shadow(0 4px 8px rgba(80,90,110,0.7)) brightness(1.3);
+}
+
+.admin-seat.seat-vip:hover:not(.seat-disabled):not(.seat-empty) .seat-icon-shape {
+    filter: drop-shadow(0 4px 12px rgba(255,100,40,0.7)) brightness(1.2);
+}
+
+.admin-seat.seat-couple:hover:not(.seat-disabled):not(.seat-empty) .seat-icon-shape {
+    filter: drop-shadow(0 4px 12px rgba(176,106,233,0.7)) brightness(1.2);
+}
+
 /* ── Trạng thái ghế ──────────────────────────────────────────────────── */
 
 /* Đã chọn (admin mode) */
 .seat.seat-selected,
 .admin-seat.seat-selected {
     background: transparent;
-    color: var(--accent-primary, #e50914);
 }
 
 .seat.seat-vip.seat-selected,
@@ -444,5 +452,17 @@
     .seat-legend {
         gap: 16px;
         padding: 12px;
+    }
+}
+
+/* Fix wrap couple seat */
+.seat-couple-center {
+    position: relative;
+    left: 26px;
+}
+
+@media (max-width: 768px) {
+    .seat-couple-center {
+        left: 23px;
     }
 }

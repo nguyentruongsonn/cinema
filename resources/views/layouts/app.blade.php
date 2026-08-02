@@ -45,6 +45,10 @@
                 <i class="bi bi-film"></i>
                 <span>Phim</span>
             </a>
+            <a href="{{ route('posts.index') }}" class="mobile-nav-item {{ request()->is('posts*') ? 'active' : '' }}">
+                <i class="bi bi-newspaper"></i>
+                <span>Tin tức</span>
+            </a>
             <a href="{{ route('profile.index') }}" class="mobile-nav-item {{ request()->is('profile*') ? 'active' : '' }}">
                 <i class="bi bi-person"></i>
                 <span>Tài khoản</span>

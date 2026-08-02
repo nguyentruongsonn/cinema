@@ -30,6 +30,11 @@
         isActive: document.getElementById('theaterStatus'),
         phone: document.getElementById('theaterPhone'),
         email: document.getElementById('theaterEmail'),
+        basePrice: document.getElementById('theaterBasePrice'),
+        weekendSurcharge: document.getElementById('theaterWeekendSurcharge'),
+        holidaySurcharge: document.getElementById('theaterHolidaySurcharge'),
+        happyDayPrice: document.getElementById('theaterHappyDayPrice'),
+        studentDiscount: document.getElementById('theaterStudentDiscount'),
     };
 
     let currentPage = 1;
@@ -84,8 +89,9 @@
     /* ── Fetch & Render ────────────────────────────────────────────── */
     async function loadData(page = 1) {
         try {
-            // Skeleton loading is now handled in HTML blade template
-            // els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+            if (window.renderAdminTableSkeleton && els.tableBody) {
+                window.renderAdminTableSkeleton(els.tableBody, 6, 5, false);
+            }
 
             const url = new URL(window.location.origin + '/api/v1/admin/theaters');
             url.searchParams.append('page', page);
@@ -168,6 +174,11 @@
         els.form.reset();
         els.formMethod.value = 'POST';
         els.idInput.value = '';
+        els.basePrice.value = '70000';
+        els.happyDayPrice.value = '50000';
+        els.weekendSurcharge.value = '10000';
+        els.holidaySurcharge.value = '20000';
+        els.studentDiscount.value = '10000';
     }
 
     if (els.btnCreate) {
@@ -196,6 +207,13 @@
             els.phone.value = theater.phone || '';
             els.email.value = theater.email || '';
             els.isActive.checked = theater.status === 1 || theater.status === true;
+
+            const pp = theater.pricing_profile || {};
+            els.basePrice.value = pp.base_price ?? '70000';
+            els.happyDayPrice.value = pp.happy_day_price ?? '50000';
+            els.weekendSurcharge.value = pp.weekend_surcharge ?? '10000';
+            els.holidaySurcharge.value = pp.holiday_surcharge ?? '20000';
+            els.studentDiscount.value = pp.student_discount ?? '10000';
 
             getModalInstance()?.show();
             return;

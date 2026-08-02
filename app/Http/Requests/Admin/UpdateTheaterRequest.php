@@ -20,6 +20,11 @@ class UpdateTheaterRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'status' => ['nullable', 'boolean'],
+            'base_price' => ['nullable', 'integer', 'min:0'],
+            'weekend_surcharge' => ['nullable', 'integer', 'min:0'],
+            'holiday_surcharge' => ['nullable', 'integer', 'min:0'],
+            'happy_day_price' => ['nullable', 'integer', 'min:0'],
+            'student_discount' => ['nullable', 'integer', 'min:0'],
         ];
     }
 

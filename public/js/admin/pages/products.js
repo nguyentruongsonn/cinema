@@ -73,8 +73,9 @@
     /* ── Fetch & Render ────────────────────────────────────────────── */
     async function loadData(page = 1) {
         try {
-            // Skeleton loading is now handled in HTML blade template
-            // els.tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+            if (window.renderAdminTableSkeleton && els.tableBody) {
+                window.renderAdminTableSkeleton(els.tableBody, 7, 5, true);
+            }
 
             const url = new URL(window.location.origin + '/api/v1/admin/products');
             url.searchParams.append('page', page);
@@ -203,7 +204,7 @@
     if (els.btnCreate) {
         els.btnCreate.addEventListener('click', () => {
             resetForm();
-            els.modalLabel.innerHTML = `<i class="bi bi-box-seam me-2"></i>${pageConfig.createTitle || 'Thêm sản phẩm mới'}`;
+            els.modalLabel.innerHTML = `<i class="bi bi-box-seam me-2 admin-accent-icon"></i>${pageConfig.createTitle || 'Tạo sản phẩm mới'}`;
             getModalInstance()?.show();
         });
     }
@@ -250,7 +251,7 @@
 
             const prod = JSON.parse(btnEdit.dataset.product);
             els.idInput.value = prod.id;
-            els.modalLabel.innerHTML = `<i class="bi bi-box-seam me-2"></i>${pageConfig.editTitle || 'Cập nhật sản phẩm'}`;
+            els.modalLabel.innerHTML = `<i class="bi bi-box-seam me-2 admin-accent-icon"></i>${pageConfig.editTitle || 'Cập nhật sản phẩm'}`;
 
             els.name.value = prod.name || '';
             els.type.value = fixedType || prod.type || 'combo';

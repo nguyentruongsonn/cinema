@@ -3914,7 +3914,7 @@ body {
 }
 
 .ticket-poster {
-    width: 100px;
+    width: 80px;
     flex-shrink: 0;
 }
 
@@ -3995,8 +3995,8 @@ body {
     color: #ffffff;
 }
 .ticket-poster {
-    width: 100px;
-    height: 145px;
+    width: 80px;
+    height: 115px;
     flex-shrink: 0;
     background-color: #222;
     border-radius: 8px;
@@ -4338,4 +4338,16 @@ body {
 }
 .info-label {
     color: #ccc !important;
+}
+
+/* Fix wrap couple seat */
+.seat-couple-center {
+    position: relative;
+    left: 26px;
+}
+
+@media (max-width: 768px) {
+    .seat-couple-center {
+        left: 23px;
+    }
 }

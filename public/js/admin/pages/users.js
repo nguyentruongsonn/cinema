@@ -95,8 +95,9 @@
     /* ── Fetch & Render ────────────────────────────────────────────── */
     async function loadData(page = 1) {
         try {
-            // Skeleton loading is now handled in HTML blade template
-            // els.tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+            if (window.renderAdminTableSkeleton && els.tableBody) {
+                window.renderAdminTableSkeleton(els.tableBody, 9, 5, false);
+            }
             
             const url = new URL(window.location.origin + '/api/v1/admin/users');
             url.searchParams.append('page', page);
@@ -330,7 +331,7 @@
                 });
 
                 // Update modal UI
-                els.modalLabel.textContent = 'Cập nhật tài khoản';
+                els.modalLabel.innerHTML = '<i class="bi bi-person me-2 admin-accent-icon"></i>Cập nhật tài khoản';
                 els.password.removeAttribute('required');
                 els.passwordRequired.style.display = 'none';
                 
@@ -486,7 +487,7 @@
                 els.form.reset();
                 els.idInput.value = '';
                 els.formMethod.value = 'POST';
-                els.modalLabel.textContent = 'Tạo tài khoản mới';
+                els.modalLabel.innerHTML = '<i class="bi bi-person me-2 admin-accent-icon"></i>Tạo tài khoản mới';
                 els.password.setAttribute('required', 'required');
                 els.passwordRequired.style.display = 'inline';
                 els.status.checked = true;

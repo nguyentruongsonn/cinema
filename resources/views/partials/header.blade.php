@@ -22,12 +22,14 @@
                         <a class="nav-link {{ request()->is('prices*') ? 'active' : '' }}" href="{{ route('prices.index') }}">Giá vé</a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="eventsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Sự kiện
+                        <a class="nav-link dropdown-toggle {{ request()->is('posts*') ? 'active' : '' }}" href="#" id="eventsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Tin tức & Ưu đãi
                         </a>
                         <ul class="dropdown-menu dropdown-menu-dark border-0 shadow" aria-labelledby="eventsDropdown">
-                            <li><a class="dropdown-item" href="#">Ưu đãi</a></li>
-                            <li><a class="dropdown-item" href="#">Phim hay tháng</a></li>
+                            <li><a class="dropdown-item" href="{{ route('posts.index') }}">Tất cả bài viết</a></li>
+                            <li><a class="dropdown-item" href="{{ route('posts.index', ['category' => 'promotion']) }}">Ưu đãi & Khuyến mãi</a></li>
+                            <li><a class="dropdown-item" href="{{ route('posts.index', ['category' => 'event']) }}">Sự kiện điện ảnh</a></li>
+                            <li><a class="dropdown-item" href="{{ route('posts.index', ['category' => 'news']) }}">Tin phim mới nhất</a></li>
                         </ul>
                     </li>
                 </ul>

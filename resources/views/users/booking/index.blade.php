@@ -3,8 +3,8 @@
 @section('title', 'Đặt vé - ' . $showtime->movie->title)
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/users/pages/booking.css') }}?v={{ config('app.asset_version') }}">
-<link rel="stylesheet" href="{{ asset('css/users/booking-toast.css') }}?v={{ config('app.asset_version') }}">
+<link rel="stylesheet" href="{{ asset('css/users/pages/booking.css') }}?v={{ filemtime(public_path('css/users/pages/booking.css')) }}">
+<link rel="stylesheet" href="{{ asset('css/users/booking-toast.css') }}?v={{ filemtime(public_path('css/users/booking-toast.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}">
 @endpush
 
@@ -212,7 +212,7 @@
                     </div>
 
                     <!-- Bottom section: Available Vouchers -->
-                    <div class="promotion-section mt-5">
+                    <div class="promotion-section mt-5" id="availableVouchersSection">
                         <h4 class="promo-heading">Voucher khả dụng</h4>
                         <div class="voucher-grid-dark mt-3" id="voucherContent">
                             <div class="empty-voucher text-center py-4 w-100">
@@ -230,7 +230,6 @@
                         <div class="payment-methods-column">
                             <div class="section-header mb-4">
                                 <h3 class="section-title text-white" style="font-size: 24px; text-transform: none; border: none; padding: 0; margin-bottom: 8px;">Phương thức thanh toán</h3>
-                                <p class="text-muted">Vui lòng chọn phương thức thanh toán an toàn của bạn.</p>
                             </div>
                             <div class="payment-methods-list-dark">
                                 <!-- Apple Pay -->

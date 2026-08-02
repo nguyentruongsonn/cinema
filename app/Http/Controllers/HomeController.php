@@ -41,7 +41,14 @@ class HomeController extends Controller
 
     public function index(): View
     {
-        return view('users.home');
+        $latestPosts = \App\Models\Post::query()
+            ->with('author:id,name')
+            ->published()
+            ->latest('published_at')
+            ->take(3)
+            ->get();
+
+        return view('users.home', compact('latestPosts'));
     }
 
     public function data(): JsonResponse

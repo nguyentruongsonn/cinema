@@ -29,6 +29,7 @@ class TheaterResource extends JsonResource
                     'name' => $this->branch->name,
                 ];
             }),
+            'screens' => ScreenResource::collection($this->whenLoaded('screens')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

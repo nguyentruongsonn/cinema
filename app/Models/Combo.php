@@ -124,7 +124,7 @@ class Combo extends Model
         return static::forceCreate([
             'name' => $data['name'],
             'price' => $data['price'],
-            'original_price' => $data['original_price'] ?? null,
+            'original_price' => $data['original_price'] ?? 0,
             'image_url' => $data['image_url'] ?? null,
             'description' => $data['description'] ?? null,
             'status' => $data['status'] ?? true,

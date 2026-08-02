@@ -241,7 +241,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="formatModalLabel">
-                    <i class="bi bi-camera-reels me-2" style="color:var(--accent-color);"></i>Thêm định dạng chiếu
+                    <i class="bi bi-camera-reels me-2" style="color:var(--accent-color);"></i>Tạo định dạng chiếu mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -268,10 +268,15 @@
 </div>
 
 {{-- ── MODAL: ĐỊNH DẠNG ÂM THANH ──────────────────────────────────── --}}
-<x-admin.modal id="soundModal" labelled-by="soundModalLabel">
-    <x-slot:title>
-        <i class="bi bi-volume-up me-2"></i>Thêm định dạng âm thanh
-    </x-slot:title>
+<div class="modal fade" id="soundModal" tabindex="-1" aria-labelledby="soundModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="soundModalLabel">
+                    <i class="bi bi-volume-up me-2" style="color:var(--accent-color);"></i>Tạo định dạng âm thanh mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
             <form id="soundForm">
                 <input type="hidden" id="soundFormMethod" value="POST">
                 <input type="hidden" name="sound_id" id="soundIdInput" value="">
@@ -286,7 +291,9 @@
                     <button type="submit" class="btn-primary-custom border-0">Lưu âm thanh</button>
                 </div>
             </form>
-</x-admin.modal>
+        </div>
+    </div>
+</div>
 
 @endsection
 

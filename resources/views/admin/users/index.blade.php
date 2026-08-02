@@ -76,7 +76,9 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="userModalLabel">Tạo tài khoản mới</h5>
+                <h5 class="modal-title" id="userModalLabel">
+                    <i class="bi bi-person me-2" style="color:var(--accent-color);"></i>Tạo tài khoản mới
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <form id="userForm">
@@ -114,7 +116,7 @@
                                 Mật khẩu <span class="text-danger" id="passwordRequired">*</span>
                             </label>
                             <input type="password" class="form-control bg-dark text-white border-secondary" id="userPassword" name="password">
-                            <small class="text-muted">Tối thiểu 6 ký tự. Để trống nếu không muốn thay đổi khi cập nhật.</small>
+                            <small class="text-light opacity-75" style="color: #ccc !important;">Tối thiểu 6 ký tự. Để trống nếu không muốn thay đổi khi cập nhật.</small>
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -150,7 +152,7 @@
                         <select class="form-select bg-dark text-white border-secondary" id="userRoles" name="roles[]" multiple size="3">
                             <!-- Loaded dynamically -->
                         </select>
-                        <small class="text-muted">Giữ Ctrl (Cmd) để chọn nhiều vai trò</small>
+                        <small class="text-light opacity-75" style="color: #ccc !important;">Giữ Ctrl (Cmd) để chọn nhiều vai trò</small>
                     </div>
 
                     <div class="mb-0">
@@ -162,8 +164,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn-primary-custom border-0">Lưu thông tin</button>
+                    <button type="submit" class="btn-primary-custom border-0">Lưu tài khoản</button>
                 </div>
             </form>
         </div>
@@ -175,19 +176,21 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="resetPasswordModalLabel">Đặt lại mật khẩu</h5>
+                <h5 class="modal-title" id="resetPasswordModalLabel">
+                    <i class="bi bi-shield-lock me-2" style="color:var(--accent-color);"></i>Đặt lại mật khẩu
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <form id="resetPasswordForm">
                 <input type="hidden" id="resetUserId" value="">
 
                 <div class="modal-body">
-                    <p class="text-muted mb-3">Đặt lại mật khẩu cho người dùng: <strong id="resetUserName"></strong></p>
+                    <p class="text-light opacity-75 mb-3" style="color: #ccc !important;">Đặt lại mật khẩu cho người dùng: <strong id="resetUserName" class="text-white"></strong></p>
 
                     <div class="mb-3">
                         <label for="newPassword" class="form-label text-secondary">Mật khẩu mới <span class="text-danger">*</span></label>
                         <input type="password" class="form-control bg-dark text-white border-secondary" id="newPassword" name="password" required minlength="6">
-                        <small class="text-muted">Tối thiểu 6 ký tự</small>
+                        <small class="text-light opacity-75" style="color: #ccc !important;">Tối thiểu 6 ký tự</small>
                     </div>
 
                     <div class="mb-0">
@@ -197,7 +200,6 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn-primary-custom border-0">Đặt lại mật khẩu</button>
                 </div>
             </form>

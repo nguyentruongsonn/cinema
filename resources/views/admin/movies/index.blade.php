@@ -64,7 +64,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="movieModalLabel">
-                    <i class="bi bi-film me-2"></i>Thêm phim mới
+                    <i class="bi bi-film me-2" style="color:var(--accent-color);"></i>Tạo phim mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -234,7 +234,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0" id="movieSubmitBtn">Lưu phim</button>
                 </div>
             </form>

@@ -76,8 +76,9 @@
     /* ── Fetch & Render ────────────────────────────────────────────── */
     async function loadData(page = 1) {
         try {
-            // Skeleton loading is now handled in HTML blade template
-            // els.tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+            if (window.renderAdminTableSkeleton && els.tableBody) {
+                window.renderAdminTableSkeleton(els.tableBody, 8, 5, true);
+            }
 
             const url = new URL(window.location.origin + '/api/v1/admin/combos');
             url.searchParams.append('page', page);
@@ -357,7 +358,7 @@
         resetForm();
         els.formMethod.value = 'PUT';
         els.idInput.value = combo.id;
-        els.modalLabel.innerHTML = `<i class="bi bi-box-seam me-2"></i>${pageConfig.editTitle || 'Cập nhật combo'}`;
+        els.modalLabel.innerHTML = `<i class="bi bi-box-seam me-2 admin-accent-icon"></i>${pageConfig.editTitle || 'Cập nhật combo'}`;
         els.name.value = combo.name || '';
         els.price.value = combo.price || '';
         els.description.value = combo.description || '';
@@ -381,7 +382,7 @@
         els.btnCreate.addEventListener('click', async () => {
             resetForm();
             await loadAvailableProducts();
-            els.modalLabel.innerHTML = `<i class="bi bi-box-seam me-2"></i>${pageConfig.createTitle || 'Thêm combo mới'}`;
+            els.modalLabel.innerHTML = `<i class="bi bi-box-seam me-2 admin-accent-icon"></i>${pageConfig.createTitle || 'Tạo combo mới'}`;
             getModalInstance()?.show();
         });
     }

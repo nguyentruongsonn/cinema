@@ -432,6 +432,7 @@
 
 .admin-filter-primary-action {
     flex-shrink: 0;
+    margin-left: auto !important;
 }
 
 .admin-filter-title-fixed {
@@ -478,7 +479,7 @@
 }
 
 .filter-select-md {
-    width: 160px;
+    width: 220px;
 }
 
 .search-container-lg {
@@ -541,6 +542,7 @@
 .admin-filter-container .admin-filter-primary-action {
     flex-shrink: 0;
     order: 3;
+    margin-left: auto !important;
 }
 
 @media (max-width: 768px) {

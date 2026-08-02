@@ -62,6 +62,7 @@
 
 /* Keep filter component last so the unified admin filter pattern overrides legacy filter styles. */
 @import './components/filters.css';
+@import './pages/banners.css';
 /* Individual page CSS will be refactored later:
 - branches.css
 - combos.css

@@ -59,8 +59,9 @@
     /* ── Fetch & Render ────────────────────────────────────────────── */
     async function loadData(page = 1) {
         try {
-            // Skeleton loading is now handled in HTML blade template
-            // els.tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+            if (window.renderAdminTableSkeleton && els.tableBody) {
+                window.renderAdminTableSkeleton(els.tableBody, 10, 5, false);
+            }
 
             const url = new URL(window.location.origin + '/api/v1/admin/promotions');
             url.searchParams.append('page', page);
@@ -208,7 +209,7 @@
     if (els.btnCreate) {
         els.btnCreate.addEventListener('click', () => {
             resetForm();
-            els.modalLabel.innerHTML = '<i class="bi bi-tag me-2"></i>Tạo mã giảm giá mới';
+            els.modalLabel.innerHTML = '<i class="bi bi-tag me-2 admin-accent-icon"></i>Tạo mã giảm giá mới';
             getModalInstance()?.show();
         });
     }
@@ -232,7 +233,7 @@
 
             const promo = JSON.parse(btnEdit.dataset.promotion);
             els.idInput.value = promo.id;
-            els.modalLabel.innerHTML = '<i class="bi bi-tag me-2"></i>Cập nhật mã giảm giá';
+            els.modalLabel.innerHTML = '<i class="bi bi-tag me-2 admin-accent-icon"></i>Cập nhật mã giảm giá';
 
             els.code.value = promo.code || '';
             els.name.value = promo.name || '';

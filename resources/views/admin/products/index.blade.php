@@ -68,10 +68,10 @@
 {{-- ── Modal: Thêm / Sửa Sản phẩm ─────────────────────────────── --}}
 <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="productModalLabel">
-                    <i class="bi bi-box-seam me-2"></i>Thêm sản phẩm mới
+                    <i class="bi bi-box-seam me-2" style="color:var(--accent-color);"></i>Tạo sản phẩm mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -148,9 +148,9 @@
                     </div>
                 </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
-                    <button type="submit" class="btn-primary-custom" id="productSubmitBtn">Lưu sản phẩm</button>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="submit" class="btn-primary-custom border-0" id="productSubmitBtn">Lưu sản phẩm</button>
                 </div>
             </form>
         </div>
@@ -168,7 +168,7 @@
     window.ADMIN_PRODUCT_PAGE = {
         type: 'all',
         allowedTypes: null,
-        createTitle: 'Thêm sản phẩm mới',
+        createTitle: 'Tạo sản phẩm mới',
         editTitle: 'Cập nhật sản phẩm',
         createSuccess: 'Thêm sản phẩm thành công!',
         updateSuccess: 'Cập nhật sản phẩm thành công!',

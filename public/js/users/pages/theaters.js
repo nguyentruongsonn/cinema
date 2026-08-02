@@ -150,17 +150,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const card = document.createElement('div');
         card.className = 'theater-card';
 
-        const imageUrl = getSafeImageUrl(theater.images?.[0]?.url);
-        const media = document.createElement('div');
-        media.className = imageUrl ? 'theater-img' : 'theater-img-placeholder';
-
-        if (imageUrl) {
-            media.style.backgroundImage = `url(${JSON.stringify(imageUrl)})`;
-        } else {
-            const placeholderIcon = document.createElement('i');
-            placeholderIcon.className = 'bi bi-camera-video';
-            media.appendChild(placeholderIcon);
+        let imageUrl = getSafeImageUrl(theater.images?.[0]?.url);
+        if (!imageUrl) {
+            const fallbackImages = [
+                'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=600&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=600&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1505686994434-e3cc5abf1330?q=80&w=600&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=600&auto=format&fit=crop',
+            ];
+            imageUrl = fallbackImages[theater.id % fallbackImages.length];
         }
+
+        const imgWrapper = document.createElement('div');
+        imgWrapper.className = 'theater-img-wrapper';
+
+        const media = document.createElement('div');
+        media.className = 'theater-img';
+        media.style.backgroundImage = `url(${JSON.stringify(imageUrl)})`;
+        imgWrapper.appendChild(media);
 
         const badgesContainer = document.createElement('div');
         badgesContainer.className = 'theater-badges';
@@ -179,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             badgesContainer.appendChild(badgeElement);
         });
 
-        media.appendChild(badgesContainer);
+        imgWrapper.appendChild(badgesContainer);
 
         const info = document.createElement('div');
         info.className = 'theater-info';
@@ -198,21 +206,37 @@ document.addEventListener('DOMContentLoaded', () => {
         address.textContent = String(theater.address ?? '');
         detail.append(locationIcon, address);
 
+        const contacts = document.createElement('div');
+        contacts.className = 'theater-contacts';
+
+        if (theater.phone) {
+            const phoneEl = document.createElement('div');
+            phoneEl.className = 'theater-contact-item';
+            phoneEl.innerHTML = `<i class="bi bi-telephone-fill"></i><span>${theater.phone}</span>`;
+            contacts.appendChild(phoneEl);
+        }
+        if (theater.email) {
+            const emailEl = document.createElement('div');
+            emailEl.className = 'theater-contact-item';
+            emailEl.innerHTML = `<i class="bi bi-envelope-fill"></i><span>${theater.email}</span>`;
+            contacts.appendChild(emailEl);
+        }
+
         const actions = document.createElement('div');
         actions.className = 'theater-actions';
 
         const scheduleLink = document.createElement('a');
-        scheduleLink.href = '#';
+        scheduleLink.href = '/movies';
         scheduleLink.className = 'btn-theater';
-        scheduleLink.append(document.createTextNode('Xem lịch chiếu '));
+        scheduleLink.append(document.createTextNode('Đặt vé ngay '));
 
         const arrowIcon = document.createElement('i');
         arrowIcon.className = 'bi bi-arrow-right';
         scheduleLink.appendChild(arrowIcon);
         actions.appendChild(scheduleLink);
 
-        info.append(name, detail, actions);
-        card.append(media, info);
+        info.append(name, detail, contacts, actions);
+        card.append(imgWrapper, info);
         column.appendChild(card);
 
         return column;
@@ -279,17 +303,30 @@ document.addEventListener('DOMContentLoaded', () => {
             paginationData.current_page === 1
         ));
         
-        for (let i = 1; i <= paginationData.last_page; i++) {
-            if (i === 1 || i === paginationData.last_page || (i >= paginationData.current_page - 1 && i <= paginationData.current_page + 1)) {
-                const pageButton = createPaginationButton(i, '', false, String(i));
-                pageButton.classList.toggle('active', i === paginationData.current_page);
-                controls.push(pageButton);
-            } else if (i === paginationData.current_page - 2 || i === paginationData.current_page + 2) {
+        const pages = (function(currentPage, lastPage) {
+            if (lastPage <= 7) {
+                return Array.from({ length: lastPage }, (_, i) => i + 1);
+            }
+            if (currentPage <= 4) {
+                return [1, 2, 3, 4, 5, '...', lastPage];
+            }
+            if (currentPage >= lastPage - 3) {
+                return [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
+            }
+            return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
+        })(paginationData.current_page, paginationData.last_page);
+
+        for (const item of pages) {
+            if (item === '...') {
                 const ellipsis = document.createElement('span');
                 ellipsis.className = 'px-2';
                 ellipsis.style.color = '#666';
                 ellipsis.textContent = '...';
                 controls.push(ellipsis);
+            } else {
+                const pageButton = createPaginationButton(item, '', false, String(item));
+                pageButton.classList.toggle('active', item === paginationData.current_page);
+                controls.push(pageButton);
             }
         }
         

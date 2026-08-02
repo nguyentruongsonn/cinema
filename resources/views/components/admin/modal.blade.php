@@ -12,7 +12,7 @@
     'submitBtnId' => null,
 ])
 
-<div class="modal fade" id="{{ $id }}" tabindex="-1" @if($titleId) aria-labelledby="{{ $titleId }}" @endif aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade" id="{{ $id }}" tabindex="-1" @if($titleId) aria-labelledby="{{ $titleId }}" @endif aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered {{ $size }}">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">

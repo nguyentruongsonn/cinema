@@ -34,22 +34,28 @@ class ContentController extends Controller
         ]);
     }
 
-    public function posts(Request $request): JsonResponse
+    public function posts(Request $request, \App\Services\PostService $service): JsonResponse
     {
         $validated = $request->validate([
             'category' => ['nullable', 'string', 'in:news,blog,announcement,event,promotion'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:30'],
         ]);
 
-        $posts = Post::query()
-            ->with('author:id,name')
-            ->published()
-            ->when($validated['category'] ?? null, fn ($query, $category) => $query->category($category))
-            ->latest('published_at')
-            ->paginate($validated['per_page'] ?? 12);
+        $category = $validated['category'] ?? null;
+        $search = trim((string) ($validated['search'] ?? ''));
+        $page = (int) ($validated['page'] ?? 1);
+        $perPage = (int) ($validated['per_page'] ?? 10);
+
+        $featuredPost = $service->getFeaturedPost($category, $search, $page);
+        $posts = $service->getFilteredPosts($featuredPost, $category, $search, $perPage);
 
         return response()->json([
             'data' => PostResource::collection($posts->getCollection())->resolve(),
+            'featured_post' => $featuredPost ? (new PostResource($featuredPost))->resolve() : null,
+            'sidebar_trailers' => $service->getSidebarTrailers(3),
+            'popular_tags' => $service->getPopularTags(),
             'pagination' => [
                 'current_page' => $posts->currentPage(),
                 'last_page' => $posts->lastPage(),
@@ -59,36 +65,48 @@ class ContentController extends Controller
         ]);
     }
 
-    public function post(Post $post): JsonResponse
+    public function post(Post $post, \App\Services\PostService $service): JsonResponse
     {
         abort_unless($post->isPubliclyVisible(), 404);
         $post->incrementViews();
+
+        $relatedPosts = $service->getRelatedPosts($post, 3);
 
         return response()->json([
             'data' => (new PostResource($post->fresh('author:id,name')))->resolve(),
+            'related_posts' => PostResource::collection($relatedPosts)->resolve(),
         ]);
     }
 
-    public function postsPage(Request $request): View
+    public function postsPage(Request $request, \App\Services\PostService $service): View
     {
-        $posts = Post::query()
-            ->with('author:id,name')
-            ->published()
-            ->latest('published_at')
-            ->paginate(12)
-            ->withQueryString();
+        $category = $request->query('category');
+        $search = trim((string) $request->query('search', ''));
+        $page = (int) $request->query('page', 1);
 
-        return view('users.posts.index', compact('posts'));
+        $featuredPost = $service->getFeaturedPost($category, $search, $page);
+        $posts = $service->getFilteredPosts($featuredPost, $category, $search, 10);
+        $sidebarTrailers = $service->getSidebarTrailers(3);
+        $popularTags = $service->getPopularTags();
+
+        return view('users.posts.index', compact(
+            'posts',
+            'featuredPost',
+            'sidebarTrailers',
+            'popularTags',
+            'category',
+            'search'
+        ));
     }
 
-    public function postPage(Post $post): View
+    public function postPage(Post $post, \App\Services\PostService $service): View
     {
         abort_unless($post->isPubliclyVisible(), 404);
-        $post->incrementViews();
 
-        return view('users.posts.show', [
-            'post' => $post->fresh('author:id,name'),
-            'safeContent' => $this->htmlSanitizer->sanitize((string) $post->content),
-        ]);
+        $service->recordView($post);
+        $relatedPosts = $service->getRelatedPosts($post, 3);
+        $safeContent = $this->htmlSanitizer->sanitize((string) $post->content);
+
+        return view('users.posts.show', compact('post', 'relatedPosts', 'safeContent'));
     }
 }

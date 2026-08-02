@@ -110,4 +110,69 @@ class Post extends Model
         }
         return Str::limit(strip_tags($this->content), 150);
     }
+
+    /**
+     * Get properly formatted image URL for display.
+     */
+    public function getImageUrlAttribute(): string
+    {
+        if (empty($this->featured_image)) {
+            return asset('images/default-banner.jpg');
+        }
+
+        if (Str::startsWith($this->featured_image, ['http://', 'https://', '/'])) {
+            return $this->featured_image;
+        }
+
+        return asset('storage/' . $this->featured_image);
+    }
+
+    /**
+     * Get localized category label.
+     */
+    public function getCategoryLabelAttribute(): string
+    {
+        return match ($this->category) {
+            'promotion' => 'Ưu đãi & Khuyến mãi',
+            'blog' => 'Review & Blog',
+            'event' => 'Sự kiện',
+            'news' => 'Tin phim',
+            'announcement' => 'Thông báo',
+            default => 'Tin tức',
+        };
+    }
+
+    /**
+     * Estimated reading time in minutes.
+     */
+    public function getReadingTimeAttribute(): int
+    {
+        $words = count(preg_split('/\s+/', trim(strip_tags((string) $this->content))));
+        return max(3, (int) ceil($words / 180));
+    }
+
+    /**
+     * Safe author display name.
+     */
+    public function getAuthorNameAttribute(): string
+    {
+        return $this->author?->name ?? 'Poly Cinema';
+    }
+
+    /**
+     * Uppercase badge text matching Dune UI screenshot.
+     */
+    public function getBadgeTextAttribute(): string
+    {
+        return match ($this->category) {
+            'blog' => 'REVIEW',
+            'news' => 'INDUSTRY',
+            'promotion' => 'EXCLUSIVE',
+            'event' => 'SỰ KIỆN',
+            'announcement' => 'THÔNG BÁO',
+            default => strtoupper($this->category),
+        };
+    }
 }
+
+

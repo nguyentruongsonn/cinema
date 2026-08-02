@@ -21,11 +21,13 @@ class Screen extends Model
         'seat_layout_template_id',
         'capacity',
         'status',
+        'hidden_rows',
     ];
 
     protected $casts = [
         'capacity' => 'integer',
         'status' => 'integer',
+        'hidden_rows' => 'array',
     ];
 
     public function theater(): BelongsTo

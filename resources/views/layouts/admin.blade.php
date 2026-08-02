@@ -117,22 +117,23 @@
                 <!-- Theater System -->
                 <li class="nav-item has-submenu">
                     <a href="#menuRap"
-                       class="nav-link {{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*') ? 'active' : '' }}"
+                       class="nav-link {{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*', 'admin.pricing-rules.*') ? 'active' : '' }}"
                        data-bs-toggle="collapse"
                        role="button"
-                       aria-expanded="{{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*') ? 'true' : 'false' }}"
+                       aria-expanded="{{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*', 'admin.pricing-rules.*') ? 'true' : 'false' }}"
                        aria-controls="menuRap"
                        data-bs-tooltip="Hệ thống rạp">
                         <i class="bi bi-buildings"></i>
                         <span class="nav-text">Hệ thống rạp</span>
                         <i class="bi bi-chevron-down submenu-arrow"></i>
                     </a>
-                    <div class="collapse {{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*') ? 'show' : '' }}" id="menuRap">
+                    <div class="collapse {{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*', 'admin.pricing-rules.*') ? 'show' : '' }}" id="menuRap">
                         <ul class="nav flex-column submenu">
                             <li class="nav-item"><a href="{{ route('admin.branches.index') }}" class="nav-link {{ request()->routeIs('admin.branches.*') ? 'active' : '' }}">Quản lý chi nhánh</a></li>
                             <li class="nav-item"><a href="{{ route('admin.theaters.index') }}" class="nav-link {{ request()->routeIs('admin.theaters.*') ? 'active' : '' }}">Quản lý rạp chiếu</a></li>
                             <li class="nav-item"><a href="{{ route('admin.screens.index') }}" class="nav-link {{ request()->routeIs('admin.screens.*') ? 'active' : '' }}">Quản lý phòng chiếu</a></li>
                             <li class="nav-item"><a href="{{ route('admin.seat-layout-templates.index') }}" class="nav-link {{ request()->routeIs('admin.seat-layout-templates.*') ? 'active' : '' }}">Mẫu sơ đồ ghế</a></li>
+                            <li class="nav-item"><a href="{{ route('admin.pricing-rules.index') }}" class="nav-link {{ request()->routeIs('admin.pricing-rules.*') ? 'active' : '' }}">Cấu hình bảng giá</a></li>
                         </ul>
                     </div>
                 </li>

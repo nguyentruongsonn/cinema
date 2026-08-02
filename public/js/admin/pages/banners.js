@@ -59,8 +59,9 @@
 
     async function loadData(page = 1) {
         try {
-            // Skeleton loading is now handled in HTML blade template
-            // els.tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-secondary"></div></td></tr>`;
+            if (window.renderAdminTableSkeleton && els.tableBody) {
+                window.renderAdminTableSkeleton(els.tableBody, 9, 5, true);
+            }
             const url = new URL(window.location.origin + '/api/v1/admin/banners');
             url.searchParams.append('page', page);
             if (currentSearch) url.searchParams.append('search', currentSearch);
@@ -96,12 +97,13 @@
                 ? images.map((image, imageIndex) => `
                     <img src="${escapeHtml(image.image_url || storageImageUrl(image.image_path))}"
                          alt="${safeTitle} - ${imageIndex + 1}"
-                         class="banner-image-preview">
+                         class="banner-image-preview"
+                         style="width: 105px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: #1a1a1a; display: inline-block; flex-shrink: 0;">
                 `).join('')
                 : '<span class="text-white-50">Chưa có ảnh</span>';
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
-                <td><div class="banner-images-row">${imagesHtml}</div></td>
+                <td><div class="banner-images-row" style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; align-items: center; overflow-x: auto; max-width: 360px; padding: 4px 0;">${imagesHtml}</div></td>
                 <td>
                     <div class="banner-title">${safeTitle}</div>
                     ${description ? `<small class="banner-description">${safeDescription}${description.length > 50 ? '...' : ''}</small>` : ''}
@@ -151,7 +153,7 @@
     if (els.btnCreate) els.btnCreate.addEventListener('click', () => {
         resetForm();
         selectedFiles = [];
-        els.modalLabel.innerHTML = '<i class="bi bi-image me-2"></i>Tạo banner mới';
+        els.modalLabel.innerHTML = '<i class="bi bi-image me-2 admin-accent-icon"></i>Tạo banner mới';
         getModalInstance()?.show();
     });
 
@@ -243,7 +245,7 @@
             els.formMethod.value = 'PUT';
             const banner = JSON.parse(btnEdit.dataset.banner);
             els.idInput.value = banner.id;
-            els.modalLabel.innerHTML = '<i class="bi bi-image me-2"></i>Cập nhật banner';
+            els.modalLabel.innerHTML = '<i class="bi bi-image me-2 admin-accent-icon"></i>Cập nhật banner';
             els.title.value = banner.title || '';
             els.description.value = banner.description || '';
 

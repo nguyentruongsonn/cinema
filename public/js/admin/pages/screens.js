@@ -93,6 +93,9 @@
     /* ── Fetch API Data ─────────────────────────────────────────────── */
     async function loadData(page = 1, search = '') {
         try {
+            if (window.renderAdminTableSkeleton && els.screensTableBody) {
+                window.renderAdminTableSkeleton(els.screensTableBody, 8, 5, false);
+            }
             const url = new URL(window.location.origin + '/api/v1/admin/screens');
             url.searchParams.append('page', page);
             if (search) url.searchParams.append('search', search);
@@ -341,7 +344,7 @@
         if (!form) return;
         form.reset();
         document.getElementById('formatFormMethod').value = 'POST';
-        document.getElementById('formatModalLabel').innerHTML = '<i class="bi bi-camera-reels me-2 admin-accent-icon"></i>Thêm định dạng chiếu';
+        document.getElementById('formatModalLabel').innerHTML = '<i class="bi bi-camera-reels me-2 admin-accent-icon"></i>Tạo định dạng chiếu mới';
     }
 
     function resetSoundForm() {
@@ -350,7 +353,7 @@
         form.reset();
         form.dataset.id = '';
         document.getElementById('soundFormMethod').value = 'POST';
-        document.getElementById('soundModalLabel').innerHTML = '<i class="bi bi-volume-up me-2"></i>Thêm định dạng âm thanh';
+        document.getElementById('soundModalLabel').innerHTML = '<i class="bi bi-volume-up me-2 admin-accent-icon"></i>Tạo định dạng âm thanh mới';
     }
 
     function bindModalOpeners() {
@@ -442,7 +445,7 @@
             document.getElementById('soundFormMethod').value = 'PUT';
             document.getElementById('soundForm').dataset.id = editSound.dataset.id;
             document.getElementById('soundName').value = editSound.dataset.name || '';
-            document.getElementById('soundModalLabel').innerHTML = '<i class="bi bi-volume-up me-2"></i>Cập nhật định dạng âm thanh';
+            document.getElementById('soundModalLabel').innerHTML = '<i class="bi bi-volume-up me-2 admin-accent-icon"></i>Cập nhật định dạng âm thanh';
             getModal('soundModal')?.show();
             return;
         }

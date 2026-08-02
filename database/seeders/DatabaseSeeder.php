@@ -40,6 +40,11 @@ class DatabaseSeeder extends Seeder
 
             // Showtimes (depends on Movie and Screen)
             ShowtimeSeeder::class,
+
+            // Pricing rules (Holidays, Day rules, Time slots)
+            HolidaySeeder::class,
+            DayRuleSeeder::class,
+            TimeSlotSeeder::class,
         ]);
 
         $this->command->info('All seeders completed successfully!');

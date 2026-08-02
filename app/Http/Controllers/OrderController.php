@@ -162,6 +162,8 @@ class OrderController extends Controller
             'theater_id' => ['nullable', 'integer'],
             'movie_id' => ['nullable', 'integer'],
             'date' => ['nullable', 'date'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 
@@ -197,6 +199,8 @@ class OrderController extends Controller
                 Carbon::createFromFormat('Y-m-d', $date)->startOfDay(),
                 Carbon::createFromFormat('Y-m-d', $date)->endOfDay(),
             ]))
+            ->when($validated['date_from'] ?? null, fn ($q, $date) => $q->where('created_at', '>=', Carbon::createFromFormat('Y-m-d', $date)->startOfDay()))
+            ->when($validated['date_to'] ?? null, fn ($q, $date) => $q->where('created_at', '<=', Carbon::createFromFormat('Y-m-d', $date)->endOfDay()))
             ->when($validated['search'] ?? null, function ($q, $search) {
                 $q->where(function ($searchQuery) use ($search) {
                     $searchQuery->where('code', 'like', "%{$search}%")

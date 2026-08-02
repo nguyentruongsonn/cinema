@@ -23,8 +23,10 @@
         filterForm: document.getElementById('filterForm'),
         branchFilter: document.getElementById('branchFilter'),
         theaterFilter: document.getElementById('theaterFilter'),
-        dateFilter: document.getElementById('dateFilter'),
+        dateFromFilter: document.getElementById('dateFromFilter'),
+        dateToFilter: document.getElementById('dateToFilter'),
         statusFilter: document.getElementById('statusFilter'),
+        resetFilterBtn: document.getElementById('resetFilterBtn'),
         addShowtimeBtn: document.getElementById('addShowtimeBtn'),
 
         // Movies table
@@ -37,7 +39,9 @@
         showtimesTableBody: document.getElementById('showtimesTableBody'),
         showtimeCount: document.getElementById('showtimeCount'),
         backToMoviesBtn: document.getElementById('backToMoviesBtn'),
+        pagination: document.getElementById('paginationContainer'),
         paginationContainer: document.getElementById('paginationContainer'),
+        moviesPagination: document.getElementById('moviesPaginationContainer'),
 
         // Add modal
         addModal: document.getElementById('addShowtimeModal'),
@@ -136,10 +140,22 @@
         return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-    function setTodayDate() {
-        if (els.dateFilter) {
-            const today = new Date().toISOString().split('T')[0];
-            els.dateFilter.value = today;
+    function setThisWeekDate() {
+        if (els.dateFromFilter && els.dateToFilter) {
+            const now = new Date();
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Monday
+            
+            const start = new Date(now);
+            start.setDate(diff);
+            
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6); // Sunday
+
+            const format = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            
+            els.dateFromFilter.value = format(start);
+            els.dateToFilter.value = format(end);
         }
     }
 
@@ -191,13 +207,15 @@
     }
 
     /* ── Load Movies List ────────────────────────────────── */
-    async function loadMoviesList() {
-        // Skeleton loading is now handled in HTML blade template
-        // els.moviesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+    async function loadMoviesList(page = 1) {
+        if (window.renderAdminTableSkeleton && els.moviesTableBody) {
+            window.renderAdminTableSkeleton(els.moviesTableBody, 5, 5, false);
+        }
 
         try {
             const params = new URLSearchParams();
-            params.append('per_page', '200');
+            params.append('per_page', '10');
+            params.append('page', page);
             params.append('status', 'all');
             params.append('include', 'categories');
 
@@ -209,15 +227,19 @@
 
             const data = await res.json();
             const movies = data.data || [];
+            const pagination = data.pagination || {};
 
             if (movies.length === 0) {
                 els.moviesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>Không có phim nào.</td></tr>`;
                 els.movieCount.textContent = '0 phim';
+                if (els.moviesPagination) els.moviesPagination.innerHTML = '';
                 return;
             }
 
-            renderMoviesTable(movies);
-            els.movieCount.textContent = `${movies.length} phim`;
+            renderMoviesTable(movies, pagination.from || 1);
+            els.movieCount.textContent = `${pagination.total ?? movies.length} phim`;
+            renderMoviesPagination(pagination);
+
 
         } catch (err) {
             console.error('loadMoviesList error:', err);
@@ -225,7 +247,7 @@
         }
     }
 
-    function renderMoviesTable(movies) {
+    function renderMoviesTable(movies, startIndex = 1) {
         els.moviesTableBody.innerHTML = '';
 
         movies.forEach((movie, index) => {
@@ -246,7 +268,7 @@
                 : '—';
 
             tr.innerHTML = `
-                <td class="text-center text-white-50 movie-stt">${index + 1}</td>
+                <td class="text-center text-white-50 movie-stt">${startIndex + index}</td>
                 <td class="movie-info-cell">
                     <div class="d-flex align-items-center gap-3">
                         <div class="showtime-movie-poster-container">${posterHtml}</div>
@@ -283,8 +305,9 @@
 
     async function loadShowtimesForMovie(movieId, page = 1) {
         currentShowtimePage = page;
-        // Skeleton loading is now handled in HTML blade template
-        // els.showtimesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+        if (window.renderAdminTableSkeleton && els.showtimesTableBody) {
+            window.renderAdminTableSkeleton(els.showtimesTableBody, 5, 5, false);
+        }
 
         try {
             const url = new URL(window.location.origin + '/api/v1/admin/showtimes');
@@ -300,7 +323,8 @@
             if (statusValue) url.searchParams.append('status', statusValue);
 
             // Apply filters
-            if (els.dateFilter?.value) url.searchParams.append('date', els.dateFilter.value);
+            if (els.dateFromFilter?.value) url.searchParams.append('date_from', els.dateFromFilter.value);
+            if (els.dateToFilter?.value) url.searchParams.append('date_to', els.dateToFilter.value);
             if (els.theaterFilter?.value) url.searchParams.append('theater_id', els.theaterFilter.value);
 
             const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'showtimes:list' });
@@ -388,14 +412,18 @@
         });
     }
 
+    function renderMoviesPagination(pagination) {
+        const normalizedPagination = pagination || {};
+        window.AdminCore.renderAdminPagination(els.moviesPagination, normalizedPagination, (page) => {
+            loadMoviesList(page);
+        });
+    }
+
     function renderPagination(pagination) {
         const normalizedPagination = pagination || {};
         window.AdminCore.renderAdminPagination(els.pagination, normalizedPagination, (page) => {
             if (selectedMovieId) {
-                selectMovieAndLoadShowtimes(selectedMovieId, page);
-            } else {
-                currentPage = page;
-                loadData(page);
+                loadShowtimesForMovie(selectedMovieId, page);
             }
         });
     }
@@ -410,12 +438,30 @@
 
     /* ── Filter Handlers ─────────────────────────────────── */
     function handleFilterSubmit(e) {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (selectedMovieId) {
             // Reload showtimes with filters
             loadShowtimesForMovie(selectedMovieId, 1);
         } else {
             // Just reload movies list (filters don't affect it in current flow)
+            loadMoviesList();
+        }
+    }
+
+    function handleResetFilter(e) {
+        if (e) e.preventDefault();
+        if (els.branchFilter) els.branchFilter.value = '';
+        if (els.theaterFilter) {
+            fillSelect(els.theaterFilter, cachedTheaters, 'id', 'name', 'Tất cả rạp');
+            els.theaterFilter.value = '';
+        }
+        if (els.dateFromFilter) els.dateFromFilter.value = '';
+        if (els.dateToFilter) els.dateToFilter.value = '';
+        if (els.statusFilter) els.statusFilter.value = '';
+
+        if (selectedMovieId) {
+            loadShowtimesForMovie(selectedMovieId, 1);
+        } else {
             loadMoviesList();
         }
     }
@@ -456,12 +502,19 @@
 
     function resetMovieInfo(prefix) {
         const poster = document.getElementById(`${prefix}MoviePoster`);
+        const placeholder = document.getElementById(`${prefix}MoviePosterPlaceholder`);
         const title = document.getElementById(`${prefix}MovieTitle`);
         const duration = document.getElementById(`${prefix}MovieDuration`);
         const release = document.getElementById(`${prefix}MovieRelease`);
         const end = document.getElementById(`${prefix}MovieEnd`);
 
-        if (poster) poster.src = '/images/default-poster.jpg';
+        if (poster) {
+            poster.classList.add('d-none');
+            poster.src = '';
+        }
+        if (placeholder) {
+            placeholder.classList.remove('d-none');
+        }
         if (title) title.textContent = 'Chọn phim để xem thông tin';
         if (duration) duration.textContent = '—';
         if (release) release.textContent = '—';
@@ -534,13 +587,26 @@
 
     async function handleMultiDaySubmit(e) {
         e.preventDefault();
+        
+        // Auto-add pending time if user forgot to click "Thêm giờ"
+        if (els.mTimeInput && els.mTimeInput.value) {
+            if (!multiTimeSlots.includes(els.mTimeInput.value)) {
+                addTimeSlot();
+            }
+        }
+        
         if (multiTimeSlots.length === 0) {
-            alert('Vui lòng thêm ít nhất 1 giờ chiếu!');
+            window.showAdminToast('Vui lòng thêm ít nhất 1 giờ chiếu!', 'error');
+            return;
+        }
+
+        if (!els.multiDayForm.checkValidity()) {
+            els.multiDayForm.reportValidity();
             return;
         }
 
         const formData = new FormData(els.multiDayForm);
-        formData.append('time_slots', JSON.stringify(multiTimeSlots));
+        multiTimeSlots.forEach(time => formData.append('times[]', time));
         formData.append('status', '1');
 
         try {
@@ -549,10 +615,26 @@
                 body: formData
             });
 
-            if (!res || !res.ok) throw new Error();
+            if (!res || !res.ok) {
+                if (res) {
+                    const json = await res.json();
+                    if (res.status === 422) {
+                        const errStr = Object.values(json.errors || {}).flat().join('\n');
+                        window.showAdminToast(errStr || 'Dữ liệu không hợp lệ', 'error');
+                    } else {
+                        window.showAdminToast(json.message || 'Lỗi API', 'error');
+                    }
+                } else {
+                    window.showAdminToast('Không thể kết nối đến server', 'error');
+                }
+                return;
+            }
+            
             const json = await res.json();
 
-            window.AdminCore.showToast(json.message || 'Tạo lịch chiếu thành công!', 'success');
+            // Show warning if some were skipped
+            const toastType = json.data?.skipped > 0 && json.data?.created > 0 ? 'warning' : 'success';
+            window.showAdminToast(json.message || 'Tạo lịch chiếu thành công!', toastType);
             bootstrap.Modal.getInstance(els.addModal)?.hide();
             if (selectedMovieId) {
                 loadShowtimesForMovie(selectedMovieId, 1);
@@ -561,7 +643,7 @@
             }
         } catch (err) {
             console.error(err);
-            window.AdminCore.showToast('Lỗi tạo lịch chiếu!', 'error');
+            window.showAdminToast('Lỗi tạo lịch chiếu!', 'error');
         }
     }
 
@@ -614,20 +696,57 @@
 
     async function handleSingleDaySubmit(e) {
         e.preventDefault();
-        const formData = new FormData(els.singleDayForm);
+        
+        if (!els.singleDayForm.checkValidity()) {
+            els.singleDayForm.reportValidity();
+            return;
+        }
+        
+        const rawFormData = new FormData(els.singleDayForm);
+        const formData = new FormData();
+        
+        for (let [key, val] of rawFormData.entries()) {
+            if (key !== 'times[]' && key !== 'theater_ids[]' && key !== 'screen_ids[]') {
+                formData.append(key, val);
+            }
+        }
+        
+        const times = rawFormData.getAll('times[]');
+        const screenIds = rawFormData.getAll('screen_ids[]');
+        for (let i = 0; i < times.length; i++) {
+            formData.append(`slots[${i}][time]`, times[i]);
+            formData.append(`slots[${i}][screen_id]`, screenIds[i]);
+        }
+
         const status = els.sStatusToggle?.checked ? '1' : '0';
         formData.append('status', status);
 
         try {
-            const res = await window.AdminCore.apiFetch('/api/v1/admin/showtimes/single-day', {
+            const res = await window.AdminCore.apiFetch('/api/v1/admin/showtimes/bulk-single', {
                 method: 'POST',
                 body: formData
             });
 
-            if (!res || !res.ok) throw new Error();
+            if (!res || !res.ok) {
+                if (res) {
+                    const json = await res.json();
+                    if (res.status === 422) {
+                        const errStr = Object.values(json.errors || {}).flat().join('\n');
+                        window.showAdminToast(errStr || 'Dữ liệu không hợp lệ', 'error');
+                    } else {
+                        window.showAdminToast(json.message || 'Lỗi API', 'error');
+                    }
+                } else {
+                    window.showAdminToast('Không thể kết nối đến server', 'error');
+                }
+                return;
+            }
+            
             const json = await res.json();
 
-            window.AdminCore.showToast(json.message || 'Tạo lịch chiếu thành công!', 'success');
+            // Show warning if some were skipped
+            const toastType = json.data?.skipped > 0 && json.data?.created > 0 ? 'warning' : 'success';
+            window.showAdminToast(json.message || 'Lưu suất chiếu thành công!', toastType);
             bootstrap.Modal.getInstance(els.addModal)?.hide();
             if (selectedMovieId) {
                 loadShowtimesForMovie(selectedMovieId, 1);
@@ -636,7 +755,7 @@
             }
         } catch (err) {
             console.error(err);
-            window.AdminCore.showToast('Lỗi tạo lịch chiếu!', 'error');
+            window.showAdminToast('Lỗi tạo lịch chiếu!', 'error');
         }
     }
 
@@ -649,6 +768,7 @@
         }
 
         const poster = document.getElementById(`${prefix}MoviePoster`);
+        const placeholder = document.getElementById(`${prefix}MoviePosterPlaceholder`);
         const title = document.getElementById(`${prefix}MovieTitle`);
         const duration = document.getElementById(`${prefix}MovieDuration`);
         const release = document.getElementById(`${prefix}MovieRelease`);
@@ -656,9 +776,21 @@
 
         const posterUrl = movie.poster_path
             ? `/storage/${movie.poster_path}`
-            : (movie.poster_url || '/images/default-poster.jpg');
+            : (movie.poster_url || '');
 
-        if (poster) poster.src = posterUrl;
+        if (posterUrl && poster) {
+            poster.src = posterUrl;
+            poster.classList.remove('d-none');
+            if (placeholder) placeholder.classList.add('d-none');
+            poster.onerror = () => {
+                poster.classList.add('d-none');
+                if (placeholder) placeholder.classList.remove('d-none');
+            };
+        } else {
+            if (poster) poster.classList.add('d-none');
+            if (placeholder) placeholder.classList.remove('d-none');
+        }
+
         if (title) title.textContent = movie.title || '—';
         if (duration) duration.textContent = movie.duration || '—';
         if (release) release.textContent = formatDate(movie.release_date);
@@ -709,8 +841,7 @@
         }
 
         try {
-            // Use PUBLIC endpoint (supports theater_id filter) instead of admin endpoint
-            const url = `/api/v1/screens?theater_id=${theaterId}&per_page=200&status=all`;
+            const url = `/api/v1/admin/screens?theater_id=${theaterId}&per_page=50&status=all`;
             console.log('[LOAD SCREENS] Fetching from:', url);
 
             const res = await window.AdminCore.apiFetch(url);
@@ -719,11 +850,9 @@
             if (res && res.ok) {
                 const json = await res.json();
                 console.log('[LOAD SCREENS] JSON response:', json);
-                console.log('[LOAD SCREENS] json.data:', json.data);
-                console.log('[LOAD SCREENS] Number of screens:', json.data?.length);
 
-                // Public endpoint returns { data: [...], pagination: {...} }
-                const screens = json.data || [];
+                // Admin endpoint returns { screens: { data: [...] } }
+                const screens = json.screens?.data || json.data || [];
                 fillSelect(screenEl, screens, 'id', 'name', '-- Chọn phòng --');
                 console.log('[LOAD SCREENS] Dropdown populated with', screens.length, 'screens');
             } else {
@@ -749,14 +878,14 @@
             if (!res || !res.ok) throw new Error();
             const json = await res.json();
 
-            window.AdminCore.showToast(json.message || 'Cập nhật thành công!', 'success');
+            window.showAdminToast(json.message || 'Cập nhật thành công!', 'success');
             bootstrap.Modal.getInstance(els.editModal)?.hide();
             if (selectedMovieId) {
                 loadShowtimesForMovie(selectedMovieId, currentShowtimePage);
             }
         } catch (err) {
             console.error(err);
-            window.AdminCore.showToast('Lỗi cập nhật lịch chiếu!', 'error');
+            window.showAdminToast('Lỗi cập nhật lịch chiếu!', 'error');
         }
     }
 
@@ -772,13 +901,13 @@
             if (!res || !res.ok) throw new Error();
             const json = await res.json();
 
-            window.AdminCore.showToast(json.message || 'Xóa thành công!', 'success');
+            window.showAdminToast(json.message || 'Xóa thành công!', 'success');
             if (selectedMovieId) {
                 loadShowtimesForMovie(selectedMovieId, currentShowtimePage);
             }
         } catch (err) {
             console.error(err);
-            window.AdminCore.showToast('Lỗi xóa suất chiếu!', 'error');
+            window.showAdminToast('Lỗi xóa suất chiếu!', 'error');
         }
     }
 
@@ -786,6 +915,7 @@
     function setupEventListeners() {
         // Filter form
         els.filterForm?.addEventListener('submit', handleFilterSubmit);
+        els.resetFilterBtn?.addEventListener('click', handleResetFilter);
         els.branchFilter?.addEventListener('change', handleBranchChange);
 
         // Back to movies
@@ -817,6 +947,14 @@
 
         // Single-day form
         els.sAddSlotBtn?.addEventListener('click', addSingleSlotRow);
+        
+        // Add invalid listeners to show toast when HTML5 validation fails silently
+        const showValidationError = (e) => {
+            window.showAdminToast('Vui lòng điền đầy đủ các trường bắt buộc', 'error');
+        };
+        els.multiDayForm?.addEventListener('invalid', showValidationError, true);
+        els.singleDayForm?.addEventListener('invalid', showValidationError, true);
+        
         els.singleDayForm?.addEventListener('submit', handleSingleDaySubmit);
         els.sMovieId?.addEventListener('change', () => updateMovieInfo('s', els.sMovieId.value));
 
@@ -871,10 +1009,10 @@
                         }
 
                         const json = await res.json();
-                        window.AdminCore.showToast(json.message || 'Cập nhật trạng thái thành công!', 'success');
+                        window.showAdminToast(json.message || 'Cập nhật trạng thái thành công!', 'success');
                     } catch (err) {
                         console.error('Toggle status error:', err);
-                        window.AdminCore.showToast(err.message || 'Lỗi cập nhật trạng thái!', 'error');
+                        window.showAdminToast(err.message || 'Lỗi cập nhật trạng thái!', 'error');
                         // Revert toggle on error
                         toggle.checked = !isActive;
                     }
@@ -887,8 +1025,8 @@
     async function init() {
         console.log('[Showtimes] Initializing...');
 
-        // Set default date to today
-        setTodayDate();
+        // Do not pre-fill date filter so that clicking any movie displays all showtimes by default
+        // setThisWeekDate();
 
         // Fetch all prerequisites
         await fetchPrerequisites();

@@ -74,7 +74,9 @@
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="promotionModalLabel"><i class="bi bi-tag me-2"></i>Tạo mã giảm giá mới</h5>
+                <h5 class="modal-title" id="promotionModalLabel">
+                    <i class="bi bi-tag me-2" style="color:var(--accent-color);"></i>Tạo mã giảm giá mới
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <form id="promotionForm">
@@ -86,7 +88,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="promotionCode" class="form-label text-secondary">Mã giảm giá <span class="text-danger">*</span></label>
                             <input type="text" class="form-control bg-dark text-white border-secondary" id="promotionCode" required>
-                            <small class="text-muted">VD: SUMMER2024, FILM50</small>
+                            <small class="text-light opacity-75" style="color: #ccc !important;">VD: SUMMER2024, FILM50</small>
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -119,13 +121,13 @@
                         <div class="col-md-6 mb-3">
                             <label for="promotionDiscountValue" class="form-label text-secondary">Giá trị giảm <span class="text-danger">*</span></label>
                             <input type="number" class="form-control bg-dark text-white border-secondary" id="promotionDiscountValue" min="0" step="0.01" required>
-                            <small class="text-muted" id="discountValueHint">Nhập % giảm (VD: 20 cho 20%)</small>
+                            <small class="text-light opacity-75" style="color: #ccc !important;" id="discountValueHint">Nhập % giảm (VD: 20 cho 20%)</small>
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <label for="promotionMaxDiscountAmount" class="form-label text-secondary">Giảm tối đa (VNĐ)</label>
                             <input type="number" class="form-control bg-dark text-white border-secondary" id="promotionMaxDiscountAmount" min="0">
-                            <small class="text-muted">Chỉ dùng khi giảm %</small>
+                            <small class="text-light opacity-75" style="color: #ccc !important;">Chỉ dùng khi giảm %</small>
                         </div>
                     </div>
 
@@ -143,7 +145,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="promotionUsageLimit" class="form-label text-secondary">Giới hạn sử dụng</label>
                             <input type="number" class="form-control bg-dark text-white border-secondary" id="promotionUsageLimit" min="0">
-                            <small class="text-muted">Để trống = không giới hạn</small>
+                            <small class="text-light opacity-75" style="color: #ccc !important;">Để trống = không giới hạn</small>
                         </div>
                     </div>
 
@@ -168,8 +170,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn-primary-custom border-0">Lưu thông tin</button>
+                    <button type="submit" class="btn-primary-custom border-0">Lưu khuyến mãi</button>
                 </div>
             </form>
         </div>

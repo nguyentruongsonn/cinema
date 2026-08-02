@@ -47,6 +47,7 @@ class BookingManager {
         this.applyPromotionBtn = document.getElementById('applyPromotionBtn');
         this.promotionMessage = document.getElementById('promotionMessage');
         this.voucherContent = document.getElementById('voucherContent');
+        this.availableVouchersSection = document.getElementById('availableVouchersSection');
         this.discountAmount = document.getElementById('discountAmount');
         this.proceedBtn = document.getElementById('proceedToPaymentBtn');
         this.cancelBtn = document.getElementById('cancelSelectionBtn');
@@ -214,7 +215,11 @@ class BookingManager {
         }
 
         // Re-create the seat element correctly using createSeat to ensure SVG/Gradients are rebuilt
+        const hasCoupleCenter = seatEl.classList.contains('seat-couple-center');
         const newSeatEl = this.createSeat(seat);
+        if (hasCoupleCenter) {
+            newSeatEl.classList.add('seat-couple-center');
+        }
         seatEl.replaceWith(newSeatEl);
     }
 
@@ -397,7 +402,7 @@ class BookingManager {
         this.applyPromotionBtn?.addEventListener('click', () => this.registerPromotionFromInput());
         this.promotionCodeInput?.addEventListener('input', () => {
             this.appliedPromotion = null;
-            this.setPromotionMessage('Nhập mã để đăng ký voucher. Mã chỉ giảm giá sau khi bạn bấm Áp dụng trong danh sách voucher.', 'text-muted');
+            this.setPromotionMessage('Nhập mã để đăng ký voucher. Mã chỉ giảm giá sau khi bạn bấm Áp dụng trong danh sách voucher.', 'text-white-50');
             this.updateSummary();
             this.renderRegisteredPromotions();
         });
@@ -802,10 +807,16 @@ class BookingManager {
         const seatMap = this.buildSeatPositionMap();
 
         for (let rowIndex = 0; rowIndex < dimensions.rows; rowIndex++) {
+            let firstSeatRow = seatMap[rowIndex] && Object.values(seatMap[rowIndex]).find(s => s);
+            const rowLabelText = firstSeatRow ? firstSeatRow.row : '';
+
             const rowLabel = document.createElement('div');
             rowLabel.className = 'seat-row-label';
-            rowLabel.textContent = this.getSeatRowLabel(rowIndex);
+            rowLabel.textContent = rowLabelText;
             this.seatMapContainer.appendChild(rowLabel);
+
+            let isCoupleRow = firstSeatRow && this.isCoupleSeat(firstSeatRow);
+            const shiftRight = isCoupleRow && (dimensions.cols % 2 !== 0);
 
             let colIndex = 0;
             while (colIndex < dimensions.cols) {
@@ -817,14 +828,26 @@ class BookingManager {
                     continue;
                 }
 
-                this.seatMapContainer.appendChild(this.createSeat(seat));
-                colIndex += this.isCoupleSeat(seat) ? 2 : 1;
+                const isCouple = this.isCoupleSeat(seat);
+                
+                if (isCouple && colIndex + 2 > dimensions.cols) {
+                    this.seatMapContainer.appendChild(this.createEmptySeat());
+                    colIndex++;
+                    continue;
+                }
+
+                const seatEl = this.createSeat(seat);
+                if (shiftRight && isCouple) {
+                    seatEl.classList.add('seat-couple-center');
+                }
+                this.seatMapContainer.appendChild(seatEl);
+                colIndex += isCouple ? 2 : 1;
             }
             
             // Add right side label
             const rightRowLabel = document.createElement('div');
             rightRowLabel.className = 'seat-row-label right-label';
-            rightRowLabel.textContent = this.getSeatRowLabel(rowIndex);
+            rightRowLabel.textContent = rowLabelText;
             this.seatMapContainer.appendChild(rightRowLabel);
         }
     }
@@ -947,7 +970,7 @@ class BookingManager {
         // Fix for browser SVG rendering bugs when re-inserting same IDs
         gradId = `${gradId}-${Math.random().toString(36).substring(2, 9)}`;
 
-        const fillAttr = (status === 'holding' || status === 'booked' || status === 'locked')
+        const fillAttr = (status === 'holding' || status === 'booked' || status === 'locked' || status === 'maintenance')
             ? 'fill="#2a2d35"'
             : `fill="url(#${gradId})"`;
 
@@ -978,6 +1001,10 @@ class BookingManager {
             seatDiv.setAttribute('aria-label', `Ghế ${seat.row}${seat.number}, ${seat.seat_type?.name || 'Thường'}`);
         } else {
             seatDiv.setAttribute('aria-disabled', 'true');
+            if (status === 'maintenance') {
+                seatDiv.style.opacity = '0.2';
+                seatDiv.style.cursor = 'not-allowed';
+            }
         }
 
         return seatDiv;
@@ -1006,6 +1033,10 @@ class BookingManager {
             return 'locked';
         }
 
+        if (seat.status === 'maintenance') {
+            return 'maintenance';
+        }
+
         return 'available';
     }
 
@@ -1026,8 +1057,8 @@ class BookingManager {
         const seatId = seat.id;
         const status = this.getSeatStatus(seat);
 
-        // Can't click booked or locked seats
-        if (status === 'booked' || status === 'locked') {
+        // Can't click booked, locked, or maintenance seats
+        if (status === 'booked' || status === 'locked' || status === 'maintenance') {
             return;
         }
 
@@ -1046,7 +1077,11 @@ class BookingManager {
         // Re-render only the clicked seat element to avoid full map DOM reflows
         const seatEl = this.seatMapContainer?.querySelector(`[data-seat-id="${seatId}"]`);
         if (seatEl) {
+            const hasCoupleCenter = seatEl.classList.contains('seat-couple-center');
             const newSeatEl = this.createSeat(seat);
+            if (hasCoupleCenter) {
+                newSeatEl.classList.add('seat-couple-center');
+            }
             seatEl.replaceWith(newSeatEl);
         } else {
             this.renderSeatMap();
@@ -1667,7 +1702,7 @@ class BookingManager {
 
         this.promotionCodeInput.value = code;
         this.appliedPromotion = null;
-        this.setPromotionMessage('Đã chọn mã. Bấm Áp dụng trong danh sách voucher để giảm giá.', 'text-muted');
+        this.setPromotionMessage('Đã chọn mã. Bấm Áp dụng trong danh sách voucher để giảm giá.', 'text-white-50');
         this.updateSummary();
         this.renderRegisteredPromotions();
     }
@@ -1836,16 +1871,16 @@ class BookingManager {
         const promotions = this.registeredPromotions.filter(item => this.isVoucherUsable(item));
 
         if (promotions.length === 0) {
-            this.voucherContent.innerHTML = `
-                <div class="empty-voucher text-center py-5" style="grid-column: 1 / -1;">
-                    <i class="bi bi-ticket-perforated text-muted" style="font-size: 48px; opacity: 0.3;"></i>
-                    <p class="text-muted mt-3 mb-1 fw-bold" style="color: #8c8c8c !important;">Chưa có voucher nào khả dụng.</p>
-                    <small class="voucher-hint" style="color: #666;">Hãy nhập mã khuyến mãi ở phía trên để thêm voucher mới.</small>
-                </div>
-            `;
+            if (this.availableVouchersSection) {
+                this.availableVouchersSection.style.setProperty('display', 'none', 'important');
+            }
+            this.voucherContent.innerHTML = '';
             return;
         }
 
+        if (this.availableVouchersSection) {
+            this.availableVouchersSection.style.removeProperty('display');
+        }
         this.voucherContent.innerHTML = this.renderVoucherItems(promotions, selectedCode, appliedCode);
     }
 

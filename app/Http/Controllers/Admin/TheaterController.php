@@ -88,13 +88,22 @@ class TheaterController extends Controller
 
             $validated = $request->validated();
 
+            $pricingProfile = [
+                'base_price' => (int) ($request->input('base_price') ?? 70000),
+                'weekend_surcharge' => (int) ($request->input('weekend_surcharge') ?? 10000),
+                'holiday_surcharge' => (int) ($request->input('holiday_surcharge') ?? 20000),
+                'happy_day_price' => (int) ($request->input('happy_day_price') ?? 50000),
+                'student_discount' => (int) ($request->input('student_discount') ?? 10000),
+                'beta_ten_discount' => -10000,
+            ];
+
             $theater = Theater::create([
                 'branch_id' => $validated['branch_id'],
                 'name' => $validated['name'],
                 'address' => $validated['address'],
                 'phone' => $validated['phone'] ?? null,
                 'email' => $validated['email'] ?? null,
-                'pricing_profile' => $validated['pricing_profile'] ?? null,
+                'pricing_profile' => $pricingProfile,
                 'status' => $validated['status'] ?? true,
             ]);
 
@@ -140,13 +149,22 @@ class TheaterController extends Controller
                 }
             }
 
+            $pricingProfile = [
+                'base_price' => (int) ($request->input('base_price') ?? 70000),
+                'weekend_surcharge' => (int) ($request->input('weekend_surcharge') ?? 10000),
+                'holiday_surcharge' => (int) ($request->input('holiday_surcharge') ?? 20000),
+                'happy_day_price' => (int) ($request->input('happy_day_price') ?? 50000),
+                'student_discount' => (int) ($request->input('student_discount') ?? 10000),
+                'beta_ten_discount' => -10000,
+            ];
+
             $theater->update([
                 'branch_id' => $validated['branch_id'],
                 'name' => $validated['name'],
                 'address' => $validated['address'],
                 'phone' => $validated['phone'] ?? $theater->phone,
                 'email' => $validated['email'] ?? $theater->email,
-                'pricing_profile' => $validated['pricing_profile'] ?? $theater->pricing_profile,
+                'pricing_profile' => $pricingProfile,
                 'status' => $validated['status'] ?? $theater->status,
             ]);
 

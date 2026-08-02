@@ -33,9 +33,11 @@ class SeatService
         $this->cleanupExpiredReservations($showtimeId);
 
         $showtime = Showtime::with(['screen.theater', 'format', 'movie'])->findOrFail($showtimeId);
+        $hiddenRows = $showtime->screen?->hidden_rows ?? [];
 
         $seats = Seat::with('seatType')
             ->where('screen_id', $showtime->screen_id)
+            ->when(!empty($hiddenRows), fn($q) => $q->whereNotIn('row_index', $hiddenRows))
             ->orderBy('row')
             ->orderBy('number')
             ->get();
@@ -80,7 +82,9 @@ class SeatService
             $seatId = $seat->id;
             $status = 'available';
 
-            if (in_array($seatId, $bookedSeatIds, true)) {
+            if ($seat->status === 0 || $seat->status === false) {
+                $status = 'maintenance';
+            } elseif (in_array($seatId, $bookedSeatIds, true)) {
                 $status = 'booked';
             } elseif (in_array($seatId, $currentUserHoldSeatIds, true)) {
                 $status = 'holding';
@@ -159,6 +163,14 @@ class SeatService
 
             if ($seats->count() !== count($seatIds)) {
                 throw new \RuntimeException('Một hoặc nhiều ghế không thuộc phòng chiếu của suất chiếu này.');
+            }
+
+            $disabledSeatLabels = $seats->filter(fn($seat) => $seat->status === 0 || $seat->status === false)
+                ->map(fn($seat) => $seat->label ?: ($seat->row . $seat->number))
+                ->all();
+
+            if (!empty($disabledSeatLabels)) {
+                throw new \RuntimeException('Một hoặc nhiều ghế đang bảo trì hoặc không khả dụng: ' . implode(', ', $disabledSeatLabels));
             }
 
             $bookedSeatIds = $this->getBookedSeatIds($showtime->id, $seatIds, true);

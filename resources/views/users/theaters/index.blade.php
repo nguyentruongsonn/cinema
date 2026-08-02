@@ -3,7 +3,7 @@
 @section('title', 'Hệ thống Rạp - Cinema')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/users/pages/theaters.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/users/pages/theaters.css') }}?v={{ filemtime(public_path('css/users/pages/theaters.css')) }}">
 @endpush
 
 @section('content')
@@ -11,7 +11,6 @@
     <section class="theaters-header">
         <div class="container cinema-shell">
             <h1 class="page-title text-center text-md-start">Hệ thống Rạp Chiếu</h1>
-            <p class="text-secondary text-center text-md-start">Trải nghiệm điện ảnh tuyệt đỉnh tại các rạp chiếu trên toàn quốc</p>
         </div>
     </section>
 
@@ -88,5 +87,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/users/pages/theaters.js') }}"></script>
+    <script src="{{ asset('js/users/pages/theaters.js') }}?v={{ config('app.asset_version', time()) }}"></script>
 @endpush

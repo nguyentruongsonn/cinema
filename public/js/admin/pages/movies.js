@@ -77,8 +77,9 @@
     /* ── Fetch & Render ────────────────────────────────────────────── */
     async function loadData(page = 1, search = '', status = 'all') {
         try {
-            // Skeleton loading is now handled in HTML blade template
-            // els.tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><div class="spinner-border text-secondary" role="status"></div></td></tr>`;
+            if (window.renderAdminTableSkeleton && els.tableBody) {
+                window.renderAdminTableSkeleton(els.tableBody, 7, 5, true);
+            }
 
             const url = new URL(window.location.origin + '/api/v1/movies');
             url.searchParams.append('page', page);
@@ -235,7 +236,7 @@
     if (els.btnCreate) {
         els.btnCreate.addEventListener('click', () => {
             resetForm();
-            els.modalLabel.innerHTML = '<i class="bi bi-film me-2"></i>Thêm phim mới';
+            els.modalLabel.innerHTML = '<i class="bi bi-film me-2 admin-accent-icon"></i>Tạo phim mới';
             getModalInstance()?.show();
         });
     }
@@ -284,7 +285,7 @@
 
             const movie = JSON.parse(btnEdit.dataset.movie);
             els.idInput.value = movie.id;
-            els.modalLabel.innerHTML = '<i class="bi bi-film me-2"></i>Cập nhật phim';
+            els.modalLabel.innerHTML = '<i class="bi bi-film me-2 admin-accent-icon"></i>Cập nhật phim';
 
             // Điền các field cơ bản
             els.title.value = movie.title || '';
