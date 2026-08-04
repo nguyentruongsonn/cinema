@@ -11,8 +11,6 @@
  */
 
 import Toast from '../components/toast.js';
-import HybridPage from '../components/hybrid-page.js';
-import CinemaPagination from '../components/pagination.js';
 
 (function () {
     'use strict';
@@ -21,64 +19,15 @@ import CinemaPagination from '../components/pagination.js';
     let currentCategory = '';
     let currentSearch = '';
     let searchDebounceTimer = null;
-    let heroReady = false;
-    let sidebarReady = false;
-    let heroRegion = null;
-    let postsRegion = null;
-    let sidebarRegion = null;
 
     function init() {
         setupNewsletterForms();
         setupArticleActions();
 
         if (document.getElementById('postsSpaContainer')) {
-            bindHybridRegions();
-            hydrateStateFromUrl();
             setupSpaEventListeners();
-            syncFilterControls();
-            loadPosts(currentPage, currentCategory, currentSearch);
+            loadPosts(1, '', '');
         }
-    }
-
-    function bindHybridRegions() {
-        heroRegion = HybridPage.bindRegion({
-            skeleton: '#heroSkeleton',
-            content: '#heroContent',
-            busyTarget: '.posts-hero-shell',
-        });
-
-        postsRegion = HybridPage.bindRegion({
-            skeleton: '#postsSkeletonGrid',
-            content: '#postsGrid',
-            empty: '#postsEmptyState',
-            error: '#postsErrorState',
-            busyTarget: '#postsMainSection',
-        });
-
-        sidebarRegion = HybridPage.bindRegion({
-            skeleton: '#sidebarTrailersSkeleton',
-            content: '#sidebarTrailersGrid',
-            busyTarget: '.sidebar-widget-section',
-        });
-    }
-
-    function hydrateStateFromUrl() {
-        const params = new URLSearchParams(window.location.search);
-        const allowedCategories = new Set(['news', 'blog', 'promotion', 'event', 'announcement']);
-        const requestedCategory = params.get('category') || '';
-        currentCategory = allowedCategories.has(requestedCategory) ? requestedCategory : '';
-        currentSearch = (params.get('search') || '').trim().slice(0, 100);
-        currentPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
-    }
-
-    function syncFilterControls() {
-        const searchInput = document.getElementById('postSearchInput');
-        if (searchInput) searchInput.value = currentSearch;
-
-        document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(tab => {
-            const isActive = (tab.dataset.value || '') === currentCategory;
-            if (isActive) window.CinemaTabs?.activate(tab, { emit: false });
-        });
     }
 
     /* ─── XSS protection ──────────────────────────────────────────────────── */
@@ -95,10 +44,14 @@ import CinemaPagination from '../components/pagination.js';
     /* ─── Tab & Search listeners ──────────────────────────────────────────── */
     function setupSpaEventListeners() {
         // Category tabs
-        document.getElementById('postsFilterTabs')?.addEventListener('cinema:tab-change', event => {
-            currentCategory = event.detail.value || '';
-            currentPage = 1;
-            loadPosts(1, currentCategory, currentSearch);
+        document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(tab => {
+            tab.addEventListener('click', e => {
+                e.preventDefault();
+                document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentCategory = tab.dataset.category || '';
+                loadPosts(1, currentCategory, currentSearch);
+            });
         });
 
         // Debounced live search
@@ -108,7 +61,6 @@ import CinemaPagination from '../components/pagination.js';
                 clearTimeout(searchDebounceTimer);
                 searchDebounceTimer = setTimeout(() => {
                     currentSearch = e.target.value.trim();
-                    currentPage = 1;
                     loadPosts(1, currentCategory, currentSearch);
                 }, 350);
             });
@@ -121,7 +73,9 @@ import CinemaPagination from '../components/pagination.js';
                 currentCategory = '';
                 currentSearch = '';
                 if (searchInput) searchInput.value = '';
-                syncFilterControls();
+                document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(t => t.classList.remove('active'));
+                const allTab = document.querySelector('#postsFilterTabs .cinema-pill-tab[data-category=""]');
+                if (allTab) allTab.classList.add('active');
                 loadPosts(1, '', '');
             }
         });
@@ -137,33 +91,29 @@ import CinemaPagination from '../components/pagination.js';
             if (category) qs.append('category', category);
             if (search)   qs.append('search', search);
 
-            const data = await window.apiClient.get(`/posts?${qs}`);
+            const resp = await fetch(`/api/v1/posts?${qs}`, {
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
-            if (!heroReady) renderHero(data.featured_post);
+            const data = await resp.json();
+            renderHero(data.featured_post, page, category, search);
             renderPostsGrid(data.data || []);
             renderPagination(data.pagination || {});
-            if (!sidebarReady) {
-                renderTrailers(data.sidebar_trailers || []);
-                renderTags(data.popular_tags || []);
-                sidebarReady = true;
-            }
+            renderTrailers(data.sidebar_trailers || []);
+            renderTags(data.popular_tags || []);
         } catch (err) {
             console.error('SPA posts fetch error:', err);
-            Toast.error('Không thể tải bài viết', 'Vui lòng kiểm tra kết nối và thử lại.');
-            postsRegion?.failed('Khong the tai bai viet. Vui long thu lai sau.');
+            Toast.error('Không thể tải bài viết, vui lòng kiểm tra kết nối.');
             hideSkeletons();
         }
     }
 
     /* ─── Skeleton helpers ────────────────────────────────────────────────── */
     function showSkeletons() {
-        if (!heroReady) {
-            heroRegion?.loading();
-        }
-        postsRegion?.loading();
-        if (!sidebarReady) {
-            sidebarRegion?.loading();
-        }
+        show('heroSkeleton');   hide('heroContent');
+        show('postsSkeletonGrid'); hide('postsGrid'); hide('postsEmptyState');
+        show('sidebarTrailersSkeleton'); hide('sidebarTrailersGrid');
     }
 
     function hideSkeletons() {
@@ -172,19 +122,19 @@ import CinemaPagination from '../components/pagination.js';
         hide('sidebarTrailersSkeleton');
     }
 
+    function show(id) { document.getElementById(id)?.classList.remove('d-none'); }
     function hide(id) { document.getElementById(id)?.classList.add('d-none'); }
 
     /* ─── 1. Hero Banner ──────────────────────────────────────────────────── */
-    function renderHero(featured) {
+    function renderHero(featured, page, category, search) {
+        hide('heroSkeleton');
         const heroEl = document.getElementById('heroContent');
         if (!heroEl) return;
 
-        heroReady = true;
-
-        if (featured) {
-            const slugUrl = `/posts/${encodeURIComponent(featured.slug || '')}`;
-            const bgUrl = safeAssetUrl(featured.image_url || featured.featured_image_url || '');
-            heroEl.style.backgroundImage = bgUrl ? `url("${bgUrl.replace(/"/g, '%22')}")` : '';
+        if (page === 1 && !category && !search && featured) {
+            const slugUrl  = `/posts/${esc(featured.slug)}`;
+            const bgUrl    = esc(featured.image_url || featured.featured_image_url || '');
+            heroEl.style.backgroundImage = `url('${bgUrl}')`;
 
             const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
             const href = (id, url) => { const el = document.getElementById(id); if (el) el.setAttribute('href', url); };
@@ -197,51 +147,44 @@ import CinemaPagination from '../components/pagination.js';
             if (titleEl) { titleEl.textContent = featured.title || ''; titleEl.setAttribute('href', slugUrl); }
 
             href('heroReadBtn', slugUrl);
-            heroRegion?.ready();
+            heroEl.classList.remove('d-none');
         } else {
-            heroRegion?.ready({ empty: true });
-        }
-    }
-
-    function safeAssetUrl(value) {
-        const url = String(value || '').trim();
-        if (!url) return '';
-        if (url.startsWith('/')) return url;
-
-        try {
-            const parsed = new URL(url, window.location.origin);
-            return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
-        } catch {
-            return '';
+            heroEl.classList.add('d-none');
         }
     }
 
     /* ─── 2. Horizontal News Cards ────────────────────────────────────────── */
     function renderPostsGrid(posts) {
+        hide('postsSkeletonGrid');
         const grid  = document.getElementById('postsGrid');
+        const empty = document.getElementById('postsEmptyState');
         if (!grid) return;
 
         if (!posts.length) {
-            grid.innerHTML = '';
-            postsRegion?.ready({ empty: true });
+            grid.classList.add('d-none');
+            empty?.classList.remove('d-none');
             return;
         }
 
+        empty?.classList.add('d-none');
+
         grid.innerHTML = posts.map(post => {
-            const slugUrl  = `/posts/${encodeURIComponent(post.slug || '')}`;
-            const thumb    = esc(safeAssetUrl(post.image_url || post.featured_image_url || '') || '/images/default-banner.jpg');
+            const slugUrl  = `/posts/${esc(post.slug)}`;
+            const thumb    = esc(post.image_url || post.featured_image_url || '');
             const cat      = esc(post.category || '');
             const badge    = post.category_label ? esc(post.category_label).toUpperCase() : '';
             const author   = esc(post.author_name || 'Cinema Premium');
-            const avatar   = `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=2a2a35&color=ffffff&size=64`;
+            const initial  = author.charAt(0).toUpperCase();
+            const dateStr  = esc(post.published_date || '');
             const readTime = esc(post.reading_time || 5);
             const title    = esc(post.title || '');
             const excerpt  = esc(post.excerpt || '');
+            const slug     = esc(post.slug || '');
 
             return `
 <article class="cinema-news-card horizontal-card mb-4">
     <a href="${slugUrl}" class="news-card-img-wrapper d-block flex-shrink-0">
-        <img src="${thumb}" alt="${title}" loading="lazy" data-fallback-src="/images/default-banner.jpg">
+        <img src="${thumb}" alt="${title}" loading="lazy">
     </a>
     <div class="news-card-body d-flex flex-column justify-content-between flex-grow-1">
         <div class="news-card-content">
@@ -251,39 +194,88 @@ import CinemaPagination from '../components/pagination.js';
             </h3>
             <p class="news-card-excerpt">${excerpt}</p>
         </div>
-        <div class="news-card-footer mt-3 d-flex align-items-center justify-content-between">
-            <div class="author-info d-flex align-items-center">
-                <img src="${avatar}" class="author-avatar-img me-2" alt="${author}">
+        <div class="news-card-footer mt-3">
+            <div class="author-info">
+                <span class="author-avatar-circle">${initial}</span>
                 <span class="author-name-text">${author}</span>
             </div>
             <div class="card-meta-right">
+                ${dateStr ? `<span class="card-meta-item"><i class="bi bi-calendar3 me-1"></i>${dateStr}</span>` : ''}
                 <span class="card-meta-item"><i class="bi bi-clock me-1"></i>${readTime} phút đọc</span>
+                <button type="button" class="btn-card-action btn-bookmark-post" data-slug="${slug}" title="Lưu bài viết" aria-label="Lưu bài viết"><i class="bi bi-bookmark"></i></button>
+                <button type="button" class="btn-card-action btn-share-post" data-slug="${slug}" data-title="${title}" title="Chia sẻ" aria-label="Chia sẻ"><i class="bi bi-share"></i></button>
             </div>
         </div>
     </div>
 </article>`;
         }).join('');
 
-        bindImageFallbacks(grid);
-        postsRegion?.ready();
+        grid.classList.remove('d-none');
+        bindCardActions(grid);
+    }
+
+    /* ─── Card action bindings (bookmark/share) ───────────────────────────── */
+    function bindCardActions(container) {
+        container.querySelectorAll('.btn-bookmark-post').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                if (btn.classList.contains('active')) {
+                    Toast.success('Đã lưu bài viết vào danh sách quan tâm!');
+                } else {
+                    Toast.info('Đã bỏ lưu bài viết.');
+                }
+            });
+        });
+
+        container.querySelectorAll('.btn-share-post').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const title = btn.dataset.title || document.title;
+                const url   = `${location.origin}/posts/${btn.dataset.slug}`;
+                if (navigator.share) {
+                    try { await navigator.share({ title, url }); } catch { copyUrl(url); }
+                } else {
+                    copyUrl(url);
+                }
+            });
+        });
     }
 
     /* ─── 3. SPA Pagination ───────────────────────────────────────────────── */
-    function renderPagination({ current_page, last_page, total, per_page }) {
-        CinemaPagination.render({
-            container: '#postsPaginationContainer',
-            pagination: { current_page, last_page, total, per_page },
-            itemLabel: 'bài viết',
-            onPageChange(page) {
-                if (page && page !== currentPage) {
-                    loadPosts(page, currentCategory, currentSearch);
-                    document.getElementById('postsMainSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    function renderPagination({ current_page, last_page }) {
+        const el = document.getElementById('postsPaginationContainer');
+        if (!el) return;
+
+        if (!last_page || last_page <= 1) { el.innerHTML = ''; return; }
+
+        const btn = (page, label, disabled = false, active = false) =>
+            `<li class="page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}">
+                ${disabled || active
+                    ? `<span class="page-link">${label}</span>`
+                    : `<a class="page-link spa-page-btn" href="#" data-page="${page}">${label}</a>`}
+            </li>`;
+
+        let html = '<ul class="pagination mb-0">';
+        html += btn(current_page - 1, '&laquo;', current_page === 1);
+        for (let p = 1; p <= last_page; p++) html += btn(p, p, false, p === current_page);
+        html += btn(current_page + 1, '&raquo;', current_page === last_page);
+        html += '</ul>';
+        el.innerHTML = html;
+
+        el.querySelectorAll('.spa-page-btn').forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                const p = +a.dataset.page;
+                if (p && p !== currentPage) {
+                    loadPosts(p, currentCategory, currentSearch);
+                    window.scrollTo({ top: 100, behavior: 'smooth' });
                 }
-            },
+            });
         });
     }
+
     /* ─── 4. Sidebar: Large Trailer Cards (chuẩn mockup) ─────────────────── */
     function renderTrailers(trailers) {
+        hide('sidebarTrailersSkeleton');
         const grid = document.getElementById('sidebarTrailersGrid');
         if (!grid) return;
 
@@ -291,15 +283,15 @@ import CinemaPagination from '../components/pagination.js';
             grid.innerHTML = '<p class="text-secondary small mb-0">Chưa có trailer nào.</p>';
         } else {
             grid.innerHTML = trailers.map(m => {
-                const slug   = encodeURIComponent(m.slug || m.id || '');
+                const slug   = esc(m.slug || m.id || '');
                 const title  = esc(m.title || '');
-                const poster = esc(safeAssetUrl(m.poster_display_url || m.poster_url || '') || '/images/default-banner.jpg');
-                const age = esc(m.age_rating || '');
+                const poster = esc(m.poster_url || '');
+                const age    = esc(m.age_rating || '');
 
                 return `
 <a href="/movies/${slug}" class="sidebar-trailer-card d-block text-decoration-none mb-3">
     <div class="trailer-thumbnail position-relative">
-        <img src="${poster}" alt="Poster ${title}" loading="lazy" data-fallback-src="/images/default-poster.jpg">
+        <img src="${poster}" alt="" loading="lazy" onerror="this.style.opacity='0'" style="display:none" onload="this.style.display='block';this.style.opacity='1'">
         <div class="trailer-play-overlay">
             <div class="play-btn-sm"><i class="bi bi-play-fill"></i></div>
         </div>
@@ -312,18 +304,7 @@ import CinemaPagination from '../components/pagination.js';
             }).join('');
         }
 
-        bindImageFallbacks(grid);
-        sidebarRegion?.ready();
-    }
-
-    function bindImageFallbacks(container) {
-        container.querySelectorAll('img[data-fallback-src]').forEach(image => {
-            image.addEventListener('error', () => {
-                const fallback = image.dataset.fallbackSrc;
-                if (!fallback || image.getAttribute('src') === fallback) return;
-                image.setAttribute('src', fallback);
-            }, { once: true });
-        });
+        grid.classList.remove('d-none');
     }
 
     /* ─── 5. Sidebar: Popular Tags ────────────────────────────────────────── */
@@ -358,7 +339,7 @@ import CinemaPagination from '../components/pagination.js';
                 e.preventDefault();
                 const inp = form.querySelector('input[type="email"]');
                 if (inp && inp.value.trim()) {
-                    Toast.success('Đăng ký thành công', 'Cảm ơn bạn đã đồng hành cùng Poly Cinema.');
+                    Toast.success('Đăng ký bản tin trải nghiệm thành công! Cảm ơn bạn đã đồng hành cùng Poly Cinema.');
                     form.reset();
                 }
             });
@@ -367,9 +348,6 @@ import CinemaPagination from '../components/pagination.js';
 
     /* ─── Article detail actions ──────────────────────────────────────────── */
     function setupArticleActions() {
-        document.querySelector('[data-back-to-top]')?.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
         const btnShare = document.getElementById('btnShareArticle');
         if (btnShare) {
             btnShare.addEventListener('click', async () => {
@@ -387,9 +365,11 @@ import CinemaPagination from '../components/pagination.js';
             btnBookmark.addEventListener('click', () => {
                 btnBookmark.classList.toggle('active');
                 if (btnBookmark.classList.contains('active')) {
-                    Toast.success('Đã lưu bài viết', 'Bài viết đã được thêm vào danh sách quan tâm.');
+                    btnBookmark.style.color = '#e50914';
+                    Toast.success('Đã lưu bài viết vào danh sách quan tâm!');
                 } else {
-                    Toast.info('Đã bỏ lưu bài viết');
+                    btnBookmark.style.color = '';
+                    Toast.info('Đã bỏ lưu bài viết.');
                 }
             });
         }
@@ -397,8 +377,8 @@ import CinemaPagination from '../components/pagination.js';
 
     function copyUrl(text) {
         navigator.clipboard.writeText(text)
-            .then(() => Toast.success('Đã sao chép liên kết'))
-            .catch(() => Toast.error('Không thể sao chép liên kết', 'Vui lòng sao chép thủ công từ thanh địa chỉ.'));
+            .then(() => Toast.success('Đã sao chép liên kết!'))
+            .catch(() => Toast.error('Không thể sao chép liên kết.'));
     }
 
     if (document.readyState === 'loading') {

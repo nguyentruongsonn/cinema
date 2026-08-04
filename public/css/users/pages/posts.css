@@ -687,15 +687,6 @@
     margin-top: -1px;
 }
 
-.article-hero-image {
-    height: 100%;
-    inset: 0;
-    object-fit: cover;
-    position: absolute;
-    width: 100%;
-    z-index: 0;
-}
-
 .article-hero-overlay {
     position: absolute;
     inset: 0;
@@ -755,10 +746,6 @@
     background: #e50914;
     border-color: #e50914;
     transform: translateY(-2px);
-}
-
-.btn-article-action.active {
-    color: var(--primary-color, #e50914);
 }
 
 /* Article Body Typography */
@@ -1396,225 +1383,51 @@ h3.sidebar-widget-title {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   11. PIXEL-PERFECT DESIGN SYSTEM MATCH TO MOCKUP (input_file_0.png)
+   11. TRAILER CARD CAPTION OVERLAY (Mockup: title overlaid at bottom)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* 1. Hero Banner Boxed Card Container */
-.posts-hero-section.posts-hero-card-box {
-    border-radius: 24px;
-    overflow: hidden;
-    position: relative;
-    min-height: 480px;
-    width: 100%;
-    display: flex;
-    align-items: flex-end;
-    background-size: cover;
-    background-position: center;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-    margin-bottom: 1.5rem;
-}
-
-.posts-hero-section.posts-hero-card-box .posts-hero-overlay {
+/* Caption gradient overlay at bottom of trailer thumbnail */
+.trailer-card-caption {
     position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, rgba(12, 12, 18, 0.96) 0%, rgba(12, 12, 18, 0.72) 48%, transparent 100%),
-                linear-gradient(0deg, rgba(12, 12, 18, 0.92) 0%, transparent 65%);
-    z-index: 1;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.5rem 0.75rem 0.6rem;
+    background: linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.88) 0%,
+        rgba(0, 0, 0, 0.6) 50%,
+        transparent 100%
+    );
+    z-index: 3;
 }
 
-.posts-hero-section.posts-hero-card-box .posts-hero-content {
-    position: relative;
-    z-index: 2;
-    padding: 2.5rem 3rem;
-    width: 100%;
-}
-
-.hero-badge-exclusive {
-    background: #e50914 !important;
-    color: #ffffff !important;
-    padding: 4px 14px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    display: inline-block;
-    margin-bottom: 1rem;
-    letter-spacing: 0.5px;
-}
-
-.posts-hero-title {
-    font-size: clamp(2rem, 3.2vw, 2.75rem);
-    font-weight: 800;
-    color: #ffffff;
-    line-height: 1.25;
-    max-width: 680px;
-    margin-bottom: 1rem;
-}
-
-.posts-hero-excerpt {
-    color: #b0b0c0;
-    font-size: 1rem;
-    line-height: 1.6;
-    max-width: 620px;
-    margin-bottom: 1.5rem;
-}
-
-.hero-read-btn {
-    background: #e50914 !important;
-    color: #ffffff !important;
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: none;
-    transition: background 0.2s ease;
-}
-
-.hero-read-btn:hover {
-    background: #ff1f2d !important;
-    color: #ffffff !important;
-}
-
-.hero-read-time {
-    color: #a0a0b0;
-    font-size: 0.85rem;
-}
-
-/* 2. News Horizontal Cards (Boxed dark card container matching mockup) */
-.cinema-news-card.horizontal-card {
-    background: #14141c !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    border-radius: 16px !important;
-    overflow: hidden;
-    display: flex !important;
-    flex-direction: row;
-    margin-bottom: 24px;
-    transition: transform 0.25s ease, border-color 0.25s ease;
-    padding: 0 !important;
-}
-
-.cinema-news-card.horizontal-card:hover {
-    border-color: rgba(255, 255, 255, 0.14) !important;
-    transform: translateY(-2px);
-}
-
-.cinema-news-card.horizontal-card .news-card-img-wrapper {
-    width: 310px;
-    min-width: 310px;
-    flex-shrink: 0;
-    background: #1c1c26;
-    position: relative;
-    overflow: hidden;
-}
-
-.cinema-news-card.horizontal-card .news-card-img-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.4s ease;
-}
-
-.cinema-news-card.horizontal-card:hover .news-card-img-wrapper img {
-    transform: scale(1.04);
-}
-
-.cinema-news-card.horizontal-card .news-card-body {
-    padding: 24px 28px !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    flex-grow: 1;
-}
-
-.cinema-news-card.horizontal-card .card-cat-label {
-    color: #ff7a00 !important;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: inline-block;
-    background: transparent !important;
-    padding: 0 !important;
-}
-
-.cinema-news-card.horizontal-card .news-card-title {
-    margin-bottom: 12px;
-}
-
-.cinema-news-card.horizontal-card .news-card-title a {
-    color: #ffffff;
-    font-size: 1.28rem;
-    font-weight: 700;
-    line-height: 1.35;
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.cinema-news-card.horizontal-card:hover .news-card-title a {
-    color: #ff1f2d;
-}
-
-.cinema-news-card.horizontal-card .news-card-excerpt {
-    color: #9e9ea8;
-    font-size: 0.92rem;
-    line-height: 1.6;
-    margin-bottom: 20px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.cinema-news-card.horizontal-card .news-card-footer {
-    border-top: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.cinema-news-card.horizontal-card .author-avatar-img {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.cinema-news-card.horizontal-card .author-name-text {
-    color: #d0d0e0;
-    font-size: 0.86rem;
-    font-weight: 500;
-}
-
-.cinema-news-card.horizontal-card .card-meta-right {
-    color: #808090;
+.trailer-caption-title {
     font-size: 0.82rem;
-}
-
-/* 3. Sidebar Widgets Styling */
-.sidebar-widget-section {
-    margin-bottom: 2.5rem;
-}
-
-.sidebar-widget-title {
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-weight: 600;
     color: #ffffff;
-    margin-bottom: 1.25rem;
-    display: flex;
-    align-items: center;
+    margin: 0;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
 }
 
-/* Trailer cards */
+/* ── Sidebar widget card: less prominent borders for clean look ── */
+.sidebar-widget-card {
+    background: rgba(20, 20, 26, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    margin-bottom: var(--space-5);
+}
+
+/* Ensure trailer-thumbnail fills properly */
 .sidebar-trailer-card .trailer-thumbnail {
     position: relative;
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: 10px;
     background: #1a1a22;
     aspect-ratio: 16 / 9;
     width: 100%;
@@ -1633,124 +1446,4 @@ h3.sidebar-widget-title {
 
 .sidebar-trailer-card:hover .trailer-thumbnail img {
     transform: scale(1.04);
-}
-
-/* Frosted play button in center of trailer thumbnail matching mockup */
-.sidebar-trailer-card .trailer-play-overlay .play-btn-sm {
-    width: 44px !important;
-    height: 44px !important;
-    border-radius: 50% !important;
-    background: rgba(255, 255, 255, 0.22) !important;
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255, 255, 255, 0.35) !important;
-    color: #ffffff !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 1.3rem !important;
-    transition: all 0.2s ease;
-    margin: auto;
-}
-
-.sidebar-trailer-card:hover .trailer-play-overlay .play-btn-sm {
-    background: rgba(229, 9, 20, 0.9) !important;
-    border-color: #e50914 !important;
-    transform: scale(1.1);
-}
-
-.trailer-card-caption {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 1.75rem 0.85rem 0.65rem;
-    background: linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 50%, transparent 100%);
-    z-index: 3;
-}
-
-.trailer-caption-title {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #ffffff;
-    margin: 0;
-    line-height: 1.35;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Popular tags pills */
-.sidebar-tags-cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-}
-
-.sidebar-tags-cloud .cinema-tag-item {
-    background: #1c1c24;
-    color: #a0a0b0;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 20px;
-    padding: 6px 16px;
-    font-size: 0.82rem;
-    text-decoration: none;
-    transition: all 0.2s ease;
-}
-
-.sidebar-tags-cloud .cinema-tag-item:hover {
-    background: #2a2a35;
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Newsletter card box */
-.sidebar-widget-card.sidebar-newsletter-card {
-    background: #161620 !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    border-radius: 16px !important;
-    padding: 24px !important;
-    margin-bottom: 24px;
-}
-
-.sidebar-newsletter-card .sidebar-widget-subtitle {
-    color: #9e9ea8;
-    font-size: 0.85rem;
-    line-height: 1.5;
-}
-
-.cinema-newsletter-input {
-    background: #0e0e14;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 10px 14px;
-    color: #ffffff;
-    font-size: 0.9rem;
-    width: 100%;
-}
-
-.btn-newsletter-submit {
-    background: #e50914;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    padding: 10px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    width: 100%;
-    transition: background 0.2s ease;
-}
-
-.btn-newsletter-submit:hover {
-    background: #ff1f2d;
-}
-
-/* Responsive adjustments */
-@media (max-width: 767.98px) {
-    .cinema-news-card.horizontal-card {
-        flex-direction: column !important;
-    }
-    .cinema-news-card.horizontal-card .news-card-img-wrapper {
-        width: 100% !important;
-        aspect-ratio: 16 / 9;
-    }
 }
