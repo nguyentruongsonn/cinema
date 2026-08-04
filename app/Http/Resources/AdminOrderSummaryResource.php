@@ -28,7 +28,8 @@ class AdminOrderSummaryResource extends JsonResource
                 'movie' => $this->showtime?->relationLoaded('movie') && $this->showtime?->movie ? [
                     'id' => $this->showtime->movie->id,
                     'title' => $this->showtime->movie->title,
-                    'poster_url' => $this->showtime->movie->poster_url,
+                    'poster_url' => $this->showtime->movie->poster_display_url,
+                    'poster_display_url' => $this->showtime->movie->poster_display_url,
                     'duration' => $this->showtime->movie->duration,
                     'age_rating' => $this->showtime->movie->age_rating,
                 ] : null,

@@ -12,7 +12,7 @@ class PostPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('posts.view');
     }
 
     /**
@@ -20,7 +20,7 @@ class PostPolicy
      */
     public function view(User $user, Post $post): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('posts.view');
     }
 
     /**
@@ -28,7 +28,7 @@ class PostPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('posts.create');
     }
 
     /**
@@ -36,11 +36,7 @@ class PostPolicy
      */
     public function update(User $user, Post $post): bool
     {
-        if ($user->hasAnyRole(['admin', 'super-admin'])) {
-            return true;
-        }
-
-        return false;
+        return $user->hasPermission('posts.update');
     }
 
     /**
@@ -48,11 +44,7 @@ class PostPolicy
      */
     public function delete(User $user, Post $post): bool
     {
-        if ($user->hasAnyRole(['admin', 'super-admin'])) {
-            return true;
-        }
-
-        return false;
+        return $user->hasPermission('posts.delete');
     }
 
     /**
@@ -60,6 +52,6 @@ class PostPolicy
      */
     public function publish(User $user, Post $post): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('posts.publish');
     }
 }

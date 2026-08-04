@@ -71,7 +71,7 @@
                                 </div>
                                 <div class="select-dropdown">
                                     <div class="select-search">
-                                        <input type="text" placeholder="Search..." autocomplete="off">
+                                        <input type="search" placeholder="Tìm rạp..." autocomplete="off" aria-label="Tìm rạp trong danh sách">
                                     </div>
                                     <div class="select-options"></div>
                                 </div>
@@ -148,37 +148,19 @@
 
     {{-- Latest Promotions & News Section --}}
     @if(isset($latestPosts) && $latestPosts->isNotEmpty())
-    <section class="home-posts-section py-5" aria-labelledby="postsTitle" style="border-top: 1px solid rgba(255,255,255,0.08);">
+    <section class="home-posts-section content-posts-section py-5" aria-labelledby="postsTitle">
         <div class="container">
-            <div class="section-header d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <span class="content-eyebrow text-danger fw-semibold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 2px;">CINEMA JOURNAL</span>
-                    <h2 id="postsTitle" class="section-title mb-0">Tin Tức & Ưu Đãi Mới</h2>
-                </div>
-                <a href="{{ route('posts.index') }}" class="view-all-link text-decoration-none d-flex align-items-center gap-1">
-                    <span>Xem tất cả</span> <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
+            <x-user.content-section-header
+                eyebrow="CINEMA JOURNAL"
+                title="Tin Tức & Ưu Đãi Mới"
+                title-id="postsTitle"
+                :href="route('posts.index')"
+            />
 
             <div class="row g-4">
                 @foreach($latestPosts as $post)
                 <div class="col-12 col-md-4">
-                    <article class="home-post-card">
-                        <a href="{{ route('posts.show', ['post' => $post->slug]) }}" class="home-post-image position-relative d-block overflow-hidden" style="border-radius: 12px; aspect-ratio: 16/9; background: #1a1a1a;">
-                            <img src="{{ $post->image_url }}"
-                                 alt="{{ $post->title }}" loading="lazy" class="w-100 h-100 object-fit-cover" style="transition: transform 0.4s ease;">
-                            <span class="home-post-badge position-absolute top-0 start-0 m-2 px-2 py-1 badge text-uppercase fw-semibold" style="font-size: 0.68rem; background: rgba(229, 9, 20, 0.9); backdrop-filter: blur(4px);">{{ $post->category_label }}</span>
-                        </a>
-                        <div class="home-post-body mt-3">
-                            <div class="home-post-meta text-white-50 small mb-1">
-                                <time datetime="{{ $post->published_at?->toISOString() }}">{{ $post->published_at?->format('d/m/Y') }}</time>
-                            </div>
-                            <h3 class="home-post-title h6 mb-2 fw-bold" style="line-height: 1.4;">
-                                <a href="{{ route('posts.show', ['post' => $post->slug]) }}" class="text-white text-decoration-none">{{ $post->title }}</a>
-                            </h3>
-                            <p class="home-post-excerpt text-white-50 small mb-0" style="line-height: 1.6;">{{ Str::limit($post->excerpt, 95) }}</p>
-                        </div>
-                    </article>
+                    <x-user.post-card :post="$post" />
                 </div>
                 @endforeach
             </div>
@@ -188,5 +170,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/users/pages/home.js') }}" type="module"></script>
+    <script src="{{ asset('js/users/pages/home.js') }}?v={{ config('app.asset_version') }}" type="module"></script>
 @endpush

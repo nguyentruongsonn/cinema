@@ -68,6 +68,48 @@ class ContentManagementTest extends TestCase
             ->assertJsonPath('data.title', 'Lịch chiếu đặc biệt');
     }
 
+    public function test_posts_api_keeps_one_shared_hero_and_paginates_filtered_news(): void
+    {
+        $author = User::factory()->create();
+        $featured = Post::create([
+            'title' => 'Bài viết nổi bật dùng chung',
+            'slug' => 'bai-viet-noi-bat-dung-chung',
+            'content' => '<p>Nội dung nổi bật</p>',
+            'excerpt' => 'Nội dung nổi bật',
+            'author_id' => $author->id,
+            'category' => 'blog',
+            'is_published' => true,
+            'published_at' => now()->subMinute(),
+        ]);
+
+        foreach (range(1, 13) as $index) {
+            Post::create([
+                'title' => "Tin phim {$index}",
+                'slug' => "tin-phim-{$index}",
+                'content' => '<p>Nội dung tin phim</p>',
+                'excerpt' => 'Nội dung tin phim',
+                'author_id' => $author->id,
+                'category' => 'news',
+                'is_published' => true,
+                'published_at' => now()->subMinutes($index + 1),
+            ]);
+        }
+
+        $firstPage = $this->getJson('/api/v1/posts?category=news&per_page=5&page=1');
+        $secondPage = $this->getJson('/api/v1/posts?category=news&per_page=5&page=2');
+
+        $firstPage->assertOk()
+            ->assertJsonPath('featured_post.id', $featured->id)
+            ->assertJsonPath('pagination.current_page', 1)
+            ->assertJsonPath('pagination.last_page', 3)
+            ->assertJsonPath('pagination.total', 13)
+            ->assertJsonCount(5, 'data');
+        $secondPage->assertOk()
+            ->assertJsonPath('featured_post.id', $featured->id)
+            ->assertJsonPath('pagination.current_page', 2)
+            ->assertJsonCount(5, 'data');
+    }
+
     public function test_replacing_active_home_banner_updates_home_snapshot_and_removes_old_file(): void
     {
         Storage::fake('public');

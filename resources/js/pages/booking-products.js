@@ -16,14 +16,20 @@ class BookingProductRenderer {
         return products.map((product) => {
             const price = Number(product?.price);
             const maxQuantity = Number.parseInt(product?.max_quantity ?? product?.stock ?? 0, 10);
+            const sourceId = Number.parseInt(product?.id, 10);
+            const catalogType = product?.catalog_type || product?.type || 'product';
+            const catalogKey = product?.catalog_key || `${catalogType}:${sourceId}`;
 
             return {
                 ...product,
-                id: Number.parseInt(product?.id, 10),
+                id: catalogKey,
+                source_id: sourceId,
+                catalog_key: catalogKey,
+                catalog_type: catalogType,
                 price: Number.isFinite(price) ? price : 0,
                 max_quantity: Number.isFinite(maxQuantity) ? Math.max(0, maxQuantity) : 0,
             };
-        }).filter((product) => Number.isFinite(product.id));
+        }).filter((product) => Number.isFinite(product.source_id) && product.catalog_key);
     }
 
     render() {
@@ -44,10 +50,10 @@ class BookingProductRenderer {
                 ? `<div class="product-item-total">Tổng: <span class="text-danger">${manager.formatCurrency(total)}</span></div>`
                 : '';
 
-            return `<div class="product-card" data-product-id="${product.id}">
+            return `<div class="product-card" data-product-id="${manager.escapeHtml(product.id)}">
                 <div class="product-image-wrapper">
                     ${image ? `<img src="${manager.escapeHtml(image)}" alt="${manager.escapeHtml(product.name)}" class="product-image">` : ''}
-                    <div class="product-image-fallback" style="${image ? 'display: none;' : 'display: flex;'}"><i class="bi ${this.icon(product.name)}"></i></div>
+                    <div class="product-image-fallback ${image ? 'd-none' : ''}"><i class="bi ${this.icon(product.name)}"></i></div>
                 </div>
                 <div class="product-info">
                     <div class="product-name">${manager.escapeHtml(product.name)}</div>
@@ -72,7 +78,7 @@ class BookingProductRenderer {
         });
 
         manager.productsContainer.querySelectorAll('.product-card').forEach((item) => {
-            const productId = Number.parseInt(item.dataset.productId, 10);
+            const productId = item.dataset.productId;
             item.querySelector('[data-action="decrease"]')?.addEventListener('click', () => manager.changeProductQuantity(productId, -1));
             item.querySelector('[data-action="increase"]')?.addEventListener('click', () => manager.changeProductQuantity(productId, 1));
         });

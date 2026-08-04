@@ -23,14 +23,16 @@ class AdminMiddleware
             if ($request->expectsJson()) {
                 return $this->errorResponse('Unauthenticated', 401);
             }
+
             return redirect()->route('login');
         }
 
-        if (!$user->hasAnyRole(['admin', 'super-admin'])) {
+        if (!$user->canAccessAdminPanel()) {
             if ($request->expectsJson()) {
-                return $this->errorResponse('Forbidden: admin role required', 403);
+                return $this->errorResponse('Forbidden: management role required', 403);
             }
-            return redirect()->route('home')->with('error', 'Bạn không có quyền truy cập trang này.');
+
+            return redirect()->route('home')->with('error', 'B?n kh?ng c? quy?n truy c?p trang qu?n l?.');
         }
 
         return $next($request);

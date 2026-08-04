@@ -1,0 +1,544 @@
+<?php $__env->startSection('title', 'Quản lý lịch chiếu'); ?>
+<?php $__env->startSection('header_title', 'Quản lý lịch chiếu'); ?>
+
+<?php $__env->startSection('content'); ?>
+
+
+<div class="admin-filter-container">
+    <div class="admin-filter-bar align-items-end">
+        <div class="admin-filter-fields align-items-end">
+            <div class="admin-filter-group auto-width">
+                <label for="dateFromFilter" class="filter-label mb-1">Từ ngày</label>
+                <input type="date" id="dateFromFilter" class="admin-filter-input filter-date-md" title="Từ ngày">
+            </div>
+
+            <div class="admin-filter-group auto-width">
+                <label for="dateToFilter" class="filter-label mb-1">Đến ngày</label>
+                <input type="date" id="dateToFilter" class="admin-filter-input filter-date-md" title="Đến ngày">
+            </div>
+
+            <div class="admin-filter-group auto-width">
+                <select id="branchFilter" class="admin-filter-select filter-select-md">
+                    <option value="">Tất cả chi nhánh</option>
+                </select>
+            </div>
+
+            <div class="admin-filter-group auto-width">
+                <select id="theaterFilter" class="admin-filter-select filter-select-md">
+                    <option value="">Tất cả rạp</option>
+                </select>
+            </div>
+
+            <div class="admin-filter-group auto-width">
+                <select id="statusFilter" class="admin-filter-select filter-select-sm">
+                    <option value="">Trạng thái</option>
+                    <option value="active">Mở bán</option>
+                    <option value="inactive">Đóng</option>
+                </select>
+            </div>
+        </div>
+
+        <form id="filterForm" class="admin-filter-search d-flex gap-2">
+            <button class="admin-filter-btn" type="submit" title="Tìm kiếm">
+                <i class="bi bi-search"></i>
+                <span>Tìm kiếm</span>
+            </button>
+            <button class="admin-filter-btn admin-filter-reset" type="button" id="resetFilterBtn" title="Đặt lại bộ lọc">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span>Đặt lại</span>
+            </button>
+        </form>
+
+        <button type="button" class="admin-action-btn admin-filter-primary-action ms-auto" id="addShowtimeBtn">
+            <i class="bi bi-plus-lg"></i> Thêm suất chiếu
+        </button>
+    </div>
+</div>
+
+
+<div class="admin-table-container mb-4" id="moviesPanel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="text-white fw-semibold mb-0">Danh sách phim</h6>
+        <span class="admin-badge admin-badge-info" id="movieCount"></span>
+    </div>
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="text-center movie-stt">STT</th>
+                    <th class="movie-info-cell">Phim</th>
+                    <th class="text-center movie-duration">Thời lượng</th>
+                    <th class="movie-categories">Thể loại</th>
+                </tr>
+            </thead>
+            <tbody id="moviesTableBody">
+                <!-- Skeleton Loading Rows -->
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-75 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-50"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-60"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-80 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-45"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-75"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-65 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-55"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-80"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-70 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-48"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-70"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-xs-center"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-skeleton admin-skeleton-img-movie"></div>
+                            <div class="skeleton-flex-fill">
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-85 skeleton-mb-sm"></div>
+                                <div class="admin-skeleton admin-skeleton-text skeleton-w-42"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center"><div class="admin-skeleton admin-skeleton-text skeleton-text-md-center"></div></td>
+                    <td><div class="admin-skeleton admin-skeleton-text skeleton-w-65"></div></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="d-flex justify-content-center mt-4 pt-3" id="moviesPaginationContainer"></div>
+</div>
+
+
+<div class="admin-table-container showtimes-panel" id="showtimesPanel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="text-white fw-semibold mb-0">
+            <span id="selectedMovieTitle" class="showtimes-selected-movie-title"></span>
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+            <span class="admin-badge admin-badge-info" id="showtimeCount"></span>
+            <button type="button" id="backToMoviesBtn" class="admin-action-btn">
+                Danh sách phim
+            </button>
+        </div>
+    </div>
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="text-center showtime-stt-col">STT</th>
+                    <th class="showtime-time-col">Thời gian</th>
+                    <th class="showtime-screen-col">Phòng</th>
+                    <th class="text-center showtime-capacity-col">Ghế</th>
+                    <th class="showtime-format-col">Định dạng</th>
+                    <th class="text-center showtime-active-col">Hoạt động</th>
+                    <th class="text-center showtime-actions-col">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="showtimesTableBody">
+                <?php if (isset($component)) { $__componentOriginal39bf41cfe2d7587ee73efb5ec1fa8106 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal39bf41cfe2d7587ee73efb5ec1fa8106 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.skeleton-table','data' => ['cols' => '7','rows' => '5','hasImage' => false]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.skeleton-table'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['cols' => '7','rows' => '5','hasImage' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(false)]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal39bf41cfe2d7587ee73efb5ec1fa8106)): ?>
+<?php $attributes = $__attributesOriginal39bf41cfe2d7587ee73efb5ec1fa8106; ?>
+<?php unset($__attributesOriginal39bf41cfe2d7587ee73efb5ec1fa8106); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal39bf41cfe2d7587ee73efb5ec1fa8106)): ?>
+<?php $component = $__componentOriginal39bf41cfe2d7587ee73efb5ec1fa8106; ?>
+<?php unset($__componentOriginal39bf41cfe2d7587ee73efb5ec1fa8106); ?>
+<?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-center mt-4 pt-3" id="paginationContainer"></div>
+</div>
+
+
+<div class="modal fade" id="addShowtimeModal" tabindex="-1" aria-labelledby="addShowtimeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="addShowtimeModalLabel">
+                    <i class="bi bi-calendar-plus me-2 admin-accent-icon"></i>Tạo suất chiếu mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+
+            <div class="modal-body showtimes-modal-body admin-modal-scroll">
+                
+                <ul class="nav nav-tabs combo-tabs mb-4" id="addModeTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-multi" data-bs-toggle="tab" data-bs-target="#pane-multi"
+                                type="button" role="tab">
+                            <i class="bi bi-calendar-range me-1"></i> Thêm nhiều ngày
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-single" data-bs-toggle="tab" data-bs-target="#pane-single"
+                                type="button" role="tab">
+                            <i class="bi bi-calendar-date me-1"></i> Thêm theo ngày
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    
+                    <div class="tab-pane fade show active" id="pane-multi" role="tabpanel">
+                        <form id="multiDayForm">
+                            <div class="row g-3">
+                                
+                                <div class="col-md-8">
+                                    <div class="row g-3">
+                                        
+                                        <div class="col-md-12">
+                                            <label class="form-label text-secondary">Phim <span class="text-danger">*</span></label>
+                                            <select class="form-select bg-dark text-white border-secondary" id="mMovieId" name="movie_id" required>
+                                                <option value="">-- Chọn phim --</option>
+                                            </select>
+                                        </div>
+
+                                        
+                                        <div class="col-md-4">
+                                            <label class="form-label text-secondary">Rạp chiếu <span class="text-danger">*</span></label>
+                                            <select class="form-select bg-dark text-white border-secondary" id="mTheaterId" required>
+                                                <option value="">-- Chọn rạp --</option>
+                                            </select>
+                                        </div>
+
+                                        
+                                        <div class="col-md-4">
+                                            <label class="form-label text-secondary">Phòng chiếu <span class="text-danger">*</span></label>
+                                            <select class="form-select bg-dark text-white border-secondary" id="mScreenId" name="screen_id" disabled required>
+                                                <option value="">-- Chọn phòng --</option>
+                                            </select>
+                                        </div>
+
+                                        
+                                        <div class="col-md-4">
+                                            <label class="form-label text-secondary">Ngày bắt đầu <span class="text-danger">*</span></label>
+                                            <input type="date" class="form-control bg-dark text-white border-secondary" id="mDateFrom" name="date_from" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-secondary">Ngày kết thúc <span class="text-danger">*</span></label>
+                                            <input type="date" class="form-control bg-dark text-white border-secondary" id="mDateTo" name="date_to" required>
+                                        </div>
+
+                                        
+                                        <div class="col-md-8">
+                                            <label class="form-label text-secondary">Giờ chiếu <span class="text-danger">*</span>
+                                                <span class="time-input-label-hint ms-1">(Ấn Enter để thêm giờ)</span>
+                                            </label>
+                                            <div class="d-flex align-items-center gap-2 flex-wrap mb-2" id="timeSlotTags"></div>
+                                            <div class="d-flex gap-2">
+                                                <input type="time" class="form-control bg-dark text-white border-secondary time-input-sm" id="mTimeInput">
+                                                <button type="button" class="btn btn-sm btn-add-time" id="mAddTimeBtn">
+                                                    <i class="bi bi-plus"></i> Thêm giờ
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        
+                                        <div class="col-md-6">
+                                            <label class="form-label text-secondary">Định dạng hình ảnh</label>
+                                            <select class="form-select bg-dark text-white border-secondary" id="mFormatId" name="format_id">
+                                                <option value="">-- Mặc định --</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-secondary">Phiên bản phim</label>
+                                            <select class="form-select bg-dark text-white border-secondary" id="mVersionTypeId" name="version_type_id">
+                                                <option value="">-- Chọn phiên bản --</option>
+                                            </select>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                
+                                <div class="col-md-4">
+                                    <div id="mMovieInfo" class="movie-info-sidebar">
+                                        <div id="mMoviePosterPlaceholder" class="movie-poster-placeholder d-flex flex-column align-items-center justify-content-center">
+                                            <i class="bi bi-film admin-empty-illustration"></i>
+                                            <span class="text-secondary small mt-2">Chưa chọn phim</span>
+                                        </div>
+                                        <img id="mMoviePoster" class="movie-poster-sidebar d-none" src="" alt="Poster">
+                                        <h6 class="movie-title-sidebar" id="mMovieTitle">Chọn phim để xem thông tin</h6>
+                                        <div class="movie-meta-sidebar">
+                                            <div class="meta-item">
+                                                <i class="bi bi-clock"></i>
+                                                <span><span id="mMovieDuration">—</span> phút</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="bi bi-calendar-event"></i>
+                                                <span id="mMovieRelease">—</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="bi bi-calendar-x"></i>
+                                                <span id="mMovieEnd">—</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            
+                            <div id="multiPreviewBlock" class="mt-4 d-none">
+                                <div class="preview-label mb-2">
+                                    Xem trước lịch chiếu sẽ được tạo
+                                </div>
+                                <div id="multiPreviewList" class="d-flex flex-wrap gap-2"></div>
+                            </div>
+
+                            <div class="modal-footer border-secondary mt-4">
+                                <button type="button" class="btn text-white showtimes-cancel-btn admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
+                                <button type="button" id="previewMultiBtn" class="btn btn-preview">
+                                    <i class="bi bi-eye me-1"></i> Xem trước
+                                </button>
+                                <button type="submit" class="btn-primary-custom border-0">
+                                    <i class="bi bi-calendar-plus me-1"></i> Tạo lịch chiếu
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    
+                    <div class="tab-pane fade" id="pane-single" role="tabpanel">
+                        <form id="singleDayForm">
+                            <div class="row g-3">
+                                
+                                <div class="col-md-8">
+                                    <div class="row g-3">
+                                        
+                                        <div class="col-md-12">
+                                            <label class="form-label text-secondary">Phim <span class="text-danger">*</span></label>
+                                            <select class="form-select bg-dark text-white border-secondary" id="sMovieId" name="movie_id" required>
+                                                <option value="">-- Chọn phim --</option>
+                                            </select>
+                                        </div>
+
+                                        
+                                        <div class="col-md-4">
+                                            <label class="form-label text-secondary">Ngày chiếu <span class="text-danger">*</span></label>
+                                            <input type="date" class="form-control bg-dark text-white border-secondary" id="sDate" name="date" required>
+                                        </div>
+
+                                        
+                                        <div class="col-md-6">
+                                            <label class="form-label text-secondary">Định dạng hình ảnh</label>
+                                            <select class="form-select bg-dark text-white border-secondary" id="sFormatId" name="format_id">
+                                                <option value="">-- Mặc định --</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-secondary">Phiên bản phim</label>
+                                            <select class="form-select bg-dark text-white border-secondary" id="sVersionTypeId" name="version_type_id">
+                                                <option value="">-- Chọn phiên bản --</option>
+                                            </select>
+                                        </div>
+
+                                        
+                                        <div class="col-12">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <label class="form-label text-secondary mb-0">Danh sách suất chiếu
+                                                    <span class="time-input-label-hint ms-1">(Thêm nhiều suất trong cùng ngày)</span>
+                                                </label>
+                                                <div class="form-check form-switch mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="sStatusToggle" checked>
+                                                    <label class="form-check-label text-white" for="sStatusToggle">Mở bán vé</label>
+                                                </div>
+                                            </div>
+                                            <div id="sSlotRows">
+                                                
+                                            </div>
+                                            <button type="button" id="sAddSlotBtn" class="btn btn-sm mt-2 btn-add-slot">
+                                                <i class="bi bi-plus-circle me-1"></i> Thêm suất chiếu
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                
+                                <div class="col-md-4">
+                                    <div id="sMovieInfo" class="movie-info-sidebar">
+                                        <div id="sMoviePosterPlaceholder" class="movie-poster-placeholder d-flex flex-column align-items-center justify-content-center">
+                                            <i class="bi bi-film admin-empty-illustration"></i>
+                                            <span class="text-secondary small mt-2">Chưa chọn phim</span>
+                                        </div>
+                                        <img id="sMoviePoster" class="movie-poster-sidebar d-none" src="" alt="Poster">
+                                        <h6 class="movie-title-sidebar" id="sMovieTitle">Chọn phim để xem thông tin</h6>
+                                        <div class="movie-meta-sidebar">
+                                            <div class="meta-item">
+                                                <i class="bi bi-clock"></i>
+                                                <span><span id="sMovieDuration">—</span> phút</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="bi bi-calendar-event"></i>
+                                                <span id="sMovieRelease">—</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="bi bi-calendar-x"></i>
+                                                <span id="sMovieEnd">—</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer border-secondary mt-4">
+                                <button type="button" class="btn text-white showtimes-cancel-btn admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
+                                <button type="submit" class="btn-primary-custom border-0">
+                                    <i class="bi bi-calendar-plus me-1"></i> Tạo lịch chiếu
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="editShowtimeModal" tabindex="-1" aria-labelledby="editShowtimeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="editShowtimeModalLabel">
+                    <i class="bi bi-pencil-square me-2 admin-accent-icon"></i>Cập nhật lịch chiếu
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <form id="editShowtimeForm">
+                <input type="hidden" id="editShowtimeFormMethod" value="PUT">
+                <input type="hidden" name="showtime_id" id="editShowtimeIdInput" value="">
+
+                <div class="modal-body admin-modal-scroll">
+                    <div class="row mb-3 g-3">
+                        <div class="col-md-12">
+                            <label class="form-label text-secondary">Phim <span class="text-danger">*</span></label>
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormMovieId" name="movie_id" required>
+                                <option value="">-- Chọn phim --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Rạp chiếu <span class="text-danger">*</span></label>
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormTheaterId">
+                                <option value="">-- Chọn rạp --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Phòng chiếu <span class="text-danger">*</span></label>
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormScreenId" name="screen_id" required disabled>
+                                <option value="">-- Chọn phòng chiếu --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Thời gian chiếu <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control bg-dark text-white border-secondary w-100" id="editFormScheduledAt" name="scheduled_at" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 g-3">
+                        <div class="col-md-12">
+                            <label class="form-label text-secondary">Định dạng hình ảnh</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormFormatId" name="format_id">
+                                <option value="">-- Mặc định --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Phiên bản phim</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="editFormVersionTypeId" name="version_type_id">
+                                <option value="">-- Chọn phiên bản --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label text-secondary mb-0">Trạng thái bán vé</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="editFormStatus" name="status" value="1" checked>
+                                <label class="form-check-label text-white small" for="editFormStatus">Mở bán</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn text-white showtimes-cancel-btn admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-primary-custom border-0" id="editShowtimeSubmitBtn">Lưu lịch chiếu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('styles'); ?>
+    <link rel="stylesheet" href="<?php echo e(asset('css/admin/pages/stats.css')); ?>?v=<?php echo e(config('app.asset_version')); ?>">
+    <link rel="stylesheet" href="<?php echo e(asset('css/admin/pages/showtimes.css')); ?>?v=<?php echo e(config('app.asset_version')); ?>">
+<?php $__env->stopPush(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script src="<?php echo e(asset('js/admin/pages/showtimes.js')); ?>?v=<?php echo e(config('app.asset_version')); ?>" defer></script>
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\cinema\resources\views/admin/showtimes/index.blade.php ENDPATH**/ ?>

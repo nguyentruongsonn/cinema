@@ -4,41 +4,39 @@ namespace Database\Seeders;
 
 use App\Models\Role;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        $roles = [
-            [
-                'name' => 'Admin',
-                'slug' => 'admin',
-                'description' => 'Administrator with full access',
-            ],
-            [
-                'name' => 'Manager',
-                'slug' => 'manager',
-                'description' => 'Manager with limited admin access',
-            ],
-            [
-                'name' => 'Staff',
-                'slug' => 'staff',
-                'description' => 'Staff member',
-            ],
-            [
-                'name' => 'User',
-                'slug' => 'user',
-                'description' => 'Regular user',
-            ],
-        ];
-
-        foreach ($roles as $role) {
+        foreach (config('rbac.roles', []) as $slug => $role) {
             Role::updateOrCreate(
-                ['slug' => $role['slug']],
-                $role
+                ['slug' => $slug],
+                [
+                    'name' => $role['name'],
+                    'display_name' => $role['display_name'] ?? $role['name'],
+                    'description' => $role['description'] ?? null,
+                ]
             );
         }
 
-        $this->command->info('Roles seeded successfully!');
+        $this->migrateLegacyUserRoles();
+
+        $this->command->info('RBAC roles seeded successfully.');
+    }
+
+    private function migrateLegacyUserRoles(): void
+    {
+        foreach (config('rbac.legacy_role_map', []) as $legacySlug => $targetSlug) {
+            $legacyRoleId = Role::query()->where('slug', $legacySlug)->value('id');
+            $targetRoleId = Role::query()->where('slug', $targetSlug)->value('id');
+
+            if ($legacyRoleId && $targetRoleId) {
+                DB::table('users')
+                    ->where('role_id', $legacyRoleId)
+                    ->update(['role_id' => $targetRoleId]);
+            }
+        }
     }
 }

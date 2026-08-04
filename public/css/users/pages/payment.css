@@ -5,6 +5,8 @@
     background: #f8f9fa;
 }
 
+.payment-sticky-summary { top: 20px; }
+
 /* Movie Info Section */
 .movie-poster {
     width: 80px;

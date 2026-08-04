@@ -101,7 +101,7 @@
                 <span class="stat-title">PHỔ BIẾN NHẤT</span>
                 <div class="stat-icon"><i class="bi bi-star"></i></div>
             </div>
-            <div class="stat-value admin-skeleton admin-skeleton-text" id="cardTopCombo" style="font-size:1.2rem"></div>
+            <div class="stat-value admin-skeleton admin-skeleton-text admin-stat-value-md" id="cardTopCombo"></div>
             <div class="stat-trend mt-2">
                 <span class="text-secondary small">combo bán chạy nhất</span>
             </div>

@@ -6,8 +6,13 @@
 
     const API = '/admin/tickets/stats';
 
-    // Palette for charts
-    const PALETTE = ['#e50914','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#a3e635','#06b6d4'];
+    // Shared admin chart palette: keep ticket stats visually aligned with revenue/dashboard pages.
+    const PALETTE = ['#ff5a5f','#22c55e','#38bdf8','#fbbf24','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#60a5fa'];
+    const PRIMARY_COLOR = '#ff5a5f';
+    const SURFACE_STROKE_COLOR = '#1e1e24';
+    const TEXT_COLOR = '#e4e4e7';
+    const MUTED_TEXT_COLOR = '#c7c7d1';
+    const GRID_COLOR = 'rgba(255,255,255,0.08)';
 
     /* ── DOM Elements ───────────────────────────────────────────────── */
     const els = {
@@ -116,24 +121,25 @@
         const opts = {
             series: [{ name: 'Vé bán ra', data: [] }],
             chart: { height: 300, type: 'area', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, zoom: { enabled: false } },
-            colors: ['#e50914'],
+            colors: [PRIMARY_COLOR],
             stroke: { curve: 'smooth', width: 3 },
             fill: {
                 type: 'gradient',
-                gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] },
+                gradient: { shadeIntensity: 0.6, opacityFrom: 0.22, opacityTo: 0.02, stops: [0, 100] },
             },
             dataLabels: { enabled: false },
             xaxis: {
                 categories: [],
-                labels: { style: { colors: '#a1a1aa', fontSize: '11px' } },
+                labels: { style: { colors: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 } },
                 axisBorder: { show: false }, axisTicks: { show: false },
             },
             yaxis: {
-                title: { text: 'Số lượng vé', style: { color: '#a1a1aa', fontSize: '11px' } },
-                labels: { style: { colors: '#a1a1aa', fontSize: '11px' } },
+                title: { text: 'Số lượng vé', style: { color: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 } },
+                labels: { style: { colors: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 } },
             },
             theme: { mode: 'dark' },
-            grid: { borderColor: '#27272a', strokeDashArray: 4 },
+            grid: { borderColor: GRID_COLOR, strokeDashArray: 4 },
+            tooltip: { theme: 'dark' },
         };
         charts.trend = new ApexCharts(els.chartTicketTrend, opts);
         charts.trend.render();
@@ -143,13 +149,14 @@
         if (!els.chartTopMovies) return;
         const opts = {
             series: [],
-            chart: { type: 'pie', height: 300, background: 'transparent', fontFamily: 'Inter, sans-serif' },
+            chart: { type: 'pie', height: 300, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
             labels: [],
             colors: PALETTE,
-            stroke: { show: true, colors: '#18181b', width: 2 },
-            dataLabels: { enabled: true, dropShadow: { enabled: false } },
+            stroke: { show: true, colors: [SURFACE_STROKE_COLOR], width: 2 },
+            dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 700, colors: ['#ffffff'] }, dropShadow: { enabled: false } },
             theme: { mode: 'dark' },
-            legend: { position: 'bottom', labels: { colors: '#a1a1aa' } },
+            legend: { position: 'bottom', labels: { colors: TEXT_COLOR }, fontSize: '13px', fontWeight: 600, markers: { width: 10, height: 10, radius: 6 } },
+            tooltip: { theme: 'dark' },
         };
         charts.movies = new ApexCharts(els.chartTopMovies, opts);
         charts.movies.render();
@@ -160,27 +167,29 @@
         const opts = {
             series: [{ name: 'Tỉ lệ lấp đầy (%)', data: [] }],
             chart: { type: 'bar', height: 350, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
-            colors: ['#3b82f6'],
+            colors: [PRIMARY_COLOR],
             plotOptions: {
                 bar: { horizontal: false, columnWidth: '45%', borderRadius: 4 }
             },
             dataLabels: { 
                 enabled: true, 
                 formatter: val => val + '%',
-                style: { fontSize: '10px' }
+                style: { fontSize: '11px', fontWeight: 700, colors: ['#ffffff'] },
+                dropShadow: { enabled: false }
             },
             xaxis: {
                 categories: [],
-                labels: { style: { colors: '#a1a1aa', fontSize: '11px' } },
+                labels: { style: { colors: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 } },
                 axisBorder: { show: false }, axisTicks: { show: false },
             },
             yaxis: {
                 max: 100,
-                title: { text: 'Tỉ lệ (%)', style: { color: '#a1a1aa', fontSize: '11px' } },
-                labels: { style: { colors: '#a1a1aa', fontSize: '11px' } },
+                title: { text: 'Tỉ lệ (%)', style: { color: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 } },
+                labels: { style: { colors: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 } },
             },
             theme: { mode: 'dark' },
-            grid: { borderColor: '#27272a', strokeDashArray: 4 },
+            grid: { borderColor: GRID_COLOR, strokeDashArray: 4 },
+            tooltip: { theme: 'dark' },
         };
         charts.occupancy = new ApexCharts(els.chartTheaterOccupancy, opts);
         charts.occupancy.render();

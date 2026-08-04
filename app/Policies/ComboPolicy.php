@@ -9,7 +9,7 @@ class ComboPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('combos.view');
     }
 
     public function view(User $user, Combo $combo): bool
@@ -19,16 +19,16 @@ class ComboPolicy
 
     public function create(User $user): bool
     {
-        return $this->viewAny($user);
+        return $user->hasPermission('combos.create');
     }
 
     public function update(User $user, Combo $combo): bool
     {
-        return $this->viewAny($user);
+        return $user->hasPermission('combos.update');
     }
 
     public function delete(User $user, Combo $combo): bool
     {
-        return $this->viewAny($user);
+        return $user->hasPermission('combos.delete');
     }
 }

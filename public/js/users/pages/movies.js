@@ -35,9 +35,7 @@ import Toast from '../components/toast.js';
     // 1. Suất chiếu đặc biệt (is_hot = 1)
     async function loadSpecialScreenings() {
         try {
-            const response = await fetch('/api/v1/movies?is_hot=1&per_page=4');
-            if (!response.ok) throw new Error('Failed to load special screenings');
-            const data = await response.json();
+            const data = await window.apiClient.get('/movies?is_hot=1&per_page=4');
             const movies = data.data || data.movies || [];
 
             if (movies.length > 0) {
@@ -53,7 +51,8 @@ import Toast from '../components/toast.js';
         const grid = document.getElementById('specialMoviesGrid');
         
         grid.innerHTML = movies.map(movie => `
-            <div class="special-card" style="background-image: url('${escapeHtml(movie.banner_display_url || movie.poster_display_url || '/images/default-banner.jpg')}');">
+            <div class="special-card">
+                <img class="special-card-image" src="${escapeHtml(movie.banner_display_url || movie.poster_display_url || '/images/default-banner.jpg')}" alt="" loading="lazy">
                 <div class="special-card-overlay"></div>
                 
                 <div class="special-badge">
@@ -86,9 +85,7 @@ import Toast from '../components/toast.js';
         const grid = document.getElementById('nowShowingGrid');
 
         try {
-            const response = await fetch('/api/v1/movies?status=now_showing&per_page=10');
-            if (!response.ok) throw new Error('Failed to load now showing');
-            const data = await response.json();
+            const data = await window.apiClient.get('/movies?status=now_showing&per_page=10');
             const movies = data.data || data.movies || [];
 
             grid.innerHTML = movies.map(movie => renderNormalCard(movie, true)).join('');
@@ -108,9 +105,7 @@ import Toast from '../components/toast.js';
         const grid = document.getElementById('comingSoonGrid');
 
         try {
-            const response = await fetch('/api/v1/movies?status=upcoming&per_page=10');
-            if (!response.ok) throw new Error('Failed to load coming soon');
-            const data = await response.json();
+            const data = await window.apiClient.get('/movies?status=upcoming&per_page=10');
             const movies = data.data || data.movies || [];
 
             grid.innerHTML = movies.map(movie => renderNormalCard(movie, false)).join('');

@@ -1,2 +1,8 @@
 @import '../../public/css/users/style.css';
 @import '../../public/css/users/auth-no-flicker.css';
+@import '../../public/css/users/components/toast.css';
+@import '../../public/css/users/components/modals.css';
+@import '../../public/css/users/components/pagination.css';
+@import '../../public/css/users/components/content-posts.css';
+@import '../../public/css/users/components/data-state.css';
+@import '../../public/css/users/components/skeleton.css';

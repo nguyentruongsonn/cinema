@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -67,166 +67,147 @@
             </div>
 
             <!-- Navigation Menu -->
+            @php
+                $adminUser = Auth::user();
+                $canAny = function (array $permissions) use ($adminUser): bool {
+                    return (bool) ($adminUser?->isAdmin() || collect($permissions)->contains(fn ($permission) => $adminUser?->hasPermission($permission)));
+                };
+                $canRoute = fn (string $routeName): bool => Route::has($routeName);
+                $adminMenuGroups = [
+                    [
+                        'type' => 'single',
+                        'label' => 'T&#7893;ng quan',
+                        'icon' => 'bi-grid',
+                        'route' => 'admin.dashboard',
+                        'active' => ['admin.dashboard'],
+                        'permissions' => ['dashboard.view'],
+                    ],
+                    [
+                        'label' => 'Th&#7889;ng k&#234;',
+                        'icon' => 'bi-bar-chart',
+                        'id' => 'menuThongKe',
+                        'active' => ['admin.revenue.*', 'admin.tickets.*', 'admin.combos.stats'],
+                        'permissions' => ['reports.view', 'analytics.view'],
+                        'children' => [
+                            ['label' => 'Th&#7889;ng k&#234; doanh thu', 'route' => 'admin.revenue.index', 'active' => ['admin.revenue.index'], 'permissions' => ['reports.view', 'analytics.view']],
+                            ['label' => 'Th&#7889;ng k&#234; v&#233;', 'route' => 'admin.tickets.index', 'active' => ['admin.tickets.index'], 'permissions' => ['analytics.view']],
+                            ['label' => 'Th&#7889;ng k&#234; s&#7843;n ph&#7849;m', 'route' => 'admin.combos.stats', 'active' => ['admin.combos.stats'], 'permissions' => ['analytics.view']],
+                        ],
+                    ],
+                    [
+                        'label' => 'H&#7879; th&#7889;ng r&#7841;p',
+                        'icon' => 'bi-buildings',
+                        'id' => 'menuRap',
+                        'active' => ['admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*', 'admin.pricing-rules.*'],
+                        'permissions' => ['branches.view', 'theaters.view', 'screens.view', 'seat_layouts.view', 'pricing.view'],
+                        'children' => [
+                            ['label' => 'Qu&#7843;n l&#253; chi nh&#225;nh', 'route' => 'admin.branches.index', 'active' => ['admin.branches.*'], 'permissions' => ['branches.view']],
+                            ['label' => 'Qu&#7843;n l&#253; r&#7841;p chi&#7871;u', 'route' => 'admin.theaters.index', 'active' => ['admin.theaters.*'], 'permissions' => ['theaters.view']],
+                            ['label' => 'Qu&#7843;n l&#253; ph&#242;ng chi&#7871;u', 'route' => 'admin.screens.index', 'active' => ['admin.screens.*'], 'permissions' => ['screens.view']],
+                            ['label' => 'M&#7851;u s&#417; &#273;&#7891; gh&#7871;', 'route' => 'admin.seat-layout-templates.index', 'active' => ['admin.seat-layout-templates.*'], 'permissions' => ['seat_layouts.view', 'screens.manage_seats']],
+                            ['label' => 'C&#7845;u h&#236;nh b&#7843;ng gi&#225;', 'route' => 'admin.pricing-rules.index', 'active' => ['admin.pricing-rules.*'], 'permissions' => ['pricing.view', 'pricing.update']],
+                        ],
+                    ],
+                    [
+                        'label' => 'Phim & Su&#7845;t chi&#7871;u',
+                        'icon' => 'bi-film',
+                        'id' => 'menuPhim',
+                        'active' => ['admin.movies.*', 'admin.showtimes.*', 'admin.orders.*'],
+                        'permissions' => ['movies.view', 'showtimes.view', 'orders.view_all', 'orders.view_theater'],
+                        'children' => [
+                            ['label' => 'Qu&#7843;n l&#253; phim', 'route' => 'admin.movies.index', 'active' => ['admin.movies.index'], 'permissions' => ['movies.view']],
+                            ['label' => 'Qu&#7843;n l&#253; su&#7845;t chi&#7871;u', 'route' => 'admin.showtimes.index', 'active' => ['admin.showtimes.index'], 'permissions' => ['showtimes.view']],
+                            ['label' => 'Qu&#7843;n l&#253; &#273;&#417;n h&#224;ng', 'route' => 'admin.orders.index', 'active' => ['admin.orders.index'], 'permissions' => ['orders.view_all', 'orders.view_theater']],
+                        ],
+                    ],
+                    [
+                        'label' => 'D&#7883;ch v&#7909; & &#431;u &#273;&#227;i',
+                        'icon' => 'bi-box-seam',
+                        'id' => 'menuDichVu',
+                        'active' => ['admin.products.*', 'admin.combos.*', 'admin.promotions.*'],
+                        'permissions' => ['products.view', 'combos.view', 'promotions.view'],
+                        'children' => [
+                            ['label' => 'Qu&#7843;n l&#253; &#273;&#7891; &#259;n & n&#432;&#7899;c u&#7889;ng', 'route' => 'admin.products.index', 'active' => ['admin.products.index'], 'permissions' => ['products.view']],
+                            ['label' => 'Qu&#7843;n l&#253; combo', 'route' => 'admin.combos.index', 'active' => ['admin.combos.index'], 'permissions' => ['combos.view']],
+                            ['label' => 'M&#227; gi&#7843;m gi&#225;', 'route' => 'admin.promotions.index', 'active' => ['admin.promotions.*'], 'permissions' => ['promotions.view']],
+                        ],
+                    ],
+                    [
+                        'label' => 'N&#7897;i dung',
+                        'icon' => 'bi-journal-text',
+                        'id' => 'menuNoiDung',
+                        'active' => ['admin.posts.*', 'admin.banners.*'],
+                        'permissions' => ['posts.view', 'banners.view'],
+                        'children' => [
+                            ['label' => 'Qu&#7843;n l&#253; b&#224;i vi&#7871;t', 'route' => 'admin.posts.index', 'active' => ['admin.posts.*'], 'permissions' => ['posts.view']],
+                            ['label' => 'Qu&#7843;n l&#253; banner', 'route' => 'admin.banners.index', 'active' => ['admin.banners.*'], 'permissions' => ['banners.view']],
+                        ],
+                    ],
+                    [
+                        'label' => 'T&#224;i kho&#7843;n',
+                        'icon' => 'bi-people',
+                        'id' => 'menuTaiKhoan',
+                        'active' => ['admin.users.*', 'admin.roles-permissions.*', 'admin.audit-logs.*'],
+                        'permissions' => ['users.view', 'roles.view', 'permissions.assign', 'audit_logs.view'],
+                        'children' => [
+                            ['label' => 'Qu&#7843;n l&#253; t&#224;i kho&#7843;n', 'route' => 'admin.users.index', 'active' => ['admin.users.index'], 'permissions' => ['users.view']],
+                            ['label' => 'Ph&#226;n quy&#7873;n', 'route' => 'admin.roles-permissions.index', 'active' => ['admin.roles-permissions.*'], 'permissions' => ['roles.view', 'permissions.assign']],
+                            ['label' => 'Nh&#7853;t k&#253; ho&#7841;t &#273;&#7897;ng', 'route' => 'admin.audit-logs.index', 'active' => ['admin.audit-logs.*'], 'permissions' => ['audit_logs.view']],
+                        ],
+                    ],
+                ];
+            @endphp
             <ul class="nav flex-column sidebar-nav flex-grow-1 mt-3">
-                <!-- Dashboard -->
-                <li class="nav-item">
-                    <a href="{{ route('admin.dashboard') }}"
-                       class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
-                       data-bs-toggle="tooltip"
-                       data-bs-placement="right"
-                       data-bs-title="Tổng quan">
-                        <i class="bi bi-grid"></i>
-                        <span class="nav-text">Tổng quan</span>
-                    </a>
-                </li>
+                @foreach ($adminMenuGroups as $group)
+                    @continue(!$canAny($group['permissions']))
 
-                <!-- Statistics -->
-                <li class="nav-item has-submenu">
-                    <a href="#menuThongKe"
-                       class="nav-link {{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.stats') ? 'active' : '' }}"
-                       data-bs-toggle="collapse"
-                       role="button"
-                       aria-expanded="{{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.stats') ? 'true' : 'false' }}"
-                       aria-controls="menuThongKe"
-                       data-bs-tooltip="Thống kê">
-                        <i class="bi bi-bar-chart"></i>
-                        <span class="nav-text">Thống kê</span>
-                        <i class="bi bi-chevron-down submenu-arrow"></i>
-                    </a>
-                    <div class="collapse {{ request()->routeIs('admin.revenue.*', 'admin.tickets.*', 'admin.combos.stats') ? 'show' : '' }}" id="menuThongKe">
-                        <ul class="nav flex-column submenu">
-                            <li class="nav-item">
-                                <a href="{{ route('admin.revenue.index') }}" class="nav-link {{ request()->routeIs('admin.revenue.index') ? 'active' : '' }}">
-                                    Thống kê doanh thu
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.tickets.index') }}" class="nav-link {{ request()->routeIs('admin.tickets.index') ? 'active' : '' }}">
-                                    Thống kê vé
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.combos.stats') }}" class="nav-link {{ request()->routeIs('admin.combos.stats') ? 'active' : '' }}">
-                                    Thống kê sản phẩm
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
+                    @if (($group['type'] ?? 'group') === 'single')
+                        @continue(!$canRoute($group['route']))
+                        <li class="nav-item">
+                            <a href="{{ route($group['route']) }}"
+                               class="nav-link {{ request()->routeIs(...$group['active']) ? 'active' : '' }}"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="right"
+                               data-bs-title="{!! $group['label'] !!}">
+                                <i class="bi {{ $group['icon'] }}"></i>
+                                <span class="nav-text">{!! $group['label'] !!}</span>
+                            </a>
+                        </li>
+                        @continue
+                    @endif
 
-                <!-- Theater System -->
-                <li class="nav-item has-submenu">
-                    <a href="#menuRap"
-                       class="nav-link {{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*', 'admin.pricing-rules.*') ? 'active' : '' }}"
-                       data-bs-toggle="collapse"
-                       role="button"
-                       aria-expanded="{{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*', 'admin.pricing-rules.*') ? 'true' : 'false' }}"
-                       aria-controls="menuRap"
-                       data-bs-tooltip="Hệ thống rạp">
-                        <i class="bi bi-buildings"></i>
-                        <span class="nav-text">Hệ thống rạp</span>
-                        <i class="bi bi-chevron-down submenu-arrow"></i>
-                    </a>
-                    <div class="collapse {{ request()->routeIs('admin.branches.*', 'admin.theaters.*', 'admin.screens.*', 'admin.seat-layout-templates.*', 'admin.pricing-rules.*') ? 'show' : '' }}" id="menuRap">
-                        <ul class="nav flex-column submenu">
-                            <li class="nav-item"><a href="{{ route('admin.branches.index') }}" class="nav-link {{ request()->routeIs('admin.branches.*') ? 'active' : '' }}">Quản lý chi nhánh</a></li>
-                            <li class="nav-item"><a href="{{ route('admin.theaters.index') }}" class="nav-link {{ request()->routeIs('admin.theaters.*') ? 'active' : '' }}">Quản lý rạp chiếu</a></li>
-                            <li class="nav-item"><a href="{{ route('admin.screens.index') }}" class="nav-link {{ request()->routeIs('admin.screens.*') ? 'active' : '' }}">Quản lý phòng chiếu</a></li>
-                            <li class="nav-item"><a href="{{ route('admin.seat-layout-templates.index') }}" class="nav-link {{ request()->routeIs('admin.seat-layout-templates.*') ? 'active' : '' }}">Mẫu sơ đồ ghế</a></li>
-                            <li class="nav-item"><a href="{{ route('admin.pricing-rules.index') }}" class="nav-link {{ request()->routeIs('admin.pricing-rules.*') ? 'active' : '' }}">Cấu hình bảng giá</a></li>
-                        </ul>
-                    </div>
-                </li>
+                    @php
+                        $visibleChildren = collect($group['children'])
+                            ->filter(fn ($child) => $canRoute($child['route']) && $canAny($child['permissions']))
+                            ->values();
+                    @endphp
+                    @continue($visibleChildren->isEmpty())
 
-                <!-- Movies & Showtimes -->
-                <li class="nav-item has-submenu">
-                    <a href="#menuPhim"
-                       class="nav-link {{ request()->routeIs('admin.movies.*', 'admin.showtimes.*', 'admin.orders.*') ? 'active' : '' }}"
-                       data-bs-toggle="collapse"
-                       role="button"
-                       aria-expanded="{{ request()->routeIs('admin.movies.*', 'admin.showtimes.*', 'admin.orders.*') ? 'true' : 'false' }}"
-                       aria-controls="menuPhim"
-                       data-bs-tooltip="Phim & Suất chiếu">
-                        <i class="bi bi-film"></i>
-                        <span class="nav-text">Phim & Suất chiếu</span>
-                        <i class="bi bi-chevron-down submenu-arrow"></i>
-                    </a>
-                    <div class="collapse {{ request()->routeIs('admin.movies.*', 'admin.showtimes.*', 'admin.orders.*') ? 'show' : '' }}" id="menuPhim">
-                        <ul class="nav flex-column submenu">
-                            <li class="nav-item"><a href="{{ route('admin.movies.index') }}" class="nav-link {{ request()->routeIs('admin.movies.index') ? 'active' : '' }}">Quản lý phim</a></li>
-                            <li class="nav-item"><a href="{{ route('admin.showtimes.index') }}" class="nav-link {{ request()->routeIs('admin.showtimes.index') ? 'active' : '' }}">Quản lý suất chiếu</a></li>
-                            <li class="nav-item"><a href="{{ route('admin.orders.index') }}" class="nav-link {{ request()->routeIs('admin.orders.index') ? 'active' : '' }}">Quản lý đơn hàng</a></li>
-                        </ul>
-                    </div>
-                </li>
-
-                <!-- Services & Offers -->
-                <li class="nav-item has-submenu">
-                    <a href="#menuDichVu"
-                       class="nav-link {{ request()->routeIs('admin.products.*', 'admin.combos.index', 'admin.promotions.*') ? 'active' : '' }}"
-                       data-bs-toggle="collapse"
-                       role="button"
-                       aria-expanded="{{ request()->routeIs('admin.products.*', 'admin.combos.*', 'admin.promotions.*') ? 'true' : 'false' }}"
-                       aria-controls="menuDichVu"
-                       data-bs-tooltip="Dịch vụ & Ưu đãi">
-                        <i class="bi bi-box-seam"></i>
-                        <span class="nav-text">Dịch vụ & Ưu đãi</span>
-                        <i class="bi bi-chevron-down submenu-arrow"></i>
-                    </a>
-                    <div class="collapse {{ request()->routeIs('admin.products.*', 'admin.combos.*', 'admin.promotions.*') ? 'show' : '' }}" id="menuDichVu">
-                        <ul class="nav flex-column submenu">
-                            <li class="nav-item"><a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.index', 'admin.products.foods', 'admin.products.drinks') ? 'active' : '' }}">Quản lý đồ ăn & nước uống</a></li>
-                            <li class="nav-item"><a href="{{ route('admin.combos.index') }}" class="nav-link {{ request()->routeIs('admin.combos.index') ? 'active' : '' }}">Quản lý combo</a></li>
-                            <li class="nav-item"><a href="{{ route('admin.promotions.index') }}" class="nav-link {{ request()->routeIs('admin.promotions.*') ? 'active' : '' }}">Mã giảm giá</a></li>
-                        </ul>
-                    </div>
-                </li>
-
-                <!-- Content -->
-                <li class="nav-item has-submenu">
-                    <a href="#menuNoiDung"
-                       class="nav-link {{ request()->routeIs('admin.posts.*', 'admin.banners.*') ? 'active' : '' }}"
-                       data-bs-toggle="collapse"
-                       role="button"
-                       aria-expanded="{{ request()->routeIs('admin.posts.*', 'admin.banners.*') ? 'true' : 'false' }}"
-                       aria-controls="menuNoiDung"
-                       data-bs-tooltip="Nội dung">
-                        <i class="bi bi-journal-text"></i>
-                        <span class="nav-text">Nội dung</span>
-                        <i class="bi bi-chevron-down submenu-arrow"></i>
-                    </a>
-                    <div class="collapse {{ request()->routeIs('admin.posts.*', 'admin.banners.*') ? 'show' : '' }}" id="menuNoiDung">
-                        <ul class="nav flex-column submenu">
-                            <li class="nav-item"><a href="{{ route('admin.posts.index') }}" class="nav-link {{ request()->routeIs('admin.posts.*') ? 'active' : '' }}">Quản lý bài viết</a></li>
-                            <li class="nav-item"><a href="{{ route('admin.banners.index') }}" class="nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">Quản lý banner</a></li>
-                        </ul>
-                    </div>
-                </li>
-
-                <!-- Accounts -->
-                <li class="nav-item has-submenu">
-                    <a href="#menuTaiKhoan"
-                       class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
-                       data-bs-toggle="collapse"
-                       role="button"
-                       aria-expanded="{{ request()->routeIs('admin.users.*') ? 'true' : 'false' }}"
-                       aria-controls="menuTaiKhoan"
-                       data-bs-tooltip="Tài khoản">
-                        <i class="bi bi-people"></i>
-                        <span class="nav-text">Tài khoản</span>
-                        <i class="bi bi-chevron-down submenu-arrow"></i>
-                    </a>
-                    <div class="collapse {{ request()->routeIs('admin.users.*') ? 'show' : '' }}" id="menuTaiKhoan">
-                        <ul class="nav flex-column submenu">
-                            <li class="nav-item">
-                                <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
-                                    Quản lý tài khoản
-                                </a>
-                            </li>
-                            <li class="nav-item"><a href="#" class="nav-link">Phân quyền</a></li>
-                        </ul>
-                    </div>
-                </li>
+                    <li class="nav-item has-submenu">
+                        <a href="#{{ $group['id'] }}"
+                           class="nav-link {{ request()->routeIs(...$group['active']) ? 'active' : '' }}"
+                           data-bs-toggle="collapse"
+                           role="button"
+                           aria-expanded="{{ request()->routeIs(...$group['active']) ? 'true' : 'false' }}"
+                           aria-controls="{{ $group['id'] }}"
+                           data-bs-tooltip="{!! $group['label'] !!}">
+                            <i class="bi {{ $group['icon'] }}"></i>
+                            <span class="nav-text">{!! $group['label'] !!}</span>
+                            <i class="bi bi-chevron-down submenu-arrow"></i>
+                        </a>
+                        <div class="collapse {{ request()->routeIs(...$group['active']) ? 'show' : '' }}" id="{{ $group['id'] }}">
+                            <ul class="nav flex-column submenu">
+                                @foreach ($visibleChildren as $child)
+                                    <li class="nav-item">
+                                        <a href="{{ route($child['route']) }}" class="nav-link {{ request()->routeIs(...$child['active']) ? 'active' : '' }}">
+                                            {!! $child['label'] !!}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </li>
+                @endforeach
             </ul>
 
             <!-- User Profile -->
@@ -234,13 +215,13 @@
                class="user-profile-block"
                data-bs-toggle="tooltip"
                data-bs-placement="right"
-               data-bs-title="{{ Auth::user()->name ?? 'Admin User' }} - System Manager">
-                <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name ?? 'Admin User') }}&background=3f3f46&color=fff"
+               data-bs-title="{{ $adminUser->name ?? 'Admin User' }} - {{ $adminUser->role?->display_name ?? $adminUser->role?->name ?? 'Management' }}">
+                <img src="https://ui-avatars.com/api/?name={{ urlencode($adminUser->name ?? 'Admin User') }}&background=3f3f46&color=fff"
                      alt="User Avatar"
                      class="user-avatar">
                 <div class="user-info">
-                    <span class="user-name">{{ Auth::user()->name ?? 'Admin User' }}</span>
-                    <span class="user-role">System Manager</span>
+                    <span class="user-name">{{ $adminUser->name ?? 'Admin User' }}</span>
+                    <span class="user-role">{{ $adminUser->role?->display_name ?? $adminUser->role?->name ?? 'Management' }}</span>
                 </div>
             </a>
         </aside>
@@ -256,11 +237,16 @@
                 </div>
 
                 <div class="topbar-actions">
-                    <button class="btn-icon" id="scanTicketBtn" aria-label="Quét mã vạch vé" title="Quét mã vạch vé">
-                        <i class="bi bi-qr-code-scan"></i>
-                    </button>
+                    @if ($canAny(['tickets.verify']))
+                        <button class="btn-icon" id="scanTicketBtn" aria-label="Quét mã vạch vé" title="Quét mã vạch vé">
+                            <i class="bi bi-qr-code-scan"></i>
+                        </button>
+                    @endif
                     <button class="btn-icon" aria-label="Notifications">
                         <i class="bi bi-bell"></i>
+                    </button>
+                    <button class="btn-icon" type="button" data-admin-logout aria-label="Đăng xuất" title="Đăng xuất">
+                        <i class="bi bi-box-arrow-right"></i>
                     </button>
                     @yield('topbar_action')
                 </div>
@@ -280,55 +266,58 @@
     <div id="adminToastContainer" class="admin-toast-container" data-turbo-permanent></div>
 
     <!-- Ticket Scanner Modal -->
-    <div class="modal fade" id="ticketScannerModal" tabindex="-1" aria-labelledby="ticketScannerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-turbo-permanent>
+    <div class="modal fade admin-scanner-modal" id="ticketScannerModal" tabindex="-1" aria-labelledby="ticketScannerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-turbo-permanent>
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content bg-dark text-white border-secondary">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title" id="ticketScannerModalLabel">
-                        <i class="bi bi-qr-code-scan me-2"></i>Quét Mã Vạch Vé
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-content admin-scanner-shell">
+                <div class="modal-header admin-scanner-header">
+                    <div class="admin-scanner-title-wrap">
+                        <span class="admin-scanner-title-icon" aria-hidden="true">
+                            <i class="bi bi-upc-scan"></i>
+                        </span>
+                        <div>
+                            <p class="admin-scanner-eyebrow mb-1">Ticket Control</p>
+                            <h5 class="modal-title" id="ticketScannerModalLabel">Quét mã vạch / QR vé</h5>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
                 </div>
-                <div class="modal-body">
-                    <!-- Scanner Modes -->
-                    <div class="btn-group w-100 mb-3" role="group">
-                        <button type="button" class="btn btn-outline-light" id="cameraScanBtn">
-                            <i class="bi bi-camera"></i> Quét bằng Camera
+                <div class="modal-body admin-scanner-body">
+                    <div class="admin-scanner-mode-tabs" role="group" aria-label="Chọn phương thức quét">
+                        <button type="button" class="admin-scanner-tab" id="cameraScanBtn">
+                            <i class="bi bi-camera-video"></i>
+                            <span>Camera</span>
                         </button>
-                        <button type="button" class="btn btn-outline-light active" id="manualScanBtn">
-                            <i class="bi bi-keyboard"></i> Nhập thủ công
+                        <button type="button" class="admin-scanner-tab active" id="manualScanBtn">
+                            <i class="bi bi-keyboard"></i>
+                            <span>Nhập mã</span>
                         </button>
                     </div>
 
-                    <!-- Camera Scanner -->
-                    <div id="cameraScanner" class="scanner-mode" style="display: none;">
-                        <div class="position-relative">
-                            <video id="scannerVideo" class="w-100 rounded" style="max-height: 400px; background: #000;" autoplay playsinline></video>
-                            <canvas id="scannerCanvas" style="display: none;"></canvas>
-                            <div class="scanner-overlay position-absolute top-50 start-50 translate-middle">
-                                <div class="scanner-frame"></div>
+                    <div id="cameraScanner" class="scanner-mode admin-scanner-panel d-none">
+                        <div class="admin-scanner-camera-frame">
+                            <video id="scannerVideo" class="admin-scanner-video" autoplay playsinline></video>
+                            <canvas id="scannerCanvas" class="d-none"></canvas>
+                            <div class="admin-scanner-reticle" aria-hidden="true">
+                                <span></span>
                             </div>
                         </div>
-                        <div class="alert alert-info mt-3 mb-0">
-                            <i class="bi bi-info-circle me-2"></i>Hướng mã vạch QR/barcode vào camera
+                    </div>
+
+                    <div id="manualScanner" class="scanner-mode admin-scanner-panel">
+                        <label for="ticketCodeInput" class="form-label">Mã vé / barcode</label>
+                        <div class="admin-scanner-input-row">
+                            <div class="admin-scanner-input-wrap">
+                                <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
+                                <input type="text" class="form-control form-control-lg" id="ticketCodeInput" placeholder="Nhập hoặc quét mã vé..." autocomplete="off" autofocus>
+                            </div>
+                            <button type="button" class="admin-scanner-submit" id="verifyTicketBtn">
+                                <i class="bi bi-check2-circle"></i>
+                                <span>Xác thực</span>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Manual Input -->
-                    <div id="manualScanner" class="scanner-mode">
-                        <div class="mb-3">
-                            <label for="ticketCodeInput" class="form-label">Mã vé</label>
-                            <input type="text" class="form-control form-control-lg bg-dark text-white border-secondary"
-                                   id="ticketCodeInput" placeholder="Nhập hoặc quét mã vé..." autofocus>
-                            <small class="text-muted">Có thể quét bằng máy quét mã vạch hoặc nhập thủ công</small>
-                        </div>
-                        <button type="button" class="btn btn-primary w-100" id="verifyTicketBtn">
-                            <i class="bi bi-check-circle me-2"></i>Xác Thực Vé
-                        </button>
-                    </div>
-
-                    <!-- Scan Result -->
-                    <div id="scanResult" class="mt-3" style="display: none;"></div>
+                    <div id="scanResult" class="admin-scanner-result d-none" aria-live="polite"></div>
                 </div>
             </div>
         </div>
@@ -341,7 +330,7 @@
     <script data-turbo-eval="false">
         window.APP_CONFIG = {
             appName: @json(config('app.name', 'Cinema')),
-            apiUrl: @json(url('/api/v1')),
+            apiUrl: @json('/api/v1'),
             assetVersion: @json(config('app.asset_version')),
             csrfToken: @json(csrf_token()),
             auth: {

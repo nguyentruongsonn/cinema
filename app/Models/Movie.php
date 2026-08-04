@@ -67,6 +67,16 @@ class Movie extends Model
         'is_hot',
     ];
 
+    protected $hidden = [
+        'poster_path',
+        'banner_path',
+    ];
+
+    protected $appends = [
+        'poster_display_url',
+        'banner_display_url',
+    ];
+
     /**
      * URL hiển thị poster: ưu tiên file upload, fallback sang poster_url cũ.
      */

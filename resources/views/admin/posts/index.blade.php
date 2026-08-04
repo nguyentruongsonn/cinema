@@ -74,7 +74,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="postModalLabel">
-                    <i class="bi bi-file-text me-2" style="color:var(--accent-color);"></i>Tạo bài viết mới
+                    <i class="bi bi-file-text me-2 admin-accent-icon"></i>Tạo bài viết mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -105,8 +105,17 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="postImage">Ảnh đại diện</label>
-                            <input type="file" class="form-control bg-dark border-secondary text-white"
-                                   id="postImage" accept="image/*">
+                            <div class="image-upload-box post-image-upload" id="postImageUploadBox" data-media-input>
+                                <img id="postImagePreview" class="image-preview" alt="Xem trước ảnh đại diện">
+                                <div id="postImagePlaceholder" class="image-placeholder text-white-50">
+                                    <i class="bi bi-cloud-arrow-up fs-2 d-block mb-1"></i>
+                                    <div class="small fw-semibold">Kéo thả hoặc click để chọn</div>
+                                </div>
+                                <input type="file" class="image-upload-input" id="postImage" accept="image/jpeg,image/png,image/webp">
+                            </div>
+                            <button type="button" id="clearPostImageBtn" class="btn btn-sm w-100 d-none btn-clear-image mt-2">
+                                <i class="bi bi-x me-1"></i>Xóa ảnh
+                            </button>
                             <small class="text-white-50">Max 5MB. Khuyến nghị 1200×630px</small>
                         </div>
 
@@ -154,61 +163,7 @@
 
 @push('styles')
 <link href="{{ asset('vendor/summernote/summernote-lite.min.css') }}" rel="stylesheet">
-<style>
-    .note-editor.note-frame {
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        background: #1a1d20 !important;
-        border-radius: 8px !important;
-        overflow: hidden;
-    }
-    .note-editor .note-toolbar {
-        background: #212529 !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-        padding: 8px !important;
-        margin: 0 !important;
-    }
-    .note-editor .note-editing-area .note-editable {
-        background: #1a1d20 !important;
-        color: #fff !important;
-        min-height: 260px;
-        line-height: 1.6;
-    }
-    .note-editor .note-btn {
-        background: #2c3034 !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #fff !important;
-        border-radius: 6px !important;
-    }
-    .note-editor .note-btn:hover {
-        background: #373b3e !important;
-        border-color: rgba(255, 255, 255, 0.25) !important;
-    }
-    .note-editor .note-dropdown-menu {
-        background: #212529 !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
-    }
-    .note-editor .note-dropdown-item {
-        color: #fff !important;
-    }
-    .note-editor .note-dropdown-item:hover {
-        background: #373b3e !important;
-    }
-    .note-placeholder {
-        color: #888 !important;
-    }
-    .note-modal .modal-content {
-        background: #212529 !important;
-        color: #fff !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    }
-    .note-modal .modal-header {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
-    .note-modal .modal-footer {
-        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
-</style>
+<link href="{{ asset('css/admin/pages/posts.css') }}?v={{ config('app.asset_version') }}" rel="stylesheet">
 @endpush
 
 @push('scripts')

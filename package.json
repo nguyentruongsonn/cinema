@@ -6,18 +6,10 @@
         "build": "vite build",
         "dev": "vite",
         "lint": "eslint resources/js public/js scripts",
-        "test:browser:booking-idempotency": "node scripts/booking-idempotency-regression.mjs",
-        "test:browser:ticket-scanner": "node scripts/ticket-scanner-regression.mjs",
         "test:frontend:security": "node scripts/frontend-security-gate.mjs",
         "test:frontend:syntax": "node scripts/frontend-syntax-gate.mjs",
-        "test:browser:matrix": "node scripts/browser-security-matrix.mjs",
-        "test:browser:admin-users-xss": "node scripts/admin-users-xss-regression.mjs",
-        "test:browser:admin-dashboard": "node scripts/admin-dashboard-regression.mjs",
-        "test:ux-ui": "node scripts/ux-ui-audit.mjs",
-        "test:browser:theaters-xss": "node scripts/theaters-xss-regression.mjs",
         "test:browser:smoke": "node scripts/release-browser-smoke.mjs",
-        "test:load:smoke": "node scripts/release-load-smoke.mjs",
-        "release:readiness": "node scripts/release-external-readiness.mjs"
+        "test:structure": "node scripts/repository-hygiene-gate.mjs"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",

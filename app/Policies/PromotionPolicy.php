@@ -15,7 +15,7 @@ class PromotionPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('view_promotions');
+        return $user->hasPermission('promotions.view');
     }
 
     /**
@@ -25,7 +25,7 @@ class PromotionPolicy
      */
     public function view(User $user, Promotion $promotion): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('view_promotions');
+        return $user->hasPermission('promotions.view');
     }
 
     /**
@@ -35,7 +35,7 @@ class PromotionPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('create_promotions');
+        return $user->hasPermission('promotions.create');
     }
 
     /**
@@ -46,7 +46,7 @@ class PromotionPolicy
      */
     public function update(User $user, Promotion $promotion): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_promotions');
+        return $user->hasPermission('promotions.update');
     }
 
     /**
@@ -57,7 +57,7 @@ class PromotionPolicy
      */
     public function delete(User $user, Promotion $promotion): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('delete_promotions');
+        return $user->hasPermission('promotions.delete');
     }
 
     /**
@@ -67,7 +67,7 @@ class PromotionPolicy
      */
     public function toggleStatus(User $user, Promotion $promotion): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_promotions');
+        return $user->hasPermission('promotions.update');
     }
 
     /**
@@ -78,6 +78,6 @@ class PromotionPolicy
      */
     public function resetUsageCount(User $user, Promotion $promotion): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('promotions.reset_usage');
     }
 }

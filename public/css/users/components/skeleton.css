@@ -332,3 +332,19 @@
     var(--gray-800) 100%
   );
 }
+.skeleton-text--full { width: 100%; }
+.skeleton-text--80 { width: 80%; }
+.skeleton-text--60 { width: 60%; }
+.skeleton-text--base { height: 1em; }
+.skeleton-variant { min-width: 0; }
+.skeleton-variant--media-card { display: grid; gap: 12px; }
+.skeleton-variant__media { aspect-ratio: 16/9; border-radius: 12px; width: 100%; }
+.skeleton-variant__title { border-radius: 5px; height: 22px; width: 72%; }
+.skeleton-variant__line { border-radius: 4px; height: 14px; width: 100%; }
+.skeleton-variant__line--short { width: 58%; }
+.skeleton-variant--horizontal { align-items: center; display: flex; gap: 16px; min-height: 112px; }
+.skeleton-variant__thumb { border-radius: 10px; flex: 0 0 128px; height: 88px; }
+.skeleton-variant__content { display: grid; flex: 1; gap: 12px; }
+.skeleton-variant--summary { display: grid; gap: 10px; min-height: 110px; padding: 20px; }
+.skeleton-variant__label { height: 14px; width: 45%; }
+.skeleton-variant__value { height: 30px; width: 70%; }

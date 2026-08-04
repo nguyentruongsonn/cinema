@@ -11,6 +11,8 @@
  */
 
 import Toast from '../components/toast.js';
+import HybridPage from '../components/hybrid-page.js';
+import CinemaPagination from '../components/pagination.js';
 
 (function () {
     'use strict';
@@ -19,15 +21,64 @@ import Toast from '../components/toast.js';
     let currentCategory = '';
     let currentSearch = '';
     let searchDebounceTimer = null;
+    let heroReady = false;
+    let sidebarReady = false;
+    let heroRegion = null;
+    let postsRegion = null;
+    let sidebarRegion = null;
 
     function init() {
         setupNewsletterForms();
         setupArticleActions();
 
         if (document.getElementById('postsSpaContainer')) {
+            bindHybridRegions();
+            hydrateStateFromUrl();
             setupSpaEventListeners();
-            loadPosts(1, '', '');
+            syncFilterControls();
+            loadPosts(currentPage, currentCategory, currentSearch);
         }
+    }
+
+    function bindHybridRegions() {
+        heroRegion = HybridPage.bindRegion({
+            skeleton: '#heroSkeleton',
+            content: '#heroContent',
+            busyTarget: '.posts-hero-shell',
+        });
+
+        postsRegion = HybridPage.bindRegion({
+            skeleton: '#postsSkeletonGrid',
+            content: '#postsGrid',
+            empty: '#postsEmptyState',
+            error: '#postsErrorState',
+            busyTarget: '#postsMainSection',
+        });
+
+        sidebarRegion = HybridPage.bindRegion({
+            skeleton: '#sidebarTrailersSkeleton',
+            content: '#sidebarTrailersGrid',
+            busyTarget: '.sidebar-widget-section',
+        });
+    }
+
+    function hydrateStateFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const allowedCategories = new Set(['news', 'blog', 'promotion', 'event', 'announcement']);
+        const requestedCategory = params.get('category') || '';
+        currentCategory = allowedCategories.has(requestedCategory) ? requestedCategory : '';
+        currentSearch = (params.get('search') || '').trim().slice(0, 100);
+        currentPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
+    }
+
+    function syncFilterControls() {
+        const searchInput = document.getElementById('postSearchInput');
+        if (searchInput) searchInput.value = currentSearch;
+
+        document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(tab => {
+            const isActive = (tab.dataset.value || '') === currentCategory;
+            if (isActive) window.CinemaTabs?.activate(tab, { emit: false });
+        });
     }
 
     /* ─── XSS protection ──────────────────────────────────────────────────── */
@@ -44,14 +95,10 @@ import Toast from '../components/toast.js';
     /* ─── Tab & Search listeners ──────────────────────────────────────────── */
     function setupSpaEventListeners() {
         // Category tabs
-        document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(tab => {
-            tab.addEventListener('click', e => {
-                e.preventDefault();
-                document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                currentCategory = tab.dataset.category || '';
-                loadPosts(1, currentCategory, currentSearch);
-            });
+        document.getElementById('postsFilterTabs')?.addEventListener('cinema:tab-change', event => {
+            currentCategory = event.detail.value || '';
+            currentPage = 1;
+            loadPosts(1, currentCategory, currentSearch);
         });
 
         // Debounced live search
@@ -61,6 +108,7 @@ import Toast from '../components/toast.js';
                 clearTimeout(searchDebounceTimer);
                 searchDebounceTimer = setTimeout(() => {
                     currentSearch = e.target.value.trim();
+                    currentPage = 1;
                     loadPosts(1, currentCategory, currentSearch);
                 }, 350);
             });
@@ -73,9 +121,7 @@ import Toast from '../components/toast.js';
                 currentCategory = '';
                 currentSearch = '';
                 if (searchInput) searchInput.value = '';
-                document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(t => t.classList.remove('active'));
-                const allTab = document.querySelector('#postsFilterTabs .cinema-pill-tab[data-category=""]');
-                if (allTab) allTab.classList.add('active');
+                syncFilterControls();
                 loadPosts(1, '', '');
             }
         });
@@ -91,29 +137,33 @@ import Toast from '../components/toast.js';
             if (category) qs.append('category', category);
             if (search)   qs.append('search', search);
 
-            const resp = await fetch(`/api/v1/posts?${qs}`, {
-                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await window.apiClient.get(`/posts?${qs}`);
 
-            const data = await resp.json();
-            renderHero(data.featured_post, page, category, search);
+            if (!heroReady) renderHero(data.featured_post);
             renderPostsGrid(data.data || []);
             renderPagination(data.pagination || {});
-            renderTrailers(data.sidebar_trailers || []);
-            renderTags(data.popular_tags || []);
+            if (!sidebarReady) {
+                renderTrailers(data.sidebar_trailers || []);
+                renderTags(data.popular_tags || []);
+                sidebarReady = true;
+            }
         } catch (err) {
             console.error('SPA posts fetch error:', err);
-            Toast.error('Không thể tải bài viết, vui lòng kiểm tra kết nối.');
+            Toast.error('Không thể tải bài viết', 'Vui lòng kiểm tra kết nối và thử lại.');
+            postsRegion?.failed('Khong the tai bai viet. Vui long thu lai sau.');
             hideSkeletons();
         }
     }
 
     /* ─── Skeleton helpers ────────────────────────────────────────────────── */
     function showSkeletons() {
-        show('heroSkeleton');   hide('heroContent');
-        show('postsSkeletonGrid'); hide('postsGrid'); hide('postsEmptyState');
-        show('sidebarTrailersSkeleton'); hide('sidebarTrailersGrid');
+        if (!heroReady) {
+            heroRegion?.loading();
+        }
+        postsRegion?.loading();
+        if (!sidebarReady) {
+            sidebarRegion?.loading();
+        }
     }
 
     function hideSkeletons() {
@@ -122,19 +172,19 @@ import Toast from '../components/toast.js';
         hide('sidebarTrailersSkeleton');
     }
 
-    function show(id) { document.getElementById(id)?.classList.remove('d-none'); }
     function hide(id) { document.getElementById(id)?.classList.add('d-none'); }
 
     /* ─── 1. Hero Banner ──────────────────────────────────────────────────── */
-    function renderHero(featured, page, category, search) {
-        hide('heroSkeleton');
+    function renderHero(featured) {
         const heroEl = document.getElementById('heroContent');
         if (!heroEl) return;
 
-        if (page === 1 && !category && !search && featured) {
-            const slugUrl  = `/posts/${esc(featured.slug)}`;
-            const bgUrl    = esc(featured.image_url || featured.featured_image_url || '');
-            heroEl.style.backgroundImage = `url('${bgUrl}')`;
+        heroReady = true;
+
+        if (featured) {
+            const slugUrl = `/posts/${encodeURIComponent(featured.slug || '')}`;
+            const bgUrl = safeAssetUrl(featured.image_url || featured.featured_image_url || '');
+            heroEl.style.backgroundImage = bgUrl ? `url("${bgUrl.replace(/"/g, '%22')}")` : '';
 
             const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
             const href = (id, url) => { const el = document.getElementById(id); if (el) el.setAttribute('href', url); };
@@ -147,30 +197,39 @@ import Toast from '../components/toast.js';
             if (titleEl) { titleEl.textContent = featured.title || ''; titleEl.setAttribute('href', slugUrl); }
 
             href('heroReadBtn', slugUrl);
-            heroEl.classList.remove('d-none');
+            heroRegion?.ready();
         } else {
-            heroEl.classList.add('d-none');
+            heroRegion?.ready({ empty: true });
+        }
+    }
+
+    function safeAssetUrl(value) {
+        const url = String(value || '').trim();
+        if (!url) return '';
+        if (url.startsWith('/')) return url;
+
+        try {
+            const parsed = new URL(url, window.location.origin);
+            return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
+        } catch {
+            return '';
         }
     }
 
     /* ─── 2. Horizontal News Cards ────────────────────────────────────────── */
     function renderPostsGrid(posts) {
-        hide('postsSkeletonGrid');
         const grid  = document.getElementById('postsGrid');
-        const empty = document.getElementById('postsEmptyState');
         if (!grid) return;
 
         if (!posts.length) {
-            grid.classList.add('d-none');
-            empty?.classList.remove('d-none');
+            grid.innerHTML = '';
+            postsRegion?.ready({ empty: true });
             return;
         }
 
-        empty?.classList.add('d-none');
-
         grid.innerHTML = posts.map(post => {
-            const slugUrl  = `/posts/${esc(post.slug)}`;
-            const thumb    = esc(post.image_url || post.featured_image_url || '');
+            const slugUrl  = `/posts/${encodeURIComponent(post.slug || '')}`;
+            const thumb    = esc(safeAssetUrl(post.image_url || post.featured_image_url || '') || '/images/default-banner.jpg');
             const cat      = esc(post.category || '');
             const badge    = post.category_label ? esc(post.category_label).toUpperCase() : '';
             const author   = esc(post.author_name || 'Cinema Premium');
@@ -182,7 +241,7 @@ import Toast from '../components/toast.js';
             return `
 <article class="cinema-news-card horizontal-card mb-4">
     <a href="${slugUrl}" class="news-card-img-wrapper d-block flex-shrink-0">
-        <img src="${thumb}" alt="${title}" loading="lazy">
+        <img src="${thumb}" alt="${title}" loading="lazy" data-fallback-src="/images/default-banner.jpg">
     </a>
     <div class="news-card-body d-flex flex-column justify-content-between flex-grow-1">
         <div class="news-card-content">
@@ -205,53 +264,26 @@ import Toast from '../components/toast.js';
 </article>`;
         }).join('');
 
-        grid.classList.remove('d-none');
-        bindCardActions(grid);
-    }
-
-    /* ─── Card action bindings (bookmark/share) ───────────────────────────── */
-    function bindCardActions(container) {
-        // No-op for cleaner mockup structure
+        bindImageFallbacks(grid);
+        postsRegion?.ready();
     }
 
     /* ─── 3. SPA Pagination ───────────────────────────────────────────────── */
-    function renderPagination({ current_page, last_page }) {
-        const el = document.getElementById('postsPaginationContainer');
-        if (!el) return;
-
-        if (!last_page || last_page <= 1) { el.innerHTML = ''; return; }
-
-        const btn = (page, label, disabled = false, active = false) =>
-            `<button type="button" class="btn-page ${active ? 'active' : ''}" data-page="${page}" ${disabled ? 'disabled' : ''}>${label}</button>`;
-
-        let html = '';
-        html += btn(current_page - 1, '<i class="bi bi-chevron-left"></i>', current_page <= 1);
-
-        for (let p = 1; p <= last_page; p++) {
-            if (p === 1 || p === last_page || (p >= current_page - 1 && p <= current_page + 1)) {
-                html += btn(p, p, false, p === current_page);
-            } else if (p === current_page - 2 || p === current_page + 2) {
-                html += `<span class="page-ellipsis">...</span>`;
-            }
-        }
-
-        html += btn(current_page + 1, '<i class="bi bi-chevron-right"></i>', current_page >= last_page);
-        el.innerHTML = html;
-
-        el.querySelectorAll('.btn-page').forEach(b => {
-            b.addEventListener('click', () => {
-                const p = Number(b.dataset.page);
-                if (p && p !== currentPage) {
-                    loadPosts(p, currentCategory, currentSearch);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+    function renderPagination({ current_page, last_page, total, per_page }) {
+        CinemaPagination.render({
+            container: '#postsPaginationContainer',
+            pagination: { current_page, last_page, total, per_page },
+            itemLabel: 'bài viết',
+            onPageChange(page) {
+                if (page && page !== currentPage) {
+                    loadPosts(page, currentCategory, currentSearch);
+                    document.getElementById('postsMainSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-            });
+            },
         });
     }
-
     /* ─── 4. Sidebar: Large Trailer Cards (chuẩn mockup) ─────────────────── */
     function renderTrailers(trailers) {
-        hide('sidebarTrailersSkeleton');
         const grid = document.getElementById('sidebarTrailersGrid');
         if (!grid) return;
 
@@ -259,14 +291,15 @@ import Toast from '../components/toast.js';
             grid.innerHTML = '<p class="text-secondary small mb-0">Chưa có trailer nào.</p>';
         } else {
             grid.innerHTML = trailers.map(m => {
-                const slug   = esc(m.slug || m.id || '');
+                const slug   = encodeURIComponent(m.slug || m.id || '');
                 const title  = esc(m.title || '');
-                const poster = esc(m.poster_url || '');
+                const poster = esc(safeAssetUrl(m.poster_display_url || m.poster_url || '') || '/images/default-banner.jpg');
+                const age = esc(m.age_rating || '');
 
                 return `
 <a href="/movies/${slug}" class="sidebar-trailer-card d-block text-decoration-none mb-3">
     <div class="trailer-thumbnail position-relative">
-        <img src="${poster}" alt="" loading="lazy" onerror="this.style.opacity='0'" style="display:none" onload="this.style.display='block';this.style.opacity='1'">
+        <img src="${poster}" alt="Poster ${title}" loading="lazy" data-fallback-src="/images/default-poster.jpg">
         <div class="trailer-play-overlay">
             <div class="play-btn-sm"><i class="bi bi-play-fill"></i></div>
         </div>
@@ -279,7 +312,18 @@ import Toast from '../components/toast.js';
             }).join('');
         }
 
-        grid.classList.remove('d-none');
+        bindImageFallbacks(grid);
+        sidebarRegion?.ready();
+    }
+
+    function bindImageFallbacks(container) {
+        container.querySelectorAll('img[data-fallback-src]').forEach(image => {
+            image.addEventListener('error', () => {
+                const fallback = image.dataset.fallbackSrc;
+                if (!fallback || image.getAttribute('src') === fallback) return;
+                image.setAttribute('src', fallback);
+            }, { once: true });
+        });
     }
 
     /* ─── 5. Sidebar: Popular Tags ────────────────────────────────────────── */
@@ -314,7 +358,7 @@ import Toast from '../components/toast.js';
                 e.preventDefault();
                 const inp = form.querySelector('input[type="email"]');
                 if (inp && inp.value.trim()) {
-                    Toast.success('Đăng ký bản tin trải nghiệm thành công! Cảm ơn bạn đã đồng hành cùng Poly Cinema.');
+                    Toast.success('Đăng ký thành công', 'Cảm ơn bạn đã đồng hành cùng Poly Cinema.');
                     form.reset();
                 }
             });
@@ -323,6 +367,9 @@ import Toast from '../components/toast.js';
 
     /* ─── Article detail actions ──────────────────────────────────────────── */
     function setupArticleActions() {
+        document.querySelector('[data-back-to-top]')?.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
         const btnShare = document.getElementById('btnShareArticle');
         if (btnShare) {
             btnShare.addEventListener('click', async () => {
@@ -340,11 +387,9 @@ import Toast from '../components/toast.js';
             btnBookmark.addEventListener('click', () => {
                 btnBookmark.classList.toggle('active');
                 if (btnBookmark.classList.contains('active')) {
-                    btnBookmark.style.color = '#e50914';
-                    Toast.success('Đã lưu bài viết vào danh sách quan tâm!');
+                    Toast.success('Đã lưu bài viết', 'Bài viết đã được thêm vào danh sách quan tâm.');
                 } else {
-                    btnBookmark.style.color = '';
-                    Toast.info('Đã bỏ lưu bài viết.');
+                    Toast.info('Đã bỏ lưu bài viết');
                 }
             });
         }
@@ -352,8 +397,8 @@ import Toast from '../components/toast.js';
 
     function copyUrl(text) {
         navigator.clipboard.writeText(text)
-            .then(() => Toast.success('Đã sao chép liên kết!'))
-            .catch(() => Toast.error('Không thể sao chép liên kết.'));
+            .then(() => Toast.success('Đã sao chép liên kết'))
+            .catch(() => Toast.error('Không thể sao chép liên kết', 'Vui lòng sao chép thủ công từ thanh địa chỉ.'));
     }
 
     if (document.readyState === 'loading') {

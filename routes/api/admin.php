@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\ComboController;
 use App\Http\Controllers\Admin\ComboStatController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\RevenueController;
+use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\ScreenController;
 use App\Http\Controllers\Admin\SeatLayoutTemplateController;
 use App\Http\Controllers\Admin\TheaterController;
@@ -22,7 +24,7 @@ use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin'])->group(function () {
+Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin,theater_manager,ticket_seller,ticket_checker,concession_staff'])->group(function () {
     Route::get('dashboard/stats', [DashboardController::class, 'stats']);
     Route::get('revenue/stats', [RevenueController::class, 'stats']);
     Route::get('tickets/stats', [TicketStatController::class, 'stats']);
@@ -30,6 +32,18 @@ Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin'])->grou
     Route::get('food/stats', [FoodStatController::class, 'stats']);
     Route::get('orders', [OrderController::class, 'adminOrders']);
     Route::get('orders/{id}', [OrderController::class, 'adminOrder'])->whereNumber('id');
+
+    Route::prefix('roles-permissions')->group(function () {
+        Route::get('roles', [RolePermissionController::class, 'roles']);
+        Route::get('permissions', [RolePermissionController::class, 'permissions']);
+        Route::get('roles/{role}', [RolePermissionController::class, 'show']);
+        Route::put('roles/{role}', [RolePermissionController::class, 'update']);
+    });
+
+    Route::prefix('audit-logs')->group(function () {
+        Route::get('/', [AuditLogController::class, 'index']);
+        Route::get('{auditLog}', [AuditLogController::class, 'show']);
+    });
 
     Route::prefix('movies')->group(function () {
         Route::post('/', [MovieController::class, 'store']);

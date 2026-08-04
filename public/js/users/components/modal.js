@@ -10,6 +10,7 @@ class Modal {
         this.options = {
             title: options.title || '',
             content: options.content || '',
+            contentHtml: options.contentHtml || '',
             size: options.size || 'md', // sm, md, lg, xl, fullscreen
             animation: options.animation || 'fade', // fade, slide-top, slide-bottom, zoom
             variant: options.variant || '', // confirm, success, warning, error
@@ -30,33 +31,38 @@ class Modal {
     create() {
         // Create backdrop
         this.backdrop = document.createElement('div');
-        this.backdrop.className = 'modal-backdrop';
+        this.backdrop.className = 'cinema-modal-backdrop';
 
         // Create modal
         this.modal = document.createElement('div');
-        this.modal.className = `modal modal-${this.options.size} ${this.options.animation}`;
+        this.modal.className = `cinema-modal cinema-modal-${this.options.size} ${this.options.animation}`;
+        this.modal.tabIndex = -1;
+        this.modal.setAttribute('role', 'dialog');
+        this.modal.setAttribute('aria-modal', 'true');
         if (this.options.variant) {
-            this.modal.classList.add(`modal-${this.options.variant}`);
+            this.modal.classList.add(`cinema-modal-${this.options.variant}`);
         }
 
         // Create modal content
         const modalContent = document.createElement('div');
-        modalContent.className = 'modal-content';
+        modalContent.className = 'cinema-modal-content';
 
         // Create header
         const header = document.createElement('div');
-        header.className = 'modal-header';
+        header.className = 'cinema-modal-header';
 
         const title = document.createElement('h2');
-        title.className = 'modal-title';
+        title.className = 'cinema-modal-title';
+        title.id = `cinema-modal-title-${Date.now()}-${Math.random().toString(16).slice(2)}`;
         title.textContent = this.options.title;
+        this.modal.setAttribute('aria-labelledby', title.id);
         header.appendChild(title);
 
         if (this.options.showClose) {
             const closeBtn = document.createElement('button');
-            closeBtn.className = 'modal-close';
-            closeBtn.innerHTML = '×';
-            closeBtn.setAttribute('aria-label', 'Close');
+            closeBtn.className = 'cinema-modal-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.setAttribute('aria-label', 'Đóng');
             closeBtn.addEventListener('click', () => this.close());
             header.appendChild(closeBtn);
         }
@@ -65,10 +71,12 @@ class Modal {
 
         // Create body
         const body = document.createElement('div');
-        body.className = 'modal-body';
+        body.className = 'cinema-modal-body';
 
-        if (typeof this.options.content === 'string') {
-            body.innerHTML = this.options.content;
+        if (this.options.contentHtml) {
+            body.innerHTML = this.options.contentHtml;
+        } else if (typeof this.options.content === 'string') {
+            body.textContent = this.options.content;
         } else if (this.options.content instanceof HTMLElement) {
             body.appendChild(this.options.content);
         }
@@ -78,7 +86,7 @@ class Modal {
         // Create footer if provided
         if (this.options.footer) {
             const footer = document.createElement('div');
-            footer.className = 'modal-footer';
+            footer.className = 'cinema-modal-footer';
 
             if (typeof this.options.footer === 'string') {
                 footer.innerHTML = this.options.footer;
@@ -123,8 +131,10 @@ class Modal {
             this.create();
         }
 
+        this.previouslyFocused = document.activeElement;
+
         // Prevent body scroll
-        document.body.classList.add('modal-open');
+        document.body.classList.add('cinema-modal-open');
 
         // Show modal with animation
         requestAnimationFrame(() => {
@@ -140,7 +150,28 @@ class Modal {
         }
 
         // Focus management
-        this.modal.focus();
+        const preferredFocus = this.modal.querySelector('[data-modal-primary], button, [href], input, select, textarea');
+        (preferredFocus || this.modal).focus();
+
+        this.focusTrapHandler = (event) => {
+            if (event.key !== 'Tab' || !this.isOpen) return;
+            const focusable = [...this.modal.querySelectorAll('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])')];
+            if (!focusable.length) {
+                event.preventDefault();
+                this.modal.focus();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+        document.addEventListener('keydown', this.focusTrapHandler);
 
         return this;
     }
@@ -162,14 +193,18 @@ class Modal {
             }
 
             // Restore body scroll
-            document.body.classList.remove('modal-open');
+            document.body.classList.remove('cinema-modal-open');
 
             // Remove escape key listener
             if (this.escapeHandler) {
                 document.removeEventListener('keydown', this.escapeHandler);
             }
+            if (this.focusTrapHandler) {
+                document.removeEventListener('keydown', this.focusTrapHandler);
+            }
 
             this.isOpen = false;
+            this.previouslyFocused?.focus?.({ preventScroll: true });
 
             // Call onClose callback
             if (typeof this.options.onClose === 'function') {
@@ -212,10 +247,28 @@ class Modal {
                         onConfirm();
                     }
                     modal.close();
-                }, 'btn-primary')
+                }, 'btn-primary', true)
             ]
         });
         return modal.open();
+    }
+
+    static confirmAsync(title, content, options = {}) {
+        return new Promise((resolve) => {
+            let confirmed = false;
+            const modal = Modal.confirm(title, content, () => {
+                confirmed = true;
+                resolve(true);
+            }, {
+                ...options,
+                onClose: (instance) => {
+                    options.onClose?.(instance);
+                    if (!confirmed) resolve(false);
+                }
+            });
+
+            return modal;
+        });
     }
 
     static success(title, content, options = {}) {
@@ -239,10 +292,11 @@ class Modal {
         });
     }
 
-    static createButton(text, onClick, className = 'btn') {
+    static createButton(text, onClick, className = 'btn', primary = false) {
         const btn = document.createElement('button');
         btn.className = `btn ${className}`;
         btn.textContent = text;
+        if (primary) btn.dataset.modalPrimary = 'true';
         btn.addEventListener('click', onClick);
         return btn;
     }
@@ -259,8 +313,9 @@ class Modal {
             ...options
         });
 
-        modal.modal.classList.add('modal-image');
-        return modal.open();
+        modal.open();
+        modal.modal?.classList.add('cinema-modal-image');
+        return modal;
     }
 }
 

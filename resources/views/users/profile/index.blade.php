@@ -23,7 +23,7 @@
             <div id="profileLoading" class="profile-layout profile-loading">
                 <!-- Sidebar Skeleton -->
                 <aside class="profile-sidebar">
-                    <div class="profile-sidebar-user" style="margin-bottom: 0;">
+                    <div class="profile-sidebar-user profile-sidebar-user--compact">
                         <div class="skeleton skel-avatar rounded-circle"></div>
                         <div class="profile-sidebar-info w-100">
                             <div class="skeleton w-75 skel-subtitle mb-2 rounded"></div>
@@ -31,14 +31,14 @@
                         </div>
                     </div>
 
-                    <div class="profile-menu-divider" style="margin: 16px 0 12px;"></div>
+                    <div class="profile-menu-divider profile-menu-divider--section"></div>
 
                     <div class="d-flex flex-column gap-2 px-3 py-2">
                         <div class="skeleton skel-input rounded"></div>
                         <div class="skeleton skel-input rounded"></div>
                         <div class="skeleton skel-input rounded"></div>
                         <div class="skeleton skel-input rounded"></div>
-                        <div class="profile-menu-divider" style="margin: 8px 0;"></div>
+                        <div class="profile-menu-divider profile-menu-divider--compact"></div>
                         <div class="skeleton skel-input rounded"></div>
                     </div>
                 </aside>
@@ -137,7 +137,7 @@
                         </div>
                     </div>
 
-                    <div class="profile-menu-divider" style="margin: 16px 0 12px;"></div>
+                    <div class="profile-menu-divider profile-menu-divider--section"></div>
 
                     <nav class="profile-menu">
                         <button class="profile-menu-item active" type="button" data-profile-nav="profile">
@@ -175,11 +175,11 @@
                             </div>
 
                             <div class="profile-cover-text">
-                                <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="profile-rank-heading">
                                     <h1 id="profileDisplayName">Người dùng</h1>
                                     <span id="profileMemberBadge" class="badge-member">Thành viên</span>
                                 </div>
-                                <p id="profileMemberRank" style="color: #a0a0a0; font-size: 13px; margin: 8px 0 0;">Chưa có thông tin</p>
+                                <p id="profileMemberRank" class="profile-member-rank">Chưa có thông tin</p>
                             </div>
 
                             <div class="profile-cover-stats">
@@ -198,12 +198,12 @@
 
                     <div class="profile-card-grid">
                         <section class="profile-card profile-info-card">
-                            <header class="profile-card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <header class="profile-card-title profile-card-title--split">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="bi bi-info-circle"></i>
                                     <h2>Thông tin cá nhân</h2>
                                 </div>
-                                <button type="button" style="background: none; border: none; color: #ed0712; font-size: 12px; font-weight: 600; padding: 0; cursor: pointer;">Chỉnh sửa tất cả</button>
+                                <button type="button" class="profile-edit-all-btn">Chỉnh sửa tất cả</button>
                             </header>
 
                             <form id="profileUpdateForm" class="profile-inline-form" novalidate>
@@ -302,7 +302,7 @@
                                     <div class="invalid-feedback" id="newPasswordConfirmationError"></div>
                                 </div>
 
-                                <button type="submit" class="profile-password-submit" id="profilePasswordBtn" style="margin-top: 20px; width: 100%;">
+                                <button type="submit" class="profile-password-submit profile-password-submit--full" id="profilePasswordBtn">
                                     <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
                                     <span class="btn-text">Cập nhật mật khẩu</span>
                                 </button>
@@ -311,12 +311,12 @@
 
                         <!-- Support Card -->
                         <section class="profile-card profile-support-card">
-                            <header class="d-flex align-items-center gap-2" style="margin-bottom: 12px;">
-                                <i class="bi bi-headset" style="color: #ed0712; font-size: 18px;"></i>
-                                <h3 style="font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; color: #ffffff; margin: 0;">Cần hỗ trợ?</h3>
+                            <header class="profile-support-header">
+                                <i class="bi bi-headset profile-support-icon"></i>
+                                <h3 class="profile-support-title">Cần hỗ trợ?</h3>
                             </header>
-                            <p style="font-size: 13px; color: #7a7a7a; line-height: 1.7; margin: 0 0 16px;">Liên hệ đội ngũ hỗ trợ VIP để được giải quyết nhanh nhất về vé và tài khoản.</p>
-                            <button type="button" class="profile-secondary-btn" style="width: 100%; font-size: 13px; padding: 10px;">Liên hệ ngay</button>
+                            <p class="profile-support-copy">Liên hệ đội ngũ hỗ trợ VIP để được giải quyết nhanh nhất về vé và tài khoản.</p>
+                            <button type="button" class="profile-secondary-btn profile-support-action">Liên hệ ngay</button>
                         </section>
 
                         </div><!-- /.profile-right-column -->
@@ -343,7 +343,7 @@
                         <div id="ticketsList" class="tickets-list"></div>
 
                         <div class="text-center mt-4">
-                            <button type="button" id="ticketsLoadMore" class="ticket-filter-btn" style="display: none;">
+                            <button type="button" id="ticketsLoadMore" class="ticket-filter-btn d-none">
                                 <i class="bi bi-chevron-down me-2"></i>
                                 Xem thêm lịch sử
                             </button>
@@ -355,7 +355,7 @@
                         <div class="profile-card-grid">
                             <!-- Left Column: Membership Status -->
                             <section class="profile-card profile-info-card">
-                                <header class="profile-card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <header class="profile-card-title profile-card-title--split">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="bi bi-star"></i>
                                         <h2>Trạng thái thành viên</h2>
@@ -364,24 +364,24 @@
                                 <div class="profile-form-container mt-3">
                                     <div class="d-flex flex-column gap-4">
                                         <div>
-                                            <h1 class="display-4 fw-bold mb-0 text-white" id="pointsDashboardTotal" style="font-family: 'Inter', sans-serif;">
-                                                0 <span class="fs-5 text-muted fw-normal" style="font-family: 'Inter', sans-serif;">Points</span>
+                                            <h1 class="display-4 fw-bold mb-0 text-white profile-points-total" id="pointsDashboardTotal">
+                                                0 <span class="fs-5 text-muted fw-normal profile-points-unit">Points</span>
                                             </h1>
                                             <div class="d-flex align-items-center mt-2">
                                                 <i class="bi bi-star-fill text-danger me-2"></i>
-                                                <span class="fs-5 fw-semibold text-white" id="pointsDashboardRank" style="font-family: 'Inter', sans-serif;">Thành viên</span>
+                                                <span class="fs-5 fw-semibold text-white profile-points-rank" id="pointsDashboardRank">Thành viên</span>
                                             </div>
                                         </div>
                                         
                                         <div class="mt-2">
-                                            <div class="d-flex justify-content-between text-muted mb-2" style="font-size: 13px; font-weight: 500;">
+                                            <div class="profile-points-progress-meta">
                                                 <span id="pointsDashboardNextTier">Loading...</span>
                                                 <span id="pointsDashboardPercent">0%</span>
                                             </div>
-                                            <div class="progress" style="height: 6px; background-color: #2a2a2d; border-radius: 4px;">
-                                                <div id="pointsDashboardProgress" class="progress-bar bg-danger" role="progressbar" style="width: 0%; border-radius: 4px;"></div>
+                                            <div class="progress profile-points-progress">
+                                                <div id="pointsDashboardProgress" class="progress-bar bg-danger profile-points-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
                                             </div>
-                                            <p class="text-muted mt-3 mb-0" style="font-size: 13px; font-weight: 400; line-height: 1.5;" id="pointsDashboardBenefits">
+                                            <p class="text-muted mt-3 mb-0 profile-points-benefits" id="pointsDashboardBenefits">
                                                 Tiếp tục tích lũy điểm để mở khóa các đặc quyền cao cấp.
                                             </p>
                                         </div>
@@ -392,21 +392,21 @@
                             <!-- Right Column: Point History -->
                             <div class="profile-right-column">
                                 <section class="profile-card">
-                                    <header class="profile-card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <header class="profile-card-title profile-card-title--split">
                                         <div class="d-flex align-items-center gap-2">
                                             <i class="bi bi-clock-history"></i>
                                             <h2>Lịch sử điểm thưởng</h2>
                                         </div>
-                                        <a href="#" class="text-muted text-decoration-none" style="font-size: 12px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#7a7a7a'">Xem tất cả</a>
+                                        <a href="#" class="profile-history-link">Xem tất cả</a>
                                     </header>
                                     
-                                    <div class="mt-2" style="overflow-x: auto;">
+                                    <div class="mt-2 profile-table-scroll">
                                         <table class="table table-borderless mb-0 point-history-table">
                                             <thead>
                                                 <tr>
-                                                    <th class="text-muted text-uppercase" style="font-size: 10px; letter-spacing: 0.6px; font-weight: 600; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); width: 30%;">Ngày</th>
-                                                    <th class="text-muted text-uppercase" style="font-size: 10px; letter-spacing: 0.6px; font-weight: 600; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Hoạt động</th>
-                                                    <th class="text-muted text-uppercase text-end" style="font-size: 10px; letter-spacing: 0.6px; font-weight: 600; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); width: 25%;">Điểm</th>
+                                                    <th class="profile-history-heading profile-history-heading--date">Ngày</th>
+                                                    <th class="profile-history-heading">Hoạt động</th>
+                                                    <th class="profile-history-heading profile-history-heading--points text-end">Điểm</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="pointHistoryList">
@@ -414,8 +414,8 @@
                                             </tbody>
                                         </table>
                                         <div id="pointHistoryEmpty" class="text-center py-5 d-none">
-                                            <i class="bi bi-clock-history" style="font-size: 2.5rem; color: #444;"></i>
-                                            <p class="text-muted mt-2" style="font-size: 13px;">Chưa có giao dịch điểm nào.</p>
+                                            <i class="bi bi-clock-history profile-history-empty-icon"></i>
+                                            <p class="text-muted mt-2 profile-history-empty-copy">Chưa có giao dịch điểm nào.</p>
                                         </div>
                                     </div>
                                 </section>
@@ -436,7 +436,7 @@
                         </div>
 
                         <div id="voucherEmpty" class="text-center py-5 d-none">
-                            <i class="bi bi-ticket-perforated" style="font-size: 4rem; color: var(--cinema-danger);"></i>
+                            <i class="bi bi-ticket-perforated profile-ticket-empty-icon"></i>
                             <h3 class="mt-3">Chưa có voucher nào</h3>
                             <p class="text-muted">Bạn chưa đăng ký voucher nào. Nhập mã để nhận ưu đãi!</p>
                         </div>
@@ -500,17 +500,17 @@
     {{-- Order Detail Modal --}}
     <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl order-detail-modal-dialog">
-            <div class="modal-content border-0" style="background-color: #0f0f11; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;">
+            <div class="modal-content border-0 profile-order-modal-content">
                 <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted text-uppercase mb-1" style="font-size: 11px; font-weight: 600; letter-spacing: 1px;">MÃ ĐƠN HÀNG</h6>
-                        <h4 class="text-white fw-bold mb-0" id="odModalCode" style="font-family: 'Inter', sans-serif;">ORD-XXXXXXXX</h4>
+                        <h6 class="text-muted text-uppercase mb-1 profile-order-code-label">MÃ ĐƠN HÀNG</h6>
+                        <h4 class="text-white fw-bold mb-0 profile-order-code" id="odModalCode">ORD-XXXXXXXX</h4>
                     </div>
                     <div class="d-flex align-items-center gap-3">
-                        <span class="badge rounded-pill d-flex align-items-center px-3 py-2" id="odModalStatus" style="font-size: 12px; font-weight: 600;">
+                        <span class="badge rounded-pill d-flex align-items-center px-3 py-2 profile-order-status" id="odModalStatus">
                             <!-- Status dynamic -->
                         </span>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.5;"></button>
+                        <button type="button" class="btn-close btn-close-white profile-order-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                 </div>
                 
@@ -603,7 +603,7 @@
                                         <span class="invoice-label">Giảm bằng điểm (<span id="odModalPointsUsed">0</span> điểm)</span>
                                         <span class="invoice-discount-val" id="odModalPointsValue">-0đ</span>
                                     </div>
-                                    <div class="invoice-grand-total mt-3 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
+                                    <div class="invoice-grand-total mt-3 pt-3 border-top profile-invoice-grand-total">
                                         <span>Tổng cộng</span>
                                         <span id="odModalTotal">0đ</span>
                                     </div>

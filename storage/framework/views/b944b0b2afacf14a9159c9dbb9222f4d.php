@@ -62,7 +62,7 @@
     <script>
         window.APP_CONFIG = {
             appName: <?php echo json_encode(config('app.name', 'Cinema'), 512) ?>,
-            apiUrl: <?php echo json_encode(url('/api/v1'), 15, 512) ?>,
+            apiUrl: <?php echo json_encode('/api/v1', 15, 512) ?>,
             csrfToken: <?php echo json_encode(csrf_token(), 15, 512) ?>,
             auth: {
                 checked: <?php echo json_encode(Auth::guard('web')->check() || !request()->hasCookie('refresh_token'), 15, 512) ?>,

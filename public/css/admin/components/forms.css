@@ -533,3 +533,6 @@
         min-height: 150px;
     }
 }
+.image-upload-box.is-dragging { border-color: rgba(255,255,255,.4); }
+.image-preview { display: none; }
+.image-preview.is-visible { display: block; }

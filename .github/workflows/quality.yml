@@ -38,6 +38,7 @@ jobs:
 
       - run: composer install --no-interaction --prefer-dist
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: cp .env.example .env
       - run: php artisan key:generate
       - run: composer test:structure

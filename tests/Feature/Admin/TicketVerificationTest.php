@@ -34,4 +34,5 @@ class TicketVerificationTest extends TestCase
             ->postJson('/api/v1/admin/tickets/verify', ['ticket_code' => $ticket->ticket_code])
             ->assertStatus(409);
     }
+
 }

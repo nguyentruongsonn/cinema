@@ -5,6 +5,28 @@
 (function () {
     'use strict';
 
+    async function handleAdminLogout() {
+        try {
+            await window.AdminCore?.apiFetch?.('/api/v1/auth/logout', {
+                method: 'POST',
+                skipCache: true,
+            });
+            window.showAdminToast?.('Đã đăng xuất.', 'info');
+        } catch (error) {
+            console.error('Admin logout error:', error);
+        } finally {
+            window.location.replace('/');
+        }
+    }
+
+    document.addEventListener('click', (event) => {
+        const logoutButton = event.target.closest?.('[data-admin-logout]');
+        if (!logoutButton) return;
+
+        event.preventDefault();
+        handleAdminLogout();
+    });
+
     /* ------------------------------------------------------------------ */
     /*  Global Utilities – gán lên window để các page JS khác dùng được  */
     /* ------------------------------------------------------------------ */
@@ -30,6 +52,33 @@
      */
     window.formatNumber = function (value) {
         return new Intl.NumberFormat('vi-VN').format(value || 0);
+    };
+
+    document.addEventListener('error', function (event) {
+        const image = event.target.closest?.('img[data-admin-image-fallback]');
+        if (!image) return;
+        const icon = document.createElement('i');
+        icon.className = `bi ${image.dataset.adminImageFallback || 'bi-image'} text-white-50 fs-3`;
+        image.replaceWith(icon);
+    }, true);
+
+    window.formatAdminErrors = function (errors, fallback = 'Dữ liệu không hợp lệ') {
+        if (!errors) return fallback;
+        if (typeof errors === 'string') return errors;
+
+        if (Array.isArray(errors)) {
+            return errors.filter(Boolean).join(' ');
+        }
+
+        if (typeof errors === 'object') {
+            const messages = Object.values(errors)
+                .flatMap((value) => Array.isArray(value) ? value : [value])
+                .filter(Boolean);
+
+            return messages.length ? messages.join(' ') : fallback;
+        }
+
+        return fallback;
     };
 
     /**
@@ -73,28 +122,45 @@
         // Đổi type 'error' thành 'danger' để khớp class CSS trong alerts.css (.admin-toast-danger / .admin-toast-error)
         const cssType = type === 'error' ? 'error' : type;
 
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <div id="${id}" class="admin-toast admin-toast-${cssType}" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="admin-toast-icon">
-                    <i class="bi ${iconClass}"></i>
-                </div>
-                <div class="admin-toast-content">
-                    <div class="admin-toast-title">${titleText}</div>
-                    <div class="admin-toast-message">${message}</div>
-                </div>
-                <div class="admin-toast-close" aria-label="Đóng">
-                    <i class="bi bi-x-lg"></i>
-                </div>
-                <div class="admin-toast-progress">
-                    <div class="admin-toast-progress-bar" style="width: 100%;"></div>
-                </div>
-            </div>`;
-        
-        const toastEl = div.firstElementChild;
+        const toastEl = document.createElement('div');
+        toastEl.id = id;
+        toastEl.className = `admin-toast admin-toast-${cssType}`;
+        toastEl.setAttribute('role', type === 'warning' || type === 'info' ? 'status' : 'alert');
+        toastEl.setAttribute('aria-live', type === 'warning' || type === 'info' ? 'polite' : 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+
+        const iconWrap = document.createElement('div');
+        iconWrap.className = 'admin-toast-icon';
+        const icon = document.createElement('i');
+        icon.className = `bi ${iconClass}`;
+        icon.setAttribute('aria-hidden', 'true');
+        iconWrap.appendChild(icon);
+
+        const content = document.createElement('div');
+        content.className = 'admin-toast-content';
+        const title = document.createElement('div');
+        title.className = 'admin-toast-title';
+        title.textContent = titleText;
+        const messageElement = document.createElement('div');
+        messageElement.className = 'admin-toast-message';
+        messageElement.textContent = String(message ?? '');
+        content.append(title, messageElement);
+
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'admin-toast-close';
+        closeButton.setAttribute('aria-label', 'Đóng thông báo');
+        closeButton.innerHTML = '<i class="bi bi-x-lg" aria-hidden="true"></i>';
+
+        const progress = document.createElement('div');
+        progress.className = 'admin-toast-progress';
+        const progressBar = document.createElement('div');
+        progressBar.className = 'admin-toast-progress-bar';
+        progress.appendChild(progressBar);
+
+        toastEl.append(iconWrap, content, closeButton, progress);
         toastContainer.appendChild(toastEl);
 
-        const progressBar = toastEl.querySelector('.admin-toast-progress-bar');
         if (progressBar) {
             // Thiết lập màu sắc thừa hưởng từ color của lớp cha (currentColor)
             progressBar.style.transition = `width ${duration}ms linear`;
@@ -109,13 +175,10 @@
         }, duration);
 
         // Đóng thủ công khi bấm nút X
-        const closeBtn = toastEl.querySelector('.admin-toast-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                clearTimeout(autoCloseTimeout);
-                closeToast();
-            });
-        }
+        closeButton.addEventListener('click', () => {
+            clearTimeout(autoCloseTimeout);
+            closeToast();
+        });
 
         function closeToast() {
             toastEl.classList.add('hiding');

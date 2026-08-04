@@ -20,8 +20,10 @@ class AuditLog extends Model
         'post',
         'product',
         'promotion',
+        'role',
         'screen',
         'seat_layout_template',
+        'system',
         'theater',
         'user',
     ];

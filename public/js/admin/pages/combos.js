@@ -133,7 +133,7 @@
 
             const imageUrl = safeImageUrl(combo.image_url);
             const imageHtml = imageUrl
-                ? `<img src="${escapeHtml(imageUrl)}" alt="Image" loading="lazy" onerror="this.outerHTML='<i class=\'bi bi-box-seam text-white-50 fs-3\'></i>'">`
+                ? `<img src="${escapeHtml(imageUrl)}" alt="Image" loading="lazy" data-admin-image-fallback="bi-box-seam">`
                 : `<i class="bi bi-box-seam text-white-50 fs-3"></i>`;
 
             tr.innerHTML = `
@@ -188,19 +188,21 @@
         });
     }
 
+    const mediaInput = new window.AdminMediaInput({
+        root: els.imageUploadBox,
+        input: els.imageFile,
+        preview: els.imagePreview,
+        placeholder: els.imagePlaceholder,
+        clearButton: els.clearImageBtn,
+    });
+
     /* ── Image Functions ───────────────────────────────────────────── */
     function showImagePreview(src) {
-        if (!src) return;
-        if (els.imagePreview) { els.imagePreview.src = src; els.imagePreview.style.display = 'block'; }
-        if (els.imagePlaceholder) els.imagePlaceholder.style.display = 'none';
-        if (els.clearImageBtn) els.clearImageBtn.classList.remove('d-none');
+        mediaInput.show(src);
     }
 
     function clearImagePreview() {
-        if (els.imagePreview) { els.imagePreview.src = ''; els.imagePreview.style.display = 'none'; }
-        if (els.imagePlaceholder) els.imagePlaceholder.style.display = 'block';
-        if (els.imageFile) els.imageFile.value = '';
-        if (els.clearImageBtn) els.clearImageBtn.classList.add('d-none');
+        mediaInput.clear();
     }
 
     /* ── Combo Items Management ────────────────────────────────────── */
@@ -387,41 +389,6 @@
         });
     }
 
-    if (els.imageFile) {
-        els.imageFile.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) showImagePreview(URL.createObjectURL(file));
-        });
-    }
-
-    if (els.clearImageBtn) {
-        els.clearImageBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            clearImagePreview();
-        });
-    }
-
-    if (els.imageUploadBox) {
-        els.imageUploadBox.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            els.imageUploadBox.style.borderColor = 'rgba(255,255,255,0.4)';
-        });
-        els.imageUploadBox.addEventListener('dragleave', () => {
-            els.imageUploadBox.style.borderColor = 'rgba(255,255,255,0.15)';
-        });
-        els.imageUploadBox.addEventListener('drop', (e) => {
-            e.preventDefault();
-            els.imageUploadBox.style.borderColor = 'rgba(255,255,255,0.15)';
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                els.imageFile.files = dt.files;
-                showImagePreview(URL.createObjectURL(file));
-            }
-        });
-    }
-
     if (els.status && els.statusLabel) {
         els.status.addEventListener('change', () => {
             els.statusLabel.textContent = els.status.checked ? 'Đang bán' : 'Ngừng bán';
@@ -463,7 +430,7 @@
 
         const btnDel = e.target.closest('.btn-delete-combo');
         if (btnDel) {
-            if (!confirm('Bạn có chắc muốn xóa combo này? Thao tác này không thể hoàn tác!')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa combo này?', description: 'Thao tác này không thể hoàn tác.', confirmLabel: 'Xóa combo', variant: 'danger' })) return;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/combos/${btnDel.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) {
@@ -534,7 +501,7 @@
                     loadAvailableProducts(true);
                 } else {
                     const errData = await res.json();
-                    alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message));
+                    window.showAdminToast?.(window.formatAdminErrors?.(errData.errors || errData.message) || 'Dữ liệu không hợp lệ', 'error');
                 }
             } catch (error) {
                 console.error('Submit form error', error);

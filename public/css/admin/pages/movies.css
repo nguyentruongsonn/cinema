@@ -172,6 +172,10 @@
     transition: border-color 0.2s;
 }
 
+.movie-upload-box.is-dragging {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
 .movie-upload-box-poster {
     min-height: 200px;
 }
@@ -189,6 +193,10 @@
     object-fit: cover;
     border-radius: 8px;
     display: none;
+}
+
+.movie-upload-preview.is-visible {
+    display: block;
 }
 
 .movie-upload-help {

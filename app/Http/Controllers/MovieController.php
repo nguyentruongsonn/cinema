@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMovieRequest;
 use App\Http\Requests\UpdateMovieRequest;
+use App\Http\Resources\MovieResource;
 use App\Models\Movie;
 use App\Services\AuditLogService;
 use App\Services\MovieService;
@@ -49,7 +50,10 @@ class MovieController extends Controller
 
             $movies = $this->movieService->getMovies($filters);
 
-            return $this->paginatedResponse($movies, 'Movies retrieved successfully');
+            return $this->paginatedResponse(
+                $movies->setCollection(MovieResource::collection($movies->getCollection())->collection),
+                'Movies retrieved successfully'
+            );
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->errorResponse('Invalid filter parameters', 422, $e->errors());
         } catch (\Throwable $e) {
@@ -167,7 +171,7 @@ class MovieController extends Controller
                 return $this->errorResponse('Movie not found', 404);
             }
 
-            return $this->successResponse($movie, 'Movie retrieved successfully');
+            return $this->successResponse(new MovieResource($movie), 'Movie retrieved successfully');
         } catch (\Throwable $e) {
             Log::error('Failed to retrieve movie', [
                 'identifier' => $idOrSlug,

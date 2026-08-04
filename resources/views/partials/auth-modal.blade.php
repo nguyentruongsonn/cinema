@@ -12,7 +12,7 @@
                 </div>
                 <div class="modal-body cinema-auth-body text-center py-5">
                     <p class="text-white mb-4">Bạn cần đăng nhập để đặt vé xem phim.</p>
-                    <div class="d-grid gap-3 mx-auto" style="max-width: 300px;">
+                    <div class="d-grid gap-3 mx-auto cinema-auth-actions">
                         <button type="button" class="btn cinema-auth-submit" id="showLoginFormBtn">
                             <i class="bi bi-box-arrow-in-right me-2"></i>
                             Đăng nhập ngay

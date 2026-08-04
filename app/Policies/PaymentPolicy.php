@@ -32,13 +32,7 @@ class PaymentPolicy
             return true;
         }
 
-        // Admin can view any payment
-        if ($user->hasAnyRole(['admin', 'super-admin'])) {
-            return true;
-        }
-
-        // Staff with payment viewing permission
-        if ($user->hasPermission('view_payment_details')) {
+        if ($user->hasPermission('payments.view')) {
             return true;
         }
 
@@ -77,7 +71,7 @@ class PaymentPolicy
      */
     public function update(User $user, Payment $payment): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('verify_payments');
+        return $user->hasPermission('payments.verify');
     }
 
     /**
@@ -87,7 +81,7 @@ class PaymentPolicy
      */
     public function delete(User $user, Payment $payment): bool
     {
-        if (!$user->hasAnyRole(['admin', 'super-admin'])) {
+        if (! $user->isAdmin()) {
             return false;
         }
 
@@ -106,7 +100,7 @@ class PaymentPolicy
      */
     public function refund(User $user, Payment $payment): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('payments.refund');
     }
 
     /**

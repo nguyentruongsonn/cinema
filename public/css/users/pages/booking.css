@@ -53,6 +53,20 @@ body {
     margin: 0 auto;
 }
 
+.booking-container-result {
+    grid-template-columns: 1fr;
+}
+
+.booking-main-result {
+    background: transparent;
+    border: 0;
+}
+
+.seat.seat-maintenance {
+    cursor: not-allowed;
+    opacity: 0.2;
+}
+
 .booking-main {
     background-color: var(--bg-secondary);
     border-radius: 12px;
@@ -1690,6 +1704,15 @@ body {
 
 .booking-page #tab-seats.tab-content {
     padding: 32px 24px 40px;
+}
+
+.booking-page #tab-confirm.tab-content,
+.booking-page #tab-success.tab-content {
+    width: min(100%, 760px);
+    margin-left: auto;
+    margin-right: auto;
+    padding: 32px 28px;
+    min-height: auto;
 }
 
 .section-header {
@@ -3543,7 +3566,8 @@ body {
 /* === PREMIUM PAYMENT & RECEIPT === */
 .payment-split-layout {
     display: block;
-    margin-top: 20px;
+    width: min(100%, 560px);
+    margin: 0 auto;
 }
 
 @media (max-width: 992px) {
@@ -3799,7 +3823,7 @@ body {
 
 /* Success Step */
 #tab-success {
-    min-height: 500px;
+    min-height: auto;
 }
 #tab-success.active {
     display: flex;
@@ -3815,7 +3839,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 20px 0;
+    padding: 8px 0;
 }
 
 .result-icon-wrapper {
@@ -3993,6 +4017,58 @@ body {
 .btn-result.btn-view-ticket:hover {
     background: #333;
     color: #ffffff;
+}
+
+.booking-page .booking-container.booking-container-result {
+    display: block;
+    width: min(100% - 24px, 760px);
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.booking-page .booking-main.booking-main-result {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .booking-page .booking-container.booking-container-result {
+        width: calc(100% - 24px);
+    }
+
+    .booking-page #tab-confirm.tab-content,
+    .booking-page #tab-success.tab-content {
+        width: 100%;
+        padding: 24px 16px;
+    }
+
+    .booking-result-screen {
+        max-width: 100%;
+    }
+
+    .result-ticket-card {
+        padding: 18px;
+    }
+
+    .ticket-divider {
+        margin-left: -18px;
+        margin-right: -18px;
+    }
+}
+
+@media (max-width: 576px) {
+    .result-ticket-card > .d-flex {
+        gap: 14px;
+    }
+
+    .result-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .btn-result {
+        width: 100%;
+    }
 }
 .ticket-poster {
     width: 80px;
@@ -4345,6 +4421,17 @@ body {
     position: relative;
     left: 26px;
 }
+
+.booking-svg-definitions { overflow: hidden; position: absolute; }
+.booking-empty-icon { font-size: 32px; opacity: 0.5; }
+.booking-empty-copy { opacity: 0.8; }
+.booking-payment-title { border: 0; font-size: 24px; margin-bottom: 8px; padding: 0; text-transform: none; }
+.receipt-header { isolation: isolate; position: relative; }
+.receipt-header-image { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; z-index: -2; }
+.receipt-total-label, .booking-timer-label { color: #ccc; }
+.booking-timer-label { font-size: 13px; }
+.booking-timer-value { font-size: 14px; font-weight: 700; }
+.bottom-sheet-empty-seat { color: #9e9e9e; font-size: 14px; }
 
 @media (max-width: 768px) {
     .seat-couple-center {

@@ -93,7 +93,7 @@
                     <div class="fw-medium text-white">${tpl.template_name}</div>
                     ${tpl.description ? `<div class="small text-white-50 mt-1">${tpl.description}</div>` : ''}
                     <div class="mt-2">
-                        <a href="/admin/seat-layout-templates/${tpl.id}/seats" class="small text-decoration-none" style="color: var(--accent-color);">
+                    <a href="/admin/seat-layout-templates/${tpl.id}/seats" class="small text-decoration-none admin-accent-link">
                             <i class="bi bi-grid-3x3 me-1"></i>Xem & chỉnh sơ đồ ghế
                         </a>
                     </div>
@@ -200,7 +200,7 @@
         // Delete
         const btnDel = e.target.closest('.btn-delete-template');
         if (btnDel) {
-            if(!confirm('Bạn có chắc muốn xóa mẫu sơ đồ ghế này?')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa mẫu sơ đồ ghế này?', confirmLabel: 'Xóa mẫu', variant: 'danger' })) return;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/seat-layout-templates/${btnDel.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) {
@@ -263,7 +263,7 @@
                     loadData(currentPage, currentSearch, currentStatus);
                 } else {
                     const errData = await res.json();
-                    alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message));
+                    window.showAdminToast?.(window.formatAdminErrors?.(errData.errors || errData.message) || 'Dữ liệu không hợp lệ', 'error');
                 }
             } catch (error) {
                 console.error('Submit form error', error);

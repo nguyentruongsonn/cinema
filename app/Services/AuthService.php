@@ -368,7 +368,9 @@ class AuthService
 
     private function assignDefaultRole(User $user): void
     {
-        $userRole = Role::where('slug', 'user')->first();
+        $userRole = Role::whereIn('slug', ['customer', 'user'])
+            ->orderByRaw("CASE WHEN slug = 'customer' THEN 0 ELSE 1 END")
+            ->first();
 
         if ($userRole) {
             $user->role()->associate($userRole);

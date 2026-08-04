@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\PaymentGatewayException;
+use App\Models\Combo;
 use App\Models\IdempotencyKey;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -61,7 +62,7 @@ class PaymentService
                 $items = collect($validated['items'] ?? []);
 
                 $seatRequests    = $items->where('type', 'seat')->all();
-                $productRequests = $items->where('type', 'product')->all();
+                $productRequests = $items->whereIn('type', ['product', 'combo'])->all();
 
                 // PHASE 1: Validate seat hold BEFORE creating order
                 $seatIds = collect($seatRequests)
@@ -84,14 +85,10 @@ class PaymentService
                         ->with('payment')
                         ->first();
 
-                    if ($existingOrder?->checkout_url) {
+                    if ($existingOrder?->checkout_url || $existingOrder?->isPaid()) {
                         return [
                             'status' => 200,
-                            'data' => [
-                                'checkout_url' => $existingOrder->checkout_url,
-                                'gateway_order_code' => $existingOrder->gateway_order_code,
-                                'order_number' => $existingOrder->code,
-                            ],
+                            'data' => $this->formatInitiateResponse($existingOrder),
                             'payment_id' => $existingOrder->payment?->id,
                         ];
                     }
@@ -118,7 +115,7 @@ class PaymentService
                         ->with('payment')
                         ->first();
 
-                    if ($existingOrder?->checkout_url) {
+                    if ($existingOrder?->checkout_url || $existingOrder?->isPaid()) {
                         return [$existingOrder, $existingOrder->payment, true];
                     }
 
@@ -135,11 +132,12 @@ class PaymentService
                     $validated['voucher_code'] ?? null,
                     (int) ($validated['points_used'] ?? 0),
                 );
+                $isZeroAmountCheckout = (float) $pricing['final_amount'] <= 0.0;
 
                 $order = Order::createPending([
                     'code' => $this->generateOrderNumber(),
                     'gateway_order_code' => $this->generateOrderCode(),
-                    'payment_provider' => 'payos',
+                    'payment_provider' => $isZeroAmountCheckout ? 'internal' : 'payos',
                     'user_id' => $user->id,
                     'showtime_id' => $showtime->id,
                     'checkout_fingerprint' => $checkoutFingerprint,
@@ -200,11 +198,51 @@ class PaymentService
                 }
 
                 foreach ($pricing['products'] as $productData) {
-                    $product = Product::query()->whereKey($productData['id'])->lockForUpdate()->firstOrFail();
                     $quantity = (int) $productData['quantity'];
+                    $itemType = $productData['item_type'] ?? $productData['type'] ?? 'product';
+
+                    if ($itemType === 'combo') {
+                        $combo = Combo::query()
+                            ->whereKey($productData['id'])
+                            ->where('status', 1)
+                            ->with('comboItems.product')
+                            ->lockForUpdate()
+                            ->firstOrFail();
+
+                        foreach ($combo->comboItems as $comboItem) {
+                            $requiredStock = (int) $comboItem->quantity * $quantity;
+                            $product = Product::query()
+                                ->whereKey($comboItem->product_id)
+                                ->where('status', 1)
+                                ->lockForUpdate()
+                                ->firstOrFail();
+
+                            if ((int) $product->stock < $requiredStock) {
+                                throw new \RuntimeException("Combo {$combo->name} kh?ng c?n ?? s? l??ng.", 409);
+                            }
+
+                            $product->decrement('stock', $requiredStock);
+                        }
+
+                        OrderItem::createFromCombo(
+                            $order,
+                            $combo,
+                            $quantity,
+                            (string) $productData['price'],
+                            [
+                                'combo_name' => $productData['name'],
+                                'image_url' => $productData['image_url'] ?? null,
+                                'stock_reserved' => true,
+                            ]
+                        )->save();
+
+                        continue;
+                    }
+
+                    $product = Product::query()->whereKey($productData['id'])->lockForUpdate()->firstOrFail();
 
                     if ((int) $product->stock < $quantity) {
-                        throw new \RuntimeException("Sản phẩm {$product->name} không còn đủ tồn kho.", 409);
+                        throw new \RuntimeException("S?n ph?m {$product->name} kh?ng c?n ?? t?n kho.", 409);
                     }
 
                     $product->decrement('stock', $quantity);
@@ -225,7 +263,7 @@ class PaymentService
                 $payment = Payment::createPending([
                     'order_id' => $order->id,
                     'user_id' => $user->id,
-                    'method' => 'payos',
+                    'method' => $isZeroAmountCheckout ? 'zero_amount' : 'payos',
                     'gateway_order_code' => $order->gateway_order_code,
                     'amount' => $order->total_amount,
                     'payload' => [
@@ -241,12 +279,34 @@ class PaymentService
             if ($checkoutReplayed) {
                 return [
                     'status' => 200,
-                    'data' => [
-                        'checkout_url' => $order->checkout_url,
-                        'gateway_order_code' => $order->gateway_order_code,
-                        'order_number' => $order->code,
-                    ],
+                    'data' => $this->formatInitiateResponse($order),
                     'payment_id' => $payment?->id,
+                ];
+            }
+
+            if ((float) $order->total_amount <= 0.0) {
+                app(AuditLogService::class)->record(
+                    $user,
+                    'order.created',
+                    $order,
+                    [],
+                    $this->auditSnapshots->order($order)
+                );
+
+                app(AuditLogService::class)->record(
+                    $user,
+                    'payment.created',
+                    $payment,
+                    [],
+                    $this->auditSnapshots->payment($payment)
+                );
+
+                $this->fulfillment->finalize((int) $order->gateway_order_code);
+
+                return [
+                    'status' => 200,
+                    'data' => $this->formatInitiateResponse($order->fresh()),
+                    'payment_id' => $payment->id,
                 ];
             }
 
@@ -289,11 +349,7 @@ class PaymentService
                 $this->auditSnapshots->payment($payment)
             );
 
-            $result = [
-                'checkout_url'       => $checkoutUrl,
-                'gateway_order_code' => $order->gateway_order_code,
-                'order_number'       => $order->code,
-            ];
+            $result = $this->formatInitiateResponse($order);
 
                 // Return result in format expected by executeIdempotent()
                 return [
@@ -311,6 +367,18 @@ class PaymentService
 
         // Extract data from idempotent result
         return $idempotentResult['data'];
+    }
+
+    private function formatInitiateResponse(Order $order): array
+    {
+        return [
+            'checkout_url' => $order->checkout_url,
+            'gateway_order_code' => $order->gateway_order_code,
+            'order_number' => $order->code,
+            'payment_status' => $order->payment_status,
+            'requires_payment' => ! $order->isPaid() && (float) $order->total_amount > 0.0,
+            'total_amount' => (float) $order->total_amount,
+        ];
     }
 
     /**

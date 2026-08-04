@@ -1,0 +1,63 @@
+.cinema-pagination {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.cinema-pagination__summary {
+    color: rgba(255, 255, 255, 0.48);
+    flex-basis: 100%;
+    font-size: 0.78rem;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.cinema-pagination__button {
+    align-items: center;
+    background: #19191c;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.68);
+    display: inline-flex;
+    font-size: 0.92rem;
+    font-weight: 700;
+    height: 42px;
+    justify-content: center;
+    min-width: 42px;
+    padding: 0 11px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.cinema-pagination__button:hover:not(:disabled),
+.cinema-pagination__button:focus-visible,
+.cinema-pagination__button.is-active {
+    background: var(--cinema-danger);
+    border-color: var(--cinema-danger);
+    color: #fff;
+}
+
+.cinema-pagination__button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.cinema-pagination__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.38;
+}
+
+.cinema-pagination__ellipsis {
+    color: rgba(255, 255, 255, 0.4);
+    padding: 0 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cinema-pagination__button {
+        transition: none;
+    }
+
+    .cinema-pagination__button:hover:not(:disabled) {
+        transform: none;
+    }
+}

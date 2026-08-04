@@ -399,7 +399,7 @@
         // --- Delete Screen ---
         const delScreen = e.target.closest('.btn-delete-screen');
         if (delScreen) {
-            if(!confirm('Xóa phòng chiếu này sẽ xóa toàn bộ sơ đồ ghế. Tiếp tục?')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa phòng chiếu này?', description: 'Toàn bộ sơ đồ ghế của phòng cũng sẽ bị xóa.', confirmLabel: 'Xóa phòng', variant: 'danger' })) return;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/screens/${delScreen.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) {
@@ -429,7 +429,7 @@
         // --- Delete Format ---
         const delFormat = e.target.closest('.btn-delete-format');
         if (delFormat) {
-            if(!confirm('Bạn có chắc muốn xóa định dạng này?')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa định dạng này?', confirmLabel: 'Xóa định dạng', variant: 'danger' })) return;
             try {
                 referencesLoaded = false;
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/formats/${delFormat.dataset.id}`, { method: 'DELETE' });
@@ -452,7 +452,7 @@
 
         const deleteSound = e.target.closest('.btn-delete-sound');
         if (deleteSound) {
-            if (!confirm('Bạn có chắc muốn xóa định dạng âm thanh này?')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa định dạng âm thanh này?', confirmLabel: 'Xóa định dạng', variant: 'danger' })) return;
             try {
                 referencesLoaded = false;
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/sounds/${deleteSound.dataset.id}`, { method: 'DELETE' });

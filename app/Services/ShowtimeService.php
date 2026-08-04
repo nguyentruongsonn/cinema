@@ -25,7 +25,7 @@ class ShowtimeService
     public function getAll(array $filters = []): LengthAwarePaginator
     {
         $query = Showtime::with([
-            'movie:id,title,slug,duration,age_rating,poster_url',
+            'movie:id,title,slug,duration,age_rating,poster_url,poster_path',
             'screen:id,name,code,format_id,theater_id,capacity',
             'screen.theater:id,name,address,branch_id',
             'screen.theater.branch:id,name',
@@ -371,7 +371,8 @@ class ShowtimeService
             'slug' => $movie->slug,
             'duration' => $movie->duration,
             'age_rating' => $movie->age_rating,
-            'poster_url' => $movie->poster_url,
+            'poster_url' => $movie->poster_display_url,
+            'poster_display_url' => $movie->poster_display_url,
         ];
     }
 

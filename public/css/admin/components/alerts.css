@@ -160,6 +160,9 @@
 }
 
 .admin-toast-close {
+    appearance: none;
+    background: transparent;
+    border: 0;
     flex-shrink: 0;
     width: 20px;
     height: 20px;
@@ -169,6 +172,7 @@
     color: var(--admin-text-muted);
     cursor: pointer;
     border-radius: var(--admin-radius-sm);
+    padding: 0;
     transition: all var(--admin-transition-fast);
 }
 
@@ -212,6 +216,7 @@
     height: 100%;
     background: currentColor;
     transition: width linear;
+    width: 100%;
 }
 
 .admin-toast-success .admin-toast-progress-bar {
@@ -352,3 +357,8 @@
         width: 100%;
     }
 }
+.admin-data-state { align-items: center; color: var(--admin-text-muted); display: flex; flex-direction: column; justify-content: center; min-height: 240px; padding: var(--admin-space-2xl); text-align: center; }
+.admin-data-state__icon { color: var(--admin-text-muted); font-size: 2.75rem; margin-bottom: var(--admin-space-md); }
+.admin-data-state__title { color: var(--admin-text-primary); font-size: var(--admin-font-size-lg); margin-bottom: var(--admin-space-sm); }
+.admin-data-state__message { margin: 0; max-width: 520px; }
+.admin-data-state--error .admin-data-state__icon { color: var(--admin-error); }

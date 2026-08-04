@@ -91,7 +91,7 @@
             <div class="stat-value" id="statRetention">0%</div>
             <div class="custom-progress-wrapper mt-3">
                 <div class="custom-progress">
-                    <div class="custom-progress-bar" id="statRetentionProgress" style="width: 0%"></div>
+                            <div class="custom-progress-bar" id="statRetentionProgress"></div>
                 </div>
             </div>
         </div>
@@ -104,13 +104,8 @@
         <div class="admin-table-container">
             <div class="chart-header">
                 <h3 class="chart-title">Doanh Thu Theo Thời Gian</h3>
-                <select id="revenueFilter" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;">
-                    <option value="week">Tuần này</option>
-                    <option value="month" selected>Tháng này</option>
-                    <option value="year">Năm nay</option>
-                </select>
             </div>
-            <div id="revenueChart" style="min-height:300px;"></div>
+            <div id="revenueChart" class="admin-chart-h-300"></div>
         </div>
     </div>
 </div>
@@ -122,7 +117,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Lượng Khách Hàng Theo Giờ & Tuần</h3>
             </div>
-            <div id="trafficHeatmap" style="min-height:350px;"></div>
+            <div id="trafficHeatmap" class="admin-chart-h-350"></div>
         </div>
     </div>
 </div>
@@ -132,11 +127,6 @@
     <div class="col-12">
         <div class="section-header">
             <h3 class="section-title">Top Phim Doanh Thu Cao Nhất</h3>
-            <select id="topMoviesFilter" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;">
-                <option value="week">Tuần này</option>
-                <option value="month" selected>Tháng này</option>
-                <option value="year">Năm nay</option>
-            </select>
         </div>
     </div>
 </div>

@@ -11,6 +11,7 @@ use App\Models\Order;
 use App\Models\IdempotencyKey;
 use App\Http\Resources\OrderResource;
 use App\Http\Resources\AdminOrderSummaryResource;
+use App\Services\OrderExpirationService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +23,8 @@ class OrderController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly OrderService $orderService
+        private readonly OrderService $orderService,
+        private readonly OrderExpirationService $orderExpirationService
     ) {
     }
 
@@ -155,6 +157,8 @@ class OrderController extends Controller
 
     public function adminOrders(Request $request)
     {
+        $this->orderExpirationService->expirePendingOrders();
+
         $validated = $request->validate([
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
             'status' => ['nullable', 'string', 'in:all,pending,paid,confirmed,cancelled,expired,failed'],
@@ -181,7 +185,7 @@ class OrderController extends Controller
             ->with([
                 'user:id,name,email,phone',
                 'showtime:id,movie_id,screen_id,scheduled_at',
-                'showtime.movie:id,title,poster_url,duration,age_rating',
+                'showtime.movie:id,title,poster_url,poster_path,duration,age_rating',
                 'showtime.screen:id,name,theater_id',
                 'showtime.screen.theater:id,name',
                 'orderItems:id,order_id,item_type,metadata',
@@ -227,6 +231,15 @@ class OrderController extends Controller
         $order = Order::query()
             ->with(['user', 'showtime.movie', 'showtime.screen.theater.branch', 'orderItems', 'tickets.seat.seatType', 'payment'])
             ->findOrFail($id);
+
+        $order = $this->orderExpirationService->expireOrder($order)->load([
+            'user',
+            'showtime.movie',
+            'showtime.screen.theater.branch',
+            'orderItems',
+            'tickets.seat.seatType',
+            'payment',
+        ]);
 
         return $this->successResponse((new OrderResource($order))->resolve(), 'Admin order retrieved successfully');
     }

@@ -11,7 +11,8 @@
 <div class="article-page">
 
     {{-- 1. Hero Article Header with Backdrop --}}
-    <section class="article-hero-section" style="background-image: url('{{ $post->image_url }}');">
+    <section class="article-hero-section">
+        <img class="article-hero-image" src="{{ $post->image_url }}" alt="" aria-hidden="true">
         <div class="article-hero-overlay"></div>
         <div class="container article-hero-content">
             <div class="mb-3">
@@ -125,36 +126,19 @@
 
     {{-- 3. Related Articles Section (Bài Viết Liên Quan) --}}
     @if($relatedPosts->isNotEmpty())
-    <section class="article-related-section py-5">
+    <section class="article-related-section home-posts-section content-posts-section py-5" aria-labelledby="relatedPostsTitle">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-                <h2 class="section-title mb-0">Bài Viết Liên Quan</h2>
-                <a href="{{ route('posts.index') }}" class="view-all-link">
-                    <span>Xem tất cả</span> <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
+            <x-user.content-section-header
+                eyebrow="CINEMA JOURNAL"
+                title="Bài Viết Liên Quan"
+                title-id="relatedPostsTitle"
+                :href="route('posts.index')"
+            />
 
             <div class="row g-4">
                 @foreach($relatedPosts as $relPost)
-                <div class="col-md-4">
-                    <article class="cinema-news-card vertical-card h-100">
-                        <a href="{{ route('posts.show', ['post' => $relPost->slug]) }}" class="news-card-img-wrapper d-block">
-                            <img src="{{ $relPost->image_url }}" alt="{{ $relPost->title }}" loading="lazy">
-                            <span class="news-card-badge">{{ $relPost->badge_text }}</span>
-                        </a>
-                        <div class="news-card-body d-flex flex-column justify-content-between">
-                            <div>
-                                <h3 class="news-card-title mb-2">
-                                    <a href="{{ route('posts.show', ['post' => $relPost->slug]) }}">{{ $relPost->title }}</a>
-                                </h3>
-                                <p class="news-card-excerpt mb-3">{{ Str::limit($relPost->excerpt, 100) }}</p>
-                            </div>
-                            <div class="news-card-meta d-flex justify-content-between align-items-center pt-2 border-top border-secondary border-opacity-25">
-                                <span><i class="bi bi-calendar3 me-1"></i>{{ $relPost->published_at?->format('d Tháng m, Y') }}</span>
-                                <span><i class="bi bi-clock me-1"></i>{{ $relPost->reading_time }} phút đọc</span>
-                            </div>
-                        </div>
-                    </article>
+                <div class="col-12 col-md-4">
+                    <x-user.post-card :post="$relPost" :excerpt-limit="100" />
                 </div>
                 @endforeach
             </div>
@@ -166,7 +150,7 @@
     <div class="container py-4 text-center border-top">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 text-white-50 small">
             <span class="fw-bold text-white letter-spacing-1">CINEMA PREMIUM</span>
-            <button type="button" class="btn-back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'});" aria-label="Quay lên đầu trang">
+            <button type="button" class="btn-back-to-top" data-back-to-top aria-label="Quay lên đầu trang">
                 <i class="bi bi-arrow-up"></i>
             </button>
         </div>

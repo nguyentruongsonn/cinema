@@ -10,7 +10,7 @@
     <div class="filter-bar mb-4">
         <div class="filter-bar-inner align-items-center w-100">
             <h5 class="mb-0 text-white fw-bold">
-                <i class="bi bi-grid-3x3 me-2" style="color:var(--accent-color);"></i>
+                <i class="bi bi-grid-3x3 me-2 admin-accent-icon"></i>
                 <span id="screenNameTitle">Đang tải...</span>
             </h5>
             <span class="ms-2 badge bg-secondary" id="screenCodeBadge">--</span>
@@ -82,7 +82,7 @@
             {{-- ── Thông tin phòng chiếu ──────────────────────────── --}}
             <div class="chart-card p-4 mb-3">
                 <h6 class="text-secondary fw-semibold mb-3 text-uppercase card-heading-title">
-                    <i class="bi bi-info-circle me-1" style="color:var(--accent-color);"></i>Thông tin
+                    <i class="bi bi-info-circle me-1 admin-accent-icon"></i>Thông tin
                 </h6>
                 <div class="d-flex flex-column gap-2">
                     <div class="d-flex justify-content-between align-items-center">
@@ -121,7 +121,7 @@
             {{-- ── Toggle hoạt động phòng chiếu ────────────────────── --}}
             <div class="chart-card p-4 mb-3">
                 <h6 class="text-secondary fw-semibold mb-3 text-uppercase card-heading-title">
-                    <i class="bi bi-toggles me-1" style="color:var(--accent-color);"></i>Hoạt động
+                    <i class="bi bi-toggles me-1 admin-accent-icon"></i>Hoạt động
                 </h6>
                 <div class="d-flex align-items-center justify-content-between">
                     <span class="small text-white">Kích hoạt phòng chiếu</span>

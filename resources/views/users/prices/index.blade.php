@@ -32,7 +32,7 @@
             </div>
             
             <!-- Tabs Content -->
-            <div class="pricing-tabs d-none" id="pricing-tabs-container">
+            <div class="pricing-tabs d-none" id="pricing-tabs-container" role="tablist" aria-label="Chọn rạp" data-tabs>
                 <!-- Dynamically loaded tabs -->
             </div>
         </div>
@@ -43,7 +43,7 @@
         <div class="container">
             <!-- Table Skeleton -->
             <div id="pricingTableSkeleton">
-                <div class="theater-pricing-wrapper" style="display: block;">
+                <div class="theater-pricing-wrapper">
                     <div class="pricing-card">
                         <div class="skeleton skeleton-title"></div>
                         

@@ -17,6 +17,9 @@
     let cameraGeneration = 0;
     let verificationPromise = null;
     let verificationController = null;
+    let barcodeDetector = null;
+    let barcodeDetecting = false;
+    let audioContext = null;
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
@@ -31,6 +34,7 @@
         if (!modalEl) return;
 
         scannerModal = new bootstrap.Modal(modalEl);
+        barcodeDetector = createBarcodeDetector();
 
         // Button event listeners
         document.addEventListener('click', (event) => {
@@ -63,18 +67,18 @@
     function showCameraMode() {
         document.getElementById('manualScanBtn').classList.remove('active');
         document.getElementById('cameraScanBtn').classList.add('active');
-        document.getElementById('manualScanner').style.display = 'none';
-        document.getElementById('cameraScanner').style.display = 'block';
-        document.getElementById('scanResult').style.display = 'none';
+        document.getElementById('manualScanner').classList.add('d-none');
+        document.getElementById('cameraScanner').classList.remove('d-none');
+        document.getElementById('scanResult').classList.add('d-none');
         startCamera();
     }
 
     function showManualMode() {
         document.getElementById('cameraScanBtn').classList.remove('active');
         document.getElementById('manualScanBtn').classList.add('active');
-        document.getElementById('cameraScanner').style.display = 'none';
-        document.getElementById('manualScanner').style.display = 'block';
-        document.getElementById('scanResult').style.display = 'none';
+        document.getElementById('cameraScanner').classList.add('d-none');
+        document.getElementById('manualScanner').classList.remove('d-none');
+        document.getElementById('scanResult').classList.add('d-none');
         stopCamera();
         document.getElementById('ticketCodeInput')?.focus();
     }
@@ -138,16 +142,76 @@
                 lastScanAt = Date.now();
                 const result = window.__ticketQrDecoder(imageData.data, imageData.width, imageData.height);
                 if (result?.data) {
-                    scanning = false;
-                    stopCamera();
-                    document.getElementById('ticketCodeInput').value = result.data.trim();
-                    verifyTicket();
+                    handleScannedCode(result.data);
                     return;
                 }
             }
         }
 
+        if (barcodeDetector && !barcodeDetecting && Date.now() - lastScanAt >= 250) {
+            barcodeDetecting = true;
+            barcodeDetector.detect(canvas)
+                .then((codes) => {
+                    if (!scanning || !codes?.length) return;
+                    const value = codes[0]?.rawValue || codes[0]?.rawData;
+                    if (value) {
+                        lastScanAt = Date.now();
+                        handleScannedCode(value);
+                    }
+                })
+                .catch(() => {})
+                .finally(() => {
+                    barcodeDetecting = false;
+                });
+        }
+
         animationFrame = requestAnimationFrame(scanForCode);
+    }
+
+    function handleScannedCode(value) {
+        const code = normalizeScanCode(value);
+        if (!code) return;
+        scanning = false;
+        stopCamera();
+        document.getElementById('ticketCodeInput').value = code;
+        verifyTicket();
+    }
+
+
+    function normalizeScanCode(rawValue) {
+        const value = String(rawValue || '').trim();
+        if (!value) return '';
+
+        try {
+            const parsed = JSON.parse(value);
+            const parsedCode = parsed?.ticket_code;
+            if (parsedCode) return String(parsedCode).trim();
+        } catch (_) {}
+
+        try {
+            const url = new URL(value);
+            const segments = url.pathname.split('/').filter(Boolean);
+            const lastSegment = segments.at(-1);
+            if (lastSegment) return decodeURIComponent(lastSegment).trim();
+        } catch (_) {}
+
+        const prefixedCode = value.match(/\b(TKT-[A-Z0-9_-]+)\b/i)?.[1];
+        return (prefixedCode || value).trim();
+    }
+
+    function createBarcodeDetector() {
+        if (!('BarcodeDetector' in window)) return null;
+        try {
+            return new window.BarcodeDetector({
+                formats: ['qr_code', 'code_128', 'code_39', 'code_93', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf']
+            });
+        } catch (_) {
+            try {
+                return new window.BarcodeDetector();
+            } catch (__) {
+                return null;
+            }
+        }
     }
 
     function verifyTicket() {
@@ -161,28 +225,27 @@
 
     async function verifyTicketRequest() {
         const input = document.getElementById('ticketCodeInput');
-        const code = input.value.trim();
+        const code = normalizeScanCode(input.value);
 
         if (!code) {
-            showResult('warning', 'Vui lòng nhập mã vé');
+            showResult('warning', 'Vui lòng nhập mã vé.');
             return;
         }
 
         // Show loading
         const btn = document.getElementById('verifyTicketBtn');
-        const originalText = btn.textContent;
+        const originalHtml = btn.innerHTML;
         btn.disabled = true;
-        btn.textContent = 'Đang xác thực...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span>Đang xác thực...</span>';
         verificationController = new AbortController();
 
         try {
-            const response = await fetch('/api/v1/admin/tickets/verify', {
+            const response = await window.AdminCore.apiFetch('/api/v1/admin/tickets/verify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                credentials: 'include',
                 signal: verificationController.signal,
                 body: JSON.stringify({ ticket_code: code })
             });
@@ -193,13 +256,13 @@
                 showResult('success', 'Xác thực thành công!', data.data);
                 input.value = '';
             } else {
-                showResult('error', data.message || 'Vé không hợp lệ');
+                showResult('error', data.message || 'Mã vé không hợp lệ');
             }
         } catch (error) {
             if (error.name !== 'AbortError') showResult('error', 'Lỗi kết nối: ' + error.message);
         } finally {
             btn.disabled = false;
-            btn.textContent = originalText;
+            btn.innerHTML = originalHtml;
         }
     }
 
@@ -217,7 +280,13 @@
         if (type === 'success' && ticketData) {
             const details = document.createElement('div');
             details.className = 'row g-2 small mt-2';
-            [['Mã vé', ticketData.code], ['Phim', ticketData.movie], ['Suất chiếu', ticketData.showtime], ['Ghế', ticketData.seat], ['Trạng thái', ticketData.status]].forEach(([label, value]) => {
+            [
+                ['M? v?', ticketData.code],
+                ['Phim', ticketData.movie],
+                ['Su?t chi?u', ticketData.showtime],
+                ['Gh?', ticketData.seat],
+                ['Tr?ng th?i', ticketData.status],
+            ].forEach(([label, value]) => {
                 const labelNode = document.createElement('strong');
                 labelNode.className = 'col-6';
                 labelNode.textContent = label;
@@ -229,21 +298,56 @@
             alert.appendChild(details);
         }
         resultDiv.appendChild(alert);
-        resultDiv.style.display = 'block';
+        resultDiv.classList.remove('d-none');
+        playScanSound(type === 'success' ? 'success' : 'error');
 
         // Auto-hide after 5 seconds (except success)
         if (type !== 'success') {
             setTimeout(() => {
-                resultDiv.style.display = 'none';
+                resultDiv.classList.add('d-none');
             }, 5000);
         }
+    }
+
+
+    function playScanSound(type) {
+        try {
+            const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextCtor) return;
+            audioContext ||= new AudioContextCtor();
+            if (audioContext.state === 'suspended') audioContext.resume?.();
+
+            const now = audioContext.currentTime;
+            const gain = audioContext.createGain();
+            gain.connect(audioContext.destination);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(type === 'success' ? 0.08 : 0.11, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + (type === 'success' ? 0.22 : 0.34));
+
+            const playTone = (frequency, start, duration) => {
+                const osc = audioContext.createOscillator();
+                osc.type = type === 'success' ? 'sine' : 'square';
+                osc.frequency.setValueAtTime(frequency, start);
+                osc.connect(gain);
+                osc.start(start);
+                osc.stop(start + duration);
+            };
+
+            if (type === 'success') {
+                playTone(740, now, 0.08);
+                playTone(988, now + 0.09, 0.12);
+            } else {
+                playTone(220, now, 0.14);
+                playTone(165, now + 0.16, 0.16);
+            }
+        } catch (_) {}
     }
 
     function cleanup() {
         verificationController?.abort();
         stopCamera();
         document.getElementById('ticketCodeInput').value = '';
-        document.getElementById('scanResult').style.display = 'none';
+        document.getElementById('scanResult').classList.add('d-none');
         showManualMode();
     }
 

@@ -58,12 +58,12 @@
         </div>
 
         <form id="searchForm" class="admin-filter-search d-flex gap-2 align-items-end">
-            <input type="text" id="searchFilter" class="admin-filter-input" placeholder="Tìm mã đơn, email, SĐT..." style="min-width: 240px;">
+            <input type="text" id="searchFilter" class="admin-filter-input admin-min-w-240" placeholder="Tìm mã đơn, email, SĐT...">
             <button class="admin-filter-btn" type="submit" id="btnApplyFilter" title="Tìm kiếm">
                 <i class="bi bi-search"></i>
                 <span>Tìm kiếm</span>
             </button>
-            <button class="admin-filter-btn" type="button" id="btnResetFilter" title="Đặt lại bộ lọc" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <button class="admin-filter-btn admin-filter-reset" type="button" id="btnResetFilter" title="Đặt lại bộ lọc">
                 <i class="bi bi-arrow-counterclockwise"></i>
                 <span>Đặt lại</span>
             </button>
@@ -124,7 +124,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title d-flex align-items-center gap-2" id="orderDetailModalLabel">
-                    <i class="bi bi-receipt me-2" style="color:var(--accent-color);"></i>
+                    <i class="bi bi-receipt me-2 admin-accent-icon"></i>
                     Chi tiết đơn hàng <span id="modalOrderCodeTitle"></span>
                     <button type="button" class="btn btn-sm btn-outline-secondary border-0 ms-2" id="btnCopyOrderCode" title="Sao chép mã đơn hàng">
                         <i class="bi bi-copy"></i>

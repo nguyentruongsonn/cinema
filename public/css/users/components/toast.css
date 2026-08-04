@@ -1,252 +1,144 @@
-/**
- * Toast Notification Component
- * Provides user feedback through non-intrusive notifications
- */
+/* Shared public toast. Namespace prevents conflicts with Bootstrap `.toast`. */
 
-/* ============================================
-   TOAST CONTAINER
-   ============================================ */
-
-.toast-container {
-  position: fixed;
-  z-index: var(--z-notification);
-  pointer-events: none;
+.cinema-toast-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: min(390px, calc(100vw - 32px));
+    pointer-events: none;
+    position: fixed;
+    z-index: var(--z-notification, 1080);
 }
 
-/* Toast positions */
-.toast-container.top-right {
-  top: var(--space-4);
-  right: var(--space-4);
+.cinema-toast-container[data-position="top-right"] { right: 18px; top: 104px; }
+.cinema-toast-container[data-position="top-left"] { left: 18px; top: 104px; }
+.cinema-toast-container[data-position="top-center"] { left: 50%; top: 104px; transform: translateX(-50%); }
+.cinema-toast-container[data-position="bottom-right"] { bottom: 24px; right: 18px; }
+.cinema-toast-container[data-position="bottom-left"] { bottom: 24px; left: 18px; }
+.cinema-toast-container[data-position="bottom-center"] { bottom: 24px; left: 50%; transform: translateX(-50%); }
+
+.cinema-toast {
+    align-items: flex-start;
+    background: rgba(27, 27, 30, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.46);
+    color: #fff;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 34px minmax(0, 1fr) 32px;
+    min-width: 320px;
+    opacity: 0;
+    overflow: hidden;
+    padding: 14px 12px 14px 14px;
+    pointer-events: auto;
+    position: relative;
+    transform: translate3d(22px, 0, 0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.toast-container.top-left {
-  top: var(--space-4);
-  left: var(--space-4);
+.cinema-toast.is-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
 }
 
-.toast-container.top-center {
-  top: var(--space-4);
-  left: 50%;
-  transform: translateX(-50%);
+.cinema-toast.is-hiding {
+    opacity: 0;
+    transform: translate3d(18px, 0, 0);
 }
 
-.toast-container.bottom-right {
-  bottom: var(--space-4);
-  right: var(--space-4);
+.cinema-toast__icon {
+    align-items: center;
+    border-radius: 50%;
+    display: inline-flex;
+    font-size: 0.95rem;
+    height: 32px;
+    justify-content: center;
+    width: 32px;
 }
 
-.toast-container.bottom-left {
-  bottom: var(--space-4);
-  left: var(--space-4);
+.cinema-toast--success .cinema-toast__icon { background: rgba(37, 184, 105, 0.18); color: #55dc91; }
+.cinema-toast--error .cinema-toast__icon { background: rgba(255, 57, 68, 0.18); color: #ff6871; }
+.cinema-toast--warning .cinema-toast__icon { background: rgba(255, 174, 52, 0.18); color: #ffc263; }
+.cinema-toast--info .cinema-toast__icon { background: rgba(74, 156, 255, 0.18); color: #79b8ff; }
+
+.cinema-toast__content {
+    min-width: 0;
+    padding-top: 1px;
 }
 
-.toast-container.bottom-center {
-  bottom: var(--space-4);
-  left: 50%;
-  transform: translateX(-50%);
+.cinema-toast__title {
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 750;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 
-/* ============================================
-   TOAST BASE
-   ============================================ */
-
-.toast {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 300px;
-  max-width: 500px;
-  padding: var(--space-4);
-  margin-bottom: var(--space-3);
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
-  pointer-events: auto;
-  opacity: 0;
-  transform: translateX(100%);
-  transition: all var(--transition-base);
+.cinema-toast__message {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.8rem;
+    line-height: 1.45;
+    margin-top: 3px;
+    overflow-wrap: anywhere;
 }
 
-.toast.show {
-  opacity: 1;
-  transform: translateX(0);
+.cinema-toast__close {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 7px;
+    color: rgba(255, 255, 255, 0.48);
+    display: inline-flex;
+    height: 32px;
+    justify-content: center;
+    padding: 0;
+    width: 32px;
 }
 
-.toast.hiding {
-  opacity: 0;
-  transform: translateX(100%);
+.cinema-toast__close:hover,
+.cinema-toast__close:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
 }
 
-/* ============================================
-   TOAST VARIANTS
-   ============================================ */
-
-.toast.toast-success {
-  border-left: 4px solid var(--color-success);
+.cinema-toast__progress {
+    background: currentColor;
+    bottom: 0;
+    height: 3px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    transform: scaleX(1);
+    transform-origin: left;
+    transition-property: transform;
+    transition-timing-function: linear;
 }
 
-.toast.toast-error {
-  border-left: 4px solid var(--color-error);
+.cinema-toast--success .cinema-toast__progress { color: #36cc7c; }
+.cinema-toast--error .cinema-toast__progress { color: #ff3944; }
+.cinema-toast--warning .cinema-toast__progress { color: #ffae34; }
+.cinema-toast--info .cinema-toast__progress { color: #4a9cff; }
+
+@media (max-width: 767.98px) {
+    .cinema-toast-container[data-position] {
+        left: 16px;
+        max-width: none;
+        right: 16px;
+        transform: none;
+    }
+
+    .cinema-toast-container[data-position^="top"] { top: 82px; }
+    .cinema-toast-container[data-position^="bottom"] { bottom: 82px; }
+
+    .cinema-toast {
+        min-width: 0;
+        width: 100%;
+    }
 }
 
-.toast.toast-warning {
-  border-left: 4px solid var(--color-warning);
-}
-
-.toast.toast-info {
-  border-left: 4px solid var(--color-info);
-}
-
-/* ============================================
-   TOAST CONTENT
-   ============================================ */
-
-.toast-icon {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-full);
-}
-
-.toast-success .toast-icon {
-  background: var(--color-success);
-  color: white;
-}
-
-.toast-error .toast-icon {
-  background: var(--color-error);
-  color: white;
-}
-
-.toast-warning .toast-icon {
-  background: var(--color-warning);
-  color: white;
-}
-
-.toast-info .toast-icon {
-  background: var(--color-info);
-  color: white;
-}
-
-.toast-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.toast-title {
-  font-weight: var(--font-semibold);
-  font-size: var(--text-base);
-  color: var(--text-primary);
-  margin-bottom: var(--space-1);
-}
-
-.toast-message {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: var(--leading-normal);
-}
-
-.toast-close {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
-}
-
-.toast-close:hover {
-  background: var(--gray-100);
-  color: var(--text-primary);
-}
-
-/* ============================================
-   TOAST PROGRESS BAR
-   ============================================ */
-
-.toast-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 3px;
-  background: var(--color-primary);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  transition: width linear;
-}
-
-.toast-success .toast-progress {
-  background: var(--color-success);
-}
-
-.toast-error .toast-progress {
-  background: var(--color-error);
-}
-
-.toast-warning .toast-progress {
-  background: var(--color-warning);
-}
-
-.toast-info .toast-progress {
-  background: var(--color-info);
-}
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
-
-@media (max-width: 768px) {
-  .toast {
-    min-width: calc(100vw - var(--space-8));
-    max-width: calc(100vw - var(--space-8));
-  }
-
-  .toast-container.top-right,
-  .toast-container.bottom-right {
-    right: var(--space-4);
-    left: var(--space-4);
-  }
-
-  .toast-container.top-left,
-  .toast-container.bottom-left {
-    left: var(--space-4);
-    right: var(--space-4);
-  }
-
-  .toast-container.top-center,
-  .toast-container.bottom-center {
-    left: var(--space-4);
-    right: var(--space-4);
-    transform: none;
-  }
-}
-
-/* ============================================
-   DARK MODE
-   ============================================ */
-
-@media (prefers-color-scheme: dark) {
-  .toast {
-    background: var(--gray-800);
-  }
-
-  .toast-close:hover {
-    background: var(--gray-700);
-  }
-}
-
-.dark-mode .toast {
-  background: var(--gray-800);
-}
-
-.dark-mode .toast-close:hover {
-  background: var(--gray-700);
+@media (prefers-reduced-motion: reduce) {
+    .cinema-toast {
+        transition: none;
+    }
 }

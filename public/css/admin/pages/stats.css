@@ -100,6 +100,16 @@
     margin-right: 8px;
     flex-shrink: 0;
 }
+.pay-legend-dot--0 { background: #e50914; }
+.pay-legend-dot--1 { background: #f59e0b; }
+.pay-legend-dot--2 { background: #10b981; }
+.pay-legend-dot--3 { background: #3b82f6; }
+.pay-legend-dot--4 { background: #8b5cf6; }
+.pay-legend-dot--5 { background: #ec4899; }
+.pay-legend-dot--6 { background: #14b8a6; }
+.pay-legend-dot--7 { background: #f97316; }
+.pay-legend-dot--8 { background: #a3e635; }
+.pay-legend-dot--9 { background: #06b6d4; }
 
 /* Responsive */
 @media (max-width: 767px) {
@@ -166,4 +176,31 @@
     color: #ffffff;
     background: linear-gradient(135deg, #e50914, #b8070f);
     box-shadow: 0 3px 10px rgba(229, 9, 20, 0.25);
+}
+
+/* ApexCharts readability hardening */
+#adminPageContent .apexcharts-legend,
+#adminPageContent .apexcharts-legend-text {
+    color: #e4e4e7 !important;
+    fill: #e4e4e7 !important;
+    font-weight: 700 !important;
+    letter-spacing: .01em;
+}
+
+#adminPageContent .apexcharts-text,
+#adminPageContent .apexcharts-xaxis-label,
+#adminPageContent .apexcharts-yaxis-label {
+    fill: #d4d4d8 !important;
+    font-weight: 600 !important;
+}
+
+#adminPageContent .apexcharts-gridline {
+    stroke: rgba(255, 255, 255, .08) !important;
+}
+
+#adminPageContent .apexcharts-tooltip,
+#adminPageContent .apexcharts-tooltip-title {
+    background: #18181b !important;
+    border-color: rgba(255, 255, 255, .14) !important;
+    color: #f4f4f5 !important;
 }

@@ -26,6 +26,14 @@
     visibility: visible;
 }
 
+body.admin-dialog-open {
+    overflow: hidden;
+}
+
+.admin-dialog-backdrop {
+    z-index: calc(var(--admin-z-modal-backdrop) + 20);
+}
+
 /* ── Modal Container ─────────────────────────────────────────────────── */
 .admin-modal {
     position: relative;

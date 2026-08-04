@@ -52,18 +52,18 @@ import Modal from '../components/modal.js';
         const banners = homeData?.featured_banners || (homeData?.featured_banner ? [homeData.featured_banner] : []);
 
         if (!homeData || (!banners.length && !homeData.featured_movie)) {
-            if (heroSkeleton) heroSkeleton.style.display = 'none';
+            heroSkeleton?.classList.add('d-none');
             return;
         }
 
         const banner = banners.length ? banners[Math.min(heroIndex, banners.length - 1)] : null;
         const movie = homeData.featured_movie;
-        const bannerUrl = banner?.image_url || movie?.backdrop_url || movie?.poster_url || '/images/default-banner.jpg';
+        const bannerUrl = banner?.image_url || movie?.backdrop_url || movie?.poster_display_url || movie?.poster_url || '/images/default-banner.jpg';
 
         // Set backdrop image
         if (heroBackdrop) {
             const safeBannerUrl = safeImageUrl(bannerUrl);
-            heroBackdrop.style.backgroundImage = safeBannerUrl ? `url("${safeBannerUrl}")` : '';
+            heroBackdrop.style.setProperty('--hero-backdrop-image', safeBannerUrl ? `url("${safeBannerUrl}")` : 'none');
         }
 
         if (banner) {
@@ -76,7 +76,7 @@ import Modal from '../components/modal.js';
                 ${banner.description ? `<p class="hero-description">${escapeHtml(banner.description)}</p>` : ''}
                 ${safeLink ? `<div class="hero-actions"><a class="btn-book-now" href="${escapeHtml(safeLink)}"><i class="bi bi-arrow-right-circle"></i> Xem chi tiết</a></div>` : ''}
             `;
-            if (heroSkeleton) heroSkeleton.style.display = 'none';
+            heroSkeleton?.classList.add('d-none');
             heroContent.classList.remove('d-none');
             renderHeroDots(banners.length);
             return;
@@ -126,7 +126,7 @@ import Modal from '../components/modal.js';
             <p class="hero-description">${escapeHtml(movie.synopsis || movie.description || '')}</p>
 
             <div class="hero-actions">
-                <button class="btn-book-now" type="button" onclick="document.querySelector('.quick-booking-section')?.scrollIntoView({behavior:'smooth', block:'center'})">
+                <button class="btn-book-now" type="button" data-scroll-to-booking>
                     <i class="bi bi-ticket-perforated-fill"></i>
                     Book Now
                 </button>
@@ -136,15 +136,18 @@ import Modal from '../components/modal.js';
                         Watch Trailer
                     </a>
                 ` : `
-                    <button class="btn-trailer" type="button" disabled style="opacity:0.5;cursor:default">
+                        <button class="btn-trailer btn-trailer--disabled" type="button" disabled>
                         <i class="bi bi-play-circle"></i>
                         Watch Trailer
                     </button>
                 `}
             </div>
         `;
+        heroInner.querySelector('[data-scroll-to-booking]')?.addEventListener('click', () => {
+            document.querySelector('.quick-booking-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
 
-        if (heroSkeleton) heroSkeleton.style.display = 'none';
+        heroSkeleton?.classList.add('d-none');
         heroContent.classList.remove('d-none');
     }
 
@@ -200,7 +203,7 @@ import Modal from '../components/modal.js';
         const bookingWidget = document.getElementById('bookingWidget');
 
         if (!homeData) {
-            if (bookingSkeleton) bookingSkeleton.style.display = 'none';
+            bookingSkeleton?.classList.add('d-none');
             return;
         }
 
@@ -234,7 +237,7 @@ import Modal from '../components/modal.js';
             findSeatsBtn.addEventListener('click', handleFindSeats);
         }
 
-        if (bookingSkeleton) bookingSkeleton.style.display = 'none';
+        bookingSkeleton?.classList.add('d-none');
         if (bookingWidget) bookingWidget.classList.remove('d-none');
     }
 
@@ -335,14 +338,14 @@ import Modal from '../components/modal.js';
                     const searchTerm = e.target.value.toLowerCase();
                     options.forEach(option => {
                         const searchText = option.dataset.search || option.textContent.toLowerCase();
-                        option.style.display = searchText.includes(searchTerm) ? 'block' : 'none';
+                        option.classList.toggle('d-none', !searchText.includes(searchTerm));
                     });
                 });
 
                 // Reset search when dropdown opens
                 trigger.addEventListener('click', () => {
                     searchInput.value = '';
-                    options.forEach(option => option.style.display = 'block');
+                    options.forEach(option => option.classList.remove('d-none'));
                 });
             }
         });
@@ -377,7 +380,7 @@ import Modal from '../components/modal.js';
         const moviesGrid = document.getElementById('moviesGrid');
 
         if (!homeData || !homeData.now_showing_movies || homeData.now_showing_movies.length === 0) {
-            if (moviesSkeleton) moviesSkeleton.style.display = 'none';
+            moviesSkeleton?.classList.add('d-none');
             moviesGrid.innerHTML = '<p class="text-center text-muted">No movies available</p>';
             moviesGrid.classList.remove('d-none');
             return;
@@ -396,7 +399,7 @@ import Modal from '../components/modal.js';
             return `
                 <a href="/movies/${movie.slug}" class="movie-card">
                     <div class="movie-poster">
-                        <img src="${escapeHtml(movie.poster_url || '/images/default-poster.jpg')}"
+                        <img src="${escapeHtml(movie.poster_display_url || movie.poster_url || '/images/default-poster.jpg')}"
                              alt="${escapeHtml(movie.title)}"
                              loading="lazy">
                         ${movie.is_hot ? '<span class="movie-badge-hot">HOT</span>' : ''}
@@ -411,7 +414,7 @@ import Modal from '../components/modal.js';
             `;
         }).join('');
 
-        if (moviesSkeleton) moviesSkeleton.style.display = 'none';
+        moviesSkeleton?.classList.add('d-none');
         moviesGrid.classList.remove('d-none');
     }
 
@@ -445,9 +448,9 @@ import Modal from '../components/modal.js';
         const bookingSkeleton = document.getElementById('bookingSkeleton');
         const moviesSkeleton = document.getElementById('moviesSkeleton');
 
-        if (heroSkeleton) heroSkeleton.style.display = 'none';
-        if (bookingSkeleton) bookingSkeleton.style.display = 'none';
-        if (moviesSkeleton) moviesSkeleton.style.display = 'none';
+        heroSkeleton?.classList.add('d-none');
+        bookingSkeleton?.classList.add('d-none');
+        moviesSkeleton?.classList.add('d-none');
 
         // Use Toast notification instead of inline alerts
         if (typeof Toast !== 'undefined') {

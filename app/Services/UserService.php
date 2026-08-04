@@ -20,7 +20,7 @@ class UserService
      */
     public function getPaginatedUsers(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = User::with('role');
+        $query = User::with(['role', 'theaters:id,name']);
 
         // Search by name or email - bounded and normalized
         if (!empty($filters['search'])) {
@@ -85,7 +85,7 @@ class UserService
     /**
      * Create new user
      */
-    public function createUser(array $data, ?int $roleId = null, bool $status = true): User
+    public function createUser(array $data, ?int $roleId = null, bool $status = true, array $theaterIds = []): User
     {
         try {
             DB::beginTransaction();
@@ -124,11 +124,13 @@ class UserService
                 $user->save();
             }
 
+            $this->syncAssignedTheaters($user, $theaterIds);
+
             DB::commit();
 
             Log::info('User created', ['user_id' => $user->id]);
 
-            return $user->load('role');
+            return $user->load(['role', 'theaters:id,name']);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to create user', [
@@ -169,7 +171,7 @@ class UserService
 
             Log::info('User profile updated', ['user_id' => $user->id]);
 
-            return $user->fresh('role');
+            return $user->fresh(['role', 'theaters']);
         });
     }
 
@@ -188,8 +190,20 @@ class UserService
                 'role_id' => $role->id,
             ]);
 
-            return $user->fresh('role');
+            return $user->fresh(['role', 'theaters']);
         });
+    }
+
+    public function syncAssignedTheaters(User $user, array $theaterIds): User
+    {
+        $user->theaters()->sync(array_values(array_unique(array_map('intval', $theaterIds))));
+
+        Log::info('User theater assignments updated', [
+            'user_id' => $user->id,
+            'theater_ids' => $theaterIds,
+        ]);
+
+        return $user->fresh(['role', 'theaters']);
     }
 
     public function updateLoyaltyPoints(User $user, int $loyaltyPoints): User
@@ -311,7 +325,8 @@ class UserService
     public function getAllRoles(): Collection
     {
         return Role::query()
-            ->select(['id', 'name', 'slug', 'description'])
+            ->select(['id', 'name', 'slug', 'display_name', 'description'])
+            ->whereIn('slug', array_keys(config('rbac.roles', [])))
             ->orderBy('name')
             ->get();
     }

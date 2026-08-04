@@ -34,6 +34,8 @@ class UpdateUserRequest extends FormRequest
             'address' => ['nullable', 'string', 'max:500'],
             'loyalty_points' => ['nullable', 'integer', 'min:0'],
             'role_id' => ['nullable', 'integer', 'exists:roles,id'],
+            'theater_ids' => ['nullable', 'array', 'max:20'],
+            'theater_ids.*' => ['integer', 'distinct', 'exists:theaters,id'],
             'status' => ['nullable', 'boolean'],
         ];
     }
@@ -58,6 +60,10 @@ class UpdateUserRequest extends FormRequest
                     && !$actor->hasRole('super-admin')) {
                     $validator->errors()->add('role_id', 'Only a super-admin may assign administrative roles.');
                 }
+            }
+
+            if ($this->has('theater_ids') && !$actor->hasAnyRole(['admin', 'super-admin'])) {
+                $validator->errors()->add('theater_ids', 'You are not authorized to assign theaters.');
             }
 
             if ($this->has('loyalty_points') && !$actor->can('updateLoyaltyPoints', $targetUser)) {
@@ -91,7 +97,7 @@ class UpdateUserRequest extends FormRequest
     {
         $validated = $this->validated();
 
-        unset($validated['role_id'], $validated['status'], $validated['loyalty_points']);
+        unset($validated['role_id'], $validated['theater_ids'], $validated['status'], $validated['loyalty_points']);
 
         return $validated;
     }
@@ -115,5 +121,17 @@ class UpdateUserRequest extends FormRequest
         return array_key_exists('loyalty_points', $this->validated())
             ? (int) $this->validated()['loyalty_points']
             : null;
+    }
+
+    /**
+     * @return array<int, int>|null
+     */
+    public function theaterIds(): ?array
+    {
+        if (! array_key_exists('theater_ids', $this->validated())) {
+            return null;
+        }
+
+        return array_map('intval', $this->validated()['theater_ids'] ?? []);
     }
 }

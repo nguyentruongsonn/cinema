@@ -463,16 +463,15 @@ class AuthManager {
     }
 
     showToast(message, type = 'info') {
-        // Simple toast notification
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3 shadow-lg`;
-        toast.style.zIndex = '9999';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.remove();
-        }, 3000);
+        const normalizedType = type === 'danger' ? 'error' : type;
+        const titles = {
+            success: 'Thành công',
+            error: 'Có lỗi xảy ra',
+            warning: 'Cần lưu ý',
+            info: 'Thông báo',
+        };
+        const toastMethod = window.Toast?.[normalizedType] || window.Toast?.info;
+        toastMethod?.(titles[normalizedType] || titles.info, String(message || ''));
     }
 
     // Tokens managed via HttpOnly cookies - no localStorage needed

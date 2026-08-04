@@ -62,7 +62,7 @@
     <script>
         window.APP_CONFIG = {
             appName: @json(config('app.name', 'Cinema')),
-            apiUrl: @json(url('/api/v1')),
+            apiUrl: @json('/api/v1'),
             csrfToken: @json(csrf_token()),
             auth: {
                 checked: @json(Auth::guard('web')->check() || !request()->hasCookie('refresh_token')),

@@ -65,7 +65,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="comboModalLabel">
-                    <i class="bi bi-box-seam me-2" style="color:var(--accent-color);"></i>Tạo combo mới
+                    <i class="bi bi-box-seam me-2 admin-accent-icon"></i>Tạo combo mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -121,7 +121,7 @@
                         <div class="col-md-5">
                             <div class="mb-3">
                                 <label class="form-label">Hình ảnh combo</label>
-                                <div class="image-upload-box combo-image-upload-box mb-2" id="imageUploadBox">
+                                <div class="image-upload-box combo-image-upload-box mb-2" id="imageUploadBox" data-media-input>
                                     <img id="imagePreview" class="image-preview combo-image-preview" src="" alt="Preview">
                                     <div id="imagePlaceholder" class="image-placeholder text-white-50">
                                         <i class="bi bi-cloud-arrow-up fs-2 d-block mb-1"></i>

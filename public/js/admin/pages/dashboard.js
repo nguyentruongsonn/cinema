@@ -10,8 +10,6 @@
     };
     
     let state = {
-        revenueFilter: 'month',
-        topMoviesFilter: 'month',
         pollInterval: null
     };
 
@@ -45,12 +43,8 @@
             
             // Charts
             revenueChart: document.getElementById('revenueChart'),
-            revenueFilter: document.getElementById('revenueFilter'),
-            
             trafficHeatmap: document.getElementById('trafficHeatmap'),
-            
-            topMoviesContainer: document.getElementById('topMoviesContainer'),
-            topMoviesFilter: document.getElementById('topMoviesFilter')
+            topMoviesContainer: document.getElementById('topMoviesContainer')
         };
     }
 
@@ -141,7 +135,7 @@
                 fontFamily: 'Inter, sans-serif',
                 background: 'transparent'
             },
-            colors: ['#e50914'],
+            colors: ['#ff4d57'],
             stroke: {
                 curve: 'smooth',
                 width: 3,
@@ -150,16 +144,16 @@
                     top: 5,
                     left: 0,
                     blur: 4,
-                    color: '#e50914',
-                    opacity: 0.3
+                    color: '#ff4d57',
+                    opacity: 0.18
                 }
             },
             fill: {
                 type: 'gradient',
                 gradient: {
                     shadeIntensity: 1,
-                    opacityFrom: 0.6,
-                    opacityTo: 0.0,
+                    opacityFrom: 0.28,
+                    opacityTo: 0.02,
                     stops: [0, 100]
                 }
             },
@@ -169,13 +163,13 @@
             xaxis: {
                 categories: [''],
                 labels: {
-                    style: { colors: '#a1a1aa', fontSize: '12px' }
+                    style: { colors: '#d4d4d8', fontSize: '12px', fontWeight: 600 }
                 },
                 axisBorder: { show: false },
                 axisTicks: { show: false },
                 title: {
                     text: 'Thời gian',
-                    style: { color: '#a1a1aa', fontSize: '12px' }
+                    style: { color: '#d4d4d8', fontSize: '12px', fontWeight: 600 }
                 }
             },
             yaxis: {
@@ -183,10 +177,10 @@
                 max: (max) => Number.isFinite(max) && max > 0 ? Math.max(max, 500000) : 500000,
                 title: {
                     text: 'Doanh thu (₫)',
-                    style: { color: '#a1a1aa', fontSize: '12px' }
+                    style: { color: '#d4d4d8', fontSize: '12px', fontWeight: 600 }
                 },
                 labels: {
-                    style: { colors: '#a1a1aa' },
+                    style: { colors: '#d4d4d8', fontWeight: 600 },
                     formatter: (value) => {
                         if (value === 0) return '0₫';
                         if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'B';
@@ -197,7 +191,7 @@
                 }
             },
             grid: {
-                borderColor: '#2e2e33',
+                borderColor: 'rgba(255,255,255,0.08)',
                 strokeDashArray: 4,
                 yaxis: { lines: { show: true } },
                 xaxis: { lines: { show: false } }
@@ -248,12 +242,12 @@
             stroke: { width: 2, colors: ['#18181b'] },
             xaxis: {
                 categories: ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
-                labels: { style: { colors: '#a1a1aa', fontWeight: 500 } },
+                labels: { style: { colors: '#d4d4d8', fontWeight: 600 } },
                 axisBorder: { show: false },
                 axisTicks: { show: false }
             },
             yaxis: {
-                labels: { style: { colors: '#a1a1aa', fontWeight: 500 } }
+                labels: { style: { colors: '#d4d4d8', fontWeight: 600 } }
             },
             grid: { show: false },
             tooltip: { 
@@ -353,13 +347,14 @@
         }
 
         els.topMoviesContainer.innerHTML = movies.map(movie => {
-            const poster = movie.poster_url || 'https://via.placeholder.com/300x450?text=No+Poster';
+            const poster = movie.poster_display_url || movie.poster_url || 'https://via.placeholder.com/300x450?text=No+Poster';
             const revenue = formatCurrency(movie.revenue);
             const tickets = new Intl.NumberFormat('vi-VN').format(movie.tickets_sold);
             
             return `
             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                <div class="movie-card" style="background-image: url('${escapeHtml(poster)}')">
+                <div class="movie-card">
+                    <img class="movie-card-poster" src="${escapeHtml(poster)}" alt="" loading="lazy">
                     <div class="movie-tag gradient-red">${revenue}</div>
                     <div class="movie-info">
                         <div class="movie-card-title text-truncate" title="${escapeHtml(movie.title)}">${escapeHtml(movie.title)}</div>
@@ -374,8 +369,8 @@
     /*  API Flow                                                           */
     /* ------------------------------------------------------------------ */
         function showStatsSkeleton() {
-        const skeletonHtml = '<div class="admin-skeleton admin-skeleton-text" style="width: 60%; height: 28px; margin-bottom: 0;"></div>';
-        const trendSkeletonHtml = '<div class="admin-skeleton admin-skeleton-text" style="width: 40px; margin-bottom: 0;"></div>';
+        const skeletonHtml = '<div class="admin-skeleton admin-skeleton-text dashboard-stat-skeleton"></div>';
+        const trendSkeletonHtml = '<div class="admin-skeleton admin-skeleton-text dashboard-trend-skeleton"></div>';
         
         els.statRevenue.innerHTML = skeletonHtml;
         els.statRevenueTrend.innerHTML = trendSkeletonHtml;
@@ -463,28 +458,6 @@
             });
         }
         
-        // Legacy chart filters (keep for backward compatibility)
-        if (els.revenueFilter) {
-            els.revenueFilter.addEventListener('change', (e) => {
-                state.revenueFilter = e.target.value;
-                fetchStats('revenue');
-            });
-        }
-        
-        if (els.topMoviesFilter) {
-            els.topMoviesFilter.addEventListener('change', (e) => {
-                state.topMoviesFilter = e.target.value;
-                let skeletonHtml = '';
-                for(let i=0; i<6; i++) {
-                    skeletonHtml += `
-            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                <div class="movie-card admin-skeleton" style="background: var(--admin-surface); border-color: transparent;"></div>
-            </div>`;
-                }
-                els.topMoviesContainer.innerHTML = skeletonHtml;
-                fetchStats('topMovies');
-            });
-        }
     }
 
     function init() {
@@ -503,7 +476,7 @@
             if (!document.hidden) {
                 fetchStats('all', { showSkeleton: false, skipCache: true });
             }
-        }, 60000);
+        }, 15000);
     }
 
     window.onAdminPageCleanup(function () {

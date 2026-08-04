@@ -48,8 +48,8 @@ class ContentController extends Controller
         $page = (int) ($validated['page'] ?? 1);
         $perPage = (int) ($validated['per_page'] ?? 10);
 
-        $featuredPost = $service->getFeaturedPost($category, $search, $page);
-        $posts = $service->getFilteredPosts($featuredPost, $category, $search, $perPage);
+        $featuredPost = $service->getFeaturedPost();
+        $posts = $service->getFilteredPosts($category, $search, $perPage);
 
         return response()->json([
             'data' => PostResource::collection($posts->getCollection())->resolve(),
@@ -78,25 +78,9 @@ class ContentController extends Controller
         ]);
     }
 
-    public function postsPage(Request $request, \App\Services\PostService $service): View
+    public function postsPage(): View
     {
-        $category = $request->query('category');
-        $search = trim((string) $request->query('search', ''));
-        $page = (int) $request->query('page', 1);
-
-        $featuredPost = $service->getFeaturedPost($category, $search, $page);
-        $posts = $service->getFilteredPosts($featuredPost, $category, $search, 10);
-        $sidebarTrailers = $service->getSidebarTrailers(3);
-        $popularTags = $service->getPopularTags();
-
-        return view('users.posts.index', compact(
-            'posts',
-            'featuredPost',
-            'sidebarTrailers',
-            'popularTags',
-            'category',
-            'search'
-        ));
+        return view('users.posts.index');
     }
 
     public function postPage(Post $post, \App\Services\PostService $service): View

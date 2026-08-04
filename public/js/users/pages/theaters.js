@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const theatersGrid = document.getElementById('theatersGrid');
     const emptyState = document.getElementById('emptyState');
     const paginationContainer = document.getElementById('paginationContainer');
+    const dataRegion = new window.DataRegion('#theatersDataRegion');
 
     // --- State ---
     let currentPage = 1;
@@ -49,8 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- API Calls ---
     async function fetchBranches() {
         try {
-            const response = await fetch('/api/v1/theaters/cities');
-            const result = await response.json();
+            const result = await window.apiClient.get('/theaters/cities');
             
             if (result.success && result.data) {
                 const options = [];
@@ -88,8 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Default to only active theaters
             params.append('status', 'active');
             
-            const response = await fetch(`/api/v1/theaters?${params.toString()}`);
-            const result = await response.json();
+            const result = await window.apiClient.get(`/theaters?${params.toString()}`);
             
             if (result.success && result.data && result.data.length > 0) {
                 renderGroupedTheaters(result.data);
@@ -100,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error fetching theaters:', error);
-            showEmpty();
+            showError();
         } finally {
             isFetching = false;
         }
@@ -290,102 +289,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderPagination(paginationData) {
-        if (paginationData.last_page <= 1) {
-            paginationContainer.style.display = 'none';
-            return;
-        }
-
-        const controls = [];
-
-        controls.push(createPaginationButton(
-            paginationData.current_page - 1,
-            'bi bi-chevron-left',
-            paginationData.current_page === 1
-        ));
-        
-        const pages = (function(currentPage, lastPage) {
-            if (lastPage <= 7) {
-                return Array.from({ length: lastPage }, (_, i) => i + 1);
-            }
-            if (currentPage <= 4) {
-                return [1, 2, 3, 4, 5, '...', lastPage];
-            }
-            if (currentPage >= lastPage - 3) {
-                return [1, '...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage];
-            }
-            return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', lastPage];
-        })(paginationData.current_page, paginationData.last_page);
-
-        for (const item of pages) {
-            if (item === '...') {
-                const ellipsis = document.createElement('span');
-                ellipsis.className = 'px-2';
-                ellipsis.style.color = '#666';
-                ellipsis.textContent = '...';
-                controls.push(ellipsis);
-            } else {
-                const pageButton = createPaginationButton(item, '', false, String(item));
-                pageButton.classList.toggle('active', item === paginationData.current_page);
-                controls.push(pageButton);
-            }
-        }
-        
-        controls.push(createPaginationButton(
-            paginationData.current_page + 1,
-            'bi bi-chevron-right',
-            paginationData.current_page === paginationData.last_page
-        ));
-        
-        paginationContainer.replaceChildren(...controls);
-        paginationContainer.style.display = 'flex';
-        
-        // Add listeners
-        paginationContainer.querySelectorAll('.page-btn:not(:disabled)').forEach(btn => {
-            btn.addEventListener('click', () => {
-                currentPage = parseInt(btn.dataset.page);
+        window.CinemaPagination.render({
+            container: paginationContainer,
+            pagination: paginationData,
+            itemLabel: 'rạp',
+            onPageChange: (page) => {
+                currentPage = page;
                 fetchTheaters();
-                // Scroll to top of section
                 document.querySelector('.theaters-filters-section').scrollIntoView({ behavior: 'smooth' });
-            });
+            }
         });
-    }
-
-    function createPaginationButton(page, iconClass, disabled, label = '') {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'page-btn';
-        button.disabled = disabled;
-        button.dataset.page = String(page);
-
-        if (label) {
-            button.textContent = label;
-        } else {
-            const icon = document.createElement('i');
-            icon.className = iconClass;
-            button.appendChild(icon);
-        }
-
-        return button;
+        paginationContainer.classList.toggle('d-none', Number(paginationData.last_page || 1) <= 1);
     }
 
     // --- UI Helpers ---
     function showSkeleton() {
-        theatersSkeleton.style.display = 'flex';
-        theatersGrid.style.display = 'none';
-        emptyState.style.display = 'none';
-        paginationContainer.style.display = 'none';
+        dataRegion.show('loading');
+        paginationContainer.classList.add('d-none');
     }
 
     function showGrid() {
-        theatersSkeleton.style.display = 'none';
-        theatersGrid.style.display = 'block';
-        emptyState.style.display = 'none';
+        dataRegion.show('ready');
     }
 
     function showEmpty() {
-        theatersSkeleton.style.display = 'none';
-        theatersGrid.style.display = 'none';
-        emptyState.style.display = 'block';
-        paginationContainer.style.display = 'none';
+        dataRegion.show('empty');
+        paginationContainer.classList.add('d-none');
+    }
+
+    function showError() {
+        dataRegion.show('error');
+        paginationContainer.classList.add('d-none');
     }
 });

@@ -26,7 +26,28 @@ class StoreUserRequest extends FormRequest
             'gender' => ['nullable', 'in:male,female,other'],
             'address' => ['nullable', 'string', 'max:500'],
             'role_id' => ['nullable', 'integer', 'exists:roles,id'],
+            'theater_ids' => ['nullable', 'array', 'max:20'],
+            'theater_ids.*' => ['integer', 'distinct', 'exists:theaters,id'],
             'status' => ['nullable', 'boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Vui lòng nhập họ tên.',
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.unique' => 'Email này đã được sử dụng.',
+            'username.unique' => 'Tên đăng nhập này đã được sử dụng.',
+            'phone.regex' => 'Số điện thoại không đúng định dạng.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
+            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'birthday.before' => 'Ngày sinh phải nhỏ hơn ngày hiện tại.',
+            'gender.in' => 'Giới tính không hợp lệ.',
+            'role_id.exists' => 'Vai trò đã chọn không tồn tại.',
+            'theater_ids.*.exists' => 'Rạp đã chọn không tồn tại.',
         ];
     }
 
@@ -59,7 +80,11 @@ class StoreUserRequest extends FormRequest
             $role = Role::query()->find($roleId);
             if ($role?->slug && in_array($role->slug, ['admin', 'super-admin'], true)
                 && !($this->user()?->hasRole('super-admin') ?? false)) {
-                $validator->errors()->add('role_id', 'Only a super-admin may assign administrative roles.');
+                $validator->errors()->add('role_id', 'Chỉ super-admin mới được gán vai trò quản trị.');
+            }
+
+            if ($this->has('theater_ids') && !($this->user()?->hasAnyRole(['admin', 'super-admin']) ?? false)) {
+                $validator->errors()->add('theater_ids', 'Bạn không có quyền gán rạp cho tài khoản.');
             }
         });
     }
@@ -68,7 +93,7 @@ class StoreUserRequest extends FormRequest
     {
         $validated = $this->validated();
 
-        unset($validated['role_id'], $validated['status']);
+        unset($validated['role_id'], $validated['theater_ids'], $validated['status']);
 
         return $validated;
     }
@@ -83,5 +108,13 @@ class StoreUserRequest extends FormRequest
     public function status(): bool
     {
         return (bool) ($this->validated()['status'] ?? true);
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    public function theaterIds(): array
+    {
+        return array_map('intval', $this->validated()['theater_ids'] ?? []);
     }
 }

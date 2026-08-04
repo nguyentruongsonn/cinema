@@ -45,7 +45,7 @@
             <thead>
                 <tr>
                     <th class="text-center col-stt">STT</th>
-                    <th class="col-min-250" style="min-width: 340px;">Hình ảnh</th>
+                <th class="col-min-250 admin-min-w-340">Hình ảnh</th>
                     <th class="col-min-200">Tiêu đề</th>
                     <th class="text-center col-date">Ngày bắt đầu</th>
                     <th class="text-center col-date">Ngày kết thúc</th>
@@ -63,20 +63,11 @@
 </div>
 
 {{-- ── Modal: Thêm / Sửa Banner ─────────────────────────────────────── --}}
-<div class="modal fade" id="bannerModal" tabindex="-1" aria-labelledby="bannerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content bg-dark text-white border-secondary">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="bannerModalLabel">
-                    <i class="bi bi-image me-2" style="color:var(--accent-color);"></i>Tạo banner mới
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
-            </div>
-            <form id="bannerForm" enctype="multipart/form-data">
+<x-admin.modal id="bannerModal" title-id="bannerModalLabel" title="Tạo banner mới" icon="bi-image"
+               form-id="bannerForm" form-enctype="multipart/form-data" submit-label="Lưu banner"
+               submit-class="btn-primary-custom border-0" cancel-label="">
                 <input type="hidden" id="formMethod" value="POST">
                 <input type="hidden" id="bannerIdInput">
-
-                <div class="modal-body">
                     <div class="row g-3">
 
                         {{-- Tiêu đề --}}
@@ -141,15 +132,7 @@
                         </div>
 
                     </div>
-                </div>
-
-                <div class="modal-footer border-secondary">
-                    <button type="submit" class="btn-primary-custom border-0">Lưu banner</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+</x-admin.modal>
 
 @endsection
 

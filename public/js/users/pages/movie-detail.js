@@ -129,8 +129,8 @@ import Toast from '../components/toast.js';
         const heroContent = document.getElementById('heroContent');
         if (!heroContent) return;
 
-        const backdropUrl = movieData.backdrop_path || movieData.poster_path || '';
-        const posterUrl = movieData.poster_path || 'https://via.placeholder.com/280x420/1a1a2e/ffffff?text=No+Poster';
+        const posterUrl = movieData.poster_display_url || movieData.poster_url || 'https://via.placeholder.com/280x420/1a1a2e/ffffff?text=No+Poster';
+        const backdropUrl = movieData.banner_display_url || movieData.banner_url || movieData.backdrop_url || posterUrl;
 
         const metaItems = [];
         if (movieData.duration) metaItems.push(`${movieData.duration} min`);
@@ -141,7 +141,7 @@ import Toast from '../components/toast.js';
             metaItems.push(`<span class="movie-detail-badge">${escapeHtml(movieData.age_rating)}</span>`);
         }
         if (movieData.rating) {
-            metaItems.push(`<span style="color: #ffd21f;"><i class="bi bi-star"></i> ${movieData.rating}/10</span>`);
+            metaItems.push(`<span class="movie-rating-highlight"><i class="bi bi-star"></i> ${movieData.rating}/10</span>`);
         }
 
         const metaText = metaItems.join('<span class="meta-separator">•</span>');
@@ -371,7 +371,7 @@ import Toast from '../components/toast.js';
 
         content.innerHTML = movies.map(movie => `
             <a href="/movies/${movie.slug}" class="trending-item">
-                <img src="${escapeHtml(movie.poster_path || '/images/default-poster.jpg')}"
+                <img src="${escapeHtml(movie.poster_display_url || movie.poster_url || '/images/default-poster.jpg')}"
                      alt="${escapeHtml(movie.title)}"
                      class="trending-poster">
                 <div class="trending-info">

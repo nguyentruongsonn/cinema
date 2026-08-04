@@ -3,49 +3,52 @@
 @section('title', 'Tin Tức & Sự Kiện Điện Ảnh - Poly Cinema')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/users/pages/posts.css') }}?v={{ config('app.asset_version', time()) }}">
+    <link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}?v={{ config('app.asset_version') }}">
+    <link rel="stylesheet" href="{{ asset('css/users/pages/posts-index.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @section('content')
 <div class="posts-page" id="postsSpaContainer">
 
-    {{-- 1. Hero Featured Article Banner (Dynamic SPA Container) --}}
-    <div class="container my-4">
+    {{-- Shared hero banner: unchanged by tabs, search or pagination --}}
+    <section class="posts-hero-shell" aria-label="Bài viết nổi bật">
         <div id="heroSkeleton" class="hero-skeleton-container" aria-hidden="true">
             <div class="skeleton-hero-banner"></div>
         </div>
 
-        <section id="heroContent" class="posts-hero-section posts-hero-card-box d-none" style="background-image: url('');">
+        <div id="heroContent" class="posts-hero-section d-none">
             <div class="posts-hero-overlay"></div>
-            <div class="posts-hero-content">
-                <span class="hero-badge-exclusive" id="heroBadge">ĐỘC QUYỀN</span>
-                <h1 class="posts-hero-title">
-                    <a href="#" id="heroTitleLink" class="text-white text-decoration-none"></a>
-                </h1>
-                <p class="posts-hero-excerpt" id="heroExcerpt"></p>
-                <div class="d-flex align-items-center flex-wrap gap-3 mt-3">
-                    <a href="#" id="heroReadBtn" class="hero-read-btn">
-                        <span>Đọc Ngay</span>
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                    <span class="hero-read-time">
-                        <i class="bi bi-clock"></i>
-                        <span id="heroReadTime">5 phút đọc</span>
-                    </span>
+            <div class="container posts-hero-container">
+                <div class="posts-hero-content">
+                    <span class="hero-badge-exclusive" id="heroBadge">NỔI BẬT</span>
+                    <h1 class="posts-hero-title">
+                        <a href="#" id="heroTitleLink"></a>
+                    </h1>
+                    <p class="posts-hero-excerpt" id="heroExcerpt"></p>
+                    <div class="posts-hero-actions">
+                        <a href="#" id="heroReadBtn" class="hero-read-btn">
+                            <i class="bi bi-journal-text" aria-hidden="true"></i>
+                            <span>Đọc bài viết</span>
+                        </a>
+                        <span class="hero-read-time">
+                            <i class="bi bi-clock" aria-hidden="true"></i>
+                            <span id="heroReadTime">5 phút đọc</span>
+                        </span>
+                    </div>
                 </div>
             </div>
-        </section>
-    </div>
+        </div>
+    </section>
 
     {{-- 2. Main Content & Sidebar Layout --}}
-    <section class="posts-main-section py-4">
+    <section class="posts-main-section" id="postsMainSection" aria-labelledby="postsSectionTitle">
         <div class="container">
             <div class="row g-5">
 
                 {{-- Left Column: Latest News & Filter --}}
                 <div class="col-lg-8">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-                        <h2 class="section-title mb-0">Tin Tức Mới Nhất</h2>
+                        <h2 class="section-title mb-0" id="postsSectionTitle">Tin tức mới nhất</h2>
                         <div class="posts-search-box">
                             <i class="bi bi-search search-icon"></i>
                             <input type="search" id="postSearchInput" class="cinema-search-input" placeholder="Tìm bài viết, diễn viên, đạo diễn..." aria-label="Tìm bài viết">
@@ -53,13 +56,13 @@
                     </div>
 
                     {{-- Category Filter Tabs --}}
-                    <div class="posts-filter-tabs d-flex flex-wrap gap-2 mb-4" id="postsFilterTabs" role="tablist">
-                        <button type="button" class="cinema-pill-tab active" data-category="">Tất cả</button>
-                        <button type="button" class="cinema-pill-tab" data-category="news">Review Phim</button>
-                        <button type="button" class="cinema-pill-tab" data-category="blog">Hậu Trường</button>
-                        <button type="button" class="cinema-pill-tab" data-category="promotion">Khuyến Mãi</button>
-                        <button type="button" class="cinema-pill-tab" data-category="event">Sự Kiện</button>
-                        <button type="button" class="cinema-pill-tab" data-category="announcement">Thông Báo</button>
+                    <div class="posts-filter-tabs mb-4" id="postsFilterTabs" role="tablist" aria-label="Lọc bài viết theo chuyên mục" data-tabs>
+                        <button type="button" class="cinema-pill-tab active" role="tab" aria-selected="true" data-value="">Tất cả</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-value="news">Tin phim</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-value="blog">Review & Blog</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-value="promotion">Khuyến mãi</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-value="event">Sự kiện</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-value="announcement">Thông báo</button>
                     </div>
 
                     {{-- Skeleton Loading Grid --}}
@@ -82,6 +85,8 @@
                         {{-- Populated dynamically via public/js/users/pages/posts.js --}}
                     </div>
 
+                    <div id="postsErrorState" class="posts-error-state d-none text-center py-5" role="alert"></div>
+
                     {{-- Empty State --}}
                     <div id="postsEmptyState" class="posts-empty-state d-none text-center py-5">
                         <div class="empty-icon-wrap mb-3">
@@ -95,7 +100,7 @@
                     </div>
 
                     {{-- SPA Pagination Container --}}
-                    <div id="postsPaginationContainer" class="mt-5 d-flex justify-content-center"></div>
+                    <div id="postsPaginationContainer" class="cinema-pagination mt-5"></div>
                 </div>
 
                 {{-- Right Column: Cinematic Sidebar Widgets --}}

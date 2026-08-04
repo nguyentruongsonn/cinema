@@ -34,7 +34,7 @@ class TicketController extends Controller
                 ->with([
                     'order:id,code,total_amount,created_at',
                     'showtime:id,scheduled_at,screen_id,movie_id',
-                    'showtime.movie:id,title,poster_url,duration,age_rating',
+                    'showtime.movie:id,title,poster_url,poster_path,duration,age_rating',
                     'showtime.screen:id,name,theater_id',
                     'showtime.screen.theater:id,name,address,branch_id',
                     'showtime.screen.theater.branch:id,name',
@@ -90,7 +90,7 @@ class TicketController extends Controller
                 ->with([
                     'order:id,code,total_amount,created_at',
                     'showtime:id,scheduled_at,screen_id,movie_id',
-                    'showtime.movie:id,title,poster_url,duration,age_rating',
+                    'showtime.movie:id,title,poster_url,poster_path,duration,age_rating',
                     'showtime.screen:id,name,theater_id',
                     'showtime.screen.theater:id,name,address,branch_id,phone',
                     'showtime.screen.theater.branch:id,name',
@@ -118,12 +118,18 @@ class TicketController extends Controller
                 'ticket_code' => 'required|string',
             ]);
 
+            $ticketCode = $this->extractTicketCode($request->input('ticket_code'));
+
+            if ($ticketCode === '') {
+                return $this->error('Vui l?ng nh?p m? v?.', 422);
+            }
+
             $ticket = Ticket::query()
-                ->where('ticket_code', $request->input('ticket_code'))
+                ->where('ticket_code', $ticketCode)
                 ->with([
                     'order:id,code,total_amount,created_at',
                     'showtime:id,scheduled_at,screen_id,movie_id',
-                    'showtime.movie:id,title,poster_url',
+                    'showtime.movie:id,title,poster_url,poster_path',
                     'showtime.screen:id,name,theater_id',
                     'showtime.screen.theater:id,name,branch_id',
                     'showtime.screen.theater.branch:id,name',
@@ -131,35 +137,36 @@ class TicketController extends Controller
                 ])
                 ->first();
 
-            if (!$ticket) {
-                return $this->error('Vé không tồn tại.', 404);
+            if (! $ticket) {
+                return $this->error('M? v? kh?ng t?n t?i.', 404);
             }
 
             if ($ticket->status === 'used') {
-                $checkedInAt = $ticket->checked_in_at?->format('d/m/Y H:i') ?? 'không xác định';
+                $checkedInAt = $ticket->checked_in_at?->format('d/m/Y H:i') ?? 'kh?ng x?c ??nh';
 
-                return $this->error('Vé đã được sử dụng trước đó vào lúc ' . $checkedInAt, 409);
+                return $this->error('V? ?? ???c s? d?ng tr??c ?? v?o l?c ' . $checkedInAt, 409);
             }
 
             if ($ticket->status === 'cancelled') {
-                return $this->error('Vé đã bị hủy.', 400);
+                return $this->error('V? ?? b? h?y.', 400);
             }
 
             if ($ticket->status === 'refunded') {
-                return $this->error('Vé đã được hoàn tiền.', 400);
+                return $this->error('V? ?? ???c ho?n ti?n.', 400);
             }
 
             if ($ticket->showtime && $ticket->showtime->scheduled_at < now()) {
-                return $this->error('Suất chiếu đã qua. Vé không còn hiệu lực.', 400);
+                return $this->error('Su?t chi?u ?? qua. V? kh?ng c?n hi?u l?c.', 400);
             }
 
             if (! $ticket->markAsUsed()) {
-                return $this->error('Vé đã được xác thực bởi yêu cầu khác.', 409);
+                return $this->error('V? ?? ???c x?c th?c b?i y?u c?u kh?c.', 409);
             }
 
             $ticket->refresh();
 
             return $this->ok([
+                'type' => 'ticket',
                 'code' => $ticket->ticket_code,
                 'movie' => $ticket->showtime->movie->title ?? 'N/A',
                 'showtime' => $ticket->showtime ? $ticket->showtime->scheduled_at->format('d/m/Y H:i') : 'N/A',
@@ -167,15 +174,45 @@ class TicketController extends Controller
                 'screen' => $ticket->showtime->screen->name ?? 'N/A',
                 'theater' => $ticket->showtime->screen->theater->name ?? 'N/A',
                 'branch' => $ticket->showtime->screen->theater->branch->name ?? 'N/A',
-                'status' => 'Đã xác thực',
+                'status' => '?? x?c th?c',
                 'verified_at' => $ticket->checked_in_at?->format('d/m/Y H:i:s'),
-            ], 'Vé hợp lệ. Đã xác thực thành công.');
+            ], 'V? h?p l?. ?? x?c th?c th?nh c?ng.');
         } catch (ValidationException $e) {
-            return $this->error('Dữ liệu không hợp lệ.', 422, $e->errors());
+            return $this->error('D? li?u kh?ng h?p l?.', 422, $e->errors());
         } catch (Throwable $e) {
             report($e);
 
-            return $this->error('Đã xảy ra lỗi khi xác thực vé.', 500);
+            return $this->error('?? x?y ra l?i khi x?c th?c v?.', 500);
         }
     }
+
+    private function extractTicketCode(?string $raw): string
+    {
+        $value = trim((string) $raw);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $decoded = json_decode($value, true);
+        if (is_array($decoded) && isset($decoded['ticket_code']) && is_scalar($decoded['ticket_code'])) {
+            return trim((string) $decoded['ticket_code']);
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            $path = trim((string) parse_url($value, PHP_URL_PATH), '/');
+            $segments = array_values(array_filter(explode('/', $path)));
+            $lastSegment = end($segments);
+            if (is_string($lastSegment) && str_starts_with(strtoupper($lastSegment), 'TKT-')) {
+                return trim(urldecode($lastSegment));
+            }
+        }
+
+        if (preg_match('/\b(TKT-[A-Z0-9_-]+)\b/i', $value, $matches) === 1) {
+            return strtoupper($matches[1]);
+        }
+
+        return $value;
+    }
+
 }

@@ -259,10 +259,10 @@
         if (btnDel) {
             const usedCount = parseInt(btnDel.dataset.used);
             if (usedCount > 0) {
-                alert('Không thể xóa mã giảm giá đã được sử dụng!');
+                window.showAdminToast?.('Không thể xóa mã giảm giá đã được sử dụng!', 'warning');
                 return;
             }
-            if (!confirm('Bạn có chắc muốn xóa mã giảm giá này?')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa mã giảm giá này?', confirmLabel: 'Xóa mã', variant: 'danger' })) return;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/promotions/${btnDel.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) {
@@ -332,7 +332,7 @@
                     loadData(currentPage);
                 } else {
                     const errData = await res.json();
-                    alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message));
+                    window.showAdminToast?.(window.formatAdminErrors?.(errData.errors || errData.message) || 'Dữ liệu không hợp lệ', 'error');
                 }
             } catch (error) {
                 console.error('Submit form error', error);

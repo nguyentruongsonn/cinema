@@ -21,16 +21,10 @@
                     <li class="nav-item">
                         <a class="nav-link <?php echo e(request()->is('prices*') ? 'active' : ''); ?>" href="<?php echo e(route('prices.index')); ?>">Giá vé</a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle <?php echo e(request()->is('posts*') ? 'active' : ''); ?>" href="#" id="eventsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo e(request()->is('posts*') ? 'active' : ''); ?>" href="<?php echo e(route('posts.index')); ?>">
                             Tin tức & Ưu đãi
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-dark border-0 shadow" aria-labelledby="eventsDropdown">
-                            <li><a class="dropdown-item" href="<?php echo e(route('posts.index')); ?>">Tất cả bài viết</a></li>
-                            <li><a class="dropdown-item" href="<?php echo e(route('posts.index', ['category' => 'promotion'])); ?>">Ưu đãi & Khuyến mãi</a></li>
-                            <li><a class="dropdown-item" href="<?php echo e(route('posts.index', ['category' => 'event'])); ?>">Sự kiện điện ảnh</a></li>
-                            <li><a class="dropdown-item" href="<?php echo e(route('posts.index', ['category' => 'news'])); ?>">Tin phim mới nhất</a></li>
-                        </ul>
                     </li>
                 </ul>
 
@@ -49,6 +43,7 @@
                             Đăng nhập
                         </a>
                     <?php else: ?>
+                        <?php ($currentUser = Auth::guard('web')->user()); ?>
                         
                         <div class="dropdown" id="userDropdown">
                             <button class="btn btn-link text-white text-decoration-none dropdown-toggle d-flex align-items-center gap-2"
@@ -72,6 +67,14 @@
                                         <i class="bi bi-bag me-2"></i>Đơn hàng
                                     </a>
                                 </li>
+                                <?php if($currentUser?->canAccessAdminPanel()): ?>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="<?php echo e(route('admin.entry')); ?>">
+                                            <i class="bi bi-speedometer2 me-2"></i>Giao diện quản lý
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger" href="#" data-auth-action="logout">

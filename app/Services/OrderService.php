@@ -393,7 +393,8 @@ class OrderService
             'created_at' => $order->created_at,
             // Flatten movie data for easier frontend access
             'movie_title' => $order->showtime?->movie?->title,
-            'poster_url' => $order->showtime?->movie?->poster_url,
+            'poster_url' => $order->showtime?->movie?->poster_display_url,
+            'poster_display_url' => $order->showtime?->movie?->poster_display_url,
             'show_date' => $order->showtime?->scheduled_at,
             'show_time' => $order->showtime?->scheduled_at,
             'theater_name' => $order->showtime?->screen?->theater?->name,

@@ -24,10 +24,16 @@ class PermissionMiddleware
         $user = Auth::user();
 
         if (!$user) {
+            if (! $request->expectsJson()) {
+                return redirect()->route('login');
+            }
             return $this->errorResponse('Unauthenticated', 401);
         }
 
         if (empty($permissions)) {
+            if (! $request->expectsJson()) {
+                return redirect()->route('home')->with('error', 'Quyền truy cập không hợp lệ.');
+            }
             return $this->errorResponse('Forbidden: permission is required', 403);
         }
 
@@ -36,6 +42,12 @@ class PermissionMiddleware
             if ($user->hasPermission($permission)) {
                 return $next($request);
             }
+        }
+
+        if (! $request->expectsJson()) {
+            return redirect()
+                ->route($user->adminLandingRouteName())
+                ->with('error', 'Bạn không có quyền truy cập chức năng này.');
         }
 
         return $this->errorResponse('Forbidden: insufficient permissions', 403);

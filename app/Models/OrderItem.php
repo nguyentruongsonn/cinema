@@ -96,8 +96,8 @@ class OrderItem extends Model
         $item->total_price = self::calculateTotal($unitPrice, $quantity);
         $item->metadata = array_merge([
             'name' => $combo->name,
-            'image' => $combo->image,
-            'items' => $combo->items->map(function ($comboItem) {
+            'image' => $combo->image_url,
+            'items' => $combo->comboItems->map(function ($comboItem) {
                 return [
                     'product_name' => $comboItem->product->name,
                     'quantity' => $comboItem->quantity,

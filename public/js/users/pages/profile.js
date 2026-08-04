@@ -30,28 +30,28 @@ class ProfilePage {
         let html = '<div class="w-100">';
         for (let i = 0; i < 3; i++) {
             html += `
-                <div class="profile-card mb-3" style="padding: 16px;">
+                <div class="profile-card profile-ticket-skeleton-card mb-3">
                     <div class="row g-3">
                         <div class="col-auto">
-                            <div class="skeleton rounded-3" style="width: 90px; height: 130px;"></div>
+                            <div class="skeleton rounded-3 profile-skeleton profile-skeleton--ticket-poster"></div>
                         </div>
                         <div class="col">
                             <div class="d-flex gap-2 mb-2">
-                                <div class="skeleton rounded" style="width: 50px; height: 20px;"></div>
-                                <div class="skeleton rounded" style="width: 50px; height: 20px;"></div>
+                                <div class="skeleton rounded profile-skeleton profile-skeleton--badge"></div>
+                                <div class="skeleton rounded profile-skeleton profile-skeleton--badge"></div>
                             </div>
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div class="skeleton rounded" style="width: 40%; height: 24px;"></div>
-                                <div class="skeleton rounded" style="width: 80px; height: 24px;"></div>
+                                <div class="skeleton rounded profile-skeleton profile-skeleton--title"></div>
+                                <div class="skeleton rounded profile-skeleton profile-skeleton--price"></div>
                             </div>
                             <div class="mb-3">
-                                <div class="skeleton rounded mb-2" style="width: 70%; height: 16px;"></div>
-                                <div class="skeleton rounded mb-2" style="width: 60%; height: 16px;"></div>
-                                <div class="skeleton rounded" style="width: 50%; height: 16px;"></div>
+                                <div class="skeleton rounded mb-2 profile-skeleton profile-skeleton--line-lg"></div>
+                                <div class="skeleton rounded mb-2 profile-skeleton profile-skeleton--line-md"></div>
+                                <div class="skeleton rounded profile-skeleton profile-skeleton--line-sm"></div>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-3" style="border-color: #2a2a2a !important;">
-                                <div class="skeleton rounded" style="width: 100px; height: 20px;"></div>
-                                <div class="skeleton rounded" style="width: 110px; height: 32px;"></div>
+                            <div class="profile-ticket-skeleton-footer">
+                                <div class="skeleton rounded profile-skeleton profile-skeleton--meta"></div>
+                                <div class="skeleton rounded profile-skeleton profile-skeleton--action"></div>
                             </div>
                         </div>
                     </div>
@@ -65,19 +65,19 @@ class ProfilePage {
     createPointHistorySkeleton() {
         return `
             <tr>
-                <td><div class="profile-skeleton rounded" style="width: 80px; height: 16px;"></div></td>
-                <td><div class="profile-skeleton rounded" style="width: 150px; height: 16px;"></div></td>
-                <td class="text-end"><div class="profile-skeleton rounded ms-auto" style="width: 50px; height: 16px;"></div></td>
+                <td><div class="profile-skeleton rounded profile-skeleton--history-date"></div></td>
+                <td><div class="profile-skeleton rounded profile-skeleton--history-copy"></div></td>
+                <td class="text-end"><div class="profile-skeleton rounded ms-auto profile-skeleton--history-points"></div></td>
             </tr>
             <tr>
-                <td><div class="profile-skeleton rounded" style="width: 80px; height: 16px;"></div></td>
-                <td><div class="profile-skeleton rounded" style="width: 150px; height: 16px;"></div></td>
-                <td class="text-end"><div class="profile-skeleton rounded ms-auto" style="width: 50px; height: 16px;"></div></td>
+                <td><div class="profile-skeleton rounded profile-skeleton--history-date"></div></td>
+                <td><div class="profile-skeleton rounded profile-skeleton--history-copy"></div></td>
+                <td class="text-end"><div class="profile-skeleton rounded ms-auto profile-skeleton--history-points"></div></td>
             </tr>
             <tr>
-                <td><div class="profile-skeleton rounded" style="width: 80px; height: 16px;"></div></td>
-                <td><div class="profile-skeleton rounded" style="width: 150px; height: 16px;"></div></td>
-                <td class="text-end"><div class="profile-skeleton rounded ms-auto" style="width: 50px; height: 16px;"></div></td>
+                <td><div class="profile-skeleton rounded profile-skeleton--history-date"></div></td>
+                <td><div class="profile-skeleton rounded profile-skeleton--history-copy"></div></td>
+                <td class="text-end"><div class="profile-skeleton rounded ms-auto profile-skeleton--history-points"></div></td>
             </tr>
         `;
     }
@@ -87,25 +87,16 @@ class ProfilePage {
         for (let i = 0; i < 2; i++) {
             html += `
                 <div class="col-12 col-md-6">
-                    <div style="
-                        background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
-                        border: 1px solid #2a2a2a;
-                        border-left: 4px solid #2a2a2a;
-                        border-radius: 12px;
-                        padding: 20px;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 10px;
-                    ">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div class="skeleton rounded-pill" style="width: 70px; height: 22px;"></div>
-                            <div class="skeleton rounded" style="width: 90px; height: 22px;"></div>
+                    <div class="profile-voucher-card profile-voucher-card--skeleton">
+                        <div class="profile-voucher-card__header">
+                            <div class="skeleton rounded-pill profile-skeleton profile-skeleton--voucher-badge"></div>
+                            <div class="skeleton rounded profile-skeleton profile-skeleton--voucher-code"></div>
                         </div>
-                        <div class="skeleton rounded" style="width: 60%; height: 20px;"></div>
-                        <div class="skeleton rounded" style="width: 80%; height: 16px;"></div>
-                        <div style="display:flex; gap:16px;">
-                            <div class="skeleton rounded" style="width: 100px; height: 14px;"></div>
-                            <div class="skeleton rounded" style="width: 120px; height: 14px;"></div>
+                        <div class="skeleton rounded profile-skeleton profile-skeleton--voucher-title"></div>
+                        <div class="skeleton rounded profile-skeleton profile-skeleton--voucher-copy"></div>
+                        <div class="profile-voucher-card__meta">
+                            <div class="skeleton rounded profile-skeleton profile-skeleton--voucher-meta-sm"></div>
+                            <div class="skeleton rounded profile-skeleton profile-skeleton--voucher-meta-lg"></div>
                         </div>
                     </div>
                 </div>
@@ -248,7 +239,7 @@ class ProfilePage {
         if (coverStatPoints) coverStatPoints.textContent = points.toLocaleString('vi-VN');
 
         if (this.elements.xpProgress) {
-            this.elements.xpProgress.style.width = `${progress}%`;
+            this.elements.xpProgress.style.setProperty('--profile-progress', `${progress}%`);
         }
 
         if (this.elements.xpMessage) {
@@ -570,32 +561,19 @@ class ProfilePage {
 
         return `
             <div class="col-12 col-md-6">
-                <div style="
-                    background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
-                    border: 1px solid #2a2a2a;
-                    border-left: 4px solid var(--cinema-danger, #e50914);
-                    border-radius: 12px;
-                    padding: 20px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                ">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="background:#e50914; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; letter-spacing:.5px;">VOUCHER</span>
-                        <code style="color:#e50914; font-size:16px; font-weight:700; letter-spacing:2px;">${this.escapeHtml(v.code)}</code>
+                <div class="profile-voucher-card">
+                    <div class="profile-voucher-card__header">
+                        <span class="profile-voucher-card__badge">VOUCHER</span>
+                        <code class="profile-voucher-card__code">${this.escapeHtml(v.code)}</code>
                     </div>
-                    <div style="color:#fff; font-size:15px; font-weight:600;">${this.escapeHtml(v.name || discountLabel)}</div>
-                    <div style="color:#ccc; font-size:13px;">${this.escapeHtml(v.description || discountLabel)}</div>
-                    <div style="display:flex; gap:16px; font-size:12px; color:#8d96a3;">
+                    <div class="profile-voucher-card__title">${this.escapeHtml(v.name || discountLabel)}</div>
+                    <div class="profile-voucher-card__description">${this.escapeHtml(v.description || discountLabel)}</div>
+                    <div class="profile-voucher-card__meta">
                         <span><i class="bi bi-info-circle me-1"></i>${this.escapeHtml(minLabel)}</span>
                         <span><i class="bi bi-calendar me-1"></i>${this.escapeHtml(expiry)}</span>
                     </div>
-                    <div style="margin-top:4px;">
-                        <button class="voucher-copy-btn" data-code="${this.escapeHtml(v.code)}" style="
-                            background:transparent; border:1px solid #333; color:#ccc;
-                            border-radius:8px; padding:6px 14px; font-size:13px; cursor:pointer;
-                            transition:all .2s;
-                        "><i class="bi bi-clipboard me-1"></i>Sao chép mã</button>
+                    <div class="profile-voucher-card__actions">
+                        <button class="voucher-copy-btn" data-code="${this.escapeHtml(v.code)}"><i class="bi bi-clipboard me-1"></i>Sao chép mã</button>
                     </div>
                 </div>
             </div>`;
@@ -649,7 +627,9 @@ class ProfilePage {
             document.getElementById('pointsDashboardRank').textContent = rank;
             document.getElementById('pointsDashboardNextTier').textContent = nextTier;
             document.getElementById('pointsDashboardPercent').textContent = `${Math.round(progress)}%`;
-            document.getElementById('pointsDashboardProgress').style.width = `${progress}%`;
+            const progressBar = document.getElementById('pointsDashboardProgress');
+            progressBar.style.setProperty('--profile-progress', `${progress}%`);
+            progressBar.setAttribute('aria-valuenow', String(Math.round(progress)));
 
             // Load Orders for history
             const response = await this.apiRequest('/orders/user/me?per_page=50');
@@ -672,10 +652,10 @@ class ProfilePage {
                 if (pointsEarned > 0) {
                     historyHTML += `
                         <tr>
-                            <td class="text-white align-middle" style="font-size: 0.9rem;">${date}</td>
+                            <td class="text-white align-middle profile-history-date">${date}</td>
                             <td class="align-middle">
                                 <div class="text-white fw-bold mb-1">${this.escapeHtml(movieName)}</div>
-                                <div class="text-muted" style="font-size: 0.8rem;">Ticket Booking</div>
+                                <div class="text-muted profile-history-kind">Ticket Booking</div>
                             </td>
                             <td class="text-end align-middle">
                                 <span class="fs-5 fw-bold text-danger">+${pointsEarned}</span>
@@ -687,10 +667,10 @@ class ProfilePage {
                 if (pointsUsed > 0) {
                     historyHTML += `
                         <tr>
-                            <td class="text-white align-middle" style="font-size: 0.9rem;">${date}</td>
+                            <td class="text-white align-middle profile-history-date">${date}</td>
                             <td class="align-middle">
                                 <div class="text-white fw-bold mb-1">${this.escapeHtml(movieName)}</div>
-                                <div class="text-muted" style="font-size: 0.8rem;">Point Redemption</div>
+                                <div class="text-muted profile-history-kind">Point Redemption</div>
                             </td>
                             <td class="text-end align-middle">
                                 <span class="fs-5 fw-bold text-white">-${pointsUsed}</span>
@@ -732,7 +712,7 @@ class ProfilePage {
                 this.clearContainer(ticketsList);
                 ticketsList.innerHTML = this.createTicketsSkeleton();
                 ticketsEmpty.classList.add('d-none');
-                if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+                loadMoreBtn?.classList.add('d-none');
             } else {
                 if (loadMoreBtn) {
                     loadMoreBtn.disabled = true;
@@ -764,7 +744,7 @@ class ProfilePage {
 
             if (orders.length === 0 && !append) {
                 ticketsEmpty.classList.remove('d-none');
-                if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+                loadMoreBtn?.classList.add('d-none');
             } else {
                 let filteredOrders = orders;
 
@@ -788,11 +768,11 @@ class ProfilePage {
                 // Show/hide load more button
                 if (loadMoreBtn) {
                     if (currentPage < lastPage) {
-                        loadMoreBtn.style.display = 'inline-block';
+                        loadMoreBtn.classList.remove('d-none');
                         loadMoreBtn.disabled = false;
                         loadMoreBtn.textContent = 'Xem thêm lịch sử';
                     } else {
-                        loadMoreBtn.style.display = 'none';
+                        loadMoreBtn.classList.add('d-none');
                     }
                 }
             }
@@ -822,7 +802,7 @@ class ProfilePage {
 
         // Make whole card clickable
         if (cardEl) {
-            cardEl.style.cursor = 'pointer';
+            cardEl.classList.add('ticket-card-clickable');
             cardEl.addEventListener('click', (e) => {
                 if (e.target.closest('.ticket-detail-btn')) return;
                 this.openOrderDetailModal(order);
@@ -833,7 +813,7 @@ class ProfilePage {
         const poster = card.querySelector('.ticket-poster');
         const overlay = card.querySelector('.ticket-cancelled-overlay');
         if (poster) {
-            poster.src = this.safeImageUrl(order.poster_url || order.showtime?.movie?.poster_url);
+            poster.src = this.safeImageUrl(order.poster_display_url || order.poster_url || order.showtime?.movie?.poster_display_url || order.showtime?.movie?.poster_url);
             poster.alt = order.movie_title || order.showtime?.movie?.title || 'Poster';
             // Prevent infinite loop: remove handler after first error
             poster.addEventListener('error', () => {
@@ -841,7 +821,7 @@ class ProfilePage {
             }, { once: true });
         }
         if (overlay) {
-            overlay.style.display = status === 'cancelled' ? 'flex' : 'none';
+            overlay.classList.toggle('d-none', status !== 'cancelled');
         }
 
         // Format badges (3D, IMAX, etc.)
@@ -912,21 +892,18 @@ class ProfilePage {
         container.innerHTML = '';
 
         const config = {
-            completed: { dot: '#22c55e', label: 'CONFIRMED', color: '#22c55e' },
-            confirmed: { dot: '#22c55e', label: 'CONFIRMED', color: '#22c55e' },
-            pending:   { dot: '#f59e0b', label: 'PENDING',   color: '#f59e0b' },
-            cancelled: { dot: '#ed0712', label: 'ĐÃ HỦY',    color: '#ed0712' },
-        }[status] || { dot: '#6b7280', label: String(status || 'Không rõ').toUpperCase(), color: '#6b7280' };
+            completed: { label: 'CONFIRMED', className: 'is-success' },
+            confirmed: { label: 'CONFIRMED', className: 'is-success' },
+            pending: { label: 'PENDING', className: 'is-warning' },
+            cancelled: { label: 'ĐÃ HỦY', className: 'is-danger' },
+        }[status] || { label: String(status || 'Không rõ').toUpperCase(), className: 'is-neutral' };
 
         const dot = document.createElement('span');
-        dot.className = 'ticket-status-dot';
-        dot.style.background = config.dot;
-        dot.style.boxShadow = `0 0 6px ${config.dot}66`;
+        dot.className = `ticket-status-dot ${config.className}`;
 
         const label = document.createElement('span');
-        label.className = 'ticket-status-label';
+        label.className = `ticket-status-label ${config.className}`;
         label.textContent = config.label;
-        label.style.color = config.color;
 
         container.appendChild(dot);
         container.appendChild(label);
@@ -1036,7 +1013,7 @@ class ProfilePage {
             ? orderCode
             : `ORD-${orderCode}`;
         
-        const posterUrl = this.safeImageUrl(order.poster_url || order.showtime?.movie?.poster_url);
+        const posterUrl = this.safeImageUrl(order.poster_display_url || order.poster_url || order.showtime?.movie?.poster_display_url || order.showtime?.movie?.poster_url);
         const modalPoster = document.getElementById('odModalPoster');
         modalPoster.src = posterUrl;
         // Prevent infinite loop: remove handler after first error
@@ -1224,7 +1201,7 @@ class ProfilePage {
                 <div class="d-flex justify-content-between mb-2">
                     <div>
                         <div class="text-white fw-semibold">Vé ${this.escapeHtml(group.type)} (x${this.escapeHtml(group.quantity)})</div>
-                        <div class="text-muted" style="font-size: 0.8rem;">Ghế ${this.escapeHtml(group.seats.join(', '))}</div>
+                        <div class="text-muted profile-invoice-item-meta">Ghế ${this.escapeHtml(group.seats.join(', '))}</div>
                     </div>
                     <div class="text-white">${group.totalPrice.toLocaleString('vi-VN')}đ</div>
                 </div>
@@ -1242,7 +1219,7 @@ class ProfilePage {
                 <div class="d-flex justify-content-between mb-2">
                     <div>
                         <div class="text-white fw-semibold">${this.escapeHtml(name)} (x${this.escapeHtml(qty)})</div>
-                        ${description ? `<div class="text-muted" style="font-size: 0.8rem;">${this.escapeHtml(description)}</div>` : ''}
+                        ${description ? `<div class="text-muted profile-invoice-item-meta">${this.escapeHtml(description)}</div>` : ''}
                     </div>
                     <div class="text-white">${parseFloat(total).toLocaleString('vi-VN')}đ</div>
                 </div>
@@ -1260,18 +1237,16 @@ class ProfilePage {
         // Status check - completed, confirmed, paid are successful
         const statusBadge = document.getElementById('odModalStatus');
         const orderStatus = String(order.status).toLowerCase();
+        statusBadge.classList.remove('is-success', 'is-warning', 'is-danger');
         if (orderStatus === 'completed' || orderStatus === 'confirmed' || orderStatus === 'paid' || order.status_code === 2) {
             statusBadge.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> THANH TOÁN THÀNH CÔNG`;
-            statusBadge.style.backgroundColor = 'rgba(25, 135, 84, 0.15)';
-            statusBadge.style.color = '#198754';
+            statusBadge.classList.add('is-success');
         } else if (orderStatus === 'pending' || order.status_code === 1) {
             statusBadge.innerHTML = `<i class="bi bi-clock-fill me-2"></i> CHỜ THANH TOÁN`;
-            statusBadge.style.backgroundColor = 'rgba(255, 193, 7, 0.15)';
-            statusBadge.style.color = '#ffc107';
+            statusBadge.classList.add('is-warning');
         } else {
             statusBadge.innerHTML = `<i class="bi bi-x-circle-fill me-2"></i> ĐÃ HỦY`;
-            statusBadge.style.backgroundColor = 'rgba(220, 53, 69, 0.15)';
-            statusBadge.style.color = '#dc3545';
+            statusBadge.classList.add('is-danger');
         }
         
         // Transaction/Payer Info

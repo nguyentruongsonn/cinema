@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Combo;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Seat;
@@ -85,6 +86,7 @@ class PricingService
 
         if (!empty($productRequests)) {
             $requestedProducts = collect($productRequests)
+                ->filter(fn (array $product): bool => ($product['type'] ?? 'product') === 'product')
                 ->mapWithKeys(fn (array $product) => [(int) $product['id'] => (int) $product['quantity']])
                 ->filter(fn (int $quantity) => $quantity > 0);
 
@@ -106,6 +108,46 @@ class PricingService
                         'price' => $unitPrice,
                         'type' => $product->type,
                         'image_url' => $product->image_url,
+                        'item_type' => 'product',
+                    ];
+                }
+            }
+
+            $requestedCombos = collect($productRequests)
+                ->filter(fn (array $product): bool => ($product['type'] ?? null) === 'combo')
+                ->mapWithKeys(fn (array $product) => [(int) $product['id'] => (int) $product['quantity']])
+                ->filter(fn (int $quantity) => $quantity > 0);
+
+            if ($requestedCombos->isNotEmpty()) {
+                $combos = Combo::query()
+                    ->active()
+                    ->whereIn('id', $requestedCombos->keys()->all())
+                    ->with('comboItems.product')
+                    ->get();
+
+                foreach ($combos as $combo) {
+                    $quantity = (int) $requestedCombos->get($combo->id);
+                    if ($combo->available_stock < $quantity) {
+                        throw new \RuntimeException("Combo {$combo->name} không còn đủ số lượng.", 409);
+                    }
+
+                    $unitPrice = (float) $combo->price;
+                    $lineTotal = $unitPrice * $quantity;
+                    $productTotal += $lineTotal;
+
+                    $productItems[] = [
+                        'id' => $combo->id,
+                        'name' => $combo->name,
+                        'quantity' => $quantity,
+                        'price' => $unitPrice,
+                        'type' => 'combo',
+                        'image_url' => $combo->image_url,
+                        'item_type' => 'combo',
+                        'items' => $combo->comboItems->map(fn ($item): array => [
+                            'product_id' => $item->product_id,
+                            'product_name' => $item->product?->name,
+                            'quantity' => $item->quantity,
+                        ])->values()->all(),
                     ];
                 }
             }

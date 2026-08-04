@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Http\Controllers\HomeController;
 use App\Models\Movie;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -232,7 +233,7 @@ class MovieService
         });
 
         // Invalidate caches after successful commit
-        Cache::forget('movies:statistics');
+        $this->flushMovieCaches();
 
         Log::info('Movie created successfully', [
             'movie_id' => $movie->id,
@@ -306,7 +307,7 @@ class MovieService
         if (isset($oldSlug) && $movie->slug !== $oldSlug) {
             Cache::forget("movie:slug:{$oldSlug}");
         }
-        Cache::forget('movies:statistics');
+        $this->flushMovieCaches();
 
         Log::info('Movie updated successfully', [
             'movie_id' => $movie->id,
@@ -344,7 +345,7 @@ class MovieService
         // Invalidate caches after successful commit
         Cache::forget("movie:id:{$id}");
         Cache::forget("movie:slug:{$slug}");
-        Cache::forget('movies:statistics');
+        $this->flushMovieCaches();
 
         Log::info('Movie deleted successfully', [
             'movie_id' => $id,
@@ -374,5 +375,11 @@ class MovieService
 
             return $stats;
         });
+    }
+
+    private function flushMovieCaches(): void
+    {
+        Cache::forget('movies:statistics');
+        HomeController::flushCachedData();
     }
 }

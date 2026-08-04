@@ -8,11 +8,15 @@
     const API = '/admin/revenue/stats';
 
     // Palette for charts
-    const PALETTE = ['#e50914','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#a3e635','#06b6d4'];
+    const PALETTE = ['#ff5a5f','#22c55e','#38bdf8','#fbbf24','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#60a5fa'];
+    const TEXT_COLOR = '#e4e4e7';
+    const MUTED_TEXT_COLOR = '#c7c7d1';
+    const GRID_COLOR = 'rgba(255,255,255,0.08)';
 
     /* ── State ─────────────────────────────────────────────────────── */
     let charts = { theater: null, movie: null, payment: null, trend: null };
     let els    = {};
+    let pollInterval = null;
 
     /* ── DOM Cache ──────────────────────────────────────────────────── */
     function cacheDoms() {
@@ -122,8 +126,8 @@
             chart : { type: 'pie', height: 300, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
             colors: PALETTE,
             stroke: { width: 2, colors: ['#1e1e24'] },
-            legend: { position: 'bottom', labels: { colors: '#a1a1aa' }, fontSize: '12px' },
-            dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: false } },
+            legend: { position: 'bottom', labels: { colors: TEXT_COLOR }, fontSize: '13px', fontWeight: 600, markers: { width: 10, height: 10, radius: 6 } },
+            dataLabels: { style: { fontSize: '12px', fontWeight: 700, colors: ['#ffffff'] }, dropShadow: { enabled: false } },
             tooltip : { theme: 'dark', y: { formatter: formatCurrencyFull } },
         };
         charts.theater = new ApexCharts(els.chartTheaterPie, opts);
@@ -137,19 +141,19 @@
                 type: 'bar', height: 300, background: 'transparent',
                 fontFamily: 'Inter, sans-serif', toolbar: { show: false },
             },
-            colors: ['#e50914'],
+            colors: ['#ff5a5f'],
             plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } },
             dataLabels: { enabled: false },
             xaxis: {
                 categories: [],
                 labels: {
-                    style: { colors: '#a1a1aa', fontSize: '11px' },
+                    style: { colors: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 },
                     formatter: v => formatCurrency(v),
                 },
                 axisBorder: { show: false }, axisTicks: { show: false },
             },
-            yaxis: { labels: { style: { colors: '#a1a1aa', fontSize: '11px' }, maxWidth: 150 } },
-            grid : { borderColor: '#2e2e33', strokeDashArray: 4, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
+            yaxis: { labels: { style: { colors: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 }, maxWidth: 150 } },
+            grid : { borderColor: GRID_COLOR, strokeDashArray: 4, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
             tooltip: { theme: 'dark', x: { show: true }, y: { formatter: formatCurrencyFull } },
         };
         charts.movie = new ApexCharts(els.chartMovieBar, opts);
@@ -168,7 +172,7 @@
                 total: {
                     show: true,
                     label: 'Tổng lượt',
-                    color: '#a1a1aa',
+                    color: MUTED_TEXT_COLOR,
                     fontSize: '13px',
                     formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0).toLocaleString('vi-VN'),
                 },
@@ -189,26 +193,26 @@
                 { name: 'Đơn hàng',  data: [], type: 'line' },
             ],
             chart  : { height: 300, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, zoom: { enabled: false } },
-            colors : ['#e50914', '#3b82f6'],
+            colors : ['#ff5a5f', '#38bdf8'],
             stroke : { curve: 'smooth', width: [3, 2], dashArray: [0, 4] },
             fill   : {
                 type: ['gradient', 'none'],
-                gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02, stops: [0, 100] },
+                gradient: { shadeIntensity: 0.6, opacityFrom: 0.22, opacityTo: 0.02, stops: [0, 100] },
             },
-            markers: { size: [0, 4], colors: ['#e50914','#3b82f6'], strokeColors: '#1e1e24', strokeWidth: 2 },
+            markers: { size: [0, 4], colors: ['#ff5a5f','#38bdf8'], strokeColors: '#1e1e24', strokeWidth: 2 },
             dataLabels: { enabled: false },
             xaxis: {
                 categories: [],
-                labels: { style: { colors: '#a1a1aa', fontSize: '11px' }, rotate: -30 },
+                labels: { style: { colors: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 }, rotate: -30 },
                 axisBorder: { show: false }, axisTicks: { show: false },
             },
             yaxis: [
                 {
-                    title : { text: 'Doanh thu', style: { color: '#a1a1aa', fontSize: '11px' } },
+                    title : { text: 'Doanh thu', style: { color: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 } },
                     min   : 0,
                     max   : max => (max < 500000 ? 500000 : max),
                     labels: {
-                        style: { colors: '#a1a1aa', fontSize: '11px' },
+                        style: { colors: MUTED_TEXT_COLOR, fontSize: '12px', fontWeight: 600 },
                         formatter: v => formatCurrency(v),
                     },
                 },
@@ -216,11 +220,11 @@
                     opposite: true,
                     title : { text: 'Đơn hàng', style: { color: '#3b82f6', fontSize: '11px' } },
                     min   : 0,
-                    labels: { style: { colors: '#3b82f6', fontSize: '11px' } },
+                    labels: { style: { colors: '#38bdf8', fontSize: '12px', fontWeight: 600 } },
                 },
             ],
-            grid   : { borderColor: '#2e2e33', strokeDashArray: 4 },
-            legend : { position: 'top', labels: { colors: '#a1a1aa' } },
+            grid   : { borderColor: GRID_COLOR, strokeDashArray: 4 },
+            legend : { position: 'top', horizontalAlign: 'center', labels: { colors: TEXT_COLOR }, fontSize: '13px', fontWeight: 700, markers: { width: 10, height: 10, radius: 6 }, itemMargin: { horizontal: 14, vertical: 4 } },
             tooltip: { theme: 'dark', shared: true, intersect: false,
                 y: [
                     { formatter: formatCurrencyFull },
@@ -291,7 +295,7 @@
             els.paymentLegend.innerHTML = breakdown.map((b, i) => `
                 <div class="pay-legend-row">
                     <span>
-                        <span class="pay-legend-dot" style="background:${PALETTE[i % PALETTE.length]}"></span>
+              <span class="pay-legend-dot pay-legend-dot--${i % PALETTE.length}"></span>
                         <span class="text-secondary">${sanitize(b.method || 'Khác')}</span>
                     </span>
                     <span class="fw-bold">${b.count.toLocaleString('vi-VN')} lượt <span class="text-secondary">(${b.percent}%)</span></span>
@@ -314,17 +318,19 @@
 
     /* ── Wait for authManager ────────────────────────────────────────── */
     /* ── API call ───────────────────────────────────────────────────── */
-    async function loadStats() {
+    async function loadStats(options = {}) {
+        const { showSkeleton = true, skipCache = false } = options;
         const start = els.filterStart?.value;
         const end   = els.filterEnd?.value;
         if (!start || !end) return;
 
-        showLoading();
+        if (showSkeleton) showLoading();
         try {
             const url = `${API}?start_date=${start}&end_date=${end}`;
             const response = await window.AdminCore.apiFetch(`/api/v1${url}`, {
                 requestKey: 'revenue:stats',
                 cacheTtl: 30000,
+                skipCache,
             });
             if (!response?.ok) throw new Error('Không thể tải thống kê doanh thu.');
             const res = await response.json();
@@ -341,7 +347,7 @@
             if (e?.name === 'AbortError') return;
             console.error('[Revenue] Error:', e);
         } finally {
-            hideLoading();
+            if (showSkeleton) hideLoading();
         }
     }
 
@@ -375,12 +381,19 @@
         initTrendArea();
         bindEvents();
         loadStats();
+        pollInterval = setInterval(() => {
+            if (!document.hidden) {
+                loadStats({ showSkeleton: false, skipCache: true });
+            }
+        }, 15000);
     }
 
     window.onAdminPageLoad(() => {
         cacheDoms();
         init();
         window.onAdminPageCleanup?.(() => {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = null;
             Object.values(charts).forEach((chart) => chart?.destroy?.());
             charts = { theater: null, movie: null, payment: null, trend: null };
             els = {};

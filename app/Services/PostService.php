@@ -14,14 +14,10 @@ class PostService
     private const TRAILERS_CACHE_TTL = 600;
 
     /**
-     * Get the hero featured post if on first page without search/category filters.
+     * Get the shared hero post used across every posts filter and page.
      */
-    public function getFeaturedPost(?string $category, string $search, int $page): ?Post
+    public function getFeaturedPost(): ?Post
     {
-        if (! empty($category) || $search !== '' || $page > 1) {
-            return null;
-        }
-
         return Post::query()
             ->with('author:id,name')
             ->published()
@@ -32,15 +28,11 @@ class PostService
     /**
      * Get paginated list of published posts with category and search filtering.
      */
-    public function getFilteredPosts(?Post $featuredPost, ?string $category, string $search, int $perPage = 10): LengthAwarePaginator
+    public function getFilteredPosts(?string $category, string $search, int $perPage = 10): LengthAwarePaginator
     {
         $query = Post::query()
             ->with('author:id,name')
             ->published();
-
-        if ($featuredPost) {
-            $query->where('id', '!=', $featuredPost->id);
-        }
 
         if (in_array($category, ['news', 'blog', 'announcement', 'event', 'promotion'], true)) {
             $query->category($category);
@@ -65,7 +57,7 @@ class PostService
     {
         return Cache::remember(self::TRAILERS_CACHE_KEY, self::TRAILERS_CACHE_TTL, fn () =>
             Movie::query()
-                ->select(['id', 'title', 'slug', 'poster_url', 'trailer_url', 'duration', 'age_rating', 'release_date'])
+                ->select(['id', 'title', 'slug', 'poster_url', 'poster_path', 'trailer_url', 'duration', 'age_rating', 'release_date'])
                 ->active()
                 ->latest('release_date')
                 ->take($limit)

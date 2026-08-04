@@ -302,7 +302,7 @@ class AdminOrdersManager {
         const user = order.user || {};
         
         const title = this.esc(movie.title || 'Chưa rõ');
-        const poster = this.safeImageUrl(movie.poster_url);
+        const poster = this.safeImageUrl(movie.poster_display_url || movie.poster_url);
         const rating = movie.age_rating || '';
         const theaterName = this.esc(theater.name || 'Chưa rõ');
         const screenName = this.esc(screen.name || '');
@@ -324,7 +324,7 @@ class AdminOrdersManager {
         <article class="ticket-card">
             <div class="ticket-poster">
                 ${poster
-                    ? `<img class="ticket-poster-img" src="${this.esc(poster)}" alt="${title}" loading="lazy" onerror="this.outerHTML='<div class=\'movie-poster-container text-center d-flex align-items-center justify-content-center w-100 h-100\'><i class=\'bi bi-film text-white-50 fs-2\'></i></div>'">`
+                    ? `<img class="ticket-poster-img" src="${this.esc(poster)}" alt="${title}" loading="lazy" data-admin-image-fallback="bi-film">`
                     : `<div class="movie-poster-container text-center d-flex align-items-center justify-content-center w-100 h-100"><i class="bi bi-film text-white-50 fs-2"></i></div>`}
                 ${rating ? `<div class="ticket-formats"><span class="ticket-format-badge">${this.esc(rating)}</span></div>` : ''}
             </div>
@@ -379,39 +379,39 @@ class AdminOrdersManager {
         
         this.els.modalBody.innerHTML = `
             <div class="p-2">
-                <div class="d-flex align-items-center gap-3 p-3 mb-4" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
-                    <div class="skeleton-line" style="width: 70px; height: 100px; border-radius: 8px; flex-shrink: 0;"></div>
+                <div class="admin-order-detail-skeleton admin-order-detail-skeleton--hero mb-4">
+                    <div class="skeleton-line order-skeleton order-skeleton--poster"></div>
                     <div class="flex-grow-1">
-                        <div class="skeleton-line mb-2" style="width: 60%; height: 20px; border-radius: 4px;"></div>
-                        <div class="skeleton-line mb-2" style="width: 40%; height: 14px; border-radius: 4px;"></div>
-                        <div class="skeleton-line" style="width: 30%; height: 14px; border-radius: 4px;"></div>
+                        <div class="skeleton-line order-skeleton order-skeleton--title mb-2"></div>
+                        <div class="skeleton-line order-skeleton order-skeleton--line-md mb-2"></div>
+                        <div class="skeleton-line order-skeleton order-skeleton--line-sm"></div>
                     </div>
                 </div>
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
-                        <div class="p-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
-                            <div class="skeleton-line mb-3" style="width: 40%; height: 16px; border-radius: 4px;"></div>
-                            <div class="skeleton-line mb-2" style="width: 80%; height: 14px; border-radius: 4px;"></div>
-                            <div class="skeleton-line" style="width: 60%; height: 14px; border-radius: 4px;"></div>
+                        <div class="admin-order-detail-skeleton">
+                            <div class="skeleton-line order-skeleton order-skeleton--section-title mb-3"></div>
+                            <div class="skeleton-line order-skeleton order-skeleton--line-xl mb-2"></div>
+                            <div class="skeleton-line order-skeleton order-skeleton--line-lg"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="p-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
-                            <div class="skeleton-line mb-3" style="width: 40%; height: 16px; border-radius: 4px;"></div>
-                            <div class="skeleton-line mb-2" style="width: 75%; height: 14px; border-radius: 4px;"></div>
-                            <div class="skeleton-line" style="width: 55%; height: 14px; border-radius: 4px;"></div>
+                        <div class="admin-order-detail-skeleton">
+                            <div class="skeleton-line order-skeleton order-skeleton--section-title mb-3"></div>
+                            <div class="skeleton-line order-skeleton order-skeleton--line-wide mb-2"></div>
+                            <div class="skeleton-line order-skeleton order-skeleton--line-mid"></div>
                         </div>
                     </div>
                 </div>
-                <div class="p-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
-                    <div class="skeleton-line mb-3" style="width: 30%; height: 16px; border-radius: 4px;"></div>
+                <div class="admin-order-detail-skeleton">
+                    <div class="skeleton-line order-skeleton order-skeleton--summary-title mb-3"></div>
                     <div class="d-flex justify-content-between mb-2">
-                        <div class="skeleton-line" style="width: 45%; height: 14px; border-radius: 4px;"></div>
-                        <div class="skeleton-line" style="width: 20%; height: 14px; border-radius: 4px;"></div>
+                        <div class="skeleton-line order-skeleton order-skeleton--summary-label"></div>
+                        <div class="skeleton-line order-skeleton order-skeleton--summary-value"></div>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <div class="skeleton-line" style="width: 55%; height: 14px; border-radius: 4px;"></div>
-                        <div class="skeleton-line" style="width: 20%; height: 14px; border-radius: 4px;"></div>
+                        <div class="skeleton-line order-skeleton order-skeleton--line-mid"></div>
+                        <div class="skeleton-line order-skeleton order-skeleton--summary-value"></div>
                     </div>
                 </div>
             </div>`;
@@ -526,11 +526,6 @@ class AdminOrdersManager {
         const tickets = this.getTicketItemsList(order);
         const foodCombos = this.getFoodComboItemsList(order);
         
-        const modalPosterUrl = this.safeImageUrl(movie.poster_url);
-        const modalPosterHtml = modalPosterUrl
-            ? `<img src="${this.esc(modalPosterUrl)}" alt="${this.esc(movie.title || '')}" loading="lazy" onerror="this.style.display='none'">`
-            : '';
-        
         // Build Refined Table Rows
         const ticketsTableRows = tickets.map((t) => {
             const price = t.unitPrice || (order.total_amount && tickets.length ? Math.round(order.total_amount / tickets.length) : 0);
@@ -539,7 +534,7 @@ class AdminOrdersManager {
                 <td class="text-start align-middle">
                     <div class="item-title-text">Vé xem phim: <strong>Ghế ${this.esc(t.seatLabel)}</strong></div>
                     <div class="item-subtitle-text">
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle px-1.5 py-0.5 me-1" style="font-size: 0.65rem;">${this.esc(t.seatType)}</span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle px-1.5 py-0.5 me-1 admin-order-mini-badge">${this.esc(t.seatType)}</span>
                         <span>Mã vé: <code>${this.esc(t.ticketCode)}</code></span>
                     </div>
                 </td>
@@ -563,7 +558,7 @@ class AdminOrdersManager {
             </tr>`;
         }).join('');
 
-        const payload = order.payload || {};
+        const payload = order.invoice || {};
         let calculatedSubtotal = 0;
         tickets.forEach(t => calculatedSubtotal += parseFloat(t.unitPrice || 0));
         foodCombos.forEach(f => calculatedSubtotal += parseFloat(f.totalPrice || 0));
@@ -583,28 +578,26 @@ class AdminOrdersManager {
         const timeFormatted = this.formatCGVTime(showtime.scheduled_at);
 
         if (this.els.modalStatus) {
-            this.els.modalStatus.innerHTML = `<span class="badge ${statusBadgeClass} text-uppercase px-3 py-2" style="font-size:0.85rem;">${statusLabel}</span>`;
+            this.els.modalStatus.innerHTML = `<span class="badge ${statusBadgeClass} text-uppercase px-3 py-2 admin-order-status-badge">${statusLabel}</span>`;
         }
-
-        const adminBoxStyle = 'background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.25rem;';
 
         this.els.modalBody.innerHTML = `
         <div class="row g-4">
             <!-- Left Column: Itemized table & Payment summary -->
             <div class="col-lg-7">
                 <!-- Table Box -->
-                <div style="${adminBoxStyle}" class="mb-4">
-                    <h6 class="text-white fw-bold mb-3 d-flex align-items-center" style="font-size: 0.95rem;">
-                        <i class="bi bi-ticket-detailed me-2" style="color:var(--accent-color);"></i> Chi tiết Vé & Combo dịch vụ
+                <div class="admin-order-detail-box mb-4">
+                    <h6 class="admin-order-detail-heading">
+                        <i class="bi bi-ticket-detailed me-2 admin-accent-icon"></i> Chi tiết Vé & Combo dịch vụ
                     </h6>
-                    <div class="admin-table-wrapper" style="margin: 0; padding: 0;">
+                    <div class="admin-table-wrapper admin-order-detail-table-wrapper">
                         <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th class="text-start">Chi tiết mô tả</th>
-                                    <th class="text-center" style="width: 70px;">SL</th>
-                                    <th class="text-end" style="width: 125px;">Đơn giá</th>
-                                    <th class="text-end" style="width: 135px;">Thành tiền</th>
+                                    <th class="text-center admin-order-col-quantity">SL</th>
+                                    <th class="text-end admin-order-col-price">Đơn giá</th>
+                                    <th class="text-end admin-order-col-total">Thành tiền</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -616,9 +609,9 @@ class AdminOrdersManager {
                 </div>
 
                 <!-- Payment Summary Box -->
-                <div style="${adminBoxStyle}">
-                    <h6 class="text-white fw-bold mb-3 d-flex align-items-center" style="font-size: 0.95rem;">
-                        <i class="bi bi-credit-card me-2" style="color:var(--accent-color);"></i> Chi tiết thanh toán
+                <div class="admin-order-detail-box">
+                    <h6 class="admin-order-detail-heading">
+                        <i class="bi bi-credit-card me-2 admin-accent-icon"></i> Chi tiết thanh toán
                     </h6>
                     <div class="d-flex flex-column gap-2">
                         <div class="d-flex justify-content-between align-items-center py-1">
@@ -632,7 +625,7 @@ class AdminOrdersManager {
                         <hr class="border-secondary border-opacity-25 my-1">
                         <div class="d-flex justify-content-between align-items-center py-1">
                             <span class="text-white fw-bold">Tổng tiền thanh toán</span>
-                            <span class="font-monospace fw-bold" style="color: var(--accent-color); font-size: 1.15rem;">${this.formatCurrency(actualTotal)}</span>
+                            <span class="font-monospace fw-bold admin-order-grand-total">${this.formatCurrency(actualTotal)}</span>
                         </div>
                     </div>
                 </div>
@@ -641,9 +634,9 @@ class AdminOrdersManager {
             <!-- Right Column: Customer & Screening info -->
             <div class="col-lg-5">
                 <!-- Customer Box -->
-                <div style="${adminBoxStyle}" class="mb-4">
-                    <h6 class="text-white fw-bold mb-3 d-flex align-items-center" style="font-size: 0.95rem;">
-                        <i class="bi bi-person me-2" style="color:var(--accent-color);"></i> Khách hàng
+                <div class="admin-order-detail-box mb-4">
+                    <h6 class="admin-order-detail-heading">
+                        <i class="bi bi-person me-2 admin-accent-icon"></i> Khách hàng
                     </h6>
                     <div class="d-flex flex-column">
                         <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-10">
@@ -662,15 +655,15 @@ class AdminOrdersManager {
                 </div>
 
                 <!-- Screening Info Box -->
-                <div style="${adminBoxStyle}" class="mb-4">
-                    <h6 class="text-white fw-bold mb-3 d-flex align-items-center" style="font-size: 0.95rem;">
-                        <i class="bi bi-film me-2" style="color:var(--accent-color);"></i> Thông tin Suất chiếu
+                <div class="admin-order-detail-box mb-4">
+                    <h6 class="admin-order-detail-heading">
+                        <i class="bi bi-film me-2 admin-accent-icon"></i> Thông tin Suất chiếu
                     </h6>
                     <div class="d-flex flex-column">
                         <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-10">
                             <span class="text-secondary small">Phim</span>
                             <strong class="text-white small text-end">
-                                ${movie.age_rating ? `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-1.5 py-0.5 me-1" style="font-size:0.65rem;">${this.esc(movie.age_rating)}</span>` : ''}
+                                ${movie.age_rating ? `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-1.5 py-0.5 me-1 admin-order-mini-badge">${this.esc(movie.age_rating)}</span>` : ''}
                                 ${this.esc(movie.title || 'N/A')}
                             </strong>
                         </div>
@@ -690,9 +683,9 @@ class AdminOrdersManager {
                 </div>
 
                 <!-- Transaction Info Box -->
-                <div style="${adminBoxStyle}">
-                    <h6 class="text-white fw-bold mb-3 d-flex align-items-center" style="font-size: 0.95rem;">
-                        <i class="bi bi-receipt-cutoff me-2" style="color:var(--accent-color);"></i> Giao dịch
+                <div class="admin-order-detail-box">
+                    <h6 class="admin-order-detail-heading">
+                        <i class="bi bi-receipt-cutoff me-2 admin-accent-icon"></i> Giao dịch
                     </h6>
                     <div class="d-flex flex-column">
                         <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-10">
@@ -874,11 +867,7 @@ class AdminOrdersManager {
     }
     
     showToast(message, type = 'info') {
-        if (window.authManager?.showToast) {
-            window.authManager.showToast(message, type);
-        } else {
-            console.log(`[${type.toUpperCase()}] ${message}`);
-        }
+        window.showAdminToast?.(message, type);
     }
 
     destroy() {

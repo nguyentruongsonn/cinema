@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Payment;
 
+use App\Mail\TicketsIssuedMail;
 use App\Models\IdempotencyKey;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -13,6 +14,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\OrderFulfillmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -181,6 +183,74 @@ class OrderFulfillmentIdempotencyTest extends TestCase
         $this->assertSame($seat->label, $orderItem->metadata['seat_label']);
         $this->assertSame(Order::STATUS_CONFIRMED, (int) $order->fresh()->status);
         $this->assertSame(Payment::STATUS_SUCCESS, $order->payment->fresh()->status);
+    }
+
+    #[Test]
+    public function fulfillment_emails_issued_tickets_once_after_payment_success(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create(['email' => 'customer@example.test']);
+        $showtime = Showtime::factory()->create();
+        $seat = Seat::factory()->create(['screen_id' => $showtime->screen_id]);
+        $gatewayOrderCode = (string) random_int(100000, 999999);
+
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'showtime_id' => $showtime->id,
+            'status' => Order::STATUS_PENDING,
+            'payment_status' => 'pending',
+            'gateway_order_code' => $gatewayOrderCode,
+            'payload' => [
+                'seats' => [[
+                    'id' => $seat->id,
+                    'name' => $seat->label,
+                    'row' => $seat->row,
+                    'number' => $seat->number,
+                    'type' => 'standard',
+                    'price' => '100000.00',
+                ]],
+                'products' => [],
+                'points_used' => 0,
+            ],
+            'total_amount' => 100000,
+        ]);
+
+        Payment::createPending([
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'method' => 'payos',
+            'transaction_code' => 'TXN-' . $gatewayOrderCode,
+            'gateway_order_code' => $gatewayOrderCode,
+            'amount' => 100000,
+            'payload' => [],
+        ]);
+
+        $service = app(OrderFulfillmentService::class);
+        $service->finalize((int) $gatewayOrderCode);
+        $service->finalize((int) $gatewayOrderCode);
+
+        $ticket = Ticket::query()->where('order_id', $order->id)->sole();
+        $renderedMail = (new TicketsIssuedMail(
+            $order->fresh()->load([
+                'user:id,name,email',
+                'showtime:id,scheduled_at,screen_id,movie_id',
+                'showtime.movie:id,title',
+                'showtime.screen:id,name,theater_id',
+                'showtime.screen.theater:id,name,address',
+                'tickets:id,order_id,ticket_code,seat_id,status',
+                'tickets.seat:id,label',
+            ])
+        ))->render();
+
+        $this->assertStringContainsString($ticket->ticket_code, $renderedMail);
+        $this->assertStringContainsString($seat->label, $renderedMail);
+
+        Mail::assertSent(TicketsIssuedMail::class, 1);
+        Mail::assertSent(TicketsIssuedMail::class, function (TicketsIssuedMail $mail) use ($order) {
+            return $mail->order->id === $order->id
+                && $mail->hasTo('customer@example.test');
+        });
     }
 
     #[Test]

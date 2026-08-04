@@ -71,7 +71,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="productModalLabel">
-                    <i class="bi bi-box-seam me-2" style="color:var(--accent-color);"></i>Tạo sản phẩm mới
+                    <i class="bi bi-box-seam me-2 admin-accent-icon"></i>Tạo sản phẩm mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -120,7 +120,7 @@
                         <div class="col-md-5">
                             <div class="mb-3">
                                 <label class="form-label">Hình ảnh sản phẩm</label>
-                                <div class="image-upload-box mb-2" id="imageUploadBox">
+                                <div class="image-upload-box mb-2" id="imageUploadBox" data-media-input>
                                     <img id="imagePreview" src="" alt="Preview" class="image-preview">
                                     <div id="imagePlaceholder" class="image-placeholder text-white-50">
                                         <i class="bi bi-cloud-arrow-up fs-2 d-block mb-1"></i>
@@ -149,7 +149,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white btn-modal-cancel admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0" id="productSubmitBtn">Lưu sản phẩm</button>
                 </div>
             </form>

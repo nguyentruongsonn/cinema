@@ -77,6 +77,7 @@
     background-size: cover;
     background-position: center 20%;
     background-repeat: no-repeat;
+    background-image: var(--hero-backdrop-image, none);
     transition: opacity 0.8s ease;
 }
 
@@ -867,22 +868,4 @@
 }
 
 /* ── Home Posts Section ─────────────────────────────────────────────────── */
-.home-post-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 12px;
-    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-    height: 100%;
-}
-
-.home-post-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(229, 9, 20, 0.4);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-}
-
-.home-post-image:hover img {
-    transform: scale(1.08);
-}
-
+.btn-trailer--disabled { cursor: default; opacity: .5; }

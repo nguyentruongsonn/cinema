@@ -222,7 +222,7 @@
         // Delete
         const btnDel = e.target.closest('.btn-delete-theater');
         if (btnDel) {
-            if(!confirm('Bạn có chắc muốn xóa rạp này?')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa rạp này?', confirmLabel: 'Xóa rạp', variant: 'danger' })) return;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/theaters/${btnDel.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) {
@@ -282,7 +282,7 @@
                     loadData(currentPage);
                 } else {
                     const errData = await res.json();
-                    alert('Lỗi: ' + JSON.stringify(errData.errors || errData.message));
+                    window.showAdminToast?.(window.formatAdminErrors?.(errData.errors || errData.message) || 'Dữ liệu không hợp lệ', 'error');
                 }
             } catch (error) {
                 console.error('Submit form error', error);

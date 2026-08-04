@@ -70,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
             'user' => \App\Models\User::class,
+            'role' => \App\Models\Role::class,
             'order' => \App\Models\Order::class,
             'payment' => \App\Models\Payment::class,
             'movie' => \App\Models\Movie::class,
@@ -305,7 +306,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         Gate::define('viewDashboardMetrics', fn (User $user): bool =>
-            $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('view_dashboard')
+            $user->hasPermission('dashboard.view')
         );
     }
 }

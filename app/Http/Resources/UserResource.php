@@ -45,6 +45,19 @@ class UserResource extends JsonResource
                 fn() => $this->role?->id
             ),
 
+            'theaters' => $this->when(
+                $this->relationLoaded('theaters'),
+                fn() => $this->theaters->map(fn($theater) => [
+                    'id' => $theater->id,
+                    'name' => $theater->name,
+                ])->values()
+            ),
+
+            'theater_ids' => $this->when(
+                $this->relationLoaded('theaters'),
+                fn() => $this->theaters->pluck('id')->values()
+            ),
+
             // Include order statistics when loaded
             'orders_count' => $this->when(
                 $this->relationLoaded('orders'),

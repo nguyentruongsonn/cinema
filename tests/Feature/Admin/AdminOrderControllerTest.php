@@ -57,6 +57,58 @@ class AdminOrderControllerTest extends TestCase
             ->assertForbidden();
     }
 
+    #[Test]
+    public function admin_order_list_expires_overdue_pending_orders_before_returning_data(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $customer = User::factory()->create();
+        $showtime = Showtime::factory()->create();
+        $order = Order::factory()->create([
+            'user_id' => $customer->id,
+            'showtime_id' => $showtime->id,
+            'status' => Order::STATUS_PENDING,
+            'payment_status' => 'pending',
+            'paid_at' => null,
+            'expired_at' => now()->subMinute(),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->getJson('/api/v1/admin/orders?status=expired');
+
+        $response->assertOk()
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.data.0.id', $order->id)
+            ->assertJsonPath('data.data.0.payment_status', 'expired');
+
+        $this->assertSame(Order::STATUS_CANCELLED, (int) $order->fresh()->status);
+        $this->assertSame('expired', $order->fresh()->payment_status);
+    }
+
+    #[Test]
+    public function admin_order_detail_expires_overdue_pending_order_before_returning_data(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $customer = User::factory()->create();
+        $showtime = Showtime::factory()->create();
+        $order = Order::factory()->create([
+            'user_id' => $customer->id,
+            'showtime_id' => $showtime->id,
+            'status' => Order::STATUS_PENDING,
+            'payment_status' => 'pending',
+            'paid_at' => null,
+            'expired_at' => now()->subMinute(),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->getJson("/api/v1/admin/orders/{$order->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.payment_status', 'expired');
+
+        $this->assertSame(Order::STATUS_CANCELLED, (int) $order->fresh()->status);
+        $this->assertSame('expired', $order->fresh()->payment_status);
+    }
+
     private function userWithRole(string $slug): User
     {
         $role = Role::create(['name' => ucfirst($slug), 'slug' => $slug]);

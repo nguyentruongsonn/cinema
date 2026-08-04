@@ -713,11 +713,29 @@
 }
 
 .profile-xp-progress {
+    width: var(--profile-progress, 0);
     height: 100%;
     background: #ed0712;
     border-radius: 999px;
     transition: width 0.6s ease;
 }
+
+.ticket-card-clickable {
+    cursor: pointer;
+}
+
+.ticket-status-dot.is-success { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.4); }
+.ticket-status-dot.is-warning { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.4); }
+.ticket-status-dot.is-danger { background: #ed0712; box-shadow: 0 0 6px rgba(237, 7, 18, 0.4); }
+.ticket-status-dot.is-neutral { background: #6b7280; box-shadow: 0 0 6px rgba(107, 114, 128, 0.4); }
+.ticket-status-label.is-success { color: #22c55e; }
+.ticket-status-label.is-warning { color: #f59e0b; }
+.ticket-status-label.is-danger { color: #ed0712; }
+.ticket-status-label.is-neutral { color: #6b7280; }
+
+#odModalStatus.is-success { background-color: rgba(25, 135, 84, 0.15); color: #198754; }
+#odModalStatus.is-warning { background-color: rgba(255, 193, 7, 0.15); color: #ffc107; }
+#odModalStatus.is-danger { background-color: rgba(220, 53, 69, 0.15); color: #dc3545; }
 
 .profile-xp-card p {
     font-size: 12px;
@@ -1594,4 +1612,72 @@
 
 .skel-textarea { height: 100px; width: 100%; }
 .skel-box { height: 40px; width: 100%; }
+
+.profile-sidebar-user--compact { margin-bottom: 0; }
+.profile-menu-divider--section { margin: 16px 0 12px; }
+.profile-menu-divider--compact { margin: 8px 0; }
+.profile-rank-heading { align-items: center; display: flex; gap: 12px; }
+.profile-member-rank { color: #a0a0a0; font-size: 13px; margin: 8px 0 0; }
+.profile-card-title--split { align-items: center; display: flex; justify-content: space-between; width: 100%; }
+.profile-edit-all-btn { background: none; border: 0; color: #ed0712; cursor: pointer; font-size: 12px; font-weight: 600; padding: 0; }
+.profile-password-submit--full { margin-top: 20px; width: 100%; }
+.profile-support-header { align-items: center; display: flex; gap: 8px; margin-bottom: 12px; }
+.profile-support-icon { color: #ed0712; font-size: 18px; }
+.profile-support-title { color: #fff; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; margin: 0; }
+.profile-support-copy { color: #7a7a7a; font-size: 13px; line-height: 1.7; margin: 0 0 16px; }
+.profile-support-action { font-size: 13px; padding: 10px; width: 100%; }
+.profile-points-total, .profile-points-unit, .profile-points-rank { font-family: 'Inter', sans-serif; }
+.profile-points-progress-meta { color: #7a7a7a; display: flex; font-size: 13px; font-weight: 500; justify-content: space-between; margin-bottom: 8px; }
+.profile-points-progress { background-color: #2a2a2d; border-radius: 4px; height: 6px; }
+.profile-points-progress-bar { border-radius: 4px; width: var(--profile-progress, 0); }
+.profile-points-benefits { font-size: 13px; font-weight: 400; line-height: 1.5; }
+.profile-history-link { color: #7a7a7a; font-size: 12px; font-weight: 500; text-decoration: none; transition: color 0.2s ease; }
+.profile-history-link:hover, .profile-history-link:focus-visible { color: #fff; }
+.profile-table-scroll { overflow-x: auto; }
+.profile-history-heading { border-bottom: 1px solid rgba(255,255,255,0.06); color: #7a7a7a; font-size: 10px; font-weight: 600; letter-spacing: 0.6px; padding: 12px 0; text-transform: uppercase; }
+.profile-history-heading--date { width: 30%; }
+.profile-history-heading--points { width: 25%; }
+.profile-history-empty-icon { color: #444; font-size: 2.5rem; }
+.profile-history-empty-copy { font-size: 13px; }
+.profile-ticket-empty-icon { color: var(--cinema-danger); font-size: 4rem; }
+.profile-order-modal-content { background-color: #0f0f11; border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 16px; }
+.profile-order-code-label { font-size: 11px; font-weight: 600; letter-spacing: 1px; }
+.profile-order-code { font-family: 'Inter', sans-serif; }
+.profile-order-status { font-size: 12px; font-weight: 600; }
+.profile-order-close { opacity: 0.5; }
+.profile-order-close:hover, .profile-order-close:focus-visible { opacity: 1; }
+.profile-invoice-grand-total { border-color: rgba(255,255,255,0.06) !important; }
+.profile-ticket-skeleton-card { padding: 16px; }
+.profile-ticket-skeleton-footer { align-items: center; border-top: 1px solid #2a2a2a; display: flex; justify-content: space-between; margin-top: 8px; padding-top: 16px; }
+.profile-skeleton--ticket-poster { height: 130px; width: 90px; }
+.profile-skeleton--badge { height: 20px; width: 50px; }
+.profile-skeleton--title { height: 24px; width: 40%; }
+.profile-skeleton--price { height: 24px; width: 80px; }
+.profile-skeleton--line-lg { height: 16px; width: 70%; }
+.profile-skeleton--line-md { height: 16px; width: 60%; }
+.profile-skeleton--line-sm { height: 16px; width: 50%; }
+.profile-skeleton--meta { height: 20px; width: 100px; }
+.profile-skeleton--action { height: 32px; width: 110px; }
+.profile-skeleton--history-date { height: 16px; width: 80px; }
+.profile-skeleton--history-copy { height: 16px; width: 150px; }
+.profile-skeleton--history-points { height: 16px; width: 50px; }
+.profile-voucher-card { background: linear-gradient(135deg, #1a1a1a 0%, #222 100%); border: 1px solid #2a2a2a; border-left: 4px solid var(--cinema-danger, #e50914); border-radius: 12px; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
+.profile-voucher-card--skeleton { border-left-color: #2a2a2a; }
+.profile-voucher-card__header { align-items: center; display: flex; justify-content: space-between; }
+.profile-voucher-card__badge { background: #e50914; border-radius: 20px; color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .5px; padding: 4px 10px; }
+.profile-voucher-card__code { color: #e50914; font-size: 16px; font-weight: 700; letter-spacing: 2px; }
+.profile-voucher-card__title { color: #fff; font-size: 15px; font-weight: 600; }
+.profile-voucher-card__description { color: #ccc; font-size: 13px; }
+.profile-voucher-card__meta { color: #8d96a3; display: flex; flex-wrap: wrap; font-size: 12px; gap: 16px; }
+.profile-voucher-card__actions { margin-top: 4px; }
+.voucher-copy-btn { background: transparent; border: 1px solid #333; border-radius: 8px; color: #ccc; cursor: pointer; font-size: 13px; padding: 6px 14px; transition: border-color .2s ease, color .2s ease; }
+.voucher-copy-btn:hover, .voucher-copy-btn:focus-visible { border-color: #666; color: #fff; }
+.profile-skeleton--voucher-badge { height: 22px; width: 70px; }
+.profile-skeleton--voucher-code { height: 22px; width: 90px; }
+.profile-skeleton--voucher-title { height: 20px; width: 60%; }
+.profile-skeleton--voucher-copy { height: 16px; width: 80%; }
+.profile-skeleton--voucher-meta-sm { height: 14px; width: 100px; }
+.profile-skeleton--voucher-meta-lg { height: 14px; width: 120px; }
+.profile-history-date { font-size: .9rem; }
+.profile-history-kind, .profile-invoice-item-meta { font-size: .8rem; }
 

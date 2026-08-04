@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Events\OrderPaid;
+use App\Mail\TicketsIssuedMail;
 use App\Models\IdempotencyKey;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -17,6 +18,7 @@ use App\Models\SeatHoldItem;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class OrderFulfillmentService
 {
@@ -327,7 +329,52 @@ class OrderFulfillmentService
                 );
             }
 
+            $this->sendTicketsEmailAfterCommit($order->id);
+
             return $result;
+        });
+    }
+
+    private function sendTicketsEmailAfterCommit(int $orderId): void
+    {
+        DB::afterCommit(function () use ($orderId): void {
+            try {
+                $order = Order::query()
+                    ->with([
+                        'user:id,name,email',
+                        'showtime:id,scheduled_at,screen_id,movie_id',
+                        'showtime.movie:id,title',
+                        'showtime.screen:id,name,theater_id',
+                        'showtime.screen.theater:id,name,address',
+                        'tickets:id,order_id,ticket_code,seat_id,status',
+                        'tickets.seat:id,label',
+                    ])
+                    ->find($orderId);
+
+                if (! $order || ! $order->user?->email || $order->tickets->isEmpty()) {
+                    Log::info('Issued tickets email skipped', [
+                        'order_id' => $orderId,
+                        'has_order' => (bool) $order,
+                        'has_email' => (bool) $order?->user?->email,
+                        'tickets_count' => $order?->tickets?->count() ?? 0,
+                    ]);
+
+                    return;
+                }
+
+                Mail::to($order->user->email)->send(new TicketsIssuedMail($order));
+
+                Log::info('Issued tickets email sent', [
+                    'order_id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'tickets_count' => $order->tickets->count(),
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send issued tickets email', [
+                    'order_id' => $orderId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         });
     }
 

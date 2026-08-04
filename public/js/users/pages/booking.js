@@ -28,6 +28,7 @@ class BookingManager {
         this.steps = ['seats', 'food', 'promotion', 'confirm', 'success'];
         this.isCreatingPayment = false;
         this.lockPromise = null;
+        this.checkoutCompleted = false;
 
         // DOM Elements
         this.seatMapContainer = document.getElementById('seatMap');
@@ -168,6 +169,10 @@ class BookingManager {
      * This avoids re-rendering the whole seat map.
      */
     applyRealtimeSeatStatus(seatId, status, eventUserId = null) {
+        if (this.checkoutCompleted || this.currentStep === 5) {
+            return;
+        }
+
         const numericSeatId = parseInt(seatId, 10);
         const numericEventUserId = eventUserId === null || eventUserId === undefined ? null : parseInt(eventUserId, 10);
         const currentUserId = this.auth?.getUser?.()?.id ? parseInt(this.auth.getUser().id, 10) : null;
@@ -252,29 +257,26 @@ class BookingManager {
     }
 
     async showSuccessScreen(orderCode) {
+        this.markCheckoutCompleted(orderCode);
+
         // Switch to the 5th tab (Success)
         this.switchTab(5);
         this.updateStepButtons();
 
         // Hide navigation buttons
         const navButtons = document.querySelector('.booking-nav-buttons');
-        if (navButtons) navButtons.style.display = 'none';
+        navButtons?.classList.add('d-none');
 
         // Hide sidebar
         const sidebar = document.querySelector('.booking-sidebar');
-        if (sidebar) sidebar.style.display = 'none';
+        sidebar?.classList.add('d-none');
         
         // Adjust layout width
         const container = document.querySelector('.booking-container');
-        if (container) {
-            container.style.gridTemplateColumns = '1fr';
-        }
+        container?.classList.add('booking-container-result');
         
         const mainCol = document.querySelector('.booking-main');
-        if (mainCol) {
-            mainCol.style.background = 'transparent';
-            mainCol.style.border = 'none';
-        }
+        mainCol?.classList.add('booking-main-result');
 
         try {
             const order = await this.fetchVerifiedOrderResult(orderCode);
@@ -307,23 +309,18 @@ class BookingManager {
     showFailureScreen(orderCode) {
         // Hide normal booking elements
         const bookingPageEl = document.querySelector('.booking-page');
-        if (bookingPageEl) bookingPageEl.style.display = 'none';
+        bookingPageEl?.classList.add('d-none');
 
         // Hide sidebar
         const sidebar = document.querySelector('.booking-sidebar');
-        if (sidebar) sidebar.style.display = 'none';
+        sidebar?.classList.add('d-none');
         
         // Adjust layout width
         const container = document.querySelector('.booking-container');
-        if (container) {
-            container.style.gridTemplateColumns = '1fr';
-        }
+        container?.classList.add('booking-container-result');
         
         const mainCol = document.querySelector('.booking-main');
-        if (mainCol) {
-            mainCol.style.background = 'transparent';
-            mainCol.style.border = 'none';
-        }
+        mainCol?.classList.add('booking-main-result');
 
         const failureScreen = document.getElementById('failureScreen');
         if (!failureScreen) return;
@@ -454,7 +451,7 @@ class BookingManager {
             // Stop timer + polling + close WebSocket channels cleanly
             this.destroy();
             const holdId = this.getCurrentHoldId();
-            if (!holdId || ['created', 'redirecting'].includes(this.checkoutIntent?.state)) return;
+            if (!holdId || this.checkoutCompleted || ['created', 'redirecting'].includes(this.checkoutIntent?.state)) return;
 
             navigator.sendBeacon(
                 `${this.apiUrl}/seats/holds/${holdId}/release`,
@@ -535,6 +532,11 @@ class BookingManager {
             }
         }
 
+        if (this.currentStep === 3 && this.getPayableTotal() <= 0) {
+            await this.proceedToPayment();
+            return;
+        }
+
         if (this.currentStep < 4) {
             this.switchTab(this.currentStep + 1);
         } else {
@@ -576,13 +578,16 @@ class BookingManager {
         const canProceed = this.validateCurrentStep();
         const isLockingFirstStep = this.currentStep === 1 && this.isLockingSeats;
         const nextLabel = isLockingFirstStep ? 'Đang giữ ghế...' : 'Tiếp tục';
+        const isZeroAmountCheckout = this.getPayableTotal() <= 0;
         const sidebarLabel = isLockingFirstStep
             ? 'Đang giữ ghế...'
-            : (this.currentStep < 4 ? 'Tiếp tục <i class="bi bi-arrow-right ms-2"></i>' : 'Thanh toán ngay <i class="bi bi-lock-fill ms-2"></i>');
+            : (this.currentStep < 4
+                ? 'Tiếp tục <i class="bi bi-arrow-right ms-2"></i>'
+                : (isZeroAmountCheckout ? 'Xác nhận đặt vé <i class="bi bi-check2-circle ms-2"></i>' : 'Thanh toán ngay <i class="bi bi-lock-fill ms-2"></i>'));
 
         if (this.nextStepBtn) {
             this.nextStepBtn.disabled = !canProceed || isLockingFirstStep;
-            this.nextStepBtn.style.display = this.currentStep < 4 ? 'block' : 'none';
+            this.nextStepBtn.classList.toggle('d-none', this.currentStep >= 4);
             this.nextStepBtn.textContent = nextLabel;
             this.nextStepBtn.classList.toggle('is-loading', isLockingFirstStep);
         }
@@ -591,17 +596,17 @@ class BookingManager {
             this.sidebarContinueBtn.disabled = !canProceed || isLockingFirstStep;
             this.sidebarContinueBtn.innerHTML = sidebarLabel;
             this.sidebarContinueBtn.classList.toggle('is-loading', isLockingFirstStep);
-            this.sidebarContinueBtn.style.display = this.currentStep === 5 ? 'none' : 'block';
+            this.sidebarContinueBtn.classList.toggle('d-none', this.currentStep === 5);
         }
 
         // Update "Quay lại" button
         if (this.prevStepBtn) {
-            this.prevStepBtn.style.display = this.currentStep > 1 ? 'block' : 'none';
+            this.prevStepBtn.classList.toggle('d-none', this.currentStep <= 1);
         }
 
         // Update "Thanh toán" button
         if (this.paymentBtn) {
-            this.paymentBtn.style.display = this.currentStep === 4 ? 'block' : 'none';
+            this.paymentBtn.classList.toggle('d-none', this.currentStep !== 4);
             this.paymentBtn.disabled = !canProceed;
         }
     }
@@ -676,12 +681,12 @@ class BookingManager {
                 }).filter(Boolean).join('<br>');
                 
             if (receiptProductsInfo) receiptProductsInfo.innerHTML = productsList;
-            if (receiptProductsRow) receiptProductsRow.style.display = 'flex';
+            receiptProductsRow?.classList.remove('d-none');
             if (receiptComboPrice) receiptComboPrice.textContent = this.formatCurrency(productsTotal);
-            if (receiptComboPriceRow) receiptComboPriceRow.style.display = 'flex';
+            receiptComboPriceRow?.classList.remove('d-none');
         } else {
-            if (receiptProductsRow) receiptProductsRow.style.display = 'none';
-            if (receiptComboPriceRow) receiptComboPriceRow.style.display = 'none';
+            receiptProductsRow?.classList.add('d-none');
+            receiptComboPriceRow?.classList.add('d-none');
         }
 
         // Update Promo Info
@@ -690,9 +695,9 @@ class BookingManager {
         
         if (discountAmount > 0) {
             if (receiptPromoPrice) receiptPromoPrice.textContent = `-${this.formatCurrency(discountAmount)}`;
-            if (receiptPromoRow) receiptPromoRow.style.display = 'flex';
+            receiptPromoRow?.classList.remove('d-none');
         } else {
-            if (receiptPromoRow) receiptPromoRow.style.display = 'none';
+            receiptPromoRow?.classList.add('d-none');
         }
 
         // Handle points discount display
@@ -903,7 +908,7 @@ class BookingManager {
 
         let labels = parent.querySelector('.seat-grid-col-labels');
         if (labels) {
-            labels.style.display = 'none';
+            labels.classList.add('d-none');
         }
     }
 
@@ -1002,8 +1007,7 @@ class BookingManager {
         } else {
             seatDiv.setAttribute('aria-disabled', 'true');
             if (status === 'maintenance') {
-                seatDiv.style.opacity = '0.2';
-                seatDiv.style.cursor = 'not-allowed';
+                seatDiv.classList.add('seat-maintenance');
             }
         }
 
@@ -1247,7 +1251,9 @@ class BookingManager {
     async cancelSelection() {
         if (this.selectedSeats.size === 0) return;
 
-        const confirmed = confirm('Bạn có chắc muốn hủy chọn ghế?');
+        const confirmed = await window.Modal.confirmAsync('Hủy chọn ghế', 'Bạn có chắc muốn hủy toàn bộ ghế đang chọn?', {
+            variant: 'warning'
+        });
         if (!confirmed) return;
 
         // Unlock seats
@@ -1452,7 +1458,7 @@ class BookingManager {
             const products = this.getSelectedProductsPayload();
             products.forEach(p => {
                 items.push({
-                    type: 'product',
+                    type: p.type || 'product',
                     id: p.id,
                     quantity: p.quantity
                 });
@@ -1485,16 +1491,35 @@ class BookingManager {
                 }
             });
 
+            const orderCode = response.data?.gateway_order_code;
+
+            const isCompletedWithoutGateway = response.success
+                && (
+                    response.data?.requires_payment === false
+                    || String(response.data?.payment_status || '').toLowerCase() === 'paid'
+                    || Number(response.data?.total_amount) <= 0
+                )
+                && orderCode;
+
+            if (isCompletedWithoutGateway) {
+                intent.state = 'created';
+                intent.orderCode = orderCode;
+                this.currentOrderCode = orderCode;
+                this.markCheckoutCompleted(orderCode);
+                this.showToast('Đơn 0đ đã được xác nhận.', 'success');
+                await this.showSuccessScreen(orderCode);
+                return;
+            }
+
             if (response.success && response.data?.checkout_url) {
                 intent.state = 'created';
                 intent.checkoutUrl = response.data.checkout_url;
-                intent.orderCode = response.data?.gateway_order_code || null;
+                intent.orderCode = orderCode || null;
                 this.showToast('Đang chuyển hướng đến cổng thanh toán...', 'success');
 
                 // Store order code and subscribe to private WebSocket channel.
                 // If user pays on mobile (QR scan), the desktop browser will receive
                 // the OrderPaid event and auto-show the success screen.
-                const orderCode = response.data?.gateway_order_code;
                 if (orderCode) {
                     this.currentOrderCode = orderCode;
                     this.subscribeToOrderChannel(orderCode);
@@ -1503,11 +1528,28 @@ class BookingManager {
                 // Redirect directly to PayOS checkout while keeping the intent
                 // active if navigation is delayed or blocked by the browser.
                 this.redirectToCheckout(intent);
+            } else if (response.success && orderCode) {
+                const order = await this.fetchVerifiedOrderResult(orderCode);
+                if (this.isPaidOrder(order)) {
+                    intent.state = 'created';
+                    intent.orderCode = orderCode;
+                    this.currentOrderCode = orderCode;
+                    this.markCheckoutCompleted(orderCode);
+                    this.showToast('Đơn hàng đã được xác nhận.', 'success');
+                    await this.showSuccessScreen(orderCode);
+                    return;
+                }
+
+                throw new Error(response.message || 'Đơn hàng đã tạo nhưng chưa có liên kết thanh toán. Vui lòng kiểm tra Vé của tôi.');
             } else {
                 throw new Error(response.message || 'Không thể tạo đơn hàng');
             }
         } catch (error) {
             console.error('Create order error:', error);
+            if (this.checkoutCompleted) {
+                return;
+            }
+
             if (this.checkoutIntent?.state === 'submitting') {
                 this.checkoutIntent.state = 'retryable';
             }
@@ -1697,6 +1739,23 @@ class BookingManager {
         window.location.href = intent.checkoutUrl;
     }
 
+    markCheckoutCompleted(orderCode = null) {
+        this.checkoutCompleted = true;
+        this.currentOrderCode = orderCode || this.currentOrderCode || null;
+        this.currentHold = null;
+        this.stopTimer();
+
+        if (this._pollInterval) {
+            clearInterval(this._pollInterval);
+            this._pollInterval = null;
+        }
+
+        if (this.checkoutIntent) {
+            this.checkoutIntent.state = 'created';
+            this.checkoutIntent.orderCode = this.currentOrderCode;
+        }
+    }
+
     fillPromotionCode(code) {
         if (!code || !this.promotionCodeInput) return;
 
@@ -1871,16 +1930,12 @@ class BookingManager {
         const promotions = this.registeredPromotions.filter(item => this.isVoucherUsable(item));
 
         if (promotions.length === 0) {
-            if (this.availableVouchersSection) {
-                this.availableVouchersSection.style.setProperty('display', 'none', 'important');
-            }
+            this.availableVouchersSection?.classList.add('d-none');
             this.voucherContent.innerHTML = '';
             return;
         }
 
-        if (this.availableVouchersSection) {
-            this.availableVouchersSection.style.removeProperty('display');
-        }
+        this.availableVouchersSection?.classList.remove('d-none');
         this.voucherContent.innerHTML = this.renderVoucherItems(promotions, selectedCode, appliedCode);
     }
 
@@ -2094,6 +2149,14 @@ class BookingManager {
         return total;
     }
 
+    getPayableTotal() {
+        const subtotal = this.calculateSubtotal();
+        const discountAmount = this.calculateDiscount(subtotal);
+        const subtotalAfterVoucher = Math.max(0, subtotal - discountAmount);
+        const pointsDiscount = Math.min((Number(this.appliedPoints) || 0) * 1000, subtotalAfterVoucher);
+
+        return Math.max(0, subtotal - discountAmount - pointsDiscount);
+    }
     calculateDiscount(subtotal) {
         if (!this.appliedPromotion) {
             return 0;
@@ -2103,10 +2166,15 @@ class BookingManager {
     }
 
     getSelectedProductsPayload() {
-        return Array.from(this.selectedProducts.entries()).map(([id, quantity]) => ({
-            id,
-            quantity
-        }));
+        return Array.from(this.selectedProducts.entries()).map(([id, quantity]) => {
+            const product = this.products.find(item => item.id === id);
+
+            return {
+                id: product?.source_id || id,
+                type: product?.catalog_type || 'product',
+                quantity
+            };
+        });
     }
 
     renderSelectedProducts() {
@@ -2248,46 +2316,15 @@ class BookingManager {
     }
 
     showToast(message, type = 'info') {
-        const toastEl = document.getElementById('bookingToast');
-        if (!toastEl) return;
-
-        const toastBody = toastEl.querySelector('.toast-body');
-        const toastHeader = toastEl.querySelector('.toast-header');
-
-        // Set data-type attribute so CSS can apply type-specific styling
-        toastEl.setAttribute('data-type', type);
-
-        if (toastBody) {
-            toastBody.textContent = message;
-        }
-
-        // Update icon based on type
-        const icon = toastHeader?.querySelector('i');
-        if (icon) {
-            icon.className = '';
-            icon.classList.add('bi', 'me-2');
-
-            switch (type) {
-                case 'success':
-                    icon.classList.add('bi-check-circle');
-                    break;
-                case 'danger':
-                case 'error':
-                    icon.classList.add('bi-exclamation-circle');
-                    break;
-                case 'warning':
-                    icon.classList.add('bi-exclamation-triangle');
-                    break;
-                default:
-                    icon.classList.add('bi-info-circle');
-            }
-        }
-
-        const toast = new bootstrap.Toast(toastEl, {
-            autohide: true,
-            delay: 3000
-        });
-        toast.show();
+        const normalizedType = type === 'danger' ? 'error' : type;
+        const titles = {
+            success: 'Thành công',
+            error: 'Không thể thực hiện',
+            warning: 'Cần lưu ý',
+            info: 'Thông báo',
+        };
+        const toastMethod = window.Toast?.[normalizedType] || window.Toast?.info;
+        toastMethod?.(titles[normalizedType] || titles.info, String(message || ''));
     }
 
     formatCurrency(amount) {
@@ -2310,7 +2347,7 @@ class BookingManager {
 
         this._pollInterval = setInterval(async () => {
             // Don't poll if user is in the middle of locking seats
-            if (this.isLockingSeats || this._pollInFlight || document.hidden) return;
+            if (this.checkoutCompleted || this.currentStep === 5 || this.isLockingSeats || this._pollInFlight || document.hidden) return;
 
             this._pollInFlight = true;
             try {

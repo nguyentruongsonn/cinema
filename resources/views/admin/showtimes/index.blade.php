@@ -45,7 +45,7 @@
                 <i class="bi bi-search"></i>
                 <span>Tìm kiếm</span>
             </button>
-            <button class="admin-filter-btn" type="button" id="resetFilterBtn" title="Đặt lại bộ lọc" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <button class="admin-filter-btn admin-filter-reset" type="button" id="resetFilterBtn" title="Đặt lại bộ lọc">
                 <i class="bi bi-arrow-counterclockwise"></i>
                 <span>Đặt lại</span>
             </button>
@@ -192,7 +192,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="addShowtimeModalLabel">
-                    <i class="bi bi-calendar-plus me-2" style="color:var(--accent-color);"></i>Tạo suất chiếu mới
+                    <i class="bi bi-calendar-plus me-2 admin-accent-icon"></i>Tạo suất chiếu mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -291,7 +291,7 @@
                                 <div class="col-md-4">
                                     <div id="mMovieInfo" class="movie-info-sidebar">
                                         <div id="mMoviePosterPlaceholder" class="movie-poster-placeholder d-flex flex-column align-items-center justify-content-center">
-                                            <i class="bi bi-film" style="font-size: 3rem; opacity: 0.25; color: #fff;"></i>
+                                            <i class="bi bi-film admin-empty-illustration"></i>
                                             <span class="text-secondary small mt-2">Chưa chọn phim</span>
                                         </div>
                                         <img id="mMoviePoster" class="movie-poster-sidebar d-none" src="" alt="Poster">
@@ -323,7 +323,7 @@
                             </div>
 
                             <div class="modal-footer border-secondary mt-4">
-                                <button type="button" class="btn text-white showtimes-cancel-btn" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                                <button type="button" class="btn text-white showtimes-cancel-btn admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                                 <button type="button" id="previewMultiBtn" class="btn btn-preview">
                                     <i class="bi bi-eye me-1"></i> Xem trước
                                 </button>
@@ -395,7 +395,7 @@
                                 <div class="col-md-4">
                                     <div id="sMovieInfo" class="movie-info-sidebar">
                                         <div id="sMoviePosterPlaceholder" class="movie-poster-placeholder d-flex flex-column align-items-center justify-content-center">
-                                            <i class="bi bi-film" style="font-size: 3rem; opacity: 0.25; color: #fff;"></i>
+                                            <i class="bi bi-film admin-empty-illustration"></i>
                                             <span class="text-secondary small mt-2">Chưa chọn phim</span>
                                         </div>
                                         <img id="sMoviePoster" class="movie-poster-sidebar d-none" src="" alt="Poster">
@@ -419,7 +419,7 @@
                             </div>
 
                             <div class="modal-footer border-secondary mt-4">
-                                <button type="button" class="btn text-white showtimes-cancel-btn" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                                <button type="button" class="btn text-white showtimes-cancel-btn admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                                 <button type="submit" class="btn-primary-custom border-0">
                                     <i class="bi bi-calendar-plus me-1"></i> Tạo lịch chiếu
                                 </button>
@@ -438,7 +438,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="editShowtimeModalLabel">
-                    <i class="bi bi-pencil-square me-2" style="color:var(--accent-color);"></i>Cập nhật lịch chiếu
+                    <i class="bi bi-pencil-square me-2 admin-accent-icon"></i>Cập nhật lịch chiếu
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -505,7 +505,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white showtimes-cancel-btn" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white showtimes-cancel-btn admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0" id="editShowtimeSubmitBtn">Lưu lịch chiếu</button>
                 </div>
             </form>

@@ -1,3 +1,10 @@
 import '../../public/js/shared/security-standalone.js';
 import '../../public/js/core/api-client.js';
+import '../../public/js/users/components/toast.js';
+import '../../public/js/users/components/modal.js';
+import '../../public/js/users/components/hybrid-page.js';
+import '../../public/js/users/components/pagination.js';
+import '../../public/js/users/components/skeleton.js';
+import '../../public/js/shared/data-region.js';
+import '../../public/js/shared/tabs.js';
 import '../../public/js/users/auth.js';

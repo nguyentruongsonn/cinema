@@ -57,7 +57,6 @@ npm run test:frontend:security
 npm run build
 php artisan test --compact
 npm run test:browser:smoke
-npm run test:browser:admin-dashboard
 ```
 
 GitHub Actions runs static analysis, formatting, frontend checks, the production build, PHP tests, browser smoke, and dependency audits.

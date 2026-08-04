@@ -808,6 +808,10 @@ img {
     overflow: hidden;
 }
 
+.cinema-auth-actions {
+    max-width: 300px;
+}
+
 .cinema-auth-header {
     position: relative;
     padding: 0;

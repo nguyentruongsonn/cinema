@@ -37,7 +37,7 @@ class ShowtimePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('create_showtimes');
+        return $user->hasPermission('showtimes.create');
     }
 
     /**
@@ -48,7 +48,7 @@ class ShowtimePolicy
      */
     public function update(User $user, Showtime $showtime): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_showtimes');
+        return $user->hasPermission('showtimes.update') && $this->canAccessShowtimeTheater($user, $showtime);
     }
 
     /**
@@ -59,7 +59,7 @@ class ShowtimePolicy
      */
     public function delete(User $user, Showtime $showtime): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('delete_showtimes');
+        return $user->hasPermission('showtimes.delete') && $this->canAccessShowtimeTheater($user, $showtime);
     }
 
     /**
@@ -70,6 +70,20 @@ class ShowtimePolicy
      */
     public function bulkCreate(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('create_showtimes');
+        return $user->hasPermission('showtimes.bulk_create') || $user->hasPermission('showtimes.create');
+    }
+
+    private function canAccessShowtimeTheater(User $user, Showtime $showtime): bool
+    {
+        if (! $user->requiresTheaterScope()) {
+            return true;
+        }
+
+        if (! $showtime->relationLoaded('screen')) {
+            $showtime->load('screen:id,theater_id');
+        }
+
+        return $showtime->screen !== null
+            && $user->isAssignedToTheater((int) $showtime->screen->theater_id);
     }
 }

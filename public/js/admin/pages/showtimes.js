@@ -163,9 +163,7 @@
     async function fetchPrerequisites() {
         try {
             // Fetch movies
-            const mRes = await fetch('/api/v1/movies?per_page=200&status=all', {
-                headers: { Accept: 'application/json' }
-            });
+            const mRes = await window.AdminCore.apiFetch('/api/v1/movies?per_page=200&status=all', { cacheTtl: 300000 });
             if (mRes.ok) {
                 const mData = await mRes.json();
                 cachedMovies = mData.data || [];
@@ -219,9 +217,7 @@
             params.append('status', 'all');
             params.append('include', 'categories');
 
-            const res = await fetch(`/api/v1/movies?${params}`, {
-                headers: { Accept: 'application/json' }
-            });
+            const res = await window.AdminCore.apiFetch(`/api/v1/movies?${params}`, { requestKey: 'showtimes:movies' });
 
             if (!res.ok) throw new Error('Failed to load movies');
 
@@ -255,9 +251,9 @@
             tr.className = 'movie-row';
             tr.dataset.movieId = movie.id;
 
-            const posterUrl = movie.poster_path
+            const posterUrl = movie.poster_display_url || (movie.poster_path
                 ? `/storage/${movie.poster_path}`
-                : (movie.poster_url || '');
+                : (movie.poster_url || ''));
 
             const posterHtml = posterUrl
                 ? `<img src="${escapeHtml(posterUrl)}" alt="${escapeHtml(movie.title)}" class="movie-poster-thumb" loading="lazy">`
@@ -526,7 +522,7 @@
         const time = els.mTimeInput?.value;
         if (!time) return;
         if (multiTimeSlots.includes(time)) {
-            alert('Giờ này đã được thêm!');
+            window.showAdminToast?.('Giờ này đã được thêm!', 'warning');
             return;
         }
         multiTimeSlots.push(time);
@@ -554,14 +550,14 @@
 
     function previewMultiDay() {
         if (!els.mDateFrom?.value || !els.mDateTo?.value || multiTimeSlots.length === 0) {
-            alert('Vui lòng điền đủ: Ngày từ, Ngày đến và ít nhất 1 giờ chiếu!');
+            window.showAdminToast?.('Vui lòng điền đủ: Ngày từ, Ngày đến và ít nhất 1 giờ chiếu!', 'warning');
             return;
         }
 
         const from = new Date(els.mDateFrom.value);
         const to = new Date(els.mDateTo.value);
         if (from > to) {
-            alert('Ngày bắt đầu phải nhỏ hơn ngày kết thúc!');
+            window.showAdminToast?.('Ngày bắt đầu phải nhỏ hơn ngày kết thúc!', 'warning');
             return;
         }
 
@@ -774,18 +770,18 @@
         const release = document.getElementById(`${prefix}MovieRelease`);
         const end = document.getElementById(`${prefix}MovieEnd`);
 
-        const posterUrl = movie.poster_path
+        const posterUrl = movie.poster_display_url || (movie.poster_path
             ? `/storage/${movie.poster_path}`
-            : (movie.poster_url || '');
+            : (movie.poster_url || ''));
 
         if (posterUrl && poster) {
             poster.src = posterUrl;
             poster.classList.remove('d-none');
             if (placeholder) placeholder.classList.add('d-none');
-            poster.onerror = () => {
+            poster.addEventListener('error', () => {
                 poster.classList.add('d-none');
                 if (placeholder) placeholder.classList.remove('d-none');
-            };
+            }, { once: true });
         } else {
             if (poster) poster.classList.add('d-none');
             if (placeholder) placeholder.classList.remove('d-none');
@@ -891,7 +887,7 @@
 
     /* ── Delete Showtime ─────────────────────────────────── */
     async function deleteShowtime(id) {
-        if (!confirm('Xác nhận xóa suất chiếu này?')) return;
+        if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa suất chiếu này?', confirmLabel: 'Xóa suất chiếu', variant: 'danger' })) return;
 
         try {
             const res = await window.AdminCore.apiFetch(`/api/v1/admin/showtimes/${id}`, {

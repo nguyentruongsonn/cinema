@@ -179,7 +179,7 @@
                 <td class="fw-medium text-white py-3">${dayLabels[r.day_of_week]}</td>
                 <td>
                     <input type="hidden" name="rules[${r.day_of_week}][day_of_week]" value="${r.day_of_week}">
-                    <select name="rules[${r.day_of_week}][day_type]" class="admin-filter-select filter-select-md" style="max-width: 250px;">
+                        <select name="rules[${r.day_of_week}][day_type]" class="admin-filter-select filter-select-md pricing-rule-type-select">
                         <option value="weekday" ${r.day_type === 'weekday' ? 'selected' : ''}>Ngày thường (weekday)</option>
                         <option value="weekend" ${r.day_type === 'weekend' ? 'selected' : ''}>Cuối tuần (weekend)</option>
                         <option value="happy_day" ${r.day_type === 'happy_day' ? 'selected' : ''}>Ngày hội ngộ (happy_day)</option>
@@ -187,7 +187,7 @@
                 </td>
                 <td>
                     <div class="d-flex justify-content-end align-items-center">
-                        <input type="number" name="rules[${r.day_of_week}][surcharge]" class="admin-filter-input text-end" style="max-width: 180px;" min="0" value="${r.surcharge}">
+                        <input type="number" name="rules[${r.day_of_week}][surcharge]" class="admin-filter-input text-end pricing-rule-surcharge-input" min="0" value="${r.surcharge}">
                         <span class="ms-2 text-white-50">đ</span>
                     </div>
                 </td>
@@ -308,7 +308,7 @@
 
             const btnDelete = e.target.closest('.btn-delete-holiday');
             if (btnDelete) {
-                if (!confirm('Bạn có chắc muốn xóa ngày lễ này?')) return;
+                if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa ngày lễ này?', confirmLabel: 'Xóa ngày lễ', variant: 'danger' })) return;
                 try {
                     const res = await window.AdminCore.apiFetch(`/api/v1/admin/pricing-rules/holidays/${btnDelete.dataset.id}`, {
                         method: 'DELETE'
@@ -456,7 +456,7 @@
 
             const btnDelete = e.target.closest('.btn-delete-timeslot');
             if (btnDelete) {
-                if (!confirm('Bạn có chắc muốn xóa khung giờ này?')) return;
+                if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa khung giờ này?', confirmLabel: 'Xóa khung giờ', variant: 'danger' })) return;
                 try {
                     const res = await window.AdminCore.apiFetch(`/api/v1/admin/pricing-rules/time-slots/${btnDelete.dataset.id}`, {
                         method: 'DELETE'

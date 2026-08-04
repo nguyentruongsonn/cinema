@@ -53,11 +53,23 @@ class PaymentController extends Controller
                 'checkout_url' => $result['checkout_url'],
                 'gateway_order_code' => $result['gateway_order_code'],
                 'order_number' => $result['order_number'],
+                'payment_status' => $result['payment_status'] ?? 'pending',
+                'requires_payment' => (bool) ($result['requires_payment'] ?? true),
+                'total_amount' => (float) ($result['total_amount'] ?? 0),
             ], 'Tạo đơn hàng thành công.');
         } catch (PaymentGatewayException $e) {
             report($e);
 
             return $this->error('Cổng thanh toán tạm thời không khả dụng.', 502);
+        } catch (\DomainException|\RuntimeException $e) {
+            report($e);
+
+            $statusCode = (int) $e->getCode();
+            if ($statusCode < 400 || $statusCode > 499) {
+                $statusCode = 422;
+            }
+
+            return $this->error($e->getMessage(), $statusCode);
         } catch (Throwable $e) {
             report($e);
 

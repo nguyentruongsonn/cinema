@@ -4,6 +4,7 @@ namespace Tests\Unit\Http\Resources;
 
 use App\Http\Resources\MovieResource;
 use App\Http\Resources\OrderResource;
+use App\Http\Resources\OrderSummaryResource;
 use App\Http\Resources\PaymentResource;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\SeatResource;
@@ -68,11 +69,24 @@ class ApiResourceSecurityTest extends TestCase
             ],
             'payment_status' => 'pending',
         ])));
+        $orderSummaryData = $this->resolveResource(new OrderSummaryResource(new Order([
+            'id' => 20,
+            'code' => 'ORD-SECURE',
+            'total_amount' => 100000,
+            'payload' => [
+                'subtotal' => 100000,
+                'access_token' => 'secret-token',
+                'card_number' => '4111111111111111',
+            ],
+            'payment_status' => 'pending',
+        ])));
 
         $this->assertArrayNotHasKey('payload', $paymentData);
         $this->assertArrayNotHasKey('payload', $orderData);
+        $this->assertArrayNotHasKey('payload', $orderSummaryData);
         $this->assertNotContains('access_token', $this->recursiveKeys($paymentData));
         $this->assertNotContains('card_number', $this->recursiveKeys($orderData));
+        $this->assertNotContains('card_number', $this->recursiveKeys($orderSummaryData));
     }
 
     #[Test]

@@ -28,7 +28,7 @@ class TheaterPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('create_theaters');
+        return $user->hasPermission('theaters.create');
     }
 
     /**
@@ -36,7 +36,8 @@ class TheaterPolicy
      */
     public function update(User $user, Theater $theater): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_theaters');
+        return $user->hasPermission('theaters.update')
+            && (! $user->requiresTheaterScope() || $user->isAssignedToTheater((int) $theater->id));
     }
 
     /**
@@ -44,6 +45,7 @@ class TheaterPolicy
      */
     public function delete(User $user, Theater $theater): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('delete_theaters');
+        return $user->hasPermission('theaters.delete')
+            && (! $user->requiresTheaterScope() || $user->isAssignedToTheater((int) $theater->id));
     }
 }

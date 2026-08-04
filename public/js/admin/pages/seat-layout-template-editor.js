@@ -112,7 +112,7 @@
 
         if (isDisabled) {
             return (isCouple ? iconCouple : iconStandard) + 
-                   `<span class="seat-label" style="opacity: 0.3">${escapeHtml(label)}</span>`;
+                    `<span class="seat-label seat-label--muted">${escapeHtml(label)}</span>`;
         } else {
             return (isCouple ? iconCouple : iconStandard) + 
                    `<span class="seat-label">${escapeHtml(label)}</span>`;

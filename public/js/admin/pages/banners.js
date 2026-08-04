@@ -88,7 +88,7 @@
         els.tableBody.innerHTML = '';
         banners.forEach((banner, index) => {
             const tr = document.createElement('tr');
-            tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+            tr.classList.add('admin-table-row');
             const safeTitle = escapeHtml(String(banner.title || ''));
             const description = String(banner.description || '');
             const safeDescription = escapeHtml(description.substring(0, 50));
@@ -97,13 +97,12 @@
                 ? images.map((image, imageIndex) => `
                     <img src="${escapeHtml(image.image_url || storageImageUrl(image.image_path))}"
                          alt="${safeTitle} - ${imageIndex + 1}"
-                         class="banner-image-preview"
-                         style="width: 105px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: #1a1a1a; display: inline-block; flex-shrink: 0;">
+                         class="banner-image-preview admin-banner-thumb">
                 `).join('')
                 : '<span class="text-white-50">Chưa có ảnh</span>';
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
-                <td><div class="banner-images-row" style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; align-items: center; overflow-x: auto; max-width: 360px; padding: 4px 0;">${imagesHtml}</div></td>
+                <td><div class="banner-images-row">${imagesHtml}</div></td>
                 <td>
                     <div class="banner-title">${safeTitle}</div>
                     ${description ? `<small class="banner-description">${safeDescription}${description.length > 50 ? '...' : ''}</small>` : ''}
@@ -165,44 +164,25 @@
 
         if (selectedFiles.length > 0) {
             els.previewContainer.classList.remove('d-none');
-            els.previewWrap.style.display = 'flex';
-            els.previewWrap.style.flexWrap = 'nowrap';
-            els.previewWrap.style.overflowX = 'auto';
-            els.previewWrap.style.gap = '10px';
+            els.previewWrap.classList.add('banner-preview-list');
 
             selectedFiles.forEach((file, index) => {
                 const reader = new FileReader();
                 reader.addEventListener('load', function (e) {
                     const wrap = document.createElement('div');
-                    wrap.style.position = 'relative';
-                    wrap.style.display = 'inline-block';
+                    wrap.className = 'banner-preview-item';
 
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    img.style.height = '80px';
-                    img.style.width = '120px';
-                    img.style.objectFit = 'cover';
-                    img.style.borderRadius = '6px';
-                    img.style.border = '1px solid rgba(255,255,255,0.1)';
+                    img.className = 'banner-preview-image';
 
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     const icon = document.createElement('i');
                     icon.className = 'bi bi-x';
                     btn.appendChild(icon);
-                    btn.style.position = 'absolute';
-                    btn.style.top = '-6px';
-                    btn.style.right = '-6px';
-                    btn.style.background = '#ef4444';
-                    btn.style.color = 'white';
-                    btn.style.border = 'none';
-                    btn.style.borderRadius = '50%';
-                    btn.style.width = '20px';
-                    btn.style.height = '20px';
-                    btn.style.lineHeight = '1';
-                    btn.style.padding = '0';
-                    btn.style.fontSize = '14px';
-                    btn.style.cursor = 'pointer';
+                    btn.className = 'banner-preview-remove';
+                    btn.setAttribute('aria-label', `Xóa ảnh ${index + 1}`);
                     btn.addEventListener('click', function() {
                         selectedFiles.splice(index, 1);
                         renderPreviews();
@@ -255,7 +235,7 @@
                 const preview = document.createElement('img');
                 preview.src = image.image_url || storageImageUrl(image.image_path);
                 preview.alt = '';
-                preview.style.cssText = 'height:80px;width:120px;flex:0 0 auto;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);';
+                preview.className = 'banner-preview-image';
                 els.previewWrap.appendChild(preview);
             });
             els.previewContainer.classList.toggle('d-none', !banner.images?.length);
@@ -273,7 +253,7 @@
 
         const btnDel = e.target.closest('.btn-delete-banner');
         if (btnDel) {
-            if (!confirm('Bạn có chắc muốn xóa banner này?')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa banner này?', confirmLabel: 'Xóa banner', variant: 'danger' })) return;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/banners/${btnDel.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) { window.showAdminToast?.('Xóa banner thành công', 'success'); loadData(currentPage); }
@@ -314,9 +294,9 @@
             if (isEdit) formData.append('_method', 'PUT');
 
             try {
-                const res = await fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: formData, credentials: 'same-origin' });
+                const res = await window.AdminCore.apiFetch(url, { method: 'POST', body: formData, skipCache: true });
                 if (res && res.ok) { getModalInstance()?.hide(); window.showAdminToast?.(isEdit ? 'Cập nhật banner thành công' : 'Tạo banner thành công', 'success'); loadData(currentPage); }
-                else { const errData = await res.json(); alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message)); }
+                else { const errData = await res.json(); window.showAdminToast?.(window.formatAdminErrors?.(errData.errors || errData.message) || 'Dữ liệu không hợp lệ', 'error'); }
             } catch (error) { console.error('Submit error', error); }
         });
     }

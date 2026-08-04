@@ -20,7 +20,7 @@ class OrderResource extends JsonResource
             'user_id' => $this->user_id,
             'showtime_id' => $this->showtime_id,
             'total_amount' => (float) $this->total_amount,
-            'payload' => $this->payload,
+            'invoice' => $this->invoiceSnapshot(),
             'status' => $this->status,
             'payment_status' => $this->payment_status,
             'checkout_url' => $this->checkout_url,
@@ -57,6 +57,33 @@ class OrderResource extends JsonResource
             ])),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function invoiceSnapshot(): array
+    {
+        $payload = (array) $this->payload;
+        $promotion = (array) ($payload['voucher'] ?? $payload['promotion'] ?? []);
+
+        return [
+            'subtotal' => (float) ($payload['subtotal'] ?? $this->total_amount),
+            'seat_total' => (float) ($payload['seat_total'] ?? 0),
+            'product_total' => (float) ($payload['product_total'] ?? 0),
+            'voucher_discount' => (float) ($payload['voucher_discount'] ?? 0),
+            'point_discount' => (float) ($payload['point_discount'] ?? 0),
+            'discount_amount' => (float) ($payload['discount_amount'] ?? 0),
+            'points_used' => (int) ($payload['points_used'] ?? 0),
+            'promotion' => array_filter([
+                'id' => $promotion['id'] ?? null,
+                'code' => $promotion['code'] ?? null,
+                'name' => $promotion['name'] ?? null,
+                'type' => $promotion['type'] ?? $promotion['discount_type'] ?? null,
+                'value' => $promotion['value'] ?? $promotion['discount_value'] ?? null,
+            ], static fn (mixed $value): bool => $value !== null),
+            'total' => (float) $this->total_amount,
         ];
     }
 }

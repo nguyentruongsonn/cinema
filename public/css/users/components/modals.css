@@ -9,7 +9,7 @@
    MODAL BACKDROP
    ============================================ */
 
-.modal-backdrop {
+.cinema-modal-backdrop {
     position: fixed;
     top: 0;
     left: 0;
@@ -23,7 +23,7 @@
     transition: opacity var(--transition-base), visibility var(--transition-base);
 }
 
-.modal-backdrop.show {
+.cinema-modal-backdrop.show {
     opacity: 1;
     visibility: visible;
 }
@@ -32,7 +32,7 @@
    MODAL CONTAINER
    ============================================ */
 
-.modal {
+.cinema-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -48,12 +48,12 @@
     transition: opacity var(--transition-base), visibility var(--transition-base);
 }
 
-.modal.show {
+.cinema-modal.show {
     opacity: 1;
     visibility: visible;
 }
 
-.modal.show .modal-content {
+.cinema-modal.show .cinema-modal-content {
     transform: scale(1);
     opacity: 1;
 }
@@ -62,7 +62,7 @@
    MODAL CONTENT
    ============================================ */
 
-.modal-content {
+.cinema-modal-content {
     position: relative;
     width: 100%;
     max-width: 600px;
@@ -77,19 +77,19 @@
 }
 
 /* Modal Sizes */
-.modal-sm .modal-content {
+.cinema-modal-sm .cinema-modal-content {
     max-width: 400px;
 }
 
-.modal-lg .modal-content {
+.cinema-modal-lg .cinema-modal-content {
     max-width: 800px;
 }
 
-.modal-xl .modal-content {
+.cinema-modal-xl .cinema-modal-content {
     max-width: 1200px;
 }
 
-.modal-fullscreen .modal-content {
+.cinema-modal-fullscreen .cinema-modal-content {
     max-width: 100%;
     max-height: 100vh;
     border-radius: 0;
@@ -99,7 +99,7 @@
    MODAL HEADER
    ============================================ */
 
-.modal-header {
+.cinema-modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -107,14 +107,14 @@
     border-bottom: 1px solid var(--border-primary);
 }
 
-.modal-title {
+.cinema-modal-title {
     font-size: var(--text-2xl);
     font-weight: var(--font-bold);
     color: var(--text-primary);
     margin: 0;
 }
 
-.modal-close {
+.cinema-modal-close {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -131,12 +131,12 @@
     transition: all var(--transition-fast);
 }
 
-.modal-close:hover {
+.cinema-modal-close:hover {
     background: var(--gray-100);
     color: var(--text-primary);
 }
 
-.modal-close:active {
+.cinema-modal-close:active {
     transform: scale(0.95);
 }
 
@@ -144,26 +144,26 @@
    MODAL BODY
    ============================================ */
 
-.modal-body {
+.cinema-modal-body {
     padding: var(--space-6);
     overflow-y: auto;
     max-height: calc(90vh - 200px);
 }
 
-.modal-body::-webkit-scrollbar {
+.cinema-modal-body::-webkit-scrollbar {
     width: 8px;
 }
 
-.modal-body::-webkit-scrollbar-track {
+.cinema-modal-body::-webkit-scrollbar-track {
     background: var(--gray-100);
 }
 
-.modal-body::-webkit-scrollbar-thumb {
+.cinema-modal-body::-webkit-scrollbar-thumb {
     background: var(--gray-400);
     border-radius: var(--radius-full);
 }
 
-.modal-body::-webkit-scrollbar-thumb:hover {
+.cinema-modal-body::-webkit-scrollbar-thumb:hover {
     background: var(--gray-500);
 }
 
@@ -171,7 +171,7 @@
    MODAL FOOTER
    ============================================ */
 
-.modal-footer {
+.cinema-modal-footer {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -181,7 +181,7 @@
     background: var(--gray-50);
 }
 
-.modal-footer .btn {
+.cinema-modal-footer .btn {
     min-width: 100px;
 }
 
@@ -190,34 +190,34 @@
    ============================================ */
 
 /* Fade In/Out */
-.modal.fade .modal-content {
+.cinema-modal.fade .cinema-modal-content {
     transition: transform var(--transition-base), opacity var(--transition-base);
 }
 
 /* Slide From Top */
-.modal.slide-top .modal-content {
+.cinema-modal.slide-top .cinema-modal-content {
     transform: translateY(-100%);
 }
 
-.modal.slide-top.show .modal-content {
+.cinema-modal.slide-top.show .cinema-modal-content {
     transform: translateY(0);
 }
 
 /* Slide From Bottom */
-.modal.slide-bottom .modal-content {
+.cinema-modal.slide-bottom .cinema-modal-content {
     transform: translateY(100%);
 }
 
-.modal.slide-bottom.show .modal-content {
+.cinema-modal.slide-bottom.show .cinema-modal-content {
     transform: translateY(0);
 }
 
 /* Zoom */
-.modal.zoom .modal-content {
+.cinema-modal.zoom .cinema-modal-content {
     transform: scale(0.5);
 }
 
-.modal.zoom.show .modal-content {
+.cinema-modal.zoom.show .cinema-modal-content {
     transform: scale(1);
 }
 
@@ -226,78 +226,78 @@
    ============================================ */
 
 /* Confirmation Modal */
-.modal-confirm .modal-header {
+.cinema-modal-confirm .cinema-modal-header {
     background: var(--color-primary);
     color: white;
     border-bottom: none;
 }
 
-.modal-confirm .modal-title {
+.cinema-modal-confirm .cinema-modal-title {
     color: white;
 }
 
-.modal-confirm .modal-close {
+.cinema-modal-confirm .cinema-modal-close {
     color: white;
 }
 
-.modal-confirm .modal-close:hover {
+.cinema-modal-confirm .cinema-modal-close:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
 /* Success Modal */
-.modal-success .modal-header {
+.cinema-modal-success .cinema-modal-header {
     background: var(--color-success);
     color: white;
     border-bottom: none;
 }
 
-.modal-success .modal-title {
+.cinema-modal-success .cinema-modal-title {
     color: white;
 }
 
-.modal-success .modal-close {
+.cinema-modal-success .cinema-modal-close {
     color: white;
 }
 
-.modal-success .modal-close:hover {
+.cinema-modal-success .cinema-modal-close:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
 /* Warning Modal */
-.modal-warning .modal-header {
+.cinema-modal-warning .cinema-modal-header {
     background: var(--color-warning);
     color: white;
     border-bottom: none;
 }
 
-.modal-warning .modal-title {
+.cinema-modal-warning .cinema-modal-title {
     color: white;
 }
 
-.modal-warning .modal-close {
+.cinema-modal-warning .cinema-modal-close {
     color: white;
 }
 
-.modal-warning .modal-close:hover {
+.cinema-modal-warning .cinema-modal-close:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
 /* Error Modal */
-.modal-error .modal-header {
+.cinema-modal-error .cinema-modal-header {
     background: var(--color-error);
     color: white;
     border-bottom: none;
 }
 
-.modal-error .modal-title {
+.cinema-modal-error .cinema-modal-title {
     color: white;
 }
 
-.modal-error .modal-close {
+.cinema-modal-error .cinema-modal-close {
     color: white;
 }
 
-.modal-error .modal-close:hover {
+.cinema-modal-error .cinema-modal-close:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
@@ -305,11 +305,11 @@
    MODAL WITH IMAGE
    ============================================ */
 
-.modal-image .modal-body {
+.cinema-modal-image .cinema-modal-body {
     padding: 0;
 }
 
-.modal-image img {
+.cinema-modal-image img {
     width: 100%;
     display: block;
 }
@@ -319,35 +319,35 @@
    ============================================ */
 
 @media (max-width: 768px) {
-    .modal {
+    .cinema-modal {
         padding: var(--space-2);
     }
 
-    .modal-content {
+    .cinema-modal-content {
         max-height: 95vh;
     }
 
-    .modal-header {
+    .cinema-modal-header {
         padding: var(--space-4);
     }
 
-    .modal-body {
+    .cinema-modal-body {
         padding: var(--space-4);
         max-height: calc(95vh - 180px);
     }
 
-    .modal-footer {
+    .cinema-modal-footer {
         padding: var(--space-4);
         flex-direction: column;
     }
 
-    .modal-footer .btn {
+    .cinema-modal-footer .btn {
         width: 100%;
     }
 
     /* Full screen on mobile for large modals */
-    .modal-lg .modal-content,
-    .modal-xl .modal-content {
+    .cinema-modal-lg .cinema-modal-content,
+    .cinema-modal-xl .cinema-modal-content {
         max-width: 100%;
         max-height: 100vh;
         border-radius: var(--radius-lg);
@@ -358,16 +358,16 @@
    ACCESSIBILITY
    ============================================ */
 
-.modal:focus {
+.cinema-modal:focus {
     outline: none;
 }
 
-.modal-content:focus {
+.cinema-modal-content:focus {
     outline: none;
 }
 
 /* Prevent body scroll when modal is open */
-body.modal-open {
+body.cinema-modal-open {
     overflow: hidden;
 }
 
@@ -376,47 +376,47 @@ body.modal-open {
    ============================================ */
 
 @media (prefers-color-scheme: dark) {
-    .modal-content {
+    .cinema-modal-content {
         background: var(--gray-800);
         border-color: var(--gray-700);
     }
 
-    .modal-header {
+    .cinema-modal-header {
         border-bottom-color: var(--gray-700);
     }
 
-    .modal-footer {
+    .cinema-modal-footer {
         border-top-color: var(--gray-700);
         background: var(--gray-900);
     }
 
-    .modal-close:hover {
+    .cinema-modal-close:hover {
         background: var(--gray-700);
     }
 
-    .modal-body::-webkit-scrollbar-track {
+    .cinema-modal-body::-webkit-scrollbar-track {
         background: var(--gray-900);
     }
 
-    .modal-body::-webkit-scrollbar-thumb {
+    .cinema-modal-body::-webkit-scrollbar-thumb {
         background: var(--gray-600);
     }
 }
 
-.dark-mode .modal-content {
+.dark-mode .cinema-modal-content {
     background: var(--gray-800);
     border-color: var(--gray-700);
 }
 
-.dark-mode .modal-header {
+.dark-mode .cinema-modal-header {
     border-bottom-color: var(--gray-700);
 }
 
-.dark-mode .modal-footer {
+.dark-mode .cinema-modal-footer {
     border-top-color: var(--gray-700);
     background: var(--gray-900);
 }
 
-.dark-mode .modal-close:hover {
+.dark-mode .cinema-modal-close:hover {
     background: var(--gray-700);
 }

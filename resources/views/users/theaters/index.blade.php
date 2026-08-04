@@ -9,7 +9,7 @@
 @section('content')
     <!-- Header Section -->
     <section class="theaters-header">
-        <div class="container cinema-shell">
+        <div class="container cinema-shell" id="theatersDataRegion" data-state="loading" aria-busy="true">
             <h1 class="page-title text-center text-md-start">Hệ thống Rạp Chiếu</h1>
         </div>
     </section>
@@ -21,7 +21,7 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <div class="filter-group">
-                            <label class="filter-label">Chi nhánh</label>
+                            <label class="filter-label" for="branchFilter">Chi nhánh</label>
                             <select id="branchFilter" class="filter-select">
                                 <option value="">Tất cả chi nhánh</option>
                                 <!-- Rendered by JS -->
@@ -31,10 +31,10 @@
                     
                     <div class="col-md-6 offset-md-3">
                         <div class="filter-group">
-                            <label class="filter-label">Tìm kiếm</label>
+                            <label class="filter-label" for="searchInput">Tìm kiếm</label>
                             <div class="search-box">
                                 <input type="text" id="searchInput" class="search-input" placeholder="Tìm theo tên rạp...">
-                                <button id="searchBtn" class="search-btn" aria-label="Tìm kiếm">
+                                <button type="button" id="searchBtn" class="search-btn" aria-label="Tìm kiếm">
                                     <i class="bi bi-search"></i>
                                 </button>
                             </div>
@@ -50,7 +50,7 @@
         <div class="container cinema-shell">
             
             <!-- Skeleton Loader -->
-            <div id="theatersSkeleton" class="row g-4">
+            <div id="theatersSkeleton" class="row g-4" data-state-panel="loading">
                 @for ($i = 0; $i < 6; $i++)
                     <div class="col-md-6 col-lg-4">
                         <div class="theater-card-skeleton">
@@ -66,19 +66,29 @@
             </div>
 
             <!-- Theaters Grid -->
-            <div id="theatersGrid" class="row g-4" style="display: none;">
+            <div id="theatersGrid" class="row g-4 d-none" data-state-panel="ready">
                 <!-- Rendered by JS -->
             </div>
 
             <!-- Empty State -->
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <i class="bi bi-building-slash"></i>
-                <h3>Không tìm thấy rạp chiếu nào</h3>
-                <p>Vui lòng thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
-            </div>
+            <x-user.data-state
+                id="emptyState"
+                type="empty"
+                icon="bi-building-slash"
+                title="Không tìm thấy rạp chiếu nào"
+                message="Vui lòng thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn."
+            />
+
+            <x-user.data-state
+                id="theatersErrorState"
+                type="error"
+                icon="bi-wifi-off"
+                title="Không thể tải danh sách rạp"
+                message="Vui lòng kiểm tra kết nối và thử lại."
+            />
 
             <!-- Pagination -->
-            <div id="paginationContainer" class="pagination-container" style="display: none;">
+            <div id="paginationContainer" class="cinema-pagination d-none">
                 <!-- Rendered by JS -->
             </div>
             

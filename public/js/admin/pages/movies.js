@@ -63,7 +63,25 @@
         bannerPlaceholder: document.getElementById('bannerPlaceholder'),
         bannerFile: document.getElementById('movieBannerFile'),
         clearBannerBtn: document.getElementById('clearBannerBtn'),
+        bannerUploadBox: document.getElementById('bannerUploadBox'),
     };
+
+    const posterMediaInput = new window.AdminMediaInput({
+        root: els.posterUploadBox,
+        input: els.posterFile,
+        preview: els.posterPreview,
+        placeholder: els.posterPlaceholder,
+        clearButton: els.clearPosterBtn,
+        normalizeSource: safeImageUrl,
+    });
+    const bannerMediaInput = new window.AdminMediaInput({
+        root: els.bannerUploadBox,
+        input: els.bannerFile,
+        preview: els.bannerPreview,
+        placeholder: els.bannerPlaceholder,
+        clearButton: els.clearBannerBtn,
+        normalizeSource: safeImageUrl,
+    });
 
     let currentPage = 1;
     let currentSearch = '';
@@ -111,7 +129,7 @@
         const now = new Date();
         movies.forEach((movie, index) => {
             const tr = document.createElement('tr');
-            tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+            tr.classList.add('admin-table-row');
 
             const rDateObj = new Date(movie.release_date);
             const rDate = rDateObj.toLocaleDateString('vi-VN');
@@ -200,37 +218,19 @@
     }
 
     function showPosterPreview(src) {
-        if (!src) return;
-        const previewUrl = String(src).startsWith('blob:') ? src : safeImageUrl(src);
-        if (!previewUrl) return;
-        els.posterPreview.src = previewUrl;
-        els.posterPreview.style.display = 'block';
-        if (els.posterPlaceholder) els.posterPlaceholder.style.display = 'none';
-        if (els.clearPosterBtn) els.clearPosterBtn.classList.remove('d-none');
+        posterMediaInput.show(src);
     }
 
     function clearPosterPreview() {
-        if (els.posterPreview) { els.posterPreview.src = ''; els.posterPreview.style.display = 'none'; }
-        if (els.posterPlaceholder) els.posterPlaceholder.style.display = 'flex';
-        if (els.posterFile) els.posterFile.value = '';
-        if (els.clearPosterBtn) els.clearPosterBtn.classList.add('d-none');
+        posterMediaInput.clear();
     }
 
     function showBannerPreview(src) {
-        if (!src) return;
-        const previewUrl = String(src).startsWith('blob:') ? src : safeImageUrl(src);
-        if (!previewUrl) return;
-        els.bannerPreview.src = previewUrl;
-        els.bannerPreview.style.display = 'block';
-        if (els.bannerPlaceholder) els.bannerPlaceholder.style.display = 'none';
-        if (els.clearBannerBtn) els.clearBannerBtn.classList.remove('d-none');
+        bannerMediaInput.show(src);
     }
 
     function clearBannerPreview() {
-        if (els.bannerPreview) { els.bannerPreview.src = ''; els.bannerPreview.style.display = 'none'; }
-        if (els.bannerPlaceholder) els.bannerPlaceholder.style.display = 'flex';
-        if (els.bannerFile) els.bannerFile.value = '';
-        if (els.clearBannerBtn) els.clearBannerBtn.classList.add('d-none');
+        bannerMediaInput.clear();
     }
 
     if (els.btnCreate) {
@@ -239,41 +239,6 @@
             els.modalLabel.innerHTML = '<i class="bi bi-film me-2 admin-accent-icon"></i>Tạo phim mới';
             getModalInstance()?.show();
         });
-    }
-
-    // File input preview events
-    if (els.posterFile) {
-        els.posterFile.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) showPosterPreview(URL.createObjectURL(file));
-        });
-    }
-    if (els.clearPosterBtn) {
-        els.clearPosterBtn.addEventListener('click', (e) => { e.stopPropagation(); clearPosterPreview(); });
-    }
-    if (els.posterUploadBox) {
-        els.posterUploadBox.addEventListener('dragover', (e) => { e.preventDefault(); els.posterUploadBox.style.borderColor = 'rgba(255,255,255,0.4)'; });
-        els.posterUploadBox.addEventListener('dragleave', () => { els.posterUploadBox.style.borderColor = 'rgba(255,255,255,0.15)'; });
-        els.posterUploadBox.addEventListener('drop', (e) => {
-            e.preventDefault();
-            els.posterUploadBox.style.borderColor = 'rgba(255,255,255,0.15)';
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                els.posterFile.files = dt.files;
-                showPosterPreview(URL.createObjectURL(file));
-            }
-        });
-    }
-    if (els.bannerFile) {
-        els.bannerFile.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) showBannerPreview(URL.createObjectURL(file));
-        });
-    }
-    if (els.clearBannerBtn) {
-        els.clearBannerBtn.addEventListener('click', (e) => { e.stopPropagation(); clearBannerPreview(); });
     }
 
     els.tableBody.addEventListener('click', async (e) => {
@@ -332,7 +297,7 @@
         // Delete
         const btnDel = e.target.closest('.btn-delete-movie');
         if (btnDel) {
-            if(!confirm('Bạn có chắc muốn xóa phim này? Thao tác này sẽ xóa mọi dữ liệu lịch chiếu liên quan!')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa phim này?', description: 'Mọi dữ liệu lịch chiếu liên quan cũng sẽ bị xóa.', confirmLabel: 'Xóa phim', variant: 'danger' })) return;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/movies/${btnDel.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) {
@@ -441,7 +406,7 @@
                     loadData(currentPage, currentSearch, currentStatus);
                 } else {
                     const errData = await res.json();
-                    alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message));
+                    window.showAdminToast?.(window.formatAdminErrors?.(errData.errors || errData.message) || 'Dữ liệu không hợp lệ', 'error');
                 }
             } catch (error) {
                 console.error('Submit form error', error);

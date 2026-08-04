@@ -5,6 +5,7 @@ namespace Tests\Feature\Payment;
 use App\Models\IdempotencyKey;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Promotion;
 use App\Models\Screen;
 use App\Models\Seat;
 use App\Models\SeatHold;
@@ -15,6 +16,7 @@ use App\Services\PaymentService;
 use App\Services\PayOSGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -246,5 +248,54 @@ class PaymentIdempotencyTest extends TestCase
             url(''),
             $invalidKey
         );
+    }
+
+    #[Test]
+    public function zero_amount_checkout_is_confirmed_without_gateway_redirect()
+    {
+        Mail::fake();
+
+        $this->createValidSeatHold();
+
+        $promotion = Promotion::factory()->fixed(999999)->active()->create([
+            'code' => 'FREEORDER',
+            'min_order_value' => 0,
+            'usage_limit' => 10,
+            'usage_count' => 0,
+        ]);
+
+        DB::table('user_promotion')->insert([
+            'user_id' => $this->user->id,
+            'promotion_id' => $promotion->id,
+            'status' => 1,
+            'usage_count' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $items = array_map(fn($id) => ['type' => 'seat', 'id' => $id], $this->seatIds);
+
+        $result = $this->paymentService->initiate(
+            $this->user,
+            $this->showtime,
+            [
+                'items' => $items,
+                'voucher_code' => 'FREEORDER',
+            ],
+            url(''),
+            Str::uuid()->toString()
+        );
+
+        $this->assertFalse($result['requires_payment']);
+        $this->assertNull($result['checkout_url']);
+        $this->assertSame('paid', $result['payment_status']);
+        $this->assertSame(0.0, $result['total_amount']);
+
+        $order = Order::query()->where('code', $result['order_number'])->firstOrFail();
+        $payment = Payment::query()->where('order_id', $order->id)->firstOrFail();
+
+        $this->assertTrue($order->isPaid());
+        $this->assertSame(Payment::STATUS_SUCCESS, $payment->status);
+        $this->assertSame(2, $order->tickets()->count());
     }
 }

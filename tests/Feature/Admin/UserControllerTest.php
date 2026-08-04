@@ -174,7 +174,7 @@ class UserControllerTest extends TestCase
     }
 
     #[Test]
-    public function cannot_mass_assign_status_via_update()
+    public function admin_can_update_user_status_via_update()
     {
         $this->actingAs($this->admin);
 
@@ -185,20 +185,19 @@ class UserControllerTest extends TestCase
 
         $updateData = [
             'name' => 'Updated Name',
-            'status' => false, // Attempting to change status
+            'status' => false,
         ];
 
         $response = $this->putJson("/api/v1/admin/users/{$user->id}", $updateData);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['status']);
+        $response->assertStatus(200);
 
         $user->refresh();
-        $this->assertTrue($user->status); // Status should not change
+        $this->assertFalse((bool) $user->status);
     }
 
     #[Test]
-    public function cannot_mass_assign_loyalty_points_via_update()
+    public function admin_can_update_loyalty_points_via_update()
     {
         $this->actingAs($this->admin);
 
@@ -209,16 +208,15 @@ class UserControllerTest extends TestCase
 
         $updateData = [
             'name' => 'Updated Name',
-            'loyalty_points' => 9999, // Attempting to manipulate points
+            'loyalty_points' => 9999,
         ];
 
         $response = $this->putJson("/api/v1/admin/users/{$user->id}", $updateData);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['loyalty_points']);
+        $response->assertStatus(200);
 
         $user->refresh();
-        $this->assertEquals(100, $user->loyalty_points); // Points should not change
+        $this->assertEquals(9999, $user->loyalty_points);
     }
 
     #[Test]

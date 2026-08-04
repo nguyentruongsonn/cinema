@@ -117,5 +117,5 @@
     </div>
 @endsection
 @push('scripts')
-    <script type="module" src="{{ asset('js/users/pages/movie-detail.js') }}"></script>
+    <script type="module" src="{{ asset('js/users/pages/movie-detail.js') }}?v={{ config('app.asset_version') }}"></script>
 @endpush

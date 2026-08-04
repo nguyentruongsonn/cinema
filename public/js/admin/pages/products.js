@@ -117,7 +117,7 @@
             const imageUrl = safeImageUrl(prod.image_url);
             const iconClass = prod.type === 'drink' ? 'bi-cup-straw' : (prod.type === 'food' ? 'bi-egg-fried' : 'bi-box-seam');
             const imageHtml = imageUrl
-                ? `<img src="${escapeHtml(imageUrl)}" alt="Image" loading="lazy" onerror="this.outerHTML='<i class=\'bi ${iconClass} text-white-50 fs-3\'></i>'">`
+                ? `<img src="${escapeHtml(imageUrl)}" alt="Image" loading="lazy" data-admin-image-fallback="${iconClass}">`
                 : `<i class="bi ${iconClass} text-white-50 fs-3"></i>`;
 
             let typeHtml = '';
@@ -174,21 +174,22 @@
         });
     }
 
+    const mediaInput = new window.AdminMediaInput({
+        root: els.imageUploadBox,
+        input: els.imageFile,
+        preview: els.imagePreview,
+        placeholder: els.imagePlaceholder,
+        clearButton: els.clearImageBtn,
+        normalizeSource: (source) => String(source).startsWith('blob:') ? source : safeImageUrl(source),
+    });
+
     /* ── Forms & Interactions ──────────────────────────────────────── */
     function showImagePreview(src) {
-        if (!src) return;
-        const previewUrl = String(src).startsWith('blob:') ? src : safeImageUrl(src);
-        if (!previewUrl) return;
-        if (els.imagePreview) { els.imagePreview.src = previewUrl; els.imagePreview.style.display = 'block'; }
-        if (els.imagePlaceholder) els.imagePlaceholder.style.display = 'none';
-        if (els.clearImageBtn) els.clearImageBtn.classList.remove('d-none');
+        mediaInput.show(src);
     }
 
     function clearImagePreview() {
-        if (els.imagePreview) { els.imagePreview.src = ''; els.imagePreview.style.display = 'none'; }
-        if (els.imagePlaceholder) els.imagePlaceholder.style.display = 'block';
-        if (els.imageFile) els.imageFile.value = '';
-        if (els.clearImageBtn) els.clearImageBtn.classList.add('d-none');
+        mediaInput.clear();
     }
 
     function resetForm() {
@@ -206,33 +207,6 @@
             resetForm();
             els.modalLabel.innerHTML = `<i class="bi bi-box-seam me-2 admin-accent-icon"></i>${pageConfig.createTitle || 'Tạo sản phẩm mới'}`;
             getModalInstance()?.show();
-        });
-    }
-
-    if (els.imageFile) {
-        els.imageFile.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) showImagePreview(URL.createObjectURL(file));
-        });
-    }
-
-    if (els.clearImageBtn) {
-        els.clearImageBtn.addEventListener('click', (e) => { e.stopPropagation(); clearImagePreview(); });
-    }
-
-    if (els.imageUploadBox) {
-        els.imageUploadBox.addEventListener('dragover', (e) => { e.preventDefault(); els.imageUploadBox.style.borderColor = 'rgba(255,255,255,0.4)'; });
-        els.imageUploadBox.addEventListener('dragleave', () => { els.imageUploadBox.style.borderColor = 'rgba(255,255,255,0.15)'; });
-        els.imageUploadBox.addEventListener('drop', (e) => {
-            e.preventDefault();
-            els.imageUploadBox.style.borderColor = 'rgba(255,255,255,0.15)';
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                els.imageFile.files = dt.files;
-                showImagePreview(URL.createObjectURL(file));
-            }
         });
     }
 
@@ -274,7 +248,7 @@
         // Delete
         const btnDel = e.target.closest('.btn-delete-product');
         if (btnDel) {
-            if(!confirm('Bạn có chắc muốn xóa sản phẩm này? Thao tác này không thể hoàn tác!')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa sản phẩm này?', description: 'Thao tác này không thể hoàn tác.', confirmLabel: 'Xóa sản phẩm', variant: 'danger' })) return;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/products/${btnDel.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) {
@@ -338,7 +312,7 @@
                     loadData(currentPage);
                 } else {
                     const errData = await res.json();
-                    alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message));
+                    window.showAdminToast?.(window.formatAdminErrors?.(errData.errors || errData.message) || 'Dữ liệu không hợp lệ', 'error');
                 }
             } catch (error) {
                 console.error('Submit form error', error);

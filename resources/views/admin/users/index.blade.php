@@ -77,94 +77,94 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="userModalLabel">
-                    <i class="bi bi-person me-2" style="color:var(--accent-color);"></i>Tạo tài khoản mới
+                    <i class="bi bi-person me-2 admin-accent-icon"></i>T&#7841;o t&#224;i kho&#7843;n m&#7899;i
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="&#272;&#243;ng"></button>
             </div>
-            <form id="userForm">
+            <form id="userForm" novalidate>
                 <input type="hidden" id="formMethod" value="POST">
                 <input type="hidden" id="userIdInput" value="">
 
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="userName" class="form-label text-secondary">Họ tên <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" id="userName" name="name" required>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="userName" class="form-label text-secondary">H&#7885; t&#234;n <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="userName" name="name" required autocomplete="name">
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
                             <label for="userEmail" class="form-label text-secondary">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control bg-dark text-white border-secondary" id="userEmail" name="email" required>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="userUsername" class="form-label text-secondary">Tên đăng nhập</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" id="userUsername" name="username">
+                            <input type="email" class="form-control bg-dark text-white border-secondary" id="userEmail" name="email" required autocomplete="email">
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label for="userPhone" class="form-label text-secondary">Số điện thoại</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" id="userPhone" name="phone">
+                        <div class="col-md-6">
+                            <label for="userUsername" class="form-label text-secondary">T&#234;n &#273;&#259;ng nh&#7853;p</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="userUsername" name="username" autocomplete="username">
                         </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
+                            <label for="userPhone" class="form-label text-secondary">S&#7889; &#273;i&#7879;n tho&#7841;i</label>
+                            <input type="tel" class="form-control bg-dark text-white border-secondary" id="userPhone" name="phone" autocomplete="tel">
+                        </div>
+
+                        <div class="col-md-6 user-password-field">
                             <label for="userPassword" class="form-label text-secondary">
-                                Mật khẩu <span class="text-danger" id="passwordRequired">*</span>
+                                M&#7853;t kh&#7849;u <span class="text-danger" id="passwordRequired">*</span>
                             </label>
-                            <input type="password" class="form-control bg-dark text-white border-secondary" id="userPassword" name="password">
-                            <small class="text-light opacity-75" style="color: #ccc !important;">Tối thiểu 6 ký tự. Để trống nếu không muốn thay đổi khi cập nhật.</small>
+                            <input type="password" class="form-control bg-dark text-white border-secondary" id="userPassword" name="password" minlength="8" autocomplete="new-password">
+                            <small class="text-light opacity-75 admin-form-help">T&#7889;i thi&#7875;u 8 k&#253; t&#7921;.</small>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label for="userBirthday" class="form-label text-secondary">Ngày sinh</label>
+                        <div class="col-md-6 user-password-field">
+                            <label for="userPasswordConfirmation" class="form-label text-secondary">X&#225;c nh&#7853;n m&#7853;t kh&#7849;u <span class="text-danger user-password-required">*</span></label>
+                            <input type="password" class="form-control bg-dark text-white border-secondary" id="userPasswordConfirmation" name="password_confirmation" minlength="8" autocomplete="new-password">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="userBirthday" class="form-label text-secondary">Ng&#224;y sinh</label>
                             <input type="date" class="form-control bg-dark text-white border-secondary" id="userBirthday" name="birthday">
                         </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="userGender" class="form-label text-secondary">Giới tính</label>
+                        <div class="col-md-6">
+                            <label for="userGender" class="form-label text-secondary">Gi&#7899;i t&#237;nh</label>
                             <select class="form-select bg-dark text-white border-secondary" id="userGender" name="gender">
-                                <option value="">-- Chọn giới tính --</option>
+                                <option value="">-- Ch&#7885;n gi&#7899;i t&#237;nh --</option>
                                 <option value="male">Nam</option>
-                                <option value="female">Nữ</option>
-                                <option value="other">Khác</option>
+                                <option value="female">N&#7919;</option>
+                                <option value="other">Kh&#225;c</option>
                             </select>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label for="userLoyaltyPoints" class="form-label text-secondary">Điểm thành viên</label>
+                        <div class="col-md-6">
+                            <label for="userLoyaltyPoints" class="form-label text-secondary">&#272;i&#7875;m th&#224;nh vi&#234;n</label>
                             <input type="number" class="form-control bg-dark text-white border-secondary" id="userLoyaltyPoints" name="loyalty_points" value="0" min="0">
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label for="userAddress" class="form-label text-secondary">Địa chỉ</label>
-                        <textarea class="form-control bg-dark text-white border-secondary" id="userAddress" name="address" rows="2"></textarea>
-                    </div>
+                        <div class="col-md-6">
+                            <label for="userRoles" class="form-label text-secondary">Vai tr&#242;</label>
+                            <select class="form-select bg-dark text-white border-secondary admin-user-roles-select" id="userRoles" name="role_id">
+                                <option value="">-- Ch&#7885;n vai tr&#242; --</option>
+                            </select>
+                            <small class="text-light opacity-75 admin-form-help">M&#7863;c &#273;&#7883;nh n&#234;n ch&#7885;n Kh&#225;ch h&#224;ng khi t&#7841;o t&#224;i kho&#7843;n m&#7899;i.</small>
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="userRoles" class="form-label text-secondary">Vai trò</label>
-                        <select class="form-select bg-dark text-white border-secondary" id="userRoles" name="roles[]" multiple size="3">
-                            <!-- Loaded dynamically -->
-                        </select>
-                        <small class="text-light opacity-75" style="color: #ccc !important;">Giữ Ctrl (Cmd) để chọn nhiều vai trò</small>
-                    </div>
+                        <div class="col-12">
+                            <label for="userAddress" class="form-label text-secondary">&#272;&#7883;a ch&#7881;</label>
+                            <textarea class="form-control bg-dark text-white border-secondary" id="userAddress" name="address" rows="2"></textarea>
+                        </div>
 
-                    <div class="mb-0">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="userStatus" name="status" value="1" checked>
-                            <label class="form-check-label text-white" for="userStatus">Kích hoạt tài khoản</label>
+                        <div class="col-12">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="userStatus" name="status" value="1" checked>
+                                <label class="form-check-label text-white" for="userStatus">K&#237;ch ho&#7841;t t&#224;i kho&#7843;n</label>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="submit" class="btn-primary-custom border-0">Lưu tài khoản</button>
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">H&#7911;y</button>
+                    <button type="submit" class="btn-primary-custom border-0">L&#432;u t&#224;i kho&#7843;n</button>
                 </div>
             </form>
         </div>
@@ -177,30 +177,31 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="resetPasswordModalLabel">
-                    <i class="bi bi-shield-lock me-2" style="color:var(--accent-color);"></i>Đặt lại mật khẩu
+                    <i class="bi bi-shield-lock me-2 admin-accent-icon"></i>&#272;&#7863;t l&#7841;i m&#7853;t kh&#7849;u
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="&#272;&#243;ng"></button>
             </div>
             <form id="resetPasswordForm">
                 <input type="hidden" id="resetUserId" value="">
 
                 <div class="modal-body">
-                    <p class="text-light opacity-75 mb-3" style="color: #ccc !important;">Đặt lại mật khẩu cho người dùng: <strong id="resetUserName" class="text-white"></strong></p>
+                    <p class="text-light opacity-75 mb-3 admin-form-help">&#272;&#7863;t l&#7841;i m&#7853;t kh&#7849;u cho ng&#432;&#7901;i d&#249;ng: <strong id="resetUserName" class="text-white"></strong></p>
 
                     <div class="mb-3">
-                        <label for="newPassword" class="form-label text-secondary">Mật khẩu mới <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control bg-dark text-white border-secondary" id="newPassword" name="password" required minlength="6">
-                        <small class="text-light opacity-75" style="color: #ccc !important;">Tối thiểu 6 ký tự</small>
+                        <label for="newPassword" class="form-label text-secondary">M&#7853;t kh&#7849;u m&#7899;i <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control bg-dark text-white border-secondary" id="newPassword" name="password" required minlength="8">
+                        <small class="text-light opacity-75 admin-form-help">T&#7889;i thi&#7875;u 8 k&#253; t&#7921;</small>
                     </div>
 
                     <div class="mb-0">
-                        <label for="newPasswordConfirmation" class="form-label text-secondary">Xác nhận mật khẩu <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control bg-dark text-white border-secondary" id="newPasswordConfirmation" name="password_confirmation" required minlength="6">
+                        <label for="newPasswordConfirmation" class="form-label text-secondary">X&#225;c nh&#7853;n m&#7853;t kh&#7849;u <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control bg-dark text-white border-secondary" id="newPasswordConfirmation" name="password_confirmation" required minlength="8">
                     </div>
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="submit" class="btn-primary-custom border-0">Đặt lại mật khẩu</button>
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">H&#7911;y</button>
+                    <button type="submit" class="btn-primary-custom border-0">&#272;&#7863;t l&#7841;i m&#7853;t kh&#7849;u</button>
                 </div>
             </form>
         </div>
@@ -211,6 +212,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/pages/users.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @push('scripts')

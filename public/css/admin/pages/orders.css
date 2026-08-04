@@ -497,6 +497,37 @@
     color: #fbbf24 !important;
 }
 
+.admin-order-detail-skeleton,
+.admin-order-detail-box {
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.admin-order-detail-skeleton--hero { align-items: center; display: flex; gap: 1rem; padding: 1rem; }
+.order-skeleton { border-radius: 4px; height: 14px; }
+.order-skeleton--poster { border-radius: 8px; flex-shrink: 0; height: 100px; width: 70px; }
+.order-skeleton--title { height: 20px; width: 60%; }
+.order-skeleton--section-title { height: 16px; width: 40%; }
+.order-skeleton--summary-title { height: 16px; width: 30%; }
+.order-skeleton--line-xl { width: 80%; }
+.order-skeleton--line-wide { width: 75%; }
+.order-skeleton--line-lg { width: 60%; }
+.order-skeleton--line-md { width: 40%; }
+.order-skeleton--line-mid { width: 55%; }
+.order-skeleton--line-sm { width: 30%; }
+.order-skeleton--summary-label { width: 45%; }
+.order-skeleton--summary-value { width: 20%; }
+.admin-order-mini-badge { font-size: .65rem; }
+.admin-order-status-badge { font-size: .85rem; }
+.admin-order-detail-heading { align-items: center; color: #fff; display: flex; font-size: .95rem; font-weight: 700; margin: 0 0 1rem; }
+.admin-order-detail-table-wrapper { margin: 0; padding: 0; }
+.admin-order-col-quantity { width: 70px; }
+.admin-order-col-price { width: 125px; }
+.admin-order-col-total { width: 135px; }
+.admin-order-grand-total { color: var(--accent-color); font-size: 1.15rem; }
+
 /* ── Responsive Adjustments ───────────────────────────────────────────── */
 
 @media (max-width: 800px) {

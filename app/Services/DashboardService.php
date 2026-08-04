@@ -204,7 +204,7 @@ class DashboardService
             ->groupBy('order_id');
 
         return DB::table('orders')
-            ->selectRaw('movies.id, movies.title, movies.poster_url, COALESCE(SUM(ticket_counts.tickets_sold), 0) as tickets_sold, SUM(orders.total_amount) as revenue')
+            ->selectRaw('movies.id, movies.title, movies.poster_url, movies.poster_path, COALESCE(SUM(ticket_counts.tickets_sold), 0) as tickets_sold, SUM(orders.total_amount) as revenue')
             ->join('showtimes', 'showtimes.id', '=', 'orders.showtime_id')
             ->join('movies', 'movies.id', '=', 'showtimes.movie_id')
             ->leftJoinSub($ticketCounts, 'ticket_counts', function ($join) {
@@ -212,10 +212,18 @@ class DashboardService
             })
             ->where('orders.status', self::STATUS_CONFIRMED)
             ->whereBetween('orders.paid_at', [$startDate, $endDate])
-            ->groupBy('movies.id', 'movies.title', 'movies.poster_url')
+            ->groupBy('movies.id', 'movies.title', 'movies.poster_url', 'movies.poster_path')
             ->orderByDesc('revenue')
             ->limit(6)
-            ->get();
+            ->get()
+            ->map(function ($movie) {
+                $movie->poster_url = $movie->poster_path
+                    ? asset('storage/' . $movie->poster_path)
+                    : $movie->poster_url;
+                unset($movie->poster_path);
+
+                return $movie;
+            });
     }
 
     private function getRecentOrders()

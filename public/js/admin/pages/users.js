@@ -28,6 +28,7 @@
         username: document.getElementById('userUsername'),
         phone: document.getElementById('userPhone'),
         password: document.getElementById('userPassword'),
+        passwordConfirmation: document.getElementById('userPasswordConfirmation'),
         passwordRequired: document.getElementById('passwordRequired'),
         birthday: document.getElementById('userBirthday'),
         gender: document.getElementById('userGender'),
@@ -58,6 +59,40 @@
         return bootstrap.Modal.getOrCreateInstance(modalEl);
     }
 
+    function formatValidationError(payload, fallbackMessage) {
+        const errors = payload?.errors || {};
+        const messages = Object.values(errors).flat().filter(Boolean);
+
+        if (messages.length > 0) {
+            return messages.slice(0, 3).join(' ');
+        }
+
+        return payload?.message || fallbackMessage;
+    }
+
+    function validateUserForm(isCreate) {
+        if (!els.form.checkValidity()) {
+            els.form.reportValidity();
+            return false;
+        }
+
+        if (isCreate && els.password?.value !== els.passwordConfirmation?.value) {
+            els.passwordConfirmation.setCustomValidity('Mật khẩu xác nhận không khớp.');
+            els.passwordConfirmation.reportValidity();
+            els.passwordConfirmation.setCustomValidity('');
+            return false;
+        }
+
+        return true;
+    }
+
+    function selectDefaultCreateRole() {
+        if (!els.roles) return;
+
+        const preferredRole = availableRoles.find((role) => ['customer', 'khach-hang'].includes(role.slug));
+        els.roles.value = preferredRole ? String(preferredRole.id) : '';
+    }
+
     /* ── Load Roles for Dropdown ────────────────────────────────────── */
     async function loadRoles() {
         try {
@@ -69,7 +104,7 @@
                 // Populate role filter
                 const allRolesOption = document.createElement('option');
                 allRolesOption.value = '';
-                allRolesOption.textContent = 'Tất cả vai trò';
+                allRolesOption.textContent = 'T\u1ea5t c\u1ea3 vai tr\u00f2';
                 els.roleFilter.replaceChildren(allRolesOption);
                 availableRoles.forEach(role => {
                     const option = document.createElement('option');
@@ -79,7 +114,7 @@
                 });
 
                 // Populate role select in form
-                els.roles.replaceChildren();
+                els.roles.replaceChildren(new Option('-- Ch\u1ecdn vai tr\u00f2 --', ''));
                 availableRoles.forEach(role => {
                     const option = document.createElement('option');
                     option.value = role.id;
@@ -190,12 +225,8 @@
             tr.appendChild(createTextCell(createdDate, 'text-white-50'));
 
             const actionsCell = document.createElement('td');
-            actionsCell.className = 'text-center';
-            actionsCell.append(
-                createActionButton(userId, 'edit-btn', 'btn-outline-primary', 'bi-pencil', 'Sửa', handleEdit, 'me-1'),
-                createActionButton(userId, 'reset-password-btn', 'btn-outline-warning', 'bi-key', 'Đặt lại mật khẩu', handleResetPasswordClick, 'me-1'),
-                createActionButton(userId, 'delete-btn', 'btn-outline-danger', 'bi-trash', 'Xóa', handleDelete),
-            );
+            actionsCell.className = 'text-center users-actions-cell';
+            actionsCell.appendChild(createUserActions(userId));
             tr.appendChild(actionsCell);
 
             fragment.appendChild(tr);
@@ -213,13 +244,28 @@
         return cell;
     }
 
-    function createActionButton(userId, actionClass, colorClass, iconClass, title, handler, spacingClass = '') {
+    function createUserActions(userId) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'user-row-actions';
+        wrapper.setAttribute('aria-label', 'Thao tác tài khoản');
+
+        wrapper.append(
+            createActionButton(userId, 'edit-btn', 'edit', 'bi-pencil-square', 'Sửa tài khoản', handleEdit),
+            createActionButton(userId, 'reset-password-btn', 'reset', 'bi-key', 'Đặt lại mật khẩu', handleResetPasswordClick),
+            createActionButton(userId, 'delete-btn', 'delete', 'bi-trash3', 'Xóa tài khoản', handleDelete),
+        );
+
+        return wrapper;
+    }
+
+    function createActionButton(userId, actionClass, variant, iconClass, title, handler) {
         const button = document.createElement('button');
         const icon = document.createElement('i');
         button.type = 'button';
-        button.className = ['btn', 'btn-sm', colorClass, actionClass, spacingClass].filter(Boolean).join(' ');
+        button.className = ['user-action-btn', `user-action-${variant}`, actionClass].join(' ');
         button.dataset.id = String(userId);
         button.title = title;
+        button.setAttribute('aria-label', title);
         icon.className = `bi ${iconClass}`;
         button.appendChild(icon);
         button.addEventListener('click', handler);
@@ -234,13 +280,11 @@
 
     /* ── CRUD Operations ───────────────────────────────────────────── */
     async function handleCreate() {
+        if (!validateUserForm(true)) return;
+
         const formData = new FormData(els.form);
         const data = Object.fromEntries(formData.entries());
-        
-        // Set role_id
         data.role_id = els.roles.value ? parseInt(els.roles.value, 10) : null;
-        
-        // Convert status to boolean
         data.status = els.status.checked ? 1 : 0;
 
         try {
@@ -251,34 +295,29 @@
 
             if (res && res.ok) {
                 const result = await res.json();
-                window.showAdminToast(result.message || 'Tạo tài khoản thành công!', 'success');
+                window.showAdminToast(result.message || 'T\u1ea1o t\u00e0i kho\u1ea3n th\u00e0nh c\u00f4ng!', 'success');
                 getModalInstance(els.modalEl).hide();
                 loadData(currentPage);
-            } else {
+            } else if (res) {
                 const error = await res.json();
-                window.showAdminToast(error.message || 'Lỗi tạo tài khoản!', 'danger');
+                window.showAdminToast(formatValidationError(error, 'Kh\u00f4ng th\u1ec3 t\u1ea1o t\u00e0i kho\u1ea3n.'), 'danger');
             }
         } catch (error) {
             console.error('Error creating user:', error);
-            window.showAdminToast('Lỗi kết nối!', 'danger');
+            window.showAdminToast(error?.message || 'Kh\u00f4ng th\u1ec3 t\u1ea1o t\u00e0i kho\u1ea3n.', 'danger');
         }
     }
 
     async function handleUpdate() {
+        if (!validateUserForm(false)) return;
+
         const formData = new FormData(els.form);
         const data = Object.fromEntries(formData.entries());
         const userId = els.idInput.value;
-        
-        // Set role_id
         data.role_id = els.roles.value ? parseInt(els.roles.value, 10) : null;
-        
-        // Convert status to boolean
         data.status = els.status.checked ? 1 : 0;
-
-        // Remove password if empty
-        if (!data.password) {
-            delete data.password;
-        }
+        delete data.password;
+        delete data.password_confirmation;
 
         try {
             const res = await window.AdminCore.apiFetch(`/api/v1/admin/users/${userId}`, {
@@ -288,16 +327,16 @@
 
             if (res && res.ok) {
                 const result = await res.json();
-                window.showAdminToast(result.message || 'Cập nhật tài khoản thành công!', 'success');
+                window.showAdminToast(result.message || 'C\u1eadp nh\u1eadt t\u00e0i kho\u1ea3n th\u00e0nh c\u00f4ng!', 'success');
                 getModalInstance(els.modalEl).hide();
                 loadData(currentPage);
-            } else {
+            } else if (res) {
                 const error = await res.json();
-                window.showAdminToast(error.message || 'Lỗi cập nhật tài khoản!', 'danger');
+                window.showAdminToast(formatValidationError(error, 'Kh\u00f4ng th\u1ec3 c\u1eadp nh\u1eadt t\u00e0i kho\u1ea3n.'), 'danger');
             }
         } catch (error) {
             console.error('Error updating user:', error);
-            window.showAdminToast('Lỗi kết nối!', 'danger');
+            window.showAdminToast(error?.message || 'Kh\u00f4ng th\u1ec3 c\u1eadp nh\u1eadt t\u00e0i kho\u1ea3n.', 'danger');
         }
     }
 
@@ -318,6 +357,7 @@
                 els.username.value = user.username || '';
                 els.phone.value = user.phone || '';
                 els.password.value = '';
+                if (els.passwordConfirmation) els.passwordConfirmation.value = '';
                 els.birthday.value = user.birthday || '';
                 els.gender.value = user.gender || '';
                 els.loyaltyPoints.value = user.loyalty_points || 0;
@@ -333,6 +373,7 @@
                 // Update modal UI
                 els.modalLabel.innerHTML = '<i class="bi bi-person me-2 admin-accent-icon"></i>Cập nhật tài khoản';
                 els.password.removeAttribute('required');
+                if (els.passwordConfirmation) els.passwordConfirmation.removeAttribute('required');
                 els.passwordRequired.style.display = 'none';
                 
                 getModalInstance(els.modalEl).show();
@@ -346,7 +387,7 @@
     async function handleDelete(e) {
         const userId = e.currentTarget.dataset.id;
         
-        if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
+        if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa người dùng này?', confirmLabel: 'Xóa người dùng', variant: 'danger' })) return;
 
         try {
             const res = await window.AdminCore.apiFetch(`/api/v1/admin/users/${userId}`, {
@@ -487,10 +528,15 @@
                 els.form.reset();
                 els.idInput.value = '';
                 els.formMethod.value = 'POST';
-                els.modalLabel.innerHTML = '<i class="bi bi-person me-2 admin-accent-icon"></i>Tạo tài khoản mới';
+                els.modalLabel.innerHTML = '<i class="bi bi-person me-2 admin-accent-icon"></i>T\u1ea1o t\u00e0i kho\u1ea3n m\u1edbi';
                 els.password.setAttribute('required', 'required');
+                if (els.passwordConfirmation) {
+                    els.passwordConfirmation.setAttribute('required', 'required');
+                    els.passwordConfirmation.value = '';
+                }
                 els.passwordRequired.style.display = 'inline';
                 els.status.checked = true;
+                selectDefaultCreateRole();
                 getModalInstance(els.modalEl).show();
             });
         }

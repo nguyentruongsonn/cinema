@@ -221,7 +221,7 @@ class BottomSheetController {
 
     updateSeatsSection(selectedSeats) {
         if (selectedSeats.length === 0) {
-            this.sheetSeatsList.innerHTML = '<span style="color: #9e9e9e; font-size: 14px;">Chưa chọn ghế</span>';
+            this.sheetSeatsList.innerHTML = '<span class="bottom-sheet-empty-seat">Chưa chọn ghế</span>';
             this.sheetSeatsPrice.textContent = '0₫';
             return;
         }
@@ -242,14 +242,14 @@ class BottomSheetController {
 
     updateProductsSection(selectedProducts) {
         if (selectedProducts.size === 0) {
-            this.sheetProductsSection.style.display = 'none';
+            this.sheetProductsSection.classList.add('d-none');
             return;
         }
 
-        this.sheetProductsSection.style.display = 'block';
+        this.sheetProductsSection.classList.remove('d-none');
 
         const productItems = Array.from(selectedProducts.entries()).map(([productId, quantity]) => {
-            const product = this.booking.products.find(p => p.id === parseInt(productId));
+            const product = this.booking.products.find(p => String(p.id) === String(productId));
             if (!product || quantity === 0) return '';
 
             const itemTotal = product.price * quantity;
@@ -266,11 +266,11 @@ class BottomSheetController {
 
     updatePromotionSection(appliedPromotion) {
         if (!appliedPromotion) {
-            this.sheetPromotionSection.style.display = 'none';
+            this.sheetPromotionSection.classList.add('d-none');
             return;
         }
 
-        this.sheetPromotionSection.style.display = 'block';
+        this.sheetPromotionSection.classList.remove('d-none');
         this.sheetPromotionCode.textContent = appliedPromotion.code || '---';
 
         const discount = this.calculateDiscount();
@@ -285,10 +285,10 @@ class BottomSheetController {
         this.sheetSubtotal.textContent = this.formatPrice(subtotal);
 
         if (discount > 0) {
-            this.sheetDiscountRow.style.display = 'flex';
+            this.sheetDiscountRow.classList.remove('d-none');
             this.sheetDiscount.textContent = `-${this.formatPrice(discount)}`;
         } else {
-            this.sheetDiscountRow.style.display = 'none';
+            this.sheetDiscountRow.classList.add('d-none');
         }
 
         this.sheetFinalTotal.textContent = this.formatPrice(total);
@@ -296,11 +296,11 @@ class BottomSheetController {
 
     updateTimer() {
         if (!this.booking.currentHold) {
-            this.sheetTimer.style.display = 'none';
+            this.sheetTimer.classList.add('d-none');
             return;
         }
 
-        this.sheetTimer.style.display = 'flex';
+        this.sheetTimer.classList.remove('d-none');
         const minutes = Math.floor(this.booking.timerSeconds / 60);
         const seconds = this.booking.timerSeconds % 60;
         this.sheetTimerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -326,7 +326,7 @@ class BottomSheetController {
     calculateProductsPrice() {
         let total = 0;
         for (const [productId, quantity] of this.booking.selectedProducts.entries()) {
-            const product = this.booking.products.find(p => p.id === parseInt(productId));
+            const product = this.booking.products.find(p => String(p.id) === String(productId));
             if (product) {
                 total += product.price * quantity;
             }

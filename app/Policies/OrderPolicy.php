@@ -27,14 +27,12 @@ class OrderPolicy
             return true;
         }
 
-        // Admin can view any order
-        if ($user->hasAnyRole(['admin', 'super-admin'])) {
+        if ($user->hasPermission('orders.view_all')) {
             return true;
         }
 
-        // Staff with order viewing permission
-        if ($user->hasPermission('view_all_orders')) {
-            return true;
+        if ($user->hasPermission('orders.view_theater')) {
+            return $this->canAccessOrderTheater($user, $order);
         }
 
         return false;
@@ -66,8 +64,11 @@ class OrderPolicy
     {
         // User must own the order
         if ($order->user_id !== $user->id) {
-            // Admin can cancel any order
-            if (!$user->hasAnyRole(['admin', 'super-admin']) && !$user->hasPermission('cancel_orders')) {
+            if (! $user->hasPermission('orders.cancel')) {
+                return false;
+            }
+
+            if (! $user->hasPermission('orders.view_all') && ! $this->canAccessOrderTheater($user, $order)) {
                 return false;
             }
         }
@@ -129,6 +130,26 @@ class OrderPolicy
      */
     public function refund(User $user, Order $order): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('refund_orders');
+        if (! $user->hasPermission('orders.refund')) {
+            return false;
+        }
+
+        return $user->hasPermission('orders.view_all') || $this->canAccessOrderTheater($user, $order);
+    }
+
+    private function canAccessOrderTheater(User $user, Order $order): bool
+    {
+        if (! $user->requiresTheaterScope()) {
+            return true;
+        }
+
+        if (! $order->relationLoaded('showtime')) {
+            $order->load('showtime.screen:id,theater_id');
+        } elseif ($order->showtime && ! $order->showtime->relationLoaded('screen')) {
+            $order->showtime->load('screen:id,theater_id');
+        }
+
+        return $order->showtime?->screen !== null
+            && $user->isAssignedToTheater((int) $order->showtime->screen->theater_id);
     }
 }

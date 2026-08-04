@@ -31,6 +31,8 @@ class HomeController extends Controller
         'slug',
         'description',
         'poster_url',
+        'poster_path',
+        'banner_path',
         'backdrops',
         'trailer_url',
         'age_rating',
@@ -193,7 +195,7 @@ class HomeController extends Controller
         }
 
         $backdrops = $this->safeBackdrops($movie);
-        $posterUrl = $this->safeUrl($movie->poster_url);
+        $posterUrl = $this->safeUrl($movie->poster_display_url);
         $backdrops = collect($backdrops)
             ->map(fn ($url): ?string => $this->safeUrl(is_string($url) ? $url : null))
             ->reject(fn (?string $url): bool => $url === null)
@@ -206,6 +208,7 @@ class HomeController extends Controller
             'slug' => $movie->slug,
             'description' => strip_tags((string) $movie->description),
             'poster_url' => $posterUrl,
+            'poster_display_url' => $posterUrl,
             'backdrop_url' => ! empty($backdrops) ? $backdrops[0] : $posterUrl,
             'backdrops' => $backdrops,
             'trailer_url' => $this->safeUrl($movie->trailer_url),

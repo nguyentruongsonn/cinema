@@ -52,7 +52,7 @@
                             <th class="text-center">Ngày tháng (DD-MM)</th>
                             <th class="text-center">Năm áp dụng</th>
                             <th class="text-end">Mức phụ thu (VNĐ)</th>
-                            <th class="text-center" style="width: 100px;">Trạng thái</th>
+                            <th class="text-center admin-col-status">Trạng thái</th>
                             <th class="text-center col-actions">Hành động</th>
                         </tr>
                     </thead>
@@ -72,7 +72,7 @@
                             <tr>
                                 <th>Thứ trong tuần</th>
                                 <th>Phân loại loại ngày (Rule)</th>
-                                <th class="text-end" style="width: 250px;">Phụ thu mặc định (VNĐ)</th>
+                            <th class="text-end admin-col-surcharge">Phụ thu mặc định (VNĐ)</th>
                             </tr>
                         </thead>
                         <tbody id="dayRulesTableBody">
@@ -99,7 +99,7 @@
                             <th class="text-center">Giờ bắt đầu</th>
                             <th class="text-center">Giờ kết thúc</th>
                             <th class="text-end">Mức phụ thu (VNĐ)</th>
-                            <th class="text-center" style="width: 100px;">Trạng thái</th>
+                            <th class="text-center admin-col-status">Trạng thái</th>
                             <th class="text-center col-actions">Hành động</th>
                         </tr>
                     </thead>
@@ -119,7 +119,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="holidayModalLabel">
-                    <i class="bi bi-calendar-event me-2" style="color:var(--accent-color);"></i>Tạo ngày lễ mới
+                    <i class="bi bi-calendar-event me-2 admin-accent-icon"></i>Tạo ngày lễ mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -149,13 +149,13 @@
                     </div>
                     <div class="mb-0">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="holidayStatus" name="status" value="1" checked style="cursor: pointer;">
+                                <input class="form-check-input admin-form-check-clickable" type="checkbox" id="holidayStatus" name="status" value="1" checked>
                             <label class="form-check-label text-white" for="holidayStatus">Kích hoạt hoạt động</label>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu ngày lễ</button>
                 </div>
             </form>
@@ -169,7 +169,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="timeSlotModalLabel">
-                    <i class="bi bi-clock me-2" style="color:var(--accent-color);"></i>Tạo khung giờ mới
+                    <i class="bi bi-clock me-2 admin-accent-icon"></i>Tạo khung giờ mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -199,13 +199,13 @@
                     </div>
                     <div class="mb-0">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="timeSlotStatus" name="status" value="1" checked style="cursor: pointer;">
+                                <input class="form-check-input admin-form-check-clickable" type="checkbox" id="timeSlotStatus" name="status" value="1" checked>
                             <label class="form-check-label text-white" for="timeSlotStatus">Kích hoạt hoạt động</label>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu khung giờ</button>
                 </div>
             </form>

@@ -44,16 +44,16 @@
 <div class="admin-table-container">
     <div class="tab-content" id="sltTabContent">
         <div class="tab-pane fade show active" id="pane-table" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table table-dark table-hover align-middle mb-0" style="background:transparent;">
-                    <thead style="border-bottom: 1px solid var(--border-color);">
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <th class="text-center text-secondary fw-semibold border-0" style="width: 60px;">STT</th>
-                            <th class="text-secondary fw-semibold border-0">Tên mẫu &amp; Mô tả</th>
-                            <th class="text-secondary fw-semibold border-0">Cấu hình lưới (Matrix)</th>
-                            <th class="text-secondary fw-semibold border-0">Chi tiết ghế</th>
-                            <th class="text-secondary fw-semibold border-0 text-center" style="width: 120px;">Trạng thái</th>
-                            <th class="text-center text-secondary fw-semibold border-0" style="width: 150px;">Hành động</th>
+                            <th class="text-center col-stt">STT</th>
+                            <th>Tên mẫu &amp; Mô tả</th>
+                            <th>Cấu hình lưới (Matrix)</th>
+                            <th>Chi tiết ghế</th>
+                            <th class="text-center col-status">Trạng thái</th>
+                            <th class="text-center col-actions-lg">Hành động</th>
                         </tr>
                     </thead>
                     <tbody id="templatesTableBody">
@@ -74,7 +74,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="seatLayoutTemplateModalLabel">
-                    <i class="bi bi-grid-3x3-gap me-2" style="color:var(--accent-color);"></i>Tạo mẫu sơ đồ ghế mới
+                    <i class="bi bi-grid-3x3-gap me-2 admin-accent-icon"></i>Tạo mẫu sơ đồ ghế mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -108,21 +108,21 @@
                     <div class="row mb-3 g-3">
                         <div class="col-md-4">
                             <label for="regularSeatRows" class="form-label text-secondary d-flex align-items-center gap-1">
-                                <span class="d-inline-block" style="width:10px;height:10px;border-radius:2px;background:#60a5fa;"></span>
+                                                <span class="admin-seat-count-dot admin-seat-count-dot--regular"></span>
                                 Ghế thường
                             </label>
                             <input type="number" class="form-control bg-dark text-white border-secondary seat-row-input" id="regularSeatRows" name="regular_seat_rows" min="0" value="0">
                         </div>
                         <div class="col-md-4">
                             <label for="vipSeatRows" class="form-label text-secondary d-flex align-items-center gap-1">
-                                <span class="d-inline-block" style="width:10px;height:10px;border-radius:2px;background:#f59e0b;"></span>
+                                                <span class="admin-seat-count-dot admin-seat-count-dot--vip"></span>
                                 Ghế VIP
                             </label>
                             <input type="number" class="form-control bg-dark text-white border-secondary seat-row-input" id="vipSeatRows" name="vip_seat_rows" min="0" value="0">
                         </div>
                         <div class="col-md-4">
                             <label for="coupleSeatRows" class="form-label text-secondary d-flex align-items-center gap-1">
-                                <span class="d-inline-block" style="width:10px;height:10px;border-radius:2px;background:#ec4899;"></span>
+                                                <span class="admin-seat-count-dot admin-seat-count-dot--couple"></span>
                                 Ghế đôi
                             </label>
                             <input type="number" class="form-control bg-dark text-white border-secondary seat-row-input" id="coupleSeatRows" name="couple_seat_rows" min="0" value="0">
@@ -145,7 +145,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white slt-btn-cancel" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white slt-btn-cancel admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0" id="sltSubmitBtn">Lưu mẫu sơ đồ ghế</button>
                 </div>
             </form>

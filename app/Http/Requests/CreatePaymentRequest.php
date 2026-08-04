@@ -24,7 +24,7 @@ class CreatePaymentRequest extends FormRequest
             'idempotency_key' => 'required|string|uuid|max:36',
             'showtime_id' => 'required|integer|exists:showtimes,id',
             'items' => 'required|array|min:1|max:50',
-            'items.*.type' => 'required|string|in:seat,product',
+            'items.*.type' => 'required|string|in:seat,product,combo',
             'items.*.id' => 'required|integer',
             'items.*.quantity' => 'required|integer|min:1|max:20',
             'voucher_code' => 'nullable|string|max:50',

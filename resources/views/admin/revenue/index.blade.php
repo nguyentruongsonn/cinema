@@ -52,7 +52,7 @@
                 <span class="stat-title">RẠP DOANH THU CAO NHẤT</span>
                 <div class="stat-icon"><i class="bi bi-buildings"></i></div>
             </div>
-            <div class="stat-value text-truncate admin-skeleton admin-skeleton-text" id="cardTopTheaterRevenue" style="font-size:1.5rem"></div>
+            <div class="stat-value text-truncate admin-skeleton admin-skeleton-text admin-stat-value-lg" id="cardTopTheaterRevenue"></div>
             <div class="stat-trend mt-2">
                 <span class="fw-bold text-info admin-skeleton admin-skeleton-text" id="cardTopTheaterName"></span>
                 <span class="trend-text ms-2 admin-skeleton admin-skeleton-text" id="cardTopTheaterPct"></span>
@@ -67,10 +67,10 @@
                 <span class="stat-title">PHIM DOANH THU CAO NHẤT</span>
                 <div class="stat-icon"><i class="bi bi-film"></i></div>
             </div>
-            <div class="stat-value admin-skeleton admin-skeleton-text" id="cardTopMovieRevenue" style="font-size:1.5rem"></div>
+            <div class="stat-value admin-skeleton admin-skeleton-text admin-stat-value-lg" id="cardTopMovieRevenue"></div>
             <div class="stat-trend mt-2">
                 <span class="fw-bold text-warning text-truncate d-block admin-skeleton admin-skeleton-text" id="cardTopMovieTitle"
-                      class="text-truncate" style="max-width:200px;"></span>
+                      class="text-truncate admin-max-w-200"></span>
                 <span class="trend-text admin-skeleton admin-skeleton-text" id="cardTopMovieTickets"></span>
             </div>
         </div>
@@ -83,7 +83,7 @@
                 <span class="stat-title">PHƯƠNG THỨC PHỔ BIẾN NHẤT</span>
                 <div class="stat-icon"><i class="bi bi-credit-card"></i></div>
             </div>
-            <div class="stat-value admin-skeleton admin-skeleton-text" id="cardTopPayMethod" style="font-size:1.5rem;text-transform:uppercase"></div>
+            <div class="stat-value admin-skeleton admin-skeleton-text admin-stat-value-lg admin-uppercase" id="cardTopPayMethod"></div>
             <div class="stat-trend mt-2">
                 <span class="fw-bold text-success admin-skeleton admin-skeleton-text" id="cardTopPayMethodPct"></span>
                 <span class="trend-text ms-2">tổng lượt thanh toán</span>
@@ -100,7 +100,7 @@
                 <h3 class="chart-title">Doanh thu theo Rạp</h3>
                 <span class="badge bg-secondary" id="badgeTheaterCount"></span>
             </div>
-            <div id="chartTheaterPie" class="admin-skeleton admin-skeleton-text" style="min-height:300px;"></div>
+            <div id="chartTheaterPie" class="admin-skeleton admin-skeleton-text admin-chart-h-300"></div>
         </div>
     </div>
     <div class="col-xl-7 col-lg-7">
@@ -108,7 +108,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Doanh thu theo Phim (Top 10)</h3>
             </div>
-            <div id="chartMovieBar" class="admin-skeleton admin-skeleton-text" style="min-height:300px;"></div>
+            <div id="chartMovieBar" class="admin-skeleton admin-skeleton-text admin-chart-h-300"></div>
         </div>
     </div>
 </div>
@@ -120,7 +120,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Tỉ lệ Phương thức Thanh toán</h3>
             </div>
-            <div id="chartPaymentDonut" class="admin-skeleton admin-skeleton-text" style="min-height:280px;"></div>
+            <div id="chartPaymentDonut" class="admin-skeleton admin-skeleton-text admin-chart-h-280"></div>
             <div id="paymentLegend" class="mt-3 d-flex flex-column gap-2 px-2"></div>
         </div>
     </div>
@@ -129,7 +129,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Xu hướng Doanh thu theo Thời gian</h3>
             </div>
-            <div id="chartRevenueTrend" class="admin-skeleton admin-skeleton-text" style="min-height:300px;"></div>
+            <div id="chartRevenueTrend" class="admin-skeleton admin-skeleton-text admin-chart-h-300"></div>
         </div>
     </div>
 </div>

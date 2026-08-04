@@ -15,7 +15,7 @@ class ScreenPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('view_screens');
+        return $user->hasPermission('screens.view');
     }
 
     /**
@@ -23,7 +23,7 @@ class ScreenPolicy
      */
     public function view(User $user, Screen $screen): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('view_screens');
+        return $user->hasPermission('screens.view') && $this->canAccessScreenTheater($user, $screen);
     }
 
     /**
@@ -31,7 +31,7 @@ class ScreenPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('create_screens');
+        return $user->hasPermission('screens.create');
     }
 
     /**
@@ -39,7 +39,7 @@ class ScreenPolicy
      */
     public function update(User $user, Screen $screen): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_screens');
+        return $user->hasPermission('screens.update') && $this->canAccessScreenTheater($user, $screen);
     }
 
     /**
@@ -47,7 +47,7 @@ class ScreenPolicy
      */
     public function delete(User $user, Screen $screen): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('delete_screens');
+        return $user->hasPermission('screens.delete') && $this->canAccessScreenTheater($user, $screen);
     }
 
     /**
@@ -55,7 +55,7 @@ class ScreenPolicy
      */
     public function manageSeats(User $user, Screen $screen): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('manage_seat_layouts');
+        return $user->hasPermission('screens.manage_seats') && $this->canAccessScreenTheater($user, $screen);
     }
 
     /**
@@ -63,6 +63,12 @@ class ScreenPolicy
      */
     public function toggleStatus(User $user, Screen $screen): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_screens');
+        return $user->hasPermission('screens.update') && $this->canAccessScreenTheater($user, $screen);
+    }
+
+    private function canAccessScreenTheater(User $user, Screen $screen): bool
+    {
+        return ! $user->requiresTheaterScope()
+            || $user->isAssignedToTheater((int) $screen->theater_id);
     }
 }

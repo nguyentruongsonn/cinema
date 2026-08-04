@@ -30,12 +30,22 @@
         excerpt: document.getElementById('postExcerpt'),
         content: document.getElementById('postContent'),
         image: document.getElementById('postImage'),
-        imagePreviewContainer: document.getElementById('postImagePreviewContainer'),
+        imageUploadBox: document.getElementById('postImageUploadBox'),
         imagePreview: document.getElementById('postImagePreview'),
+        imagePlaceholder: document.getElementById('postImagePlaceholder'),
+        clearImageBtn: document.getElementById('clearPostImageBtn'),
         publishedAt: document.getElementById('postPublishedAt'),
         isPublished: document.getElementById('postIsPublished'),
         statusLabel: document.getElementById('postStatusLabel'),
     };
+
+    const mediaInput = new window.AdminMediaInput({
+        root: els.imageUploadBox,
+        input: els.image,
+        preview: els.imagePreview,
+        placeholder: els.imagePlaceholder,
+        clearButton: els.clearImageBtn,
+    });
 
     let currentPage = 1, currentSearch = '', currentStatus = 'all', currentCategory = 'all';
 
@@ -78,7 +88,7 @@
         els.tableBody.innerHTML = '';
         posts.forEach((post, index) => {
             const tr = document.createElement('tr');
-            tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+            tr.classList.add('admin-table-row');
             const safeCategory = Object.hasOwn(categoryLabels, post.category) ? post.category : 'news';
             const categoryBadge = `<span class="badge-category badge-category-${safeCategory}">${escapeHtml(categoryLabels[post.category] || post.category)}</span>`;
             tr.innerHTML = `
@@ -125,8 +135,7 @@
             window.jQuery('#summernoteEditor').summernote('code', '');
         }
         els.content.value = '';
-        els.imagePreviewContainer?.classList.add('d-none');
-        if (els.imagePreview) els.imagePreview.src = '';
+        mediaInput.clear();
     }
 
     function formatDateTimeLocal(dateString) {
@@ -149,15 +158,6 @@
 
     if (els.isPublished) els.isPublished.addEventListener('change', updatePublicationLabel);
     if (els.publishedAt) els.publishedAt.addEventListener('change', updatePublicationLabel);
-    if (els.image) els.image.addEventListener('change', () => {
-        const file = els.image.files?.[0];
-        if (!file || !els.imagePreview || !els.imagePreviewContainer) return;
-        const url = URL.createObjectURL(file);
-        els.imagePreview.src = url;
-        els.imagePreview.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
-        els.imagePreviewContainer.classList.remove('d-none');
-    });
-
     els.tableBody.addEventListener('click', async (e) => {
         const btnEdit = e.target.closest('.btn-edit-post');
         if (btnEdit) {
@@ -177,17 +177,14 @@
             els.publishedAt.value = formatDateTimeLocal(post.published_at);
             els.isPublished.checked = post.is_published === 1 || post.is_published === true;
             updatePublicationLabel();
-            if (post.featured_image_url && els.imagePreview && els.imagePreviewContainer) {
-                els.imagePreview.src = post.featured_image_url;
-                els.imagePreviewContainer.classList.remove('d-none');
-            }
+            if (post.featured_image_url) mediaInput.show(post.featured_image_url);
             getModalInstance()?.show();
             return;
         }
 
         const btnDel = e.target.closest('.btn-delete-post');
         if (btnDel) {
-            if (!confirm('Bạn có chắc muốn xóa bài viết này?')) return;
+            if (!await window.AdminDialog.confirm({ message: 'Bạn có chắc muốn xóa bài viết này?', confirmLabel: 'Xóa bài viết', variant: 'danger' })) return;
             try {
                 const res = await window.AdminCore.apiFetch(`/api/v1/admin/posts/${btnDel.dataset.id}`, { method: 'DELETE' });
                 if (res && res.ok) { window.showAdminToast?.('Xóa bài viết thành công', 'success'); loadData(currentPage); }
@@ -229,9 +226,9 @@
             if (isEdit) formData.append('_method', 'PUT');
 
             try {
-                const res = await fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: formData, credentials: 'same-origin' });
+                const res = await window.AdminCore.apiFetch(url, { method: 'POST', body: formData, skipCache: true });
                 if (res && res.ok) { getModalInstance()?.hide(); window.showAdminToast?.(isEdit ? 'Cập nhật bài viết thành công' : 'Tạo bài viết thành công', 'success'); loadData(currentPage); }
-                else { const errData = await res.json(); alert('Dữ liệu không hợp lệ: ' + JSON.stringify(errData.errors || errData.message)); }
+                else { const errData = await res.json(); window.showAdminToast?.(window.formatAdminErrors?.(errData.errors || errData.message) || 'Dữ liệu không hợp lệ', 'error'); }
             } catch (error) { console.error('Submit error', error); }
         });
     }

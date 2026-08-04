@@ -83,10 +83,9 @@
 
 /* ── Table Actions Column ────────────────────────────────────────────── */
 .admin-table-actions {
-    display: flex;
-    gap: var(--admin-space-sm);
     align-items: center;
-    justify-content: flex-end;
+    display: inline-flex;
+    justify-content: center;
 }
 
 .admin-table th.actions-column,
@@ -246,6 +245,16 @@
 .col-actions { width: 120px; }
 .col-actions-md { width: 110px; }
 .col-actions-lg { width: 140px; }
+
+.admin-table td:has(.admin-table-action-edit),
+.admin-table td:has(.admin-table-action-delete),
+.admin-table td:has(.btn-edit-showtime),
+.admin-table td:has(.btn-delete-showtime),
+.admin-table td:has(.btn-audit-detail) {
+    min-width: 110px;
+    text-align: center;
+    white-space: nowrap;
+}
 .col-status { width: 100px; }
 .col-activity { width: 100px; }
 .col-date { width: 110px; }
@@ -378,4 +387,7 @@
     .admin-table.table-responsive .admin-table-actions {
         justify-content: flex-end;
     }
+}
+.admin-table-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }

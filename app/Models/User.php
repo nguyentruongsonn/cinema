@@ -86,6 +86,83 @@ class User extends Authenticatable implements JWTSubject
             ->withTimestamps();
     }
 
+    public function theaters(): BelongsToMany
+    {
+        return $this->belongsToMany(Theater::class, 'theater_user')
+            ->withTimestamps();
+    }
+
+    public function isAssignedToTheater(int $theaterId): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return $this->theaters()->whereKey($theaterId)->exists();
+    }
+
+    public function requiresTheaterScope(): bool
+    {
+        return $this->hasAnyRole([
+            'theater_manager',
+            'ticket_seller',
+            'ticket_checker',
+            'concession_staff',
+        ]);
+    }
+
+    public function isCustomer(): bool
+    {
+        return $this->hasRole('customer');
+    }
+
+    public function canAccessAdminPanel(): bool
+    {
+        if (! $this->role) {
+            return false;
+        }
+
+        if ($this->isCustomer()) {
+            return false;
+        }
+
+        if ($this->hasRole('super-admin')) {
+            return true;
+        }
+
+        return array_key_exists($this->role->slug, config('rbac.roles', []));
+    }
+
+    public function adminLandingRouteName(): string
+    {
+        $routesByPermission = [
+            'dashboard.view' => 'admin.dashboard',
+            'reports.view' => 'admin.revenue.index',
+            'orders.view_all' => 'admin.orders.index',
+            'orders.view_theater' => 'admin.orders.index',
+            'tickets.view' => 'admin.tickets.index',
+            'tickets.verify' => 'admin.tickets.index',
+            'showtimes.view' => 'admin.showtimes.index',
+            'movies.view' => 'admin.movies.index',
+            'products.view' => 'admin.products.index',
+            'combos.view' => 'admin.combos.index',
+            'promotions.view' => 'admin.promotions.index',
+            'theaters.view' => 'admin.theaters.index',
+            'screens.view' => 'admin.screens.index',
+            'users.view' => 'admin.users.index',
+            'posts.view' => 'admin.posts.index',
+            'banners.view' => 'admin.banners.index',
+        ];
+
+        foreach ($routesByPermission as $permission => $routeName) {
+            if ($this->hasPermission($permission)) {
+                return $routeName;
+            }
+        }
+
+        return 'home';
+    }
+
     // JWT
     public function getJWTIdentifier()
     {
@@ -112,13 +189,40 @@ class User extends Authenticatable implements JWTSubject
     // Helper: check admin role
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin');
+        return $this->hasAnyRole(['admin', 'super-admin']);
     }
 
     // Helper: check permission via role
     public function hasPermission(string $permissionSlug): bool
     {
-        return $this->role?->permissions()->where('slug', $permissionSlug)->exists() ?? false;
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if (! $this->role) {
+            return false;
+        }
+
+        return $this->role->permissions()
+            ->whereIn('slug', $this->permissionSlugCandidates($permissionSlug))
+            ->exists();
+    }
+
+    private function permissionSlugCandidates(string $permissionSlug): array
+    {
+        $aliases = config('rbac.permission_aliases', []);
+        $candidates = [$permissionSlug];
+
+        if (isset($aliases[$permissionSlug])) {
+            $candidates[] = $aliases[$permissionSlug];
+        }
+
+        $legacySlug = array_search($permissionSlug, $aliases, true);
+        if (is_string($legacySlug)) {
+            $candidates[] = $legacySlug;
+        }
+
+        return array_values(array_unique($candidates));
     }
 
     public function scopeActive($query)

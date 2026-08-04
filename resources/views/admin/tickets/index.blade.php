@@ -69,7 +69,7 @@
                 <span class="stat-title">GIỜ CAO ĐIỂM</span>
                 <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
             </div>
-            <div class="stat-value" id="cardPeakHour" style="font-size:1.5rem">—</div>
+            <div class="stat-value admin-stat-value-lg" id="cardPeakHour">—</div>
             <div class="stat-trend mt-2">
                 <span class="text-secondary small">thời gian bán nhiều nhất</span>
             </div>
@@ -83,7 +83,7 @@
                 <span class="stat-title">TỈ LỆ LẤP ĐẦY TRUNG BÌNH</span>
                 <div class="stat-icon"><i class="bi bi-people"></i></div>
             </div>
-            <div class="stat-value" id="cardOccupancyRate" style="font-size:1.5rem">—</div>
+            <div class="stat-value admin-stat-value-lg" id="cardOccupancyRate">—</div>
             <div class="stat-trend">
                 <span id="cardOccupancyRateTrend"><i class="bi bi-dash"></i> 0%</span>
                 <span class="trend-text">vs kỳ trước</span>
@@ -99,7 +99,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Xu hướng lượng vé bán ra</h3>
             </div>
-            <div id="chartTicketTrend" style="min-height:300px;"></div>
+            <div id="chartTicketTrend" class="admin-chart-h-300"></div>
         </div>
     </div>
     <div class="col-xl-4 col-lg-5">
@@ -107,7 +107,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Top phim bán chạy</h3>
             </div>
-            <div id="chartTopMovies" style="min-height:300px;"></div>
+            <div id="chartTopMovies" class="admin-chart-h-300"></div>
         </div>
     </div>
 </div>
@@ -119,7 +119,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Tỉ lệ lấp đầy theo Rạp</h3>
             </div>
-            <div id="chartTheaterOccupancy" style="min-height:350px;"></div>
+            <div id="chartTheaterOccupancy" class="admin-chart-h-350"></div>
         </div>
     </div>
 </div>

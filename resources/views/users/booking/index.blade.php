@@ -4,7 +4,6 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/users/pages/booking.css') }}?v={{ filemtime(public_path('css/users/pages/booking.css')) }}">
-<link rel="stylesheet" href="{{ asset('css/users/booking-toast.css') }}?v={{ filemtime(public_path('css/users/booking-toast.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/users/skeleton.css') }}">
 @endpush
 
@@ -83,7 +82,7 @@
                 <!-- Step 1: Seat Selection -->
                 <div class="tab-content active" id="tab-seats">
                 <!-- SVG Gradient Definitions for seat colors -->
-                <svg width="0" height="0" style="position:absolute;overflow:hidden;">
+                <svg class="booking-svg-definitions" width="0" height="0" aria-hidden="true">
                     <defs>
                         <!-- Ghế thường: xám trung tính -->
                         <linearGradient id="grad-standard" x1="0" y1="0" x2="0" y2="1">
@@ -216,8 +215,8 @@
                         <h4 class="promo-heading">Voucher khả dụng</h4>
                         <div class="voucher-grid-dark mt-3" id="voucherContent">
                             <div class="empty-voucher text-center py-4 w-100">
-                                <i class="bi bi-inbox text-light" style="font-size: 32px; opacity: 0.5;"></i>
-                                <p class="text-light mt-2 mb-0" style="opacity: 0.8;">Chưa có voucher nào khả dụng cho suất chiếu này.</p>
+                                <i class="bi bi-inbox text-light booking-empty-icon"></i>
+                                <p class="text-light mt-2 mb-0 booking-empty-copy">Chưa có voucher nào khả dụng cho suất chiếu này.</p>
                             </div>
                         </div>
                     </div>
@@ -229,7 +228,7 @@
                         <!-- Left Column: Payment Methods -->
                         <div class="payment-methods-column">
                             <div class="section-header mb-4">
-                                <h3 class="section-title text-white" style="font-size: 24px; text-transform: none; border: none; padding: 0; margin-bottom: 8px;">Phương thức thanh toán</h3>
+                                <h3 class="section-title text-white booking-payment-title">Phương thức thanh toán</h3>
                             </div>
                             <div class="payment-methods-list-dark">
                                 <!-- Apple Pay -->
@@ -304,7 +303,7 @@
                         <div class="result-ticket-card mx-auto text-start">
                             <div class="d-flex mb-3">
                                 <div class="ticket-poster me-4">
-                                    <img src="{{ asset('storage/' . $showtime->movie->poster_url) }}" alt="{{ $showtime->movie->title }}" class="img-fluid rounded">
+                                    <img src="{{ $showtime->movie->poster_display_url }}" alt="{{ $showtime->movie->title }}" class="img-fluid rounded">
                                 </div>
                                 <div class="ticket-details flex-grow-1">
                                     <h4 class="ticket-movie-title mb-2" id="successMovieTitle">{{ $showtime->movie->title }}</h4>
@@ -368,13 +367,13 @@
 
             <!-- Navigation Buttons -->
             <div class="booking-nav-buttons">
-                <button id="prevStepBtn" class="nav-btn btn-back" style="display: none;">
+                <button id="prevStepBtn" class="nav-btn btn-back d-none">
                     <i class="bi bi-arrow-left"></i> Quay lại
                 </button>
                 <button type="button" id="nextStepBtn" class="nav-btn btn-continue" disabled>
                     Tiếp tục
                 </button>
-                <button id="paymentBtn" class="nav-btn btn-payment" style="display: none;">
+                <button id="paymentBtn" class="nav-btn btn-payment d-none">
                     <i class="bi bi-credit-card"></i> Thanh toán
                 </button>
             </div>
@@ -383,7 +382,8 @@
         <!-- Sidebar Receipt -->
         <div class="booking-sidebar">
             <div class="premium-receipt">
-                <div class="receipt-header" style="background-image: url('{{ asset('storage/' . $showtime->movie->poster_url) }}');">
+                <div class="receipt-header">
+                    <img class="receipt-header-image" src="{{ $showtime->movie->poster_display_url }}" alt="" aria-hidden="true">
                     <div class="receipt-header-overlay">
                         <h4 class="receipt-movie-title">{{ $showtime->movie->title }}</h4>
                         <p class="receipt-movie-screen">{{ $showtime->screen->theater->name }} - {{ $showtime->screen->name }}</p>
@@ -398,7 +398,7 @@
                         <span class="r-label">Vị trí</span>
                         <span class="r-value text-right" id="receiptSeatsInfo">Chưa chọn ghế</span>
                     </div>
-                    <div class="receipt-row" id="receiptProductsRow" style="display:none;">
+                    <div class="receipt-row d-none" id="receiptProductsRow">
                         <span class="r-label">Bắp nước</span>
                         <span class="r-value text-right" id="receiptProductsInfo"></span>
                     </div>
@@ -409,11 +409,11 @@
                         <span class="r-label" id="receiptTicketLabel">Vé</span>
                         <span class="r-value text-right" id="receiptTicketPrice">0 đ</span>
                     </div>
-                    <div class="receipt-row" id="receiptComboPriceRow" style="display:none;">
+                    <div class="receipt-row d-none" id="receiptComboPriceRow">
                         <span class="r-label">Bắp nước</span>
                         <span class="r-value text-right" id="receiptComboPrice">0 đ</span>
                     </div>
-                    <div class="receipt-row receipt-promo-row" id="receiptPromoRow" style="display:none;">
+                    <div class="receipt-row receipt-promo-row d-none" id="receiptPromoRow">
                         <span class="r-label">Khuyến mãi</span>
                         <span class="r-value text-right" id="receiptPromoPrice">-0 đ</span>
                     </div>
@@ -421,7 +421,7 @@
                     <hr class="receipt-divider">
                     
                     <div class="receipt-total-section d-flex justify-content-between align-items-end mt-4 mb-4">
-                        <span class="total-label" style="color: #ccc;">Tổng<br>tiền</span>
+                        <span class="total-label receipt-total-label">Tổng<br>tiền</span>
                         <span class="total-value" id="receiptTotalPrice">0<small>đ</small></span>
                     </div>
 
@@ -432,8 +432,8 @@
                     <!-- Timer -->
                     <div class="booking-timer mt-3 text-center">
                         <i class="bi bi-clock-history text-danger"></i>
-                        <span style="font-size: 13px; color: #ccc;">Thời gian giữ ghế: </span>
-                        <span id="bookingTimer" class="timer-display text-white" style="font-weight: bold; font-size: 14px;">10:00</span>
+                        <span class="booking-timer-label">Thời gian giữ ghế: </span>
+                        <span id="bookingTimer" class="timer-display text-white booking-timer-value">10:00</span>
                     </div>
                 </div>
             </div>
@@ -454,7 +454,7 @@
             <div class="result-ticket-card mx-auto text-start">
                 <div class="d-flex mb-4">
                     <div class="ticket-poster me-4">
-                        <img src="{{ asset('storage/' . $showtime->movie->poster_url) }}" alt="{{ $showtime->movie->title }}" class="img-fluid rounded">
+                        <img src="{{ $showtime->movie->poster_display_url }}" alt="{{ $showtime->movie->title }}" class="img-fluid rounded">
                     </div>
                     <div class="ticket-details flex-grow-1">
                         <h4 class="ticket-movie-title mb-2">{{ $showtime->movie->title }}</h4>
@@ -518,7 +518,7 @@
                 </div>
                 <div class="section-content">
                     <div class="bottom-sheet-seats" id="sheetSeatsList">
-                        <span style="color: #9e9e9e; font-size: 14px;">Chưa chọn ghế</span>
+                        <span class="bottom-sheet-empty-seat">Chưa chọn ghế</span>
                     </div>
                     <div class="section-item">
                         <span class="item-label">Giá vé</span>
@@ -528,7 +528,7 @@
             </div>
 
             {{-- Products Section --}}
-            <div class="bottom-sheet-section" id="sheetProductsSection" style="display: none;">
+            <div class="bottom-sheet-section d-none" id="sheetProductsSection">
                 <div class="section-header">
                     <i class="bi bi-cup-straw section-icon"></i>
                     <h3 class="section-title">Bắp nước</h3>
@@ -539,7 +539,7 @@
             </div>
 
             {{-- Promotion Section --}}
-            <div class="bottom-sheet-section" id="sheetPromotionSection" style="display: none;">
+            <div class="bottom-sheet-section d-none" id="sheetPromotionSection">
                 <div class="section-header">
                     <i class="bi bi-gift section-icon"></i>
                     <h3 class="section-title">Ưu đãi</h3>
@@ -558,7 +558,7 @@
                     <span class="total-label">Tạm tính</span>
                     <span class="total-value" id="sheetSubtotal">0₫</span>
                 </div>
-                <div class="total-row" id="sheetDiscountRow" style="display: none;">
+                <div class="total-row d-none" id="sheetDiscountRow">
                     <span class="total-label">Giảm giá</span>
                     <span class="total-value" id="sheetDiscount">-0₫</span>
                 </div>
@@ -569,7 +569,7 @@
             </div>
 
             {{-- Timer --}}
-            <div class="bottom-sheet-timer" id="sheetTimer" style="display: none;">
+            <div class="bottom-sheet-timer d-none" id="sheetTimer">
                 <i class="bi bi-clock-history timer-icon"></i>
                 <span class="timer-text">Còn <span id="sheetTimerDisplay">10:00</span></span>
             </div>
@@ -591,19 +591,6 @@
     <p class="mt-3">Đang xử lý...</p>
 </div>
 
-<!-- Toast Notification -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 10000;">
-    <div id="bookingToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
-            <i class="bi bi-info-circle me-2"></i>
-            <strong class="me-auto">Thông báo</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body">
-            <!-- Message will be injected here -->
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')

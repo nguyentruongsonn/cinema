@@ -64,7 +64,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="movieModalLabel">
-                    <i class="bi bi-film me-2" style="color:var(--accent-color);"></i>Tạo phim mới
+                    <i class="bi bi-film me-2 admin-accent-icon"></i>Tạo phim mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
@@ -172,7 +172,7 @@
                             {{-- Poster Upload --}}
                             <div class="mb-3">
                                 <label class="form-label text-secondary">Poster phim</label>
-                                <div class="poster-upload-box movie-upload-box movie-upload-box-poster mb-2" id="posterUploadBox">
+                                <div class="poster-upload-box movie-upload-box movie-upload-box-poster mb-2" id="posterUploadBox" data-media-input>
                                     <img id="posterPreview" class="movie-upload-preview" src="" alt="Poster">
                                     <div id="posterPlaceholder" class="text-center text-white-50 p-3">
                                         <i class="bi bi-cloud-arrow-up fs-2 d-block mb-1"></i>
@@ -191,7 +191,7 @@
                             {{-- Banner Upload --}}
                             <div class="mb-3">
                                 <label class="form-label text-secondary">Banner / Backdrop (tùy chọn)</label>
-                                <div class="banner-upload-box movie-upload-box movie-upload-box-banner" id="bannerUploadBox">
+                                <div class="banner-upload-box movie-upload-box movie-upload-box-banner" id="bannerUploadBox" data-media-input>
                                     <img id="bannerPreview" class="movie-upload-preview" src="" alt="Banner">
                                     <div id="bannerPlaceholder" class="text-center text-white-50 p-2">
                                         <i class="bi bi-panorama fs-4 d-block mb-1"></i>
@@ -234,7 +234,7 @@
                 </div>
 
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0" id="movieSubmitBtn">Lưu phim</button>
                 </div>
             </form>

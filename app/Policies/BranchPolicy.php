@@ -12,7 +12,7 @@ class BranchPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('branches.view');
     }
 
     /**
@@ -20,7 +20,7 @@ class BranchPolicy
      */
     public function view(User $user, Branch $branch): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('branches.view');
     }
 
     /**
@@ -28,7 +28,7 @@ class BranchPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('branches.create');
     }
 
     /**
@@ -36,7 +36,7 @@ class BranchPolicy
      */
     public function update(User $user, Branch $branch): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('branches.update');
     }
 
     /**
@@ -44,7 +44,7 @@ class BranchPolicy
      */
     public function delete(User $user, Branch $branch): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('branches.delete');
     }
 
     /**
@@ -52,6 +52,6 @@ class BranchPolicy
      */
     public function toggleActive(User $user, Branch $branch): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->hasPermission('branches.update');
     }
 }

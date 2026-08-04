@@ -89,5 +89,5 @@
 @endsection
 
 @push('scripts')
-    <script type="module" src="{{ asset('js/users/pages/movies.js') }}"></script>
+    <script type="module" src="{{ asset('js/users/pages/movies.js') }}?v={{ config('app.asset_version') }}"></script>
 @endpush

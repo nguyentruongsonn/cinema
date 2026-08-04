@@ -75,8 +75,13 @@ class UserController extends Controller
         $this->authorize('create', User::class);
 
         return DB::transaction(function () use ($request) {
-            $user = $this->userService->createUser($request->userData(), $request->roleId(), $request->status());
-            $user->load('role');
+            $user = $this->userService->createUser(
+                $request->userData(),
+                $request->roleId(),
+                $request->status(),
+                $request->theaterIds()
+            );
+            $user->load(['role', 'theaters:id,name']);
 
             app(AuditLogService::class)->record(
                 $request->user(),
@@ -101,7 +106,7 @@ class UserController extends Controller
     {
         $this->authorize('view', $user);
 
-        $user->load(['role', 'orders' => function ($query) {
+        $user->load(['role', 'theaters:id,name', 'orders' => function ($query) {
             $query->latest()->limit(10);
         }]);
 
@@ -142,7 +147,11 @@ class UserController extends Controller
                 $user = $this->userService->updateStatus($user, $request->status());
             }
 
-            $user->load('role');
+            if ($request->theaterIds() !== null) {
+                $user = $this->userService->syncAssignedTheaters($user, $request->theaterIds());
+            }
+
+            $user->load(['role', 'theaters:id,name']);
 
             app(AuditLogService::class)->record(
                 $request->user(),

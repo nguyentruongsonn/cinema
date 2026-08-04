@@ -23,7 +23,7 @@
                         <!-- Movie Info -->
                         <div class="movie-info mb-4">
                             <div class="d-flex gap-3">
-                                <img src="{{ $order->showtime->movie->poster_url ?? 'https://via.placeholder.com/80x120?text=No+Image' }}"
+                                <img src="{{ $order->showtime->movie->poster_display_url ?? 'https://via.placeholder.com/80x120?text=No+Image' }}"
                                      alt="{{ $order->showtime->movie->title }}"
                                      class="movie-poster">
                                 <div class="flex-grow-1">
@@ -158,7 +158,7 @@
 
             <!-- Right: Summary & Actions -->
             <div class="col-lg-4">
-                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card shadow-sm sticky-top payment-sticky-summary">
                     <div class="card-body">
                         <div class="order-code mb-3 p-3 bg-light rounded text-center">
                             <small class="text-muted d-block mb-1">Mã đơn hàng</small>
@@ -200,7 +200,7 @@
 </div>
 
 <!-- Loading Overlay -->
-<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+<div id="loadingOverlay" class="loading-overlay d-none">
     <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
     </div>

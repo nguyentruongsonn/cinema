@@ -163,7 +163,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="screenModalLabel">
-                    <i class="bi bi-display me-2" style="color:var(--accent-color);"></i>Tạo phòng chiếu mới
+                    <i class="bi bi-display me-2 admin-accent-icon"></i>Tạo phòng chiếu mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -210,10 +210,10 @@
                             <option value="">-- Chọn mẫu --</option>
                             <!-- JS populated -->
                         </select>
-                        <div id="templateDetailBadges" class="mt-2 d-none" style="font-size:0.82rem;">
-                            <span class="badge me-1" style="background:rgba(96,165,250,0.12);color:#60a5fa;">Thường: <span id="tplRegular">0</span> hàng</span>
-                            <span class="badge me-1" style="background:rgba(245,158,11,0.12);color:#f59e0b;">VIP: <span id="tplVip">0</span> hàng</span>
-                            <span class="badge me-1" style="background:rgba(236,72,153,0.12);color:#ec4899;">Đôi: <span id="tplCouple">0</span> hàng</span>
+                                <div id="templateDetailBadges" class="mt-2 d-none admin-seat-count-badges">
+                                    <span class="badge me-1 admin-seat-count-badge--regular">Thường: <span id="tplRegular">0</span> hàng</span>
+                                    <span class="badge me-1 admin-seat-count-badge--vip">VIP: <span id="tplVip">0</span> hàng</span>
+                                    <span class="badge me-1 admin-seat-count-badge--couple">Đôi: <span id="tplCouple">0</span> hàng</span>
                         </div>
                         <div id="templateEditWarning" class="mt-1 small text-warning d-none">
                             <i class="bi bi-exclamation-triangle me-1"></i>Đổi mẫu sẽ tái tạo toàn bộ sơ đồ ghế!
@@ -221,13 +221,13 @@
                     </div>
                     <div class="mb-0">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="screenStatus" name="status" value="1" checked style="cursor: pointer;">
+                                <input class="form-check-input admin-form-check-clickable" type="checkbox" id="screenStatus" name="status" value="1" checked>
                             <label class="form-check-label text-white" for="screenStatus">Kích hoạt hoạt động</label>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu phòng chiếu</button>
                 </div>
             </form>
@@ -241,7 +241,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="formatModalLabel">
-                    <i class="bi bi-camera-reels me-2" style="color:var(--accent-color);"></i>Tạo định dạng chiếu mới
+                    <i class="bi bi-camera-reels me-2 admin-accent-icon"></i>Tạo định dạng chiếu mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -259,7 +259,7 @@
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu định dạng</button>
                 </div>
             </form>
@@ -273,7 +273,7 @@
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="soundModalLabel">
-                    <i class="bi bi-volume-up me-2" style="color:var(--accent-color);"></i>Tạo định dạng âm thanh mới
+                    <i class="bi bi-volume-up me-2 admin-accent-icon"></i>Tạo định dạng âm thanh mới
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -287,7 +287,7 @@
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn text-white" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.1);">Hủy bỏ</button>
+                    <button type="button" class="btn text-white admin-modal-cancel" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn-primary-custom border-0">Lưu âm thanh</button>
                 </div>
             </form>
