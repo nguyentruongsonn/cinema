@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\ComboController;
 use App\Http\Controllers\Admin\ComboStatController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\StaffManagementController;
 use App\Http\Controllers\Admin\FoodStatController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\ProductController;
@@ -24,7 +25,7 @@ use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin,theater_manager,ticket_seller,ticket_checker,concession_staff'])->group(function () {
+Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin,theater_manager'])->group(function () {
     Route::get('dashboard/stats', [DashboardController::class, 'stats']);
     Route::get('revenue/stats', [RevenueController::class, 'stats']);
     Route::get('tickets/stats', [TicketStatController::class, 'stats']);
@@ -191,5 +192,14 @@ Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin,theater_
         Route::delete('{user}', [UserController::class, 'destroy']);
         Route::post('{user}/toggle-status', [UserController::class, 'toggleStatus']);
         Route::post('{user}/reset-password', [UserController::class, 'resetPassword']);
+    });
+
+    // ── Staff Management (theater_manager) ──
+    Route::prefix('my-theaters')->middleware(['role:theater_manager,admin,super-admin'])->group(function () {
+        Route::get('/', [StaffManagementController::class, 'listMyTheaters']);
+        Route::get('/staff', [StaffManagementController::class, 'listStaff']);
+        Route::post('/staff', [StaffManagementController::class, 'createStaff']);
+        Route::put('/staff/{user}', [StaffManagementController::class, 'updateStaff']);
+        Route::post('/staff/{user}/toggle-status', [StaffManagementController::class, 'toggleStatus']);
     });
 });

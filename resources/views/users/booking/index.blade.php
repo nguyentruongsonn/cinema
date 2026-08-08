@@ -594,7 +594,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
     window.BOOKING_CONFIG = {
         showtimeId: {{ $showtime->id }},
         encryptedShowtimeId: @json($showtime->encrypted_id),

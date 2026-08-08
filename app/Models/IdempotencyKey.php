@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -13,8 +14,11 @@ class IdempotencyKey extends Model
 {
     // Status constants
     const STATUS_PENDING = 'pending';
+
     const STATUS_PROCESSING = 'processing';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_FAILED = 'failed';
 
     protected $fillable = [
@@ -104,10 +108,11 @@ class IdempotencyKey extends Model
      * This method ensures that an operation executes exactly once per idempotency key.
      * Duplicate requests with the same key return the cached response.
      *
-     * @param string $key Idempotency key (UUID v4 format)
-     * @param callable $operation Operation to execute, receives IdempotencyKey record
-     * @param array $requestContext Request metadata (path, method, data)
+     * @param  string  $key  Idempotency key (UUID v4 format)
+     * @param  callable  $operation  Operation to execute, receives IdempotencyKey record
+     * @param  array  $requestContext  Request metadata (path, method, data)
      * @return array ['status' => int, 'data' => mixed, 'idempotent' => bool]
+     *
      * @throws \InvalidArgumentException If key format is invalid
      * @throws \DomainException If key reused with different payload
      * @throws \RuntimeException If operation is in progress
@@ -118,7 +123,7 @@ class IdempotencyKey extends Model
         array $requestContext = []
     ): array {
         // Validate key format
-        if (!self::validateKeyFormat($key)) {
+        if (! self::validateKeyFormat($key)) {
             throw new \InvalidArgumentException('Invalid idempotency key format. Expected UUID v4.');
         }
 
@@ -127,7 +132,7 @@ class IdempotencyKey extends Model
                 $existing->request_data !== null &&
                 json_encode($requestContext['data']) !== json_encode($existing->request_data)) {
                 throw new \DomainException(
-                    'Idempotency key reused with different request payload. ' .
+                    'Idempotency key reused with different request payload. '.
                     'Each unique operation must use a unique idempotency key.'
                 );
             }
@@ -174,7 +179,7 @@ class IdempotencyKey extends Model
                     'expires_at' => now()->addHours(24),
                 ])];
             });
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             if (! self::isIdempotencyKeyDuplicate($e)) {
                 throw $e;
             }
@@ -230,7 +235,7 @@ class IdempotencyKey extends Model
     /**
      * Determine whether a query exception was caused by the idempotency key unique constraint.
      */
-    private static function isIdempotencyKeyDuplicate(\Illuminate\Database\QueryException $e): bool
+    private static function isIdempotencyKeyDuplicate(QueryException $e): bool
     {
         $message = $e->getMessage();
 
@@ -238,80 +243,8 @@ class IdempotencyKey extends Model
             && (
                 str_contains($message, 'idempotency_keys_key_unique')
                 || str_contains($message, 'idempotency_keys.key')
-                || str_contains($message, 'idempotency_keys_key_unique')
                 || str_contains($message, 'UNIQUE constraint failed: idempotency_keys.key')
                 || str_contains($message, 'Duplicate entry')
             );
-    }
-
-    /**
-     * Handle a repeated idempotency key.
-     */
-    private static function handleDuplicateKey(
-        string $key,
-        callable $operation,
-        array $requestContext
-    ): array {
-        $existing = self::lockForUpdate()->where('key', $key)->firstOrFail();
-
-        if (isset($requestContext['data']) &&
-            $existing->request_data !== null &&
-            json_encode($requestContext['data']) !== json_encode($existing->request_data)) {
-            throw new \DomainException(
-                'Idempotency key reused with different request payload. ' .
-                'Each unique operation must use a unique idempotency key.'
-            );
-        }
-
-        if ($existing->status === self::STATUS_PROCESSING) {
-            throw new \RuntimeException(
-                'Operation already in progress. Please retry in a few moments.',
-                409
-            );
-        }
-
-        if ($existing->status === self::STATUS_FAILED) {
-            $existing->update(['status' => self::STATUS_PROCESSING]);
-
-            try {
-                $result = $operation($existing);
-
-                $existing->update([
-                    'response_data' => $result['data'] ?? $result,
-                    'response_status' => $result['status'] ?? 200,
-                    'status' => self::STATUS_COMPLETED,
-                    'payment_id' => $result['payment_id'] ?? null,
-                ]);
-
-                return [
-                    'status' => $result['status'] ?? 200,
-                    'data' => $result['data'] ?? $result,
-                    'idempotent' => false,
-                ];
-            } catch (\Throwable $e) {
-                $existing->update([
-                    'status' => self::STATUS_FAILED,
-                    'response_data' => [
-                        'error' => $e->getMessage(),
-                        'code' => $e->getCode(),
-                    ],
-                    'response_status' => method_exists($e, 'getStatusCode')
-                        ? $e->getStatusCode()
-                        : 500,
-                ]);
-
-                throw $e;
-            }
-        }
-
-        if ($existing->status === self::STATUS_COMPLETED) {
-            return [
-                'status' => $existing->response_status ?? 200,
-                'data' => $existing->response_data,
-                'idempotent' => true,
-            ];
-        }
-
-        throw new \RuntimeException('Unexpected idempotency record status: ' . $existing->status);
     }
 }

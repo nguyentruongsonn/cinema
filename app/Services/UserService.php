@@ -98,6 +98,15 @@ class UserService
                 $this->ensureActorCanAssignRole($roleId);
             }
 
+            $actor = auth()->user();
+            if ($actor && $actor->hasRole('theater_manager')) {
+                $actorTheaters = $this->getActorTheaters($actor)->pluck('id')->toArray();
+                $diff = array_diff($theaterIds, $actorTheaters);
+                if (!empty($diff)) {
+                    throw new \DomainException('Theater manager can only assign users to their own theaters.');
+                }
+            }
+
             // Hash password if provided
             if (!empty($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
@@ -324,6 +333,15 @@ class UserService
      */
     public function getAllRoles(): Collection
     {
+        $actor = auth()->user();
+        if ($actor && $actor->hasRole('theater_manager')) {
+            return Role::query()
+                ->select(['id', 'name', 'slug', 'display_name', 'description'])
+                ->whereIn('slug', ['ticket_seller', 'ticket_checker', 'concession_staff'])
+                ->orderBy('name')
+                ->get();
+        }
+
         return Role::query()
             ->select(['id', 'name', 'slug', 'display_name', 'description'])
             ->whereIn('slug', array_keys(config('rbac.roles', [])))
@@ -360,10 +378,17 @@ class UserService
     private function ensureActorCanAssignRole(int $roleId): void
     {
         $role = Role::query()->findOrFail($roleId);
+        $actor = auth()->user();
 
         if (in_array($role->slug, ['admin', 'super-admin'], true)
-            && !(auth()->user()?->hasRole('super-admin') ?? false)) {
+            && !($actor?->hasRole('super-admin') ?? false)) {
             throw new \DomainException('Only a super-admin may assign administrative roles.');
+        }
+
+        if ($actor && $actor->hasRole('theater_manager')) {
+            if (!in_array($role->slug, ['ticket_seller', 'ticket_checker', 'concession_staff'], true)) {
+                throw new \DomainException('Theater manager can only assign staff roles.');
+            }
         }
     }
 
@@ -378,5 +403,10 @@ class UserService
     private function normalizeEmail(string $email): string
     {
         return mb_strtolower(trim($email));
+    }
+
+    public function getActorTheaters(User $actor): Collection
+    {
+        return $actor->theaters;
     }
 }

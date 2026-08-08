@@ -133,7 +133,10 @@
                 height: 300,
                 toolbar: { show: false },
                 fontFamily: 'Inter, sans-serif',
-                background: 'transparent'
+                background: 'transparent',
+                parentHeightOffset: 0,
+                redrawOnParentResize: true,
+                redrawOnWindowResize: true
             },
             colors: ['#ff4d57'],
             stroke: {
@@ -197,8 +200,16 @@
                 xaxis: { lines: { show: false } }
             },
             tooltip: {
+                enabled: true,
                 theme: 'dark',
-                y: { formatter: (val) => formatCurrency(val) }
+                shared: true,
+                intersect: false,
+                marker: { show: true },
+                x: { show: true },
+                y: {
+                    title: { formatter: () => 'Doanh thu: ' },
+                    formatter: (val) => formatCurrency(val)
+                }
             }
         };
         

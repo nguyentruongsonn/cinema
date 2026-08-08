@@ -10,6 +10,19 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// POS Kiosk – Ticket seller only
+Route::get('/pos', [\App\Http\Controllers\Pos\PosController::class, 'index'])
+    ->middleware(['pos.access'])
+    ->name('pos.index');
+
+Route::view('/staff/ticket-check', 'admin.tickets.index')
+    ->middleware(['admin', 'permission:tickets.verify'])
+    ->name('staff.ticket-check');
+
+Route::view('/staff/concessions', 'admin.products.index')
+    ->middleware(['admin', 'permission:concessions.fulfill'])
+    ->name('staff.concessions');
+
 // Login route - redirect to home (auth handled by frontend modal)
 Route::get('/login', function () {
     return redirect('/')->with('message', 'Vui lòng đăng nhập để tiếp tục');
@@ -54,7 +67,7 @@ Route::prefix('admin')->middleware(['admin'])->group(function () {
     Route::view('/dashboard', 'admin.dashboard')->middleware('permission:dashboard.view')->name('admin.dashboard');
     Route::view('/movies', 'admin.movies.index')->middleware('permission:movies.view')->name('admin.movies.index');
     Route::view('/revenue', 'admin.revenue.index')->middleware('permission:reports.view,analytics.view')->name('admin.revenue.index');
-    Route::view('/tickets', 'admin.tickets.index')->middleware('permission:analytics.view')->name('admin.tickets.index');
+    Route::view('/tickets', 'admin.tickets.index')->middleware('permission:analytics.view,tickets.verify')->name('admin.tickets.index');
     Route::view('/products', 'admin.products.index')->middleware('permission:products.view')->name('admin.products.index');
     Route::view('/combos', 'admin.combos.index')->middleware('permission:combos.view')->name('admin.combos.index');
     Route::view('/combos/stats', 'admin.combos.stats')->middleware('permission:analytics.view')->name('admin.combos.stats');

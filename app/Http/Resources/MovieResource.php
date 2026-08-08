@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin \App\Models\Movie */
 class MovieResource extends JsonResource
 {
     /**
@@ -27,7 +28,7 @@ class MovieResource extends JsonResource
             'release_date' => $this->release_date?->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
             'age_rating' => $this->age_rating,
-            'surcharge' => $this->surcharge !== null ? (float) $this->surcharge : null,
+            'surcharge' => (float) $this->surcharge,
             'director' => $this->director,
             'cast' => $this->cast,
             'backdrops' => $this->backdrops,

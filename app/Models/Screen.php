@@ -30,21 +30,25 @@ class Screen extends Model
         'hidden_rows' => 'array',
     ];
 
+    /** @return BelongsTo<Theater, $this> */
     public function theater(): BelongsTo
     {
         return $this->belongsTo(Theater::class);
     }
 
+    /** @return BelongsTo<Format, $this> */
     public function format(): BelongsTo
     {
         return $this->belongsTo(Format::class);
     }
 
+    /** @return BelongsTo<Sound, $this> */
     public function sound(): BelongsTo
     {
         return $this->belongsTo(Sound::class);
     }
 
+    /** @return BelongsTo<SeatLayoutTemplate, $this> */
     public function seatLayoutTemplate(): BelongsTo
     {
         return $this->belongsTo(SeatLayoutTemplate::class);

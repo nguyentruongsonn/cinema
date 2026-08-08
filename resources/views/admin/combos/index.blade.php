@@ -161,12 +161,11 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/combos.css') }}?v={{ config('app.asset_version') }}">
+    @vite(['resources/css/admin/pages/stats.css', 'resources/css/admin/pages/combos.css'])
 @endpush
 
 @push('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
     window.ADMIN_COMBO_PAGE = {
         createTitle: 'Tạo combo mới',
         editTitle: 'Cập nhật combo',

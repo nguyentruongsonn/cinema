@@ -156,7 +156,7 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
+    @vite('resources/css/admin/pages/stats.css')
 @endpush
 
 @push('scripts')

@@ -47,6 +47,31 @@ class OrderPolicy
         return $this->isActiveUser($user);
     }
 
+    public function viewAtPos(User $user, Order $order): bool
+    {
+        return $order->isPos()
+            && $user->hasPermission('orders.view_theater')
+            && $this->canAccessOrderTheater($user, $order);
+    }
+
+    public function cancelAtPos(User $user, Order $order): bool
+    {
+        return $order->isPos()
+            && $user->hasPermission('orders.cancel')
+            && $this->canAccessOrderTheater($user, $order)
+            && $order->isPending()
+            && ! $order->isPaid();
+    }
+
+    public function confirmCash(User $user, Order $order): bool
+    {
+        return $order->isPos()
+            && ($user->hasPermission('payments.process_cash') || $user->hasPermission('payments.process'))
+            && $this->canAccessOrderTheater($user, $order)
+            && $order->isPending()
+            && data_get($order->payload, 'payment_method') === 'cash';
+    }
+
     private function isActiveUser(User $user): bool
     {
         return in_array($user->status, [true, 1, '1', 'active'], true);
@@ -143,13 +168,8 @@ class OrderPolicy
             return true;
         }
 
-        if (! $order->relationLoaded('showtime')) {
-            $order->load('showtime.screen:id,theater_id');
-        } elseif ($order->showtime && ! $order->showtime->relationLoaded('screen')) {
-            $order->showtime->load('screen:id,theater_id');
-        }
+        $theaterId = $order->posTheaterId();
 
-        return $order->showtime?->screen !== null
-            && $user->isAssignedToTheater((int) $order->showtime->screen->theater_id);
+        return $theaterId !== null && $user->isAssignedToTheater($theaterId);
     }
 }

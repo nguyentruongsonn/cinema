@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin \App\Models\Screen */
 class ScreenResource extends JsonResource
 {
     /**
@@ -33,7 +34,6 @@ class ScreenResource extends JsonResource
                 return $this->format ? [
                     'id' => $this->format->id,
                     'name' => $this->format->name,
-                    'code' => $this->format->code,
                 ] : null;
             }),
             'sound_id' => $this->sound_id,
@@ -41,7 +41,6 @@ class ScreenResource extends JsonResource
                 return $this->sound ? [
                     'id' => $this->sound->id,
                     'name' => $this->sound->name,
-                    'code' => $this->sound->code,
                 ] : null;
             }),
             'status' => match ((int) $this->getRawOriginal('status')) {

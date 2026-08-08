@@ -52,7 +52,7 @@ class ContentController extends Controller
         $posts = $service->getFilteredPosts($category, $search, $perPage);
 
         return response()->json([
-            'data' => PostResource::collection($posts->getCollection())->resolve(),
+            'data' => PostResource::collection($posts->items())->resolve(),
             'featured_post' => $featuredPost ? (new PostResource($featuredPost))->resolve() : null,
             'sidebar_trailers' => $service->getSidebarTrailers(3),
             'popular_tags' => $service->getPopularTags(),

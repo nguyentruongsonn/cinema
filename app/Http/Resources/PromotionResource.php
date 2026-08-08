@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin \App\Models\Promotion */
 class PromotionResource extends JsonResource
 {
     /**
@@ -14,7 +15,9 @@ class PromotionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $pivot = $this->whenPivotLoaded('user_promotion', fn () => $this->pivot, null);
+        $pivot = $this->relationLoaded('pivot') ? $this->getRelation('pivot') : null;
+        $startDate = $this->getAttribute('start_date');
+        $endDate = $this->getAttribute('end_date');
 
         return [
             'id' => $this->id,
@@ -25,10 +28,10 @@ class PromotionResource extends JsonResource
             'discount_value' => $this->discount_value,
             'max_discount_amount' => $this->max_discount_amount,
             'min_order_value' => $this->min_order_value,
-            'start_date' => $this->start_date?->toISOString(),
-            'end_date' => $this->end_date?->toISOString(),
-            'registered_at' => $pivot?->created_at?->toISOString(),
-            'usage_count' => (int) ($pivot?->usage_count ?? 0),
+            'start_date' => $startDate?->toISOString(),
+            'end_date' => $endDate?->toISOString(),
+            'registered_at' => data_get($pivot, 'created_at')?->toISOString(),
+            'usage_count' => (int) data_get($pivot, 'usage_count', 0),
         ];
     }
 }

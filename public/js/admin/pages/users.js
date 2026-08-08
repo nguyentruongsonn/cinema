@@ -44,6 +44,11 @@
         resetUserName: document.getElementById('resetUserName'),
         newPassword: document.getElementById('newPassword'),
         newPasswordConfirmation: document.getElementById('newPasswordConfirmation'),
+
+        // Theater assignment
+        theaterAssignmentWrapper: document.getElementById('theaterAssignmentWrapper'),
+        theaterDropdownBtn: document.getElementById('theaterDropdownBtn'),
+        theaterDropdownMenu: document.getElementById('theaterDropdownMenu'),
     };
 
     let currentPage = 1;
@@ -52,6 +57,7 @@
     let currentStatus = '';
     let currentVerified = '';
     let availableRoles = [];
+    let availableTheaters = [];
     let usersById = new Map();
 
     function getModalInstance(modalEl) {
@@ -127,6 +133,52 @@
         }
     }
 
+    async function loadTheaters() {
+        if (!els.theaterDropdownMenu) return;
+        try {
+            const res = await window.AdminCore.apiFetch('/api/v1/admin/theaters?options=1');
+            if (res && res.ok) {
+                const data = await res.json();
+                availableTheaters = data.data || [];
+                
+                els.theaterDropdownMenu.replaceChildren();
+                availableTheaters.forEach(theater => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'form-check text-white mb-2';
+                    
+                    const input = document.createElement('input');
+                    input.className = 'form-check-input theater-checkbox';
+                    input.type = 'checkbox';
+                    input.value = theater.id;
+                    input.id = `theaterCheck_${theater.id}`;
+                    
+                    const label = document.createElement('label');
+                    label.className = 'form-check-label w-100 cursor-pointer';
+                    label.htmlFor = `theaterCheck_${theater.id}`;
+                    label.textContent = theater.name;
+                    
+                    wrapper.appendChild(input);
+                    wrapper.appendChild(label);
+                    els.theaterDropdownMenu.appendChild(wrapper);
+                    
+                    input.addEventListener('change', updateTheaterDropdownText);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading theaters:', error);
+        }
+    }
+
+    function updateTheaterDropdownText() {
+        if (!els.theaterDropdownBtn) return;
+        const checkedBoxes = Array.from(document.querySelectorAll('.theater-checkbox:checked'));
+        if (checkedBoxes.length === 0) {
+            els.theaterDropdownBtn.textContent = '-- Chọn rạp --';
+        } else {
+            els.theaterDropdownBtn.textContent = `Đã chọn ${checkedBoxes.length} rạp`;
+        }
+    }
+
     /* ── Fetch & Render ────────────────────────────────────────────── */
     async function loadData(page = 1) {
         try {
@@ -164,7 +216,7 @@
             const cell = document.createElement('td');
             const icon = document.createElement('i');
 
-            cell.colSpan = 9;
+            cell.colSpan = 10;
             cell.className = 'text-center py-5 text-muted';
             icon.className = 'bi bi-inbox fs-1 d-block mb-3 opacity-50';
             cell.append(icon, document.createTextNode('Không tìm thấy người dùng nào.'));
@@ -194,6 +246,20 @@
             tr.appendChild(createTextCell(user.email, 'text-white-50'));
             tr.appendChild(createTextCell(user.phone, 'text-white-50', '-'));
             tr.appendChild(createTextCell(roleName, 'text-white-50', 'Chưa có'));
+
+            const theaterCell = document.createElement('td');
+            theaterCell.className = 'text-white-50';
+            if (user.theaters && user.theaters.length > 0) {
+                user.theaters.forEach(t => {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-dark border border-secondary fw-normal me-1 mb-1';
+                    badge.textContent = t.name;
+                    theaterCell.appendChild(badge);
+                });
+            } else {
+                theaterCell.textContent = '-';
+            }
+            tr.appendChild(theaterCell);
 
             const statusCell = document.createElement('td');
             statusCell.className = 'text-center';
@@ -286,6 +352,7 @@
         const data = Object.fromEntries(formData.entries());
         data.role_id = els.roles.value ? parseInt(els.roles.value, 10) : null;
         data.status = els.status.checked ? 1 : 0;
+        data.theater_ids = Array.from(document.querySelectorAll('.theater-checkbox:checked')).map(cb => Number.parseInt(cb.value, 10));
 
         try {
             const res = await window.AdminCore.apiFetch('/api/v1/admin/users', {
@@ -295,16 +362,16 @@
 
             if (res && res.ok) {
                 const result = await res.json();
-                window.showAdminToast(result.message || 'T\u1ea1o t\u00e0i kho\u1ea3n th\u00e0nh c\u00f4ng!', 'success');
+                window.showAdminToast(result.message || 'Tạo tài khoản thành công!', 'success');
                 getModalInstance(els.modalEl).hide();
                 loadData(currentPage);
             } else if (res) {
                 const error = await res.json();
-                window.showAdminToast(formatValidationError(error, 'Kh\u00f4ng th\u1ec3 t\u1ea1o t\u00e0i kho\u1ea3n.'), 'danger');
+                window.showAdminToast(formatValidationError(error, 'Không thể tạo tài khoản.'), 'danger');
             }
         } catch (error) {
             console.error('Error creating user:', error);
-            window.showAdminToast(error?.message || 'Kh\u00f4ng th\u1ec3 t\u1ea1o t\u00e0i kho\u1ea3n.', 'danger');
+            window.showAdminToast(error?.message || 'Không thể tạo tài khoản.', 'danger');
         }
     }
 
@@ -316,6 +383,7 @@
         const userId = els.idInput.value;
         data.role_id = els.roles.value ? parseInt(els.roles.value, 10) : null;
         data.status = els.status.checked ? 1 : 0;
+        data.theater_ids = Array.from(document.querySelectorAll('.theater-checkbox:checked')).map(cb => Number.parseInt(cb.value, 10));
         delete data.password;
         delete data.password_confirmation;
 
@@ -369,6 +437,16 @@
                 Array.from(els.roles.options).forEach(opt => {
                     opt.selected = userRoleId && opt.value == userRoleId.toString();
                 });
+
+                // Select theaters
+                if (els.theaterDropdownMenu) {
+                    const userTheaterIds = user.theaters ? user.theaters.map(t => t.id) : [];
+                    document.querySelectorAll('.theater-checkbox').forEach(cb => {
+                        cb.checked = userTheaterIds.includes(Number.parseInt(cb.value, 10));
+                    });
+                }
+
+                updateTheaterDropdownText();
 
                 // Update modal UI
                 els.modalLabel.innerHTML = '<i class="bi bi-person me-2 admin-accent-icon"></i>Cập nhật tài khoản';
@@ -562,10 +640,13 @@
 
     /* ── Initialize ────────────────────────────────────────────────── */
     function init() {
-        loadRoles().then(() => {
+        Promise.all([loadRoles(), loadTheaters()]).then(() => {
             loadData(1);
         });
-        attachEventListeners();
+        
+        if (typeof attachEventListeners === 'function') {
+            attachEventListeners();
+        }
     }
 
     window.onAdminPageLoad(init);

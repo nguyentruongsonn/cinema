@@ -68,8 +68,20 @@ class AuthController extends Controller
                 return $this->errorResponse('Invalid credentials or account inactive', 401);
             }
 
+            $user = $result['user'];
+            $redirectUrl = '/';
+
+            if ($user->canAccessAdminPanel()) {
+                $redirectUrl = route($user->adminLandingRouteName(), [], false);
+            }
+
             $response = $this->successResponse(
-                ['user' => $result['user'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
+                [
+                    'user' => $user,
+                    'token_type' => $result['token_type'],
+                    'expires_in' => $result['expires_in'],
+                    'redirect_url' => $redirectUrl,
+                ],
                 'Login successful'
             );
 
@@ -97,8 +109,20 @@ class AuthController extends Controller
                 $request->userAgent()
             );
 
+            $user = $result['user'];
+            $redirectUrl = '/';
+
+            if ($user->canAccessAdminPanel()) {
+                $redirectUrl = route($user->adminLandingRouteName(), [], false);
+            }
+
             $response = $this->successResponse(
-                ['user' => $result['user'], 'token_type' => $result['token_type'], 'expires_in' => $result['expires_in']],
+                [
+                    'user' => $user,
+                    'token_type' => $result['token_type'],
+                    'expires_in' => $result['expires_in'],
+                    'redirect_url' => $redirectUrl,
+                ],
                 'Google login successful'
             );
 

@@ -291,7 +291,7 @@ import Toast from '../components/toast.js';
                 return `
 <a href="/movies/${slug}" class="sidebar-trailer-card d-block text-decoration-none mb-3">
     <div class="trailer-thumbnail position-relative">
-        <img src="${poster}" alt="" loading="lazy" onerror="this.style.opacity='0'" style="display:none" onload="this.style.display='block';this.style.opacity='1'">
+        <img src="${poster}" alt="" loading="lazy" class="d-none" data-trailer-image>
         <div class="trailer-play-overlay">
             <div class="play-btn-sm"><i class="bi bi-play-fill"></i></div>
         </div>
@@ -304,6 +304,10 @@ import Toast from '../components/toast.js';
             }).join('');
         }
 
+        grid.querySelectorAll('[data-trailer-image]').forEach((image) => {
+            image.addEventListener('load', () => image.classList.remove('d-none'), { once: true });
+            image.addEventListener('error', () => image.classList.add('d-none'), { once: true });
+        });
         grid.classList.remove('d-none');
     }
 

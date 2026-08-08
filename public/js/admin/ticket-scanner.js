@@ -240,7 +240,10 @@
         verificationController = new AbortController();
 
         try {
-            const response = await window.AdminCore.apiFetch('/api/v1/admin/tickets/verify', {
+            const verifyEndpoint = document.body.dataset.staffRole === 'ticket_checker'
+                ? '/api/v1/staff/tickets/verify'
+                : '/api/v1/admin/tickets/verify';
+            const response = await window.AdminCore.apiFetch(verifyEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

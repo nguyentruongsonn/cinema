@@ -156,6 +156,26 @@
             const data = await parseResponseBody(response);
 
             if (!response.ok) {
+                // Auto refresh token & retry once on 401 Unauthenticated
+                if (response.status === 401 && !options._isRetry && !path.includes('/auth/refresh') && !path.includes('/auth/login')) {
+                    try {
+                        const refreshRes = await fetch(this.url('/auth/refresh'), {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': JSON_CONTENT_TYPE,
+                                'Accept': JSON_CONTENT_TYPE,
+                                'X-CSRF-TOKEN': getCsrfToken(),
+                            },
+                            credentials: 'include',
+                        });
+                        if (refreshRes.ok) {
+                            return this.request(path, { ...options, _isRetry: true });
+                        }
+                    } catch (e) {
+                        console.warn('ApiClient token refresh failed:', e);
+                    }
+                }
+
                 throw createApiError(data?.message, response, data);
             }
 

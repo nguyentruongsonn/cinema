@@ -3,16 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
     use HasFactory, Notifiable;
+
+    /** @var array<int, string>|null */
+    private ?array $resolvedPermissionSlugs = null;
 
     /**
      * Mass assignable attributes - SECURITY: sensitive privilege fields removed.
@@ -30,6 +33,7 @@ class User extends Authenticatable implements JWTSubject
         'gender',
         'address',
         'status',
+        'account_status',
     ];
 
     /**
@@ -43,11 +47,13 @@ class User extends Authenticatable implements JWTSubject
         'last_login_at',
         'last_login_ip',
         'remember_token',
+        'system_key',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'system_key',
     ];
 
     protected $casts = [
@@ -59,11 +65,13 @@ class User extends Authenticatable implements JWTSubject
 
     protected $with = ['role']; // Always eager load role for auth checks
 
+    /** @return BelongsTo<Role, $this> */
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
 
+    /** @return HasMany<Order, $this> */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
@@ -79,6 +87,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(LoginHistory::class);
     }
 
+    public function loyaltyHistories(): HasMany
+    {
+        return $this->hasMany(LoyaltyHistory::class);
+    }
+
+    /** @return BelongsToMany<Promotion, $this> */
     public function promotions(): BelongsToMany
     {
         return $this->belongsToMany(Promotion::class, 'user_promotion')
@@ -86,6 +100,7 @@ class User extends Authenticatable implements JWTSubject
             ->withTimestamps();
     }
 
+    /** @return BelongsToMany<Theater, $this> */
     public function theaters(): BelongsToMany
     {
         return $this->belongsToMany(Theater::class, 'theater_user')
@@ -116,6 +131,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasRole('customer');
     }
 
+    public function isSystemGuest(): bool
+    {
+        return $this->account_status === 'system_guest'
+            || str_starts_with((string) $this->system_key, 'pos_guest:');
+    }
+
     public function canAccessAdminPanel(): bool
     {
         if (! $this->role) {
@@ -135,6 +156,18 @@ class User extends Authenticatable implements JWTSubject
 
     public function adminLandingRouteName(): string
     {
+        if ($this->hasRole('ticket_seller')) {
+            return 'pos.index';
+        }
+
+        if ($this->hasRole('ticket_checker') && $this->hasPermission('tickets.verify')) {
+            return 'staff.ticket-check';
+        }
+
+        if ($this->hasRole('concession_staff') && $this->hasPermission('concessions.fulfill')) {
+            return 'staff.concessions';
+        }
+
         $routesByPermission = [
             'dashboard.view' => 'admin.dashboard',
             'reports.view' => 'admin.revenue.index',
@@ -199,13 +232,48 @@ class User extends Authenticatable implements JWTSubject
             return true;
         }
 
-        if (! $this->role) {
-            return false;
+        return $this->hasAnyPermission([$permissionSlug]);
+    }
+
+    /**
+     * Check whether the user has any supplied permissions using a single
+     * cached permission lookup for the current model instance.
+     *
+     * @param  array<int, string>  $permissionSlugs
+     */
+    public function hasAnyPermission(array $permissionSlugs): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
         }
 
-        return $this->role->permissions()
-            ->whereIn('slug', $this->permissionSlugCandidates($permissionSlug))
-            ->exists();
+        $grantedPermissions = $this->resolvedPermissionSlugs();
+
+        foreach ($permissionSlugs as $permissionSlug) {
+            if (array_intersect($this->permissionSlugCandidates($permissionSlug), $grantedPermissions) !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @return array<int, string> */
+    private function resolvedPermissionSlugs(): array
+    {
+        if ($this->resolvedPermissionSlugs !== null) {
+            return $this->resolvedPermissionSlugs;
+        }
+
+        $role = $this->role;
+
+        if (! $role) {
+            return $this->resolvedPermissionSlugs = [];
+        }
+
+        return $this->resolvedPermissionSlugs = $role->permissions()
+            ->pluck('slug')
+            ->all();
     }
 
     private function permissionSlugCandidates(string $permissionSlug): array
@@ -240,6 +308,7 @@ class User extends Authenticatable implements JWTSubject
     public function assignRole(int $roleId): void
     {
         $this->role_id = $roleId;
+        $this->resolvedPermissionSlugs = null;
         $this->save();
     }
 
@@ -261,10 +330,11 @@ class User extends Authenticatable implements JWTSubject
         $this->save();
     }
 
-    public function markEmailAsVerified(): void
+    public function markEmailAsVerified(): bool
     {
         $this->email_verified_at = now();
-        $this->save();
+
+        return $this->save();
     }
 
     public function recordLogin(string $ip): void

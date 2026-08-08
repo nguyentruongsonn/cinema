@@ -516,8 +516,7 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/showtimes.css') }}?v={{ config('app.asset_version') }}">
+    @vite(['resources/css/admin/pages/stats.css', 'resources/css/admin/pages/showtimes.css'])
 @endpush
 
 @push('scripts')

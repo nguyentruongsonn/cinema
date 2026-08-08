@@ -80,6 +80,13 @@ class PaymentController extends Controller
             ]);
         }
 
+        if (str_starts_with($order->code, 'POS-')) {
+            return redirect()->route('pos.index', [
+                'paymentStatus' => $order->payment_status === 'paid' ? 'success' : 'pending',
+                'orderId' => $order->id,
+            ]);
+        }
+
         $encryptedShowtimeId = $order->showtime?->encrypted_id;
 
         if (!$encryptedShowtimeId) {
@@ -119,6 +126,13 @@ class PaymentController extends Controller
 
         $this->paymentService->markCancelledFromReturn($order);
         $order->refresh();
+
+        if (str_starts_with($order->code, 'POS-')) {
+            return redirect()->route('pos.index', [
+                'paymentStatus' => 'cancel',
+                'orderId' => $order->id,
+            ]);
+        }
 
         $encryptedShowtimeId = $order->showtime?->encrypted_id;
 
@@ -177,18 +191,6 @@ class PaymentController extends Controller
                 'message' => 'Webhook accepted but not processed',
             ]);
         } catch (Throwable $e) {
-            if ($e instanceof PaymentGatewayException) {
-                Log::warning('PayOS webhook ignored after gateway verification failure', [
-                    'order_code' => data_get($request->validated(), 'data.orderCode') ?? data_get($request->validated(), 'data.order_code'),
-                    'exception' => $e::class,
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Webhook accepted but not processed',
-                ]);
-            }
-
             report($e);
 
             Log::error('PayOS webhook processing failed', [
@@ -237,7 +239,10 @@ class PaymentController extends Controller
             return null;
         }
 
-        if ((int) $order->user_id !== (int) Auth::id()) {
+        $user = Auth::user();
+        $isStaff = $user && $user->hasRole('ticket_seller');
+
+        if (!$isStaff && (int) $order->user_id !== (int) Auth::id()) {
             Log::warning('Payment return ownership check failed', [
                 'action' => $action,
                 'order_id' => $order->id,

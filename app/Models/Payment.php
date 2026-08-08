@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -12,10 +13,15 @@ class Payment extends Model
 {
     // Status constants
     const STATUS_PENDING = 'pending';
+
     const STATUS_PROCESSING = 'processing';
+
     const STATUS_SUCCESS = 'success';
+
     const STATUS_FAILED = 'failed';
+
     const STATUS_CANCELLED = 'cancelled';
+
     const STATUS_REFUNDED = 'refunded';
 
     protected $fillable = [
@@ -90,7 +96,7 @@ class Payment extends Model
 
     public function markProcessing(): self
     {
-        if (!in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING], true)) {
+        if (! in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING], true)) {
             throw new \LogicException('Payment không ở trạng thái có thể xử lý.');
         }
 
@@ -111,7 +117,7 @@ class Payment extends Model
         }
 
         $this->status = self::STATUS_SUCCESS;
-        $this->paid_at = $paidAt ?? now();
+        $this->paid_at = $paidAt ? Carbon::instance($paidAt) : now();
         $this->failed_at = null;
         $this->save();
 
@@ -125,7 +131,7 @@ class Payment extends Model
         }
 
         $this->status = self::STATUS_FAILED;
-        $this->failed_at = $failedAt ?? now();
+        $this->failed_at = $failedAt ? Carbon::instance($failedAt) : now();
         $this->save();
 
         return $this;
@@ -138,7 +144,7 @@ class Payment extends Model
         }
 
         $this->status = self::STATUS_CANCELLED;
-        $this->failed_at = $cancelledAt ?? now();
+        $this->failed_at = $cancelledAt ? Carbon::instance($cancelledAt) : now();
         $this->save();
 
         return $this;

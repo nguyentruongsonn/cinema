@@ -60,11 +60,13 @@ class TheaterController extends Controller
 
             $perPage = $filters['per_page'] ?? 10;
             $theaters = $query->latest()->paginate($perPage);
-            $theaters->setCollection(
-                $theaters->getCollection()->map(fn (Theater $theater) => new TheaterResource($theater))
-            );
 
-            return $this->paginatedResponse($theaters, 'Theaters retrieved successfully');
+            return $this->paginatedResponse(
+                $theaters,
+                'Theaters retrieved successfully',
+                200,
+                fn (Theater $theater) => new TheaterResource($theater)
+            );
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
             return $this->errorResponse('Unauthorized to view theaters', 403);
         } catch (\Illuminate\Validation\ValidationException $e) {

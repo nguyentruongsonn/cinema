@@ -19,45 +19,49 @@ class PricingService
     }
     public function buildSnapshot(
         User $user,
-        Showtime $showtime,
+        ?Showtime $showtime,
         array $seatRequests,
         array $productRequests,
         ?string $voucherCode,
         int $pointsUsed
     ): array {
-        // Load relations
-        $showtime->load(['format', 'movie', 'screen.theater']);
+        // Load relations if showtime exists
+        $showtime?->load(['format', 'movie', 'screen.theater']);
 
         // Seat pricing with dynamic ticket pricing
         $seatIds = array_map(fn($item) => (int) ($item['id'] ?? $item), $seatRequests);
-        $seats = Seat::with('seatType')->whereIn('id', $seatIds)->get();
+        $seatRequestById = collect($seatRequests)->keyBy(fn ($item) => (int) ($item['id'] ?? $item));
+        $seats = !empty($seatIds) ? Seat::with('seatType')->whereIn('id', $seatIds)->get() : collect([]);
 
         $seatItems = [];
         $seatTotal = 0;
 
-        // Get format name and movie surcharge
-        $formatName = $showtime->format?->name ?? '2D';
-        $movieSurcharge = (int) ($showtime->movie?->surcharge ?? 0);
-        $scheduledAt = $showtime->scheduled_at;
+        // Get format name and movie surcharge if showtime exists
+        $formatName = (string) data_get($showtime, 'format.name', '2D');
+        $movieSurcharge = (int) data_get($showtime, 'movie.surcharge', 0);
+        $scheduledAt = $showtime === null ? now() : $showtime->scheduled_at;
 
         foreach ($seats as $seat) {
             // Check if this is a double/couple seat
-            $seatTypeName = $seat->seatType?->name ?? '';
-            $seatTypeSlug = $seat->seatType?->slug ?? '';
+            $seatTypeName = (string) data_get($seat, 'seatType.name', '');
+            $seatTypeSlug = (string) data_get($seat, 'seatType.slug', '');
             $isDoubleSeat = $this->isDoubleSeat($seatTypeName, $seatTypeSlug);
 
-            // Calculate dynamic price using TicketPricingService
-            // Default customer type is 'adult' (can be extended later to accept user preferences)
+            $seatRequest = $seatRequestById->get((int) $seat->id, []);
+            $audienceType = $seatRequest['audience_type'] ?? 'adult';
+
+            // Calculate each ticket independently; the client never supplies the final price.
             $pricingResult = $this->ticketPricingService->calculate(
                 format: $formatName,
                 scheduledAt: $scheduledAt,
-                customerType: 'adult',
+                customerType: $audienceType,
                 isDoubleSeat: $isDoubleSeat,
                 movieSurcharge: $movieSurcharge,
                 extraHolidays: [],
-                formatSurcharge: (int) ($showtime->format?->surcharge ?? 0),
-                seatSurcharge: (int) ($seat->seatType?->surcharge ?? 0),
-                theaterPricing: $showtime->screen?->theater?->pricing_profile
+                formatSurcharge: (int) data_get($showtime, 'format.surcharge', 0),
+                seatSurcharge: (int) data_get($seat, 'seatType.surcharge', 0),
+                theaterPricing: data_get($showtime, 'screen.theater.pricing_profile')
+
             );
 
             $unitPrice = $pricingResult['total_price'];
@@ -70,7 +74,9 @@ class PricingService
                 'price' => $unitPrice,
                 'row' => $seat->row,
                 'number' => $seat->number,
-                'type' => $seat->seatType?->name,
+                'type' => data_get($seat, 'seatType.name'),
+                'audience_type' => $audienceType,
+                'student_card_verified' => (bool) ($seatRequest['student_card_verified'] ?? false),
                 'pricing_details' => [
                     'base_price' => $pricingResult['base_price'],
                     'surcharges' => $pricingResult['surcharges'],
@@ -161,7 +167,7 @@ class PricingService
 
         // Points (1 point = 1000 VND)
         $pointDiscount = 0;
-        if ($pointsUsed > 0 && $user && $user->loyalty_points >= $pointsUsed) {
+        if ($pointsUsed > 0 && $user->loyalty_points >= $pointsUsed) {
             $pointDiscount = $pointsUsed * 1000;
         } else {
             $pointsUsed = 0;

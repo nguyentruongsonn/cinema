@@ -13,23 +13,27 @@ class SecurityHeaders
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $nonce = base64_encode(random_bytes(16));
+        $request->attributes->set('csp_nonce', $nonce);
+
         $response = $next($request);
 
-        // Only apply to non-API responses to avoid breaking API clients
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
         if ($request->is('api/*')) {
             return $response;
         }
 
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'DENY');
-        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('X-XSS-Protection', '0');
 
         // Content Security Policy
-        $reverbEnabled = (bool) env('REVERB_ENABLED', false);
-        $reverbHost = trim((string) env('REVERB_HOST', 'localhost'));
-        $reverbPort = (int) env('REVERB_PORT', 8080);
-        $reverbScheme = env('REVERB_SCHEME', 'http') === 'https' ? 'wss' : 'ws';
+        $reverbOptions = (array) config('broadcasting.connections.reverb.options', []);
+        $reverbEnabled = config('broadcasting.default') === 'reverb';
+        $reverbHost = trim((string) ($reverbOptions['host'] ?? 'localhost'));
+        $reverbPort = (int) ($reverbOptions['port'] ?? 8080);
+        $reverbScheme = ($reverbOptions['scheme'] ?? 'http') === 'https' ? 'wss' : 'ws';
         $reverbOrigin = $reverbEnabled && $reverbHost !== ''
             ? sprintf('%s://%s:%d', $reverbScheme, $reverbHost, $reverbPort)
             : null;
@@ -47,11 +51,12 @@ class SecurityHeaders
 
         $csp = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+            "script-src 'self' 'nonce-{$nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+            "style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+            "style-src-attr 'unsafe-inline'",
             "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
             "img-src 'self' data: https: blob:",
-            'connect-src ' . implode(' ', $connectSources),
+            'connect-src '.implode(' ', $connectSources),
             "frame-src 'self' https://sandbox.vnpayment.vn",
             "object-src 'none'",
             "base-uri 'self'",
@@ -59,6 +64,14 @@ class SecurityHeaders
         ];
 
         $response->headers->set('Content-Security-Policy', implode('; ', $csp));
+
+        $strictStyleCsp = array_map(
+            static fn (string $directive): string => $directive === "style-src-attr 'unsafe-inline'"
+                ? "style-src-attr 'none'"
+                : $directive,
+            $csp,
+        );
+        $response->headers->set('Content-Security-Policy-Report-Only', implode('; ', $strictStyleCsp));
 
         return $response;
     }

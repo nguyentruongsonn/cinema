@@ -33,58 +33,64 @@ class Showtime extends Model
         'status' => 'boolean',
     ];
 
-
-
     public function getEncryptedIdAttribute()
     {
-        return Crypt::encryptString($this->id);
+        return Crypt::encryptString((string) $this->id);
     }
 
     public function getFormattedStartTimeAttribute()
     {
-        return $this->scheduled_at ? $this->scheduled_at->format('H:i') : null;
+        return $this->getAttribute('scheduled_at')?->format('H:i');
     }
 
     public function getFormattedStartDateAttribute()
     {
-        return $this->scheduled_at ? $this->scheduled_at->format('H:i, d/m/Y') : null;
+        return $this->getAttribute('scheduled_at')?->format('H:i, d/m/Y');
     }
 
+    /** @return BelongsTo<Movie, $this> */
     public function movie(): BelongsTo
     {
         return $this->belongsTo(Movie::class);
     }
 
+    /** @return BelongsTo<Screen, $this> */
     public function screen(): BelongsTo
     {
         return $this->belongsTo(Screen::class);
     }
 
+    /** @return BelongsTo<Format, $this> */
     public function format(): BelongsTo
     {
         return $this->belongsTo(Format::class);
     }
 
+    /** @return BelongsTo<VersionType, $this> */
     public function versionType(): BelongsTo
     {
         return $this->belongsTo(VersionType::class);
     }
 
+    /** @return BelongsTo<PriceRule, $this> */
     public function priceRule(): BelongsTo
     {
         return $this->belongsTo(PriceRule::class);
     }
 
+    /** @return HasMany<Order, $this> */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
+    /** @return HasOne<ShowtimeSeatLayoutSnapshot, $this> */
     public function seatLayoutSnapshot(): HasOne
     {
         return $this->hasOne(ShowtimeSeatLayoutSnapshot::class);
     }
 
+    /** @return HasMany<SeatHold, $this> */
     public function seatHolds(): HasMany
     {
         return $this->hasMany(SeatHold::class);

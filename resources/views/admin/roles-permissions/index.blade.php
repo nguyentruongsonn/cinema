@@ -4,7 +4,7 @@
 @section('header_title', 'Phân quyền vai trò')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/pages/roles-permissions.css') }}?v={{ config('app.asset_version') }}">
+@vite('resources/css/admin/pages/roles-permissions.css')
 @endpush
 
 @section('content')

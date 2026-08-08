@@ -7,7 +7,6 @@ namespace App\Services;
 use App\Events\SeatStatusUpdated;
 use App\Exceptions\SeatConflictException;
 use App\Models\OrderItem;
-use App\Services\TicketPricingService;
 use App\Models\Seat;
 use App\Models\SeatHold;
 use App\Models\SeatHoldItem;
@@ -23,7 +22,6 @@ class SeatService
     private const TRANSACTION_ATTEMPTS = 3;
 
     public function __construct(
-        private readonly OrderExpirationService $orderExpirationService,
         private readonly TicketPricingService $ticketPricingService
     ) {
     }
@@ -33,7 +31,7 @@ class SeatService
         $this->cleanupExpiredReservations($showtimeId);
 
         $showtime = Showtime::with(['screen.theater', 'format', 'movie'])->findOrFail($showtimeId);
-        $hiddenRows = $showtime->screen?->hidden_rows ?? [];
+        $hiddenRows = (array) data_get($showtime, 'screen.hidden_rows', []);
 
         $seats = Seat::with('seatType')
             ->where('screen_id', $showtime->screen_id)
@@ -82,7 +80,7 @@ class SeatService
             $seatId = $seat->id;
             $status = 'available';
 
-            if ($seat->status === 0 || $seat->status === false) {
+            if (! $seat->status) {
                 $status = 'maintenance';
             } elseif (in_array($seatId, $bookedSeatIds, true)) {
                 $status = 'booked';
@@ -93,20 +91,32 @@ class SeatService
             }
 
             // Calculate dynamic price using TicketPricingService
-            $seatTypeName = $seat->seatType?->name ?? '';
-            $seatTypeSlug = $seat->seatType?->slug ?? '';
+            $seatTypeName = (string) data_get($seat, 'seatType.name', '');
+            $seatTypeSlug = (string) data_get($seat, 'seatType.slug', '');
             $isDoubleSeat = $this->isDoubleSeat($seatTypeName, $seatTypeSlug);
 
             $pricingResult = $this->ticketPricingService->calculate(
-                format: $showtime->format?->name ?? '2D',
+                format: (string) data_get($showtime, 'format.name', '2D'),
                 scheduledAt: $showtime->scheduled_at,
                 customerType: 'adult',
                 isDoubleSeat: $isDoubleSeat,
-                movieSurcharge: (int)($showtime->movie?->surcharge ?? 0),
+                movieSurcharge: (int) data_get($showtime, 'movie.surcharge', 0),
                 extraHolidays: [],
-                formatSurcharge: (int)($showtime->format?->surcharge ?? 0),
-                seatSurcharge: (int)($seat->seatType?->surcharge ?? 0),
-                theaterPricing: $showtime->screen?->theater?->pricing_profile
+                formatSurcharge: (int) data_get($showtime, 'format.surcharge', 0),
+                seatSurcharge: (int) data_get($seat, 'seatType.surcharge', 0),
+                theaterPricing: data_get($showtime, 'screen.theater.pricing_profile')
+            );
+
+            $pricingResultStudent = $this->ticketPricingService->calculate(
+                format: (string) data_get($showtime, 'format.name', '2D'),
+                scheduledAt: $showtime->scheduled_at,
+                customerType: 'student',
+                isDoubleSeat: $isDoubleSeat,
+                movieSurcharge: (int) data_get($showtime, 'movie.surcharge', 0),
+                extraHolidays: [],
+                formatSurcharge: (int) data_get($showtime, 'format.surcharge', 0),
+                seatSurcharge: (int) data_get($seat, 'seatType.surcharge', 0),
+                theaterPricing: data_get($showtime, 'screen.theater.pricing_profile')
             );
 
             return [
@@ -114,14 +124,15 @@ class SeatService
                 'row' => $seat->row,
                 'number' => $seat->number,
                 'label' => $seat->label ?: ($seat->row . $seat->number),
-                'seat_type' => $seat->seatType ? [
-                    'id' => $seat->seatType->id,
-                    'name' => $seat->seatType->name,
-                    'surcharge' => (float) $seat->seatType->surcharge,
+                'seat_type' => data_get($seat, 'seatType') ? [
+                    'id' => data_get($seat, 'seatType.id'),
+                    'name' => data_get($seat, 'seatType.name'),
+                    'surcharge' => (float) data_get($seat, 'seatType.surcharge', 0),
                 ] : null,
                 'seat_type_id' => $seat->seat_type_id,
-                'surcharge' => (float) ($seat->seatType?->surcharge ?? 0),
+                'surcharge' => (float) data_get($seat, 'seatType.surcharge', 0),
                 'price' => $pricingResult['total_price'],
+                'student_price' => $pricingResultStudent['total_price'],
                 'status' => $status,
                 'is_available' => $status === 'available',
                 'is_booked' => $status === 'booked',
@@ -153,6 +164,13 @@ class SeatService
                 ->lockForUpdate()
                 ->findOrFail($data['showtime_id']);
 
+            if (
+                $user->requiresTheaterScope()
+                && ! $user->isAssignedToTheater((int) $showtime->screen()->value('theater_id'))
+            ) {
+                throw new \RuntimeException('Bạn không có quyền giữ ghế tại rạp này.', 403);
+            }
+
             $seatIds = array_values(array_map('intval', $data['seat_ids']));
 
             $seats = Seat::query()
@@ -165,7 +183,7 @@ class SeatService
                 throw new \RuntimeException('Một hoặc nhiều ghế không thuộc phòng chiếu của suất chiếu này.');
             }
 
-            $disabledSeatLabels = $seats->filter(fn($seat) => $seat->status === 0 || $seat->status === false)
+            $disabledSeatLabels = $seats->filter(fn($seat) => ! $seat->status)
                 ->map(fn($seat) => $seat->label ?: ($seat->row . $seat->number))
                 ->all();
 
@@ -353,7 +371,38 @@ class SeatService
             Log::warning('Seat unlock broadcast failed (non-critical): ' . $e->getMessage());
         }
 
-        return ['unlocked_count' => count($seatIds)];
+        return [
+            'hold_id' => $holdId,
+            'showtime_id' => $showtimeId,
+            'released_seat_ids' => array_values(array_map('intval', $seatIds)),
+            'unlocked_count' => count($seatIds),
+        ];
+    }
+
+    public function syncHold(int $holdId, array $seatIds, $user): array
+    {
+        $hold = SeatHold::query()->find($holdId);
+        if (! $hold) {
+            throw new \RuntimeException('Seat hold not found', 404);
+        }
+        if ((int) $hold->user_id !== (int) $user->id) {
+            throw new \RuntimeException('Unauthorized', 403);
+        }
+        if (! $hold->isValid()) {
+            throw new \RuntimeException('Seat hold expired', 422);
+        }
+
+        $seatIds = array_values(array_unique(array_map('intval', $seatIds)));
+        if ($seatIds === []) {
+            return $this->unlock($holdId, $user);
+        }
+
+        $result = $this->lock([
+            'showtime_id' => $hold->showtime_id,
+            'seat_ids' => $seatIds,
+        ], $user);
+
+        return array_merge($result, ['previous_hold_id' => $holdId]);
     }
 
     public function cleanupExpiredSeatHolds(?int $showtimeId = null, bool $broadcast = true): int
@@ -512,7 +561,44 @@ class SeatService
             ->values()
             ->all();
 
-        return array_values(array_unique(array_merge($ticketSeatIds, $seatItemIds)));
+        // Check active pending/confirmed orders payload for any seat IDs
+        $payloadOrders = \App\Models\Order::query()
+            ->where('showtime_id', $showtimeId)
+            ->where(function ($statusQuery) {
+                $statusQuery->where('status', self::STATUS_CONFIRMED)
+                    ->orWhere(function ($pendingQuery) {
+                        $pendingQuery->where('status', self::STATUS_PENDING)
+                            ->where(function ($expiryQuery) {
+                                $expiryQuery->whereNull('expired_at')
+                                    ->orWhere('expired_at', '>', now());
+                            });
+                    });
+            })
+            ->get();
+
+        $payloadSeatIds = [];
+        foreach ($payloadOrders as $pOrder) {
+            $pSeats = $pOrder->payload['seats'] ?? [];
+            if (!empty($pSeats)) {
+                foreach ($pSeats as $s) {
+                    $sId = (int) ($s['id'] ?? $s);
+                    if ($sId > 0 && (!$seatIds || in_array($sId, $seatIds, true))) {
+                        $payloadSeatIds[] = $sId;
+                    }
+                }
+            }
+            $pSeatIds = $pOrder->payload['seat_ids'] ?? [];
+            if (!empty($pSeatIds)) {
+                foreach ($pSeatIds as $sId) {
+                    $sId = (int) $sId;
+                    if ($sId > 0 && (!$seatIds || in_array($sId, $seatIds, true))) {
+                        $payloadSeatIds[] = $sId;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique(array_merge($ticketSeatIds, $seatItemIds, $payloadSeatIds)));
     }
 
     private function isDoubleSeat(string $name, string $slug): bool

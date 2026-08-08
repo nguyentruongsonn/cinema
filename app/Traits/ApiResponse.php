@@ -67,12 +67,16 @@ trait ApiResponse
     /**
      * Paginated response
      */
-    protected function paginatedResponse($data, $message = 'Success', $code = 200): JsonResponse
+    protected function paginatedResponse($data, $message = 'Success', $code = 200, ?callable $transformer = null): JsonResponse
     {
+        $items = $transformer === null
+            ? $data->items()
+            : collect($data->items())->map($transformer)->values()->all();
+
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data' => $data->items(),
+            'data' => $items,
             'pagination' => [
                 'total' => $data->total(),
                 'per_page' => $data->perPage(),

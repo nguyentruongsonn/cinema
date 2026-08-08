@@ -61,6 +61,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
             'verify.payos' => VerifyPayOSWebhookSignature::class,
             'internal.metrics' => InternalMetricsAccess::class,
+            'theater.scope' => \App\Http\Middleware\TheaterScopeMiddleware::class,
+            'pos.access' => \App\Http\Middleware\PosAccessMiddleware::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

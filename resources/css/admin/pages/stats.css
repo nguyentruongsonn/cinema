@@ -1,11 +1,24 @@
-/* ── Admin Revenue Statistics Page ─────────────────────────────────────────── */
+/* ── Shared Admin Statistics Pages ─────────────────────────────────────────── */
+
+.admin-stats-page {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+}
+
+.admin-stats-page > .row,
+.admin-stats-page > .row > [class*="col-"] {
+    min-width: 0;
+}
 
 /* Filter Bar */
 .filter-bar {
-    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 1.25rem 1.5rem;
+    background: var(--admin-bg-secondary);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-xl);
+    box-shadow: var(--admin-shadow-sm);
+    padding: var(--admin-space-xl);
 }
 
 .filter-bar-inner {
@@ -30,10 +43,10 @@
 }
 
 .filter-input {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-primary);
+    background: var(--admin-bg-tertiary);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-md);
+    color: var(--admin-text-primary);
     padding: 0.5rem 0.85rem;
     font-size: 0.9rem;
     outline: none;
@@ -41,7 +54,8 @@
 }
 
 .filter-input:focus {
-    border-color: #e50914;
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.14);
 }
 
 .filter-shortcuts {
@@ -49,10 +63,10 @@
 }
 
 .btn-shortcut {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-secondary);
+    background: var(--admin-bg-tertiary);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-md);
+    color: var(--admin-text-secondary);
     font-size: 0.8rem;
     font-weight: 600;
     min-height: 40px;
@@ -63,9 +77,58 @@
 
 .btn-shortcut:hover,
 .btn-shortcut.active {
-    background: rgba(229, 9, 20, 0.15);
-    border-color: #e50914;
-    color: #e50914;
+    background: rgba(229, 9, 20, 0.14);
+    border-color: var(--admin-primary);
+    color: var(--admin-primary);
+}
+
+.admin-stats-page .stat-card,
+.admin-stats-page .chart-card,
+.admin-stats-page .admin-table-container {
+    background: var(--admin-bg-secondary) !important;
+    border: 1px solid var(--admin-border) !important;
+    border-radius: var(--admin-radius-xl) !important;
+    box-shadow: var(--admin-shadow-sm) !important;
+    min-width: 0;
+}
+
+.admin-stats-page .stat-card {
+    height: 100%;
+    min-height: 168px;
+    padding: var(--admin-space-xl) !important;
+}
+
+.admin-stats-page .chart-card,
+.admin-stats-page .admin-table-container {
+    isolation: isolate;
+    overflow: visible;
+    padding: var(--admin-space-xl) !important;
+    position: relative;
+}
+
+.admin-stats-page .chart-header {
+    border-bottom: 1px solid var(--admin-border-light);
+    margin-bottom: var(--admin-space-lg);
+    min-height: 42px;
+    padding-bottom: var(--admin-space-md);
+}
+
+.admin-stats-page .chart-title {
+    color: var(--admin-text-primary);
+    font-size: var(--admin-font-size-lg) !important;
+    line-height: 1.35;
+}
+
+.admin-stats-page [id^="chart"],
+.admin-stats-page #revenueChart,
+.admin-stats-page #trafficHeatmap {
+    min-width: 0;
+    width: 100%;
+}
+
+.admin-stats-page .apexcharts-canvas,
+.admin-stats-page .apexcharts-svg {
+    max-width: 100% !important;
 }
 
 /* Loading Overlay */
@@ -203,4 +266,29 @@
     background: #18181b !important;
     border-color: rgba(255, 255, 255, .14) !important;
     color: #f4f4f5 !important;
+}
+
+#adminPageContent .apexcharts-tooltip {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .38) !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+    z-index: 30 !important;
+}
+
+#adminPageContent .apexcharts-tooltip-text-y-label,
+#adminPageContent .apexcharts-tooltip-text-y-value,
+#adminPageContent .apexcharts-tooltip-text-goals-label,
+#adminPageContent .apexcharts-tooltip-text-goals-value {
+    color: #f4f4f5 !important;
+}
+
+@media (max-width: 1199.98px) {
+    .admin-stats-page .filter-bar-inner {
+        align-items: stretch;
+    }
+
+    .admin-stats-page .filter-shortcuts {
+        order: 3;
+        width: 100%;
+    }
 }

@@ -10,6 +10,7 @@
 @endsection
 
 @section('content')
+<div class="admin-stats-page">
 
 {{-- Date Range Filter --}}
 <div class="filter-bar mb-4">
@@ -139,11 +140,11 @@
         </div>
     </div>
 </div>
+</div>
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/dashboard-redesign.css') }}?v={{ config('app.asset_version') }}">
+    @vite(['resources/css/admin/dashboard-redesign.css', 'resources/css/admin/pages/stats.css'])
 @endpush
 
 @push('scripts')

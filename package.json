@@ -9,6 +9,7 @@
         "test:frontend:security": "node scripts/frontend-security-gate.mjs",
         "test:frontend:syntax": "node scripts/frontend-syntax-gate.mjs",
         "test:browser:smoke": "node scripts/release-browser-smoke.mjs",
+        "test:browser:roles": "node scripts/role-browser-smoke.mjs",
         "test:structure": "node scripts/repository-hygiene-gate.mjs"
     },
     "devDependencies": {
@@ -28,5 +29,8 @@
         "jsqr": "^1.4.0",
         "laravel-echo": "^2.4.0",
         "pusher-js": "^8.5.0"
+    },
+    "overrides": {
+        "nanoid": "3.3.17"
     }
 }

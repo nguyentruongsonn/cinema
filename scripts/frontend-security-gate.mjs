@@ -15,6 +15,9 @@ for (const file of files) {
     const normalizedFile = file.replaceAll('\\', '/');
     if (/\bon(?:error|click|load)\s*=/.test(content)) failures.push(`${file}: inline event handler`);
     if (/\b(?:eval|Function)\s*\(/.test(content)) failures.push(`${file}: dynamic code execution`);
+    if (/\.innerHTML\s*=\s*`[^`]*\$\{\s*(?:error|err)\.message\b/si.test(content)) {
+        failures.push(`${file}: unescaped error message in HTML sink`);
+    }
     const isDialogComponent = normalizedFile.endsWith('components/dialog.js') || normalizedFile.endsWith('components/modal.js');
     if (!isDialogComponent && /(^|[^\w.])(?:alert|confirm)\s*\(/m.test(content)) failures.push(`${file}: native blocking dialog`);
 }

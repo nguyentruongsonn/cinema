@@ -27,6 +27,7 @@ class Banner extends Model
         'click_count' => 'integer',
     ];
 
+    /** @return HasMany<BannerImage, $this> */
     public function images(): HasMany
     {
         return $this->hasMany(BannerImage::class)->orderBy('id');

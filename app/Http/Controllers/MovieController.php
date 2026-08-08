@@ -167,10 +167,6 @@ class MovieController extends Controller
         try {
             $movie = $this->movieService->getMovie($idOrSlug);
 
-            if (!$movie) {
-                return $this->errorResponse('Movie not found', 404);
-            }
-
             return $this->successResponse(new MovieResource($movie), 'Movie retrieved successfully');
         } catch (\Throwable $e) {
             Log::error('Failed to retrieve movie', [

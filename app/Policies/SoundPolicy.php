@@ -29,6 +29,6 @@ class SoundPolicy
 
     private function canManage(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_screens');
+        return $user->hasPermission('sounds.manage');
     }
 }

@@ -16,6 +16,7 @@ use App\Models\Seat;
 use App\Models\SeatHold;
 use App\Models\SeatHoldItem;
 use App\Models\Showtime;
+use App\Models\Theater;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -42,11 +43,16 @@ class PaymentService
      */
     public function initiate(
         User      $user,
-        Showtime  $showtime,
+        ?Showtime $showtime,
         array     $validated,
         string    $baseUrl,
-        ?string   $idempotencyKey = null
+        ?string   $idempotencyKey = null,
+        ?User     $actor = null,
+        ?User     $seatHolder = null
     ): array {
+        $actor ??= $user;
+        $seatHolder ??= $user;
+
         // Auto-generate idempotency key if not provided (for backward compatibility)
         if ($idempotencyKey === null) {
             $idempotencyKey = $this->generateIdempotencyKey($user, $showtime, $validated);
@@ -57,7 +63,7 @@ class PaymentService
         // retry logic, concurrent request blocking, and response caching
         $idempotentResult = IdempotencyKey::executeIdempotent(
             $idempotencyKey,
-            function ($record) use ($user, $showtime, $validated, $baseUrl) {
+            function ($record) use ($user, $actor, $seatHolder, $showtime, $validated, $baseUrl) {
                 // Core payment initiation logic (executeIdempotent handles transaction)
                 $items = collect($validated['items'] ?? []);
 
@@ -72,7 +78,7 @@ class PaymentService
                     ->all();
 
                 $seatHold = !empty($seatIds)
-                    ? $this->validateSeatHold($user, $showtime, $seatIds)
+                    ? $this->validateSeatHold($seatHolder, $showtime, $seatIds)
                     : null;
                 $checkoutFingerprint = $seatHold
                     ? $this->checkoutFingerprint($user, $showtime, $validated, $seatHold)
@@ -102,8 +108,14 @@ class PaymentService
                 $validated,
                 $checkoutFingerprint,
                 $seatHold,
-                $seatIds
+                $seatIds,
+                $seatHolder
             ): array {
+                $theaterId = $validated['theater_id'] ?? $showtime?->screen?->theater_id;
+                $theaterId = is_numeric($theaterId) && Theater::query()->whereKey((int) $theaterId)->exists()
+                    ? (int) $theaterId
+                    : null;
+
                 if ($seatHold) {
                     SeatHold::query()->whereKey($seatHold->id)->lockForUpdate()->firstOrFail();
                 }
@@ -139,11 +151,20 @@ class PaymentService
                     'gateway_order_code' => $this->generateOrderCode(),
                     'payment_provider' => $isZeroAmountCheckout ? 'internal' : 'payos',
                     'user_id' => $user->id,
-                    'showtime_id' => $showtime->id,
+                    'showtime_id' => $showtime?->id,
+                    'theater_id' => $theaterId,
+                    'served_by_user_id' => $validated['served_by_user_id'] ?? null,
+                    'source' => $validated['source'] ?? 'web',
+                    'payment_method' => $validated['payment_method'] ?? ($isZeroAmountCheckout ? 'zero_amount' : 'payos'),
                     'checkout_fingerprint' => $checkoutFingerprint,
                     'total_amount' => $pricing['final_amount'],
                     'payload' => [
                         'seat_hold_id' => $seatHold?->id,
+                        'seat_hold_user_id' => $seatHold ? $seatHolder->id : null,
+                        'source' => $validated['source'] ?? 'web',
+                        'theater_id' => $theaterId,
+                        'served_by_user_id' => $validated['served_by_user_id'] ?? null,
+                        'payment_method' => $validated['payment_method'] ?? ($isZeroAmountCheckout ? 'zero_amount' : 'payos'),
                         'subtotal' => $pricing['subtotal'],
                         'discount_amount' => $pricing['discount_amount'],
                         'voucher_discount' => $pricing['voucher_discount'],
@@ -197,6 +218,26 @@ class PaymentService
                     ]);
                 }
 
+                foreach ($pricing['seats'] as $seatData) {
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'item_type' => Seat::class,
+                        'item_id' => (int) $seatData['id'],
+                        'quantity' => 1,
+                        'unit_price' => (string) $seatData['price'],
+                        'total_price' => (string) $seatData['price'],
+                        'metadata' => [
+                            'seat_label' => $seatData['name'] ?? null,
+                            'row' => $seatData['row'] ?? null,
+                            'number' => $seatData['number'] ?? null,
+                            'seat_type' => $seatData['type'] ?? null,
+                            'audience_type' => $seatData['audience_type'] ?? 'adult',
+                            'student_card_verified' => (bool) ($seatData['student_card_verified'] ?? false),
+                            'pricing' => $seatData['pricing'] ?? null,
+                        ],
+                    ]);
+                }
+
                 foreach ($pricing['products'] as $productData) {
                     $quantity = (int) $productData['quantity'];
                     $itemType = $productData['item_type'] ?? $productData['type'] ?? 'product';
@@ -218,7 +259,7 @@ class PaymentService
                                 ->firstOrFail();
 
                             if ((int) $product->stock < $requiredStock) {
-                                throw new \RuntimeException("Combo {$combo->name} kh?ng c?n ?? s? l??ng.", 409);
+                                throw new \RuntimeException("Combo {$combo->name} không còn đủ số lượng.", 409);
                             }
 
                             $product->decrement('stock', $requiredStock);
@@ -242,7 +283,7 @@ class PaymentService
                     $product = Product::query()->whereKey($productData['id'])->lockForUpdate()->firstOrFail();
 
                     if ((int) $product->stock < $quantity) {
-                        throw new \RuntimeException("S?n ph?m {$product->name} kh?ng c?n ?? t?n kho.", 409);
+                        throw new \RuntimeException("Sản phẩm {$product->name} không còn đủ tồn kho.", 409);
                     }
 
                     $product->decrement('stock', $quantity);
@@ -267,7 +308,7 @@ class PaymentService
                     'gateway_order_code' => $order->gateway_order_code,
                     'amount' => $order->total_amount,
                     'payload' => [
-                        'showtime_id' => $showtime->id,
+                        'showtime_id' => $showtime?->id,
                         'seat_ids' => $seatIds,
                         'created_at' => now()->toISOString(),
                     ],
@@ -286,7 +327,7 @@ class PaymentService
 
             if ((float) $order->total_amount <= 0.0) {
                 app(AuditLogService::class)->record(
-                    $user,
+                    $actor,
                     'order.created',
                     $order,
                     [],
@@ -294,7 +335,7 @@ class PaymentService
                 );
 
                 app(AuditLogService::class)->record(
-                    $user,
+                    $actor,
                     'payment.created',
                     $payment,
                     [],
@@ -334,7 +375,7 @@ class PaymentService
             $order->setCheckoutUrl($checkoutUrl);
 
             app(AuditLogService::class)->record(
-                $user,
+                $actor,
                 'order.created',
                 $order,
                 [],
@@ -342,7 +383,7 @@ class PaymentService
             );
 
             app(AuditLogService::class)->record(
-                $user,
+                $actor,
                 'payment.created',
                 $payment,
                 [],
@@ -359,7 +400,7 @@ class PaymentService
                 ];
             },
             [
-                'path' => request()->path() ?? '/payment/initiate',
+                'path' => request()->path(),
                 'method' => 'POST',
                 'data' => $validated,
             ]
@@ -459,6 +500,8 @@ class PaymentService
                     'type' => (string) ($item['type'] ?? ''),
                     'id' => (int) ($item['id'] ?? $item),
                     'quantity' => (int) ($item['quantity'] ?? 1),
+                    'audience_type' => (string) ($item['audience_type'] ?? 'adult'),
+                    'student_card_verified' => (bool) ($item['student_card_verified'] ?? false),
                 ])
                 ->sortBy([['type', 'asc'], ['id', 'asc']])
                 ->values()
@@ -485,7 +528,36 @@ class PaymentService
                 $item->delete();
             }
 
+            $comboItems = OrderItem::query()
+                ->where('order_id', $lockedOrder->id)
+                ->where('item_type', Combo::class)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($comboItems as $item) {
+                $combo = Combo::query()->with('comboItems')->whereKey($item->item_id)->lockForUpdate()->first();
+                if ($combo === null) {
+                    continue;
+                }
+
+                foreach ($combo->comboItems as $comboItem) {
+                    Product::query()
+                        ->whereKey($comboItem->product_id)
+                        ->lockForUpdate()
+                        ->first()?->increment('stock', (int) $comboItem->quantity * (int) $item->quantity);
+                }
+                $item->delete();
+            }
+
             $payload = (array) $lockedOrder->payload;
+            $seatHoldId = data_get($payload, 'seat_hold_id');
+            if (is_numeric($seatHoldId)) {
+                SeatHold::query()
+                    ->whereKey((int) $seatHoldId)
+                    ->where('user_id', (int) data_get($payload, 'seat_hold_user_id', $lockedOrder->user_id))
+                    ->where('showtime_id', $lockedOrder->showtime_id)
+                    ->delete();
+            }
             $pointsUsed = (int) ($payload['points_used'] ?? 0);
             if (($payload['points_reserved'] ?? false) && $pointsUsed > 0) {
                 User::query()->whereKey($lockedOrder->user_id)->lockForUpdate()->first()?->increment('loyalty_points', $pointsUsed);
@@ -650,7 +722,7 @@ class PaymentService
             }
 
             SeatHold::query()
-                ->where('user_id', $order->user_id)
+                ->where('user_id', (int) data_get($order->payload, 'seat_hold_user_id', $order->user_id))
                 ->where('showtime_id', $order->showtime_id)
                 ->delete();
 
@@ -680,12 +752,12 @@ class PaymentService
         }, self::TRANSACTION_ATTEMPTS);
     }
 
-    private function generateIdempotencyKey(User $user, Showtime $showtime, array $validated): string
+    private function generateIdempotencyKey(User $user, ?Showtime $showtime, array $validated): string
     {
         // Normalize payload for consistent UUID generation
         $payload = [
             'user_id' => $user->id,
-            'showtime_id' => $showtime->id,
+            'showtime_id' => $showtime?->id,
             'items' => collect($validated['items'] ?? [])
                 ->map(fn ($item) => [
                     'type' => (string) ($item['type'] ?? ''),

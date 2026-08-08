@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\OperationalHealthController;
 use App\Http\Controllers\Api\V1\PriceController;
+use App\Http\Controllers\ContentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\PricingController;
@@ -11,7 +12,6 @@ use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\TheaterController;
-use App\Http\Controllers\ContentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('home', [HomeController::class, 'data']);

@@ -151,7 +151,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/users/pages/tickets.css') }}?v={{ config('app.asset_version') }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/orders.css') }}?v={{ config('app.asset_version') }}">
+    @vite('resources/css/admin/pages/orders.css')
 @endpush
 
 @push('scripts')

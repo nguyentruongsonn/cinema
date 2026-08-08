@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
@@ -33,8 +34,6 @@ class RegisterRequest extends FormRequest
         }
 
         // Auto-generate username from email if not provided
-        // WARNING: Race-prone - uniqueness validation happens after normalization
-        // Consider moving username generation to service layer
         if (! $this->filled('username') && $this->filled('email')) {
             $this->merge([
                 'username' => str($this->input('email'))->before('@')->slug('_')->toString(),
@@ -49,9 +48,27 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
-            'email' => ['required', 'email:rfc', 'max:255', 'unique:users,email'],
-            'username' => ['nullable', 'string', 'alpha_dash', 'min:3', 'max:50', 'unique:users,username'],
-            'phone' => ['nullable', 'string', 'regex:/^(0|\+84)[0-9]{9,10}$/', 'max:20'],
+            'email' => [
+                'required',
+                'email:rfc',
+                'max:255',
+                Rule::unique('users', 'email')->where(fn ($q) => $q->where('account_status', 'claimed')),
+            ],
+            'username' => [
+                'nullable',
+                'string',
+                'alpha_dash',
+                'min:3',
+                'max:50',
+                Rule::unique('users', 'username')->where(fn ($q) => $q->where('account_status', 'claimed')),
+            ],
+            'phone' => [
+                'nullable',
+                'string',
+                'regex:/^(0|\+84)[0-9]{9,10}$/',
+                'max:20',
+                Rule::unique('users', 'phone')->where(fn ($q) => $q->where('account_status', 'claimed')),
+            ],
             'password' => [
                 'required',
                 'string',
@@ -59,7 +76,6 @@ class RegisterRequest extends FormRequest
                 'confirmed',
                 Password::min(8)->letters()->numbers(),
             ],
-            // NOTE: Terms is nullable. If this is a legal requirement, consider making it required.
             'terms' => ['nullable', 'accepted'],
         ];
     }
@@ -74,7 +90,9 @@ class RegisterRequest extends FormRequest
             'email.unique' => 'Email đã được sử dụng.',
             'username.alpha_dash' => 'Tên đăng nhập chỉ được chứa chữ, số, dấu gạch ngang và gạch dưới.',
             'username.unique' => 'Tên đăng nhập đã được sử dụng.',
+            'phone.required' => 'Vui lòng nhập số điện thoại.',
             'phone.regex' => 'Số điện thoại không đúng định dạng Việt Nam.',
+            'phone.unique' => 'Số điện thoại này đã được đăng ký tài khoản.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
             'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
             'terms.accepted' => 'Bạn cần đồng ý điều khoản sử dụng.',

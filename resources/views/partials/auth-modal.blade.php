@@ -78,7 +78,7 @@
                                         name="password" placeholder="••••••••"
                                         required minlength="6" autocomplete="current-password">
                                     <button class="cinema-auth-toggle-password" type="button"
-                                        data-target="#loginPassword">
+                                        data-target="#loginPassword" aria-label="Hiển thị mật khẩu" aria-pressed="false">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>
@@ -154,7 +154,7 @@
                                         name="password" placeholder="Ít nhất 8 ký tự"
                                         required minlength="8" autocomplete="new-password">
                                     <button class="cinema-auth-toggle-password" type="button"
-                                        data-target="#regPassword">
+                                        data-target="#regPassword" aria-label="Hiển thị mật khẩu" aria-pressed="false">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>

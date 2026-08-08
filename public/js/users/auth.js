@@ -129,8 +129,15 @@ class AuthManager {
                 this.modal.hide();
                 this.showToast('Đăng nhập thành công!', 'success');
 
-                // Reload page immediately to trigger SSR with new auth state
-                setTimeout(() => window.location.reload(), 300);
+                // Redirect if provided by backend, else reload current page
+                const redirectUrl = response.data.redirect_url || '/';
+                setTimeout(() => {
+                    if (redirectUrl === window.location.pathname) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = redirectUrl;
+                    }
+                }, 300);
             } else {
                 this.showAlert('login', response.message || 'Đăng nhập thất bại');
             }
@@ -395,10 +402,14 @@ class AuthManager {
                 input.type = 'text';
                 icon.classList.remove('bi-eye');
                 icon.classList.add('bi-eye-slash');
+                btn.setAttribute('aria-label', 'Ẩn mật khẩu');
+                btn.setAttribute('aria-pressed', 'true');
             } else {
                 input.type = 'password';
                 icon.classList.remove('bi-eye-slash');
                 icon.classList.add('bi-eye');
+                btn.setAttribute('aria-label', 'Hiển thị mật khẩu');
+                btn.setAttribute('aria-pressed', 'false');
             }
         }
     }

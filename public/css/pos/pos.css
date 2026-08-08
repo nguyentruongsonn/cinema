@@ -1,0 +1,1165 @@
+/* ============================================================
+   POS KIOSK – Cinema Premium (Redesigned)
+   Dark cinema theme | Sleek Neon Red accents
+   ============================================================ */
+
+:root {
+    --pos-bg: var(--admin-bg-primary, transparent);
+    --pos-text: var(--admin-text-secondary, #f1f1f3);
+    --pos-surface: var(--admin-bg-secondary, #1e1e24);
+    --pos-card: var(--admin-bg-tertiary, #212126);
+    --pos-border: var(--admin-border, rgba(255, 255, 255, 0.08));
+    --pos-red: var(--admin-primary, #e50914);
+    --pos-red-glow: rgba(229, 9, 20, 0.24);
+    --pos-text-light: var(--admin-text-primary, #ffffff);
+    --pos-transition: var(--admin-transition-base, 200ms ease-in-out);
+}.pos-integrated-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    flex: 1;
+}
+
+/* Stepper */
+.pos-stepper-wrapper {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 32px;
+    position: relative;
+    padding-top: 20px; /* Padding for visual balance */
+}
+.pos-stepper-track {
+    position: absolute;
+    top: 31px; /* 20px padding + 11px (half of 22px circle) */
+    left: 60px; /* half of 120px pos-step width */
+    right: 60px;
+    height: 3px;
+    background: #4B5563; /* Base track color (darker gray for dark mode) */
+    z-index: 1;
+}
+.pos-stepper-progress {
+    height: 100%;
+    background: #E50914; /* Brand red progress */
+    transition: width 0.4s ease;
+}
+.pos-stepper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+    width: 100%;
+}
+.pos-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #9CA3AF; /* Inactive gray text */
+    width: 120px; /* Fixed width to center text nicely */
+}
+.pos-step.active, .pos-step.active-prev {
+    color: #FFFFFF;
+}
+.pos-step.active .pos-step-label {
+    color: #E50914; /* Red text for active label */
+}
+.pos-step-circle {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #555; /* Inactive circle color */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+}
+.pos-step.active .pos-step-circle, .pos-step.active-prev .pos-step-circle {
+    background: #FF4B4B;
+}
+.pos-step.active .pos-step-circle {
+    box-shadow: 0 0 0 4px rgba(255, 75, 75, 0.2);
+}
+.pos-step-label {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-transform: capitalize;
+}
+
+.pos-navbar-right {
+    display: flex;
+    gap: 16px;
+}
+.pos-nav-btn {
+    background: #555;
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--pos-transition);
+}
+.pos-nav-btn:hover {
+    background: #666;
+}
+
+/* ── Main Layout ──────────────────────────────────────── */
+.pos-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 40px 100px; /* reduced top padding */
+}
+.pos-main .admin-filter-container {
+    margin-bottom: var(--admin-space-lg, 16px);
+}
+
+.pos-date-shortcut {
+    min-height: var(--admin-input-height, 40px);
+}
+
+.pos-date-shortcut.active {
+    background: var(--admin-primary, #e50914);
+    border-color: var(--admin-primary, #e50914);
+    color: var(--admin-text-primary, #fff);
+}
+.pos-panel {
+    max-width: 100%;
+}
+
+.pos-step-title {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 24px;
+}
+
+/* Movie Container */
+.pos-movie-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+.pos-movie-card {
+    display: flex;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 24px;
+    gap: 24px;
+    color: #FFFFFF; /* White text */
+    transition: var(--pos-transition);
+}
+.pos-movie-card:hover {
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.pos-movie-poster {
+    width: 140px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: var(--pos-transition);
+}
+.pos-movie-poster.selected {
+    box-shadow: 0 0 0 3px var(--pos-red);
+}
+
+.pos-movie-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.pos-movie-title {
+    font-size: 26px;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+.pos-movie-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.pos-tag {
+    background: #374151; /* Darker gray pill */
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #D1D5DB;
+}
+
+.pos-format-group {
+    margin-bottom: 20px;
+}
+.pos-format-title {
+    font-size: 14px;
+    color: #D1D5DB;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.pos-times {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.pos-time-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #d4d4d8;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.pos-time-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+.pos-time-btn.active {
+    background: linear-gradient(135deg, #e50914, #b8070f);
+    border-color: #e50914;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(229, 9, 20, 0.3);
+}
+.pos-time-btn:disabled,
+.pos-time-btn.disabled {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: #666666 !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+}
+
+/* Step 2: Seat Map */
+#panel-step-2 {
+    width: 100%;
+    margin: 0 auto;
+}
+.pos-seat-layout-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+.pos-seat-map-area {
+    width: 100%;
+    background: var(--pos-bg);
+    border-radius: 16px;
+    padding: 0 20px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Shorten distance from screen to seat map below, while restoring full width */
+.pos-seat-map-area .screen-display {
+    width: 100% !important;
+    margin-top: 20px !important;
+    margin-bottom: 15px !important; /* Shorten gap between screen and seats */
+}
+/* Add red glow to poster in seat step */
+.pos-seat-movie-info .pos-movie-poster {
+    width: 100%;
+    box-shadow: 0 0 30px 10px rgba(229,9,20,0.6);
+    border: 2px solid var(--pos-red);
+}
+
+/* Sold marker overlay for booked/held seats on map */
+.seat .sold-marker {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9CA3AF;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: monospace;
+    pointer-events: none;
+    z-index: 5;
+}
+
+
+/* Step 3: Snacks */
+.pos-category-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.pos-topbar-theater {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--admin-space-sm, 8px);
+    min-width: 220px;
+}
+
+.admin-topbar:has(.admin-topbar-center) {
+    position: relative;
+}
+
+.admin-topbar-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.pos-topbar-theater > i {
+    color: var(--admin-text-muted, #a1a1aa);
+}
+
+.pos-topbar-theater .admin-select {
+    min-width: 0;
+}
+
+@media (max-width: 767.98px) {
+    .admin-topbar-center {
+        position: static;
+        transform: none;
+        margin-left: auto;
+        margin-right: var(--admin-space-md, 12px);
+    }
+
+    .pos-topbar-theater {
+        min-width: 0;
+    }
+
+    .pos-topbar-theater > i {
+        display: none;
+    }
+}
+.pos-cat-btn {
+    background: var(--pos-card);
+    border: 1px solid #444;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    flex: 1;
+    text-align: center;
+    transition: var(--pos-transition);
+}
+.pos-cat-btn.active {
+    background: rgba(229, 9, 20, 0.1);
+    border-color: var(--pos-red);
+    color: var(--pos-text);
+    box-shadow: 0 0 10px rgba(229,9,20,0.3);
+}
+
+.pos-product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+.pos-product-card {
+    background: var(--pos-card);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid transparent;
+    transition: var(--pos-transition);
+}
+.pos-product-card.active {
+    border-color: var(--pos-red);
+    box-shadow: 0 0 15px rgba(229,9,20,0.5);
+}
+.pos-product-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    background: #000;
+}
+.pos-product-info {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.pos-product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.pos-product-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: #DDD;
+}
+.pos-product-price {
+    font-size: 15px;
+    color: #FFF;
+}
+.pos-qty-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.pos-qty-btn {
+    background: #333;
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 20px;
+    cursor: pointer;
+}
+.pos-qty-btn.add {
+    background: var(--pos-red);
+}
+.pos-qty-val {
+    font-size: 18px;
+    font-weight: 500;
+}
+
+/* Step 4: Payment */
+.pos-payment-layout {
+    display: flex;
+    gap: 40px;
+}
+.pos-payment-left {
+    flex: 1;
+    background: var(--pos-card);
+    padding: 24px;
+    border-radius: 16px;
+}
+.pos-payment-right {
+    flex: 1;
+    background: var(--pos-card);
+    padding: 24px;
+    border-radius: 16px;
+}
+/* ── Footer ───────────────────────────────────────────── */
+.pos-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 40px;
+    background: rgba(18, 18, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+.pos-footer-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+}
+.pos-total-label {
+    font-size: 14px;
+    color: #9CA3AF;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.pos-total-amount {
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+}
+.pos-footer-right {
+    display: flex;
+    gap: 16px;
+}
+.pos-btn-footer-back {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #d4d4d8;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.pos-btn-footer-back:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+.pos-btn-footer-next {
+    background: linear-gradient(135deg, #e50914, #b8070f);
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.35);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pos-btn-footer-next:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.5);
+    transform: translateY(-1px);
+}
+.pos-btn-footer-next:disabled {
+    background: #4B5563;
+    color: #9CA3AF;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Utilities */
+.w-100 { width: 100%; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 16px; }
+.mt-4 { margin-top: 24px; }
+.text-start { text-align: left; }
+/* Cart Items */
+.pos-cart-summary {
+    background: #252A33;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid #374151;
+}
+
+.pos-cart-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px dashed #374151;
+}
+
+.pos-cart-item:last-child {
+    border-bottom: none;
+}
+
+.pos-cart-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.pos-cart-item-icon.seat {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+}
+
+.pos-cart-item-icon.product {
+    background: rgba(245, 158, 11, 0.1);
+    color: #F59E0B;
+}
+
+.pos-cart-item-name {
+    font-weight: 600;
+    color: white;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.pos-cart-item-sub {
+    font-size: 12px;
+    color: #9CA3AF;
+}
+
+.pos-cart-item-price {
+    font-weight: 600;
+    color: #10B981;
+    font-size: 15px;
+    text-align: right;
+    min-width: 80px;
+}
+
+.pos-cart-remove {
+    background: none;
+    border: none;
+    color: #EF4444;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+    opacity: 0.7;
+    transition: 0.2s;
+}
+.pos-cart-remove:hover { opacity: 1; }
+
+.pos-ticket-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.pos-ticket-type {
+    min-height: 32px;
+    padding: 4px 8px;
+    border: 1px solid #4B5563;
+    border-radius: 6px;
+    background: #1F2937;
+    color: #F3F4F6;
+    font-size: 12px;
+}
+
+.pos-ticket-verify {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #FBBF24;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.pos-ticket-remove {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 4px 8px;
+}
+
+.pos-student-row { display: none !important; }
+
+.pos-seat-interactive.seat-holding .seat-icon-shape,
+.seat-demo.seat-holding .seat-icon-shape {
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.7));
+    opacity: 1;
+}
+
+.pos-seat-interactive.seat-holding,
+.seat-demo.seat-holding {
+    color: #F59E0B !important;
+    opacity: 1;
+}
+
+.pos-qty-ctrl {
+    display: inline-flex;
+    align-items: center;
+    background: #1F2937;
+    border-radius: 6px;
+    padding: 2px;
+    margin-top: 4px;
+    border: 1px solid #374151;
+}
+.pos-qty-btn {
+    background: none;
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.pos-qty-btn:hover { background: #374151; }
+.pos-qty-val {
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    width: 24px;
+    text-align: center;
+}
+
+.pos-discount-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed #374151;
+}
+.pos-discount-item:last-child {
+    border-bottom: none;
+}
+.pos-discount-label {
+    color: #F59E0B;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pos-discount-amount {
+    color: #F59E0B;
+    font-weight: 600;
+    font-size: 14px;
+}
+/* Payment Methods */
+.pos-payment-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.pos-payment-method {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 92px;
+    background: #20242d;
+    border: 1px solid #363c48;
+    border-radius: 12px;
+    padding: 16px 18px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    user-select: none;
+}
+.pos-payment-method:hover {
+    border-color: #687386;
+    background: #252b36;
+    transform: translateY(-1px);
+}
+.pos-payment-method.active,
+.pos-payment-method.selected {
+    border-color: #E50914;
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.18), rgba(229, 9, 20, 0.05));
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.18), 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.pos-payment-method-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 27px;
+}
+.pos-payment-method .pos-payment-method-icon {
+    color: var(--admin-text-muted, #a1a1aa);
+}
+.pos-payment-method.active .pos-payment-method-icon,
+.pos-payment-method.selected .pos-payment-method-icon {
+    background: rgba(229, 9, 20, 0.18);
+    color: #fff;
+}
+.pos-payment-method-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+}
+.pos-payment-method::after {
+    content: '';
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-left: auto;
+    flex: 0 0 22px;
+    border: 1px solid #596273;
+    border-radius: 50%;
+    color: transparent;
+    font-size: 13px;
+}
+.pos-payment-method.active::after,
+.pos-payment-method.selected::after {
+    content: '✓';
+    border-color: #E50914;
+    background: #E50914;
+    color: #fff;
+}
+.pos-payment-method:focus-visible {
+    outline: 2px solid #f87171;
+    outline-offset: 3px;
+}
+/* Section Headings */
+/* Layout adjustments */
+.pos-payment-layout {
+    display: flex;
+    gap: 24px;
+}
+.pos-payment-left { flex: 1; min-width: 0; }
+.pos-payment-right { flex: 1; min-width: 0; }
+.pos-seat-legend-centered { margin-top: 20px; justify-content: center; }
+.pos-inline-spinner { width: 16px; height: 16px; border-width: 2px; }
+.pos-ui-hidden { display: none; }
+.pos-nowrap { white-space: nowrap; }
+.pos-qr-image { max-width: 200px; }
+.pos-seat-movie-poster { margin-bottom: 20px; }
+.pos-seat-movie-title { margin-bottom: 8px; }
+.pos-seat-movie-room { color: var(--pos-muted); font-size: 14px; margin-bottom: 4px; }
+.pos-seat-movie-time { color: var(--pos-red); font-size: 18px; font-weight: 700; }
+.pos-cart-item-main { flex: 1; }
+.pos-skeleton-poster { min-height: 210px; }
+.pos-poster-placeholder { display: flex; align-items: center; justify-content: center; font-size: 48px; background: #222; }
+.pos-success-line { margin-bottom: 6px; }
+.pos-success-total { color: var(--pos-gold); }
+.pos-integrated-container {
+    color: var(--admin-text-primary, #fff);
+    font-family: var(--admin-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: var(--admin-font-size-base, 0.88rem);
+}
+
+.pos-main {
+    padding: 0 0 96px;
+}
+
+.pos-payment-layout {
+    gap: var(--admin-space-xl, 24px);
+    align-items: flex-start;
+}
+
+.pos-payment-left,
+.pos-payment-right {
+    align-self: flex-start;
+    min-height: 0;
+    padding: var(--admin-space-xl, 24px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--admin-radius-xl, 12px);
+    box-shadow: var(--admin-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.pos-phone-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: stretch;
+    gap: var(--admin-space-sm, 8px);
+}
+
+.pos-phone-row #btnLookup {
+    width: 88px;
+}
+
+.pos-phone-row #btnWalkIn {
+    width: var(--admin-input-height, 40px);
+    padding-inline: 0;
+}
+
+.pos-customer-create-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: var(--admin-space-sm, 8px);
+}
+
+.pos-customer-create-row .admin-btn {
+    min-width: 168px;
+}
+
+.pos-customer-card .admin-badge {
+    flex-shrink: 0;
+}
+
+.pos-cart-summary {
+    padding: var(--admin-space-lg, 16px);
+}
+
+.pos-payment-methods {
+    gap: var(--admin-space-md, 12px);
+}
+
+.pos-payment-method {
+    min-height: 80px;
+    padding: var(--admin-space-lg, 16px);
+    background: var(--admin-surface, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--admin-radius-lg, 10px);
+    color: inherit;
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+}
+
+.pos-payment-method:hover {
+    background: var(--admin-surface-hover, rgba(255, 255, 255, 0.07));
+    border-color: var(--admin-border-focus, rgba(255, 255, 255, 0.3));
+}
+
+.pos-payment-method.active,
+.pos-payment-method.selected {
+    background: rgba(229, 9, 20, 0.1);
+    border-color: var(--admin-primary, #e50914);
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.08);
+}
+
+.pos-payment-method-label {
+    color: var(--admin-text-secondary, #f1f1f3);
+    font-size: var(--admin-font-size-base, 0.88rem);
+    font-weight: var(--admin-font-weight-semibold, 600);
+}
+
+.pos-payment-method-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+    border-radius: var(--admin-radius-lg, 10px);
+    font-size: 20px;
+}
+
+.pos-footer {
+    padding: var(--admin-space-lg, 16px) var(--admin-space-2xl, 32px);
+    background: rgba(24, 24, 27, 0.96);
+    border-top: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+}
+
+.pos-total-label {
+    color: var(--admin-text-muted, #a1a1aa);
+    font-size: var(--admin-font-size-xs, 0.72rem);
+    font-weight: var(--admin-font-weight-bold, 700);
+    letter-spacing: 0.04em;
+}
+
+.pos-total-amount {
+    color: var(--admin-text-primary, #fff);
+    font-size: var(--admin-font-size-3xl, 1.5rem);
+    font-weight: var(--admin-font-weight-bold, 700);
+}
+
+.pos-btn-footer-back {
+    padding: var(--admin-btn-padding-y, 0.5rem) var(--admin-btn-padding-x, 1.25rem);
+    background: var(--admin-surface, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--admin-radius-md, 8px);
+    color: var(--admin-text-secondary, #f1f1f3);
+    font-family: var(--admin-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: var(--admin-font-size-base, 0.88rem);
+}
+
+.pos-btn-footer-next {
+    padding: var(--admin-btn-padding-y, 0.5rem) var(--admin-btn-padding-x-lg, 1.5rem);
+    border-radius: var(--admin-radius-md, 8px);
+    font-family: var(--admin-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: var(--admin-font-size-base, 0.88rem);
+    box-shadow: var(--admin-shadow-primary, 0 4px 16px rgba(229, 9, 20, 0.3));
+}
+
+@media (max-width: 1024px) {
+    .pos-payment-layout {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 576px) {
+    .pos-payment-methods {
+        grid-template-columns: 1fr;
+    }
+
+    .pos-phone-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .pos-phone-row .admin-input {
+        flex-basis: 100%;
+        grid-column: 1 / -1;
+    }
+
+    .pos-phone-row .admin-btn {
+        flex: 1;
+    }
+
+    .pos-phone-row #btnLookup {
+        width: auto;
+    }
+
+    .pos-customer-create-row {
+        grid-template-columns: 1fr;
+    }
+
+    .pos-customer-create-row .admin-btn {
+        width: 100%;
+    }
+}
+
+/* POS payment panels follow the shared Admin card/form pattern. */
+.pos-payment-left,
+.pos-payment-right {
+    padding: 0;
+    overflow: hidden;
+}
+
+.pos-payment-left .admin-form-label span {
+    color: var(--admin-text-muted, #a1a1aa);
+    font-weight: var(--admin-font-weight-normal, 400);
+    text-transform: none;
+}
+
+.pos-customer-header {
+    display: flex;
+    align-items: center;
+    gap: var(--admin-space-md, 12px);
+}
+
+.pos-customer-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    background: var(--admin-surface, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--admin-radius-lg, 10px);
+    color: var(--admin-primary-light, #ff1a1f);
+    font-size: var(--admin-font-size-base, 0.88rem);
+    font-weight: var(--admin-font-weight-bold, 700);
+}
+
+.pos-customer-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.pos-customer-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--admin-space-sm, 8px);
+}
+
+.pos-customer-name {
+    overflow: hidden;
+    color: var(--admin-text-primary, #fff);
+    font-size: var(--admin-font-size-base, 0.88rem);
+    font-weight: var(--admin-font-weight-semibold, 600);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pos-customer-phone {
+    margin-top: var(--admin-space-xs, 4px);
+    color: var(--admin-text-muted, #a1a1aa);
+    font-size: var(--admin-font-size-sm, 0.8rem);
+}
+
+.pos-loyalty-bar {
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--admin-space-md, 12px);
+    margin-top: var(--admin-space-md, 12px);
+    padding: var(--admin-space-md, 12px);
+    background: var(--admin-surface, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--admin-radius-md, 8px);
+}
+
+.pos-loyalty-points,
+.pos-loyalty-value {
+    color: var(--admin-text-primary, #fff);
+    font-size: var(--admin-font-size-base, 0.88rem);
+    font-weight: var(--admin-font-weight-semibold, 600);
+}
+
+.pos-loyalty-label {
+    margin-top: var(--admin-space-xs, 4px);
+    color: var(--admin-text-muted, #a1a1aa);
+    font-size: var(--admin-font-size-xs, 0.72rem);
+}
+
+.pos-points-row {
+    grid-template-columns: auto minmax(72px, 96px) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--admin-space-sm, 8px);
+    margin-top: var(--admin-space-md, 12px);
+}
+
+.pos-points-row .admin-form-label {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.pos-points-input {
+    width: 100%;
+}
+
+.pos-points-discount {
+    overflow: hidden;
+    color: var(--admin-text-muted, #a1a1aa);
+    font-size: var(--admin-font-size-sm, 0.8rem);
+    font-weight: var(--admin-font-weight-medium, 500);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pos-customer-action-row {
+    justify-content: stretch;
+}
+
+.pos-customer-action-row .admin-btn-block {
+    width: 100%;
+}
+
+.pos-payment-left #btnWalkIn {
+    width: var(--admin-input-height, 40px);
+    padding-inline: 0;
+}
+
+.pos-payment-left .admin-btn-icon {
+    min-height: var(--admin-input-height, 40px);
+}
+
+.pos-payment-right .pos-cart-summary {
+    margin-bottom: 0;
+    padding: 0;
+    background: var(--admin-surface, rgba(255, 255, 255, 0.03));
+    border-color: var(--admin-border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--admin-radius-lg, 10px);
+}
+
+.pos-payment-right .pos-cart-summary .admin-card-body {
+    padding: var(--admin-space-lg, 16px);
+}
+
+.pos-payment-method {
+    min-height: 76px;
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.pos-payment-method.active,
+.pos-payment-method.selected {
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.08);
+}
+
+.pos-transaction-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--admin-space-lg, 16px);
+}
+
+.pos-payment-method:disabled,
+.pos-payment-left .admin-btn[aria-busy="true"] {
+    cursor: wait;
+}
+
+.pos-payment-left .admin-btn[aria-busy="true"] .pos-spinner {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+}
+
+@media (max-width: 576px) {
+    .pos-customer-header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .pos-customer-header #btnChangeCustomer {
+        width: 100%;
+    }
+
+    .pos-points-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .pos-points-row .admin-form-label,
+    .pos-points-discount {
+        grid-column: 1 / -1;
+    }
+}

@@ -149,8 +149,7 @@ html.admin-navigating .admin-main {
     transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.table-responsive,
-.admin-table-container {
+.table-responsive {
     content-visibility: auto;
     contain-intrinsic-size: auto 640px;
 }

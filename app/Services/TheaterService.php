@@ -29,6 +29,11 @@ class TheaterService
 
             $query = Theater::query()->with(['screens', 'branch']);
 
+            $actor = auth()->user();
+            if ($actor && $actor->requiresTheaterScope()) {
+                $query->whereIn('theaters.id', $actor->theaters()->pluck('theaters.id'));
+            }
+
             // Search by name, address or branch name
             if (!empty($filters['q'])) {
                 $keyword = $filters['q'];
@@ -177,7 +182,7 @@ class TheaterService
                 ->with(['format', 'sound'])
                 ->when(!empty($filters['status']), function ($q) use ($filters) {
                     if ($filters['status'] === 'active') {
-                        $q->active();
+                        $q->where('status', 1);
                     }
                 })
                 ->paginate($perPage);

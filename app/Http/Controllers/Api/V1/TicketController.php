@@ -121,11 +121,20 @@ class TicketController extends Controller
             $ticketCode = $this->extractTicketCode($request->input('ticket_code'));
 
             if ($ticketCode === '') {
-                return $this->error('Vui l?ng nh?p m? v?.', 422);
+                return $this->error('Vui lòng nhập mã vé.', 422);
             }
+
+            $user = $request->user();
+            $theaterIds = $user instanceof User && $user->requiresTheaterScope()
+                ? $user->theaters()->pluck('theaters.id')->all()
+                : [];
 
             $ticket = Ticket::query()
                 ->where('ticket_code', $ticketCode)
+                ->when($theaterIds !== [], fn ($query) => $query->whereHas(
+                    'showtime.screen',
+                    fn ($screenQuery) => $screenQuery->whereIn('theater_id', $theaterIds)
+                ))
                 ->with([
                     'order:id,code,total_amount,created_at',
                     'showtime:id,scheduled_at,screen_id,movie_id',
@@ -138,29 +147,29 @@ class TicketController extends Controller
                 ->first();
 
             if (! $ticket) {
-                return $this->error('M? v? kh?ng t?n t?i.', 404);
+                return $this->error('Mã vé không tồn tại.', 404);
             }
 
             if ($ticket->status === 'used') {
-                $checkedInAt = $ticket->checked_in_at?->format('d/m/Y H:i') ?? 'kh?ng x?c ??nh';
+                $checkedInAt = $ticket->checked_in_at?->format('d/m/Y H:i') ?? 'không xác định';
 
-                return $this->error('V? ?? ???c s? d?ng tr??c ?? v?o l?c ' . $checkedInAt, 409);
+                return $this->error('Vé đã được sử dụng trước đó vào lúc ' . $checkedInAt, 409);
             }
 
             if ($ticket->status === 'cancelled') {
-                return $this->error('V? ?? b? h?y.', 400);
+                return $this->error('Vé đã bị hủy.', 400);
             }
 
             if ($ticket->status === 'refunded') {
-                return $this->error('V? ?? ???c ho?n ti?n.', 400);
+                return $this->error('Vé đã được hoàn tiền.', 400);
             }
 
             if ($ticket->showtime && $ticket->showtime->scheduled_at < now()) {
-                return $this->error('Su?t chi?u ?? qua. V? kh?ng c?n hi?u l?c.', 400);
+                return $this->error('Suất chiếu đã qua. Vé không còn hiệu lực.', 400);
             }
 
             if (! $ticket->markAsUsed()) {
-                return $this->error('V? ?? ???c x?c th?c b?i y?u c?u kh?c.', 409);
+                return $this->error('Vé đã được xác thực bởi yêu cầu khác.', 409);
             }
 
             $ticket->refresh();
@@ -174,15 +183,15 @@ class TicketController extends Controller
                 'screen' => $ticket->showtime->screen->name ?? 'N/A',
                 'theater' => $ticket->showtime->screen->theater->name ?? 'N/A',
                 'branch' => $ticket->showtime->screen->theater->branch->name ?? 'N/A',
-                'status' => '?? x?c th?c',
+                'status' => 'Đã xác thực',
                 'verified_at' => $ticket->checked_in_at?->format('d/m/Y H:i:s'),
-            ], 'V? h?p l?. ?? x?c th?c th?nh c?ng.');
+            ], 'Vé hợp lệ. Đã xác thực thành công.');
         } catch (ValidationException $e) {
-            return $this->error('D? li?u kh?ng h?p l?.', 422, $e->errors());
+            return $this->error('Dữ liệu không hợp lệ.', 422, $e->errors());
         } catch (Throwable $e) {
             report($e);
 
-            return $this->error('?? x?y ra l?i khi x?c th?c v?.', 500);
+            return $this->error('Đã xảy ra lỗi khi xác thực vé.', 500);
         }
     }
 

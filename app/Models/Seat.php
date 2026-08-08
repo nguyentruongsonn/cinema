@@ -27,11 +27,13 @@ class Seat extends Model
         'status' => 'boolean',
     ];
 
+    /** @return BelongsTo<Screen, $this> */
     public function screen(): BelongsTo
     {
         return $this->belongsTo(Screen::class);
     }
 
+    /** @return BelongsTo<SeatType, $this> */
     public function seatType(): BelongsTo
     {
         return $this->belongsTo(SeatType::class);

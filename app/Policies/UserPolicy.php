@@ -39,6 +39,10 @@ class UserPolicy
             return true;
         }
 
+        if ($user->hasRole('theater_manager') && $this->sharesTheater($user, $targetUser)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -49,7 +53,7 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('create_users');
+        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasRole('theater_manager') || $user->hasPermission('users.create') || $user->hasPermission('staff.create') || $user->hasPermission('create_users');
     }
 
     /**
@@ -79,6 +83,10 @@ class UserPolicy
             return true;
         }
 
+        if ($user->hasRole('theater_manager') && $this->sharesTheater($user, $targetUser)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -104,6 +112,10 @@ class UserPolicy
             return false;
         }
 
+        if ($user->hasRole('theater_manager') && $this->sharesTheater($user, $targetUser)) {
+            return true;
+        }
+
         return true;
     }
 
@@ -122,6 +134,10 @@ class UserPolicy
 
         if ($this->isAdministrativeUser($targetUser) && !$user->hasRole('super-admin')) {
             return false;
+        }
+
+        if ($user->hasRole('theater_manager') && $this->sharesTheater($user, $targetUser)) {
+            return true;
         }
 
         // Only super-admin or delegated role managers can change non-administrative users.
@@ -238,5 +254,12 @@ class UserPolicy
     private function isAdministrativeUser(User $user): bool
     {
         return $user->hasAnyRole(['admin', 'super-admin']);
+    }
+
+    private function sharesTheater(User $user, User $targetUser): bool
+    {
+        $userTheaters = $user->theaters()->pluck('theaters.id')->toArray();
+        $targetTheaters = $targetUser->theaters()->pluck('theaters.id')->toArray();
+        return count(array_intersect($userTheaters, $targetTheaters)) > 0;
     }
 }

@@ -125,7 +125,7 @@ class MovieProductControllerRegressionTest extends TestCase
         ]);
 
         $this->assertSame(1, $products->total());
-        $this->assertSame('Active Popcorn', $products->items()[0]->name);
+        $this->assertSame('Active Popcorn', $products->items()[0]['name']);
         $this->assertSame(50, $products->perPage());
     }
 

@@ -209,7 +209,7 @@
 @endsection
 
 @section('scripts')
-<script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}">
     window.ORDER_DATA = @json([
         'id' => $order->id,
         'code' => $order->code,

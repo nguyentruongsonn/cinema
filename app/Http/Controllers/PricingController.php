@@ -120,7 +120,7 @@ class PricingController extends Controller
         ]);
 
         // Resolve format key from format relation or fallback to '2D'
-        $formatLabel = $showtime->format?->name ?? '2D';
+        $formatLabel = $showtime->format->name;
         $formatKey   = str_contains(strtoupper($formatLabel), '3D') ? '3D' : '2D';
 
         $result = $this->pricingService->calculate(
@@ -128,15 +128,15 @@ class PricingController extends Controller
             scheduledAt:     $showtime->scheduled_at,
             customerType:    $validated['customer_type']  ?? 'adult',
             isDoubleSeat:    (bool) ($validated['is_double_seat'] ?? false),
-            movieSurcharge:  (int) ($showtime->movie?->surcharge ?? 0),
+            movieSurcharge:  (int) $showtime->movie->surcharge,
             extraHolidays:   [],
-            formatSurcharge: (int) ($showtime->format?->surcharge ?? 0),
+            formatSurcharge: (int) $showtime->format->surcharge,
             seatSurcharge:   0, // Seat type pricing not included - applied at order creation
-            theaterPricing:  $showtime->screen?->theater?->pricing_profile
+            theaterPricing:  $showtime->screen->theater->pricing_profile
         );
 
         // Add showtime reference metadata (informational only)
-        $result['showtime_base_price'] = (int) $showtime->price;
+        $result['showtime_base_price'] = (int) $showtime->getAttribute('price');
         $result['showtime_id']         = $showtime->id;
 
         return $this->successResponse($result, 'Showtime ticket price calculated');

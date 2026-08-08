@@ -279,18 +279,24 @@ class ScreenController extends Controller
     /* ── Format CRUD Actions ────────────────────────────────────────── */
     public function storeFormat(StoreFormatRequest $request)
     {
+        $this->authorize('create', Format::class);
+
         $format = Format::create($request->validated());
         return response()->json(['success' => true, 'message' => 'Tạo định dạng chiếu thành công.', 'data' => $format]);
     }
 
     public function updateFormat(UpdateFormatRequest $request, Format $format)
     {
+        $this->authorize('update', $format);
+
         $format->update($request->validated());
         return response()->json(['success' => true, 'message' => 'Cập nhật định dạng chiếu thành công.', 'data' => $format]);
     }
 
     public function destroyFormat(Format $format)
     {
+        $this->authorize('delete', $format);
+
         // Explicit dependency check before deletion
         if ($format->screens()->exists()) {
             return response()->json([

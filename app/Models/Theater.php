@@ -29,6 +29,7 @@ class Theater extends Model
         'pricing_profile' => 'json',
     ];
 
+    /** @return BelongsTo<Branch, $this> */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);

@@ -126,8 +126,8 @@ class FoodAnalyticsService
         return [
             'total_revenue'   => number_format((float) ($totals->total_revenue ?? 0), 2, '.', ''),
             'total_quantity'  => (int) ($totals->total_qty ?? 0),
-            'best_combo_name' => $best?->name ?? '—',  // "combo" for frontend compatibility
-            'best_combo_qty'  => (int) ($best?->qty ?? 0),
+            'best_combo_name' => data_get($best, 'name', '—'),  // "combo" for frontend compatibility
+            'best_combo_qty'  => (int) data_get($best, 'qty', 0),
         ];
     }
 

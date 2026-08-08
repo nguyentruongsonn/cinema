@@ -7,7 +7,7 @@
 
     const API_COMBO = '/admin/combos/stats';
     const API_FOOD = '/admin/food/stats';
-    const PALETTE = ['#e50914','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#a3e635','#06b6d4'];
+    const PALETTE = ['#ff5a5f','#22c55e','#38bdf8','#fbbf24','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#60a5fa'];
 
     let currentType = 'combo'; // Track current tab
 
@@ -298,7 +298,8 @@
     /* ── Wait for authManager (No longer needed) ────────────────────── */
 
     /* ── API call ───────────────────────────────────────────────────── */
-    async function loadStats() {
+    async function loadStats(options = {}) {
+        const { showSkeleton = true, skipCache = false } = options;
         const start = els.filterStart?.value;
         const end   = els.filterEnd?.value;
         if (!start || !end) return;
@@ -309,13 +310,14 @@
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
 
         applyTypeLabels();
-        showLoading();
+        if (showSkeleton) showLoading();
         try {
             const api = currentType === 'combo' ? API_COMBO : API_FOOD;
             const url = `${api}?start_date=${start}&end_date=${end}`;
             const response = await window.AdminCore.apiFetch(`/api/v1${url}`, {
                 requestKey: 'combos:stats',
                 cacheTtl: 30000,
+                skipCache,
             });
             if (!response?.ok) throw new Error('Không thể tải thống kê sản phẩm.');
             const res = await response.json();
@@ -331,7 +333,7 @@
             if (e?.name === 'AbortError') return;
             console.error('[Combos] Error:', e);
         } finally {
-            hideLoading();
+            if (showSkeleton) hideLoading();
         }
     }
 
@@ -379,12 +381,19 @@
         bindEvents();
         loadStats();
 
-        // Auto polling every 30 seconds
-        state.pollInterval = setInterval(loadStats, 30000);
+        state.pollInterval = setInterval(() => {
+            if (!document.hidden) {
+                loadStats({ showSkeleton: false, skipCache: true });
+            }
+        }, 30000);
     }
 
     window.onAdminPageCleanup(() => {
         if (state.pollInterval) clearInterval(state.pollInterval);
+        state.pollInterval = null;
+        Object.values(charts).forEach((chart) => chart?.destroy?.());
+        charts = { trend: null, topCombos: null, revenue: null };
+        els = {};
     });
 
     window.onAdminPageLoad(() => {

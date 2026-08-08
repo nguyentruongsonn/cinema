@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\OrderFulfillmentService;
 use App\Services\PaymentService;
 use App\Services\PayOSGateway;
+use App\Services\PricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
@@ -31,11 +32,27 @@ class PaymentAuditLogTest extends TestCase
         parent::setUp();
 
         $this->mock(PayOSGateway::class, function ($mock) {
-            $mock->shouldReceive('createPaymentLink')
-                ->andReturn([
-                    'checkoutUrl' => 'https://test.payos.vn/checkout',
-                    'orderCode' => 'TEST123',
-                ]);
+            $mock->shouldReceive('createPaymentLink')->andReturn([
+                'checkoutUrl' => 'https://checkout.url',
+                'orderCode' => '123456',
+            ]);
+            $mock->shouldReceive('cancelPaymentLink')->andReturn([
+                'success' => true,
+            ]);
+        });
+
+        $this->mock(PricingService::class, function ($mock) {
+            $mock->shouldReceive('buildSnapshot')->andReturn([
+                'subtotal' => 100000,
+                'discount_amount' => 0,
+                'voucher_discount' => 0,
+                'point_discount' => 0,
+                'points_used' => 0,
+                'voucher' => null,
+                'seats' => [],
+                'products' => [],
+                'final_amount' => 100000,
+            ]);
         });
 
         $this->user = User::factory()->create();
@@ -71,7 +88,7 @@ class PaymentAuditLogTest extends TestCase
             $idempotencyKey
         );
 
-        $this->assertSame($firstResult, $secondResult);
+        $this->assertEquals($firstResult, $secondResult);
 
         $order = Order::query()->where('code', $firstResult['order_number'])->firstOrFail();
         $payment = Payment::query()->where('order_id', $order->id)->firstOrFail();

@@ -114,23 +114,27 @@ class Movie extends Model
         'is_hot' => 'boolean',
     ];
 
+    /** @return HasMany<Showtime, $this> */
     public function showtimes(): HasMany
     {
         return $this->hasMany(Showtime::class);
     }
 
+    /** @return BelongsToMany<Category, $this> */
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'categories_movies')
             ->withTimestamps();
     }
 
+    /** @return BelongsToMany<Format, $this> */
     public function formats(): BelongsToMany
     {
         return $this->belongsToMany(Format::class, 'movie_format')
             ->withTimestamps();
     }
 
+    /** @return BelongsToMany<Subtitle, $this> */
     public function subtitles(): BelongsToMany
     {
         return $this->belongsToMany(Subtitle::class, 'movie_subtitle')

@@ -8,7 +8,7 @@
 
 @if(session('success'))
     @push('scripts')
-        <script>
+        <script nonce="{{ request()->attributes->get('csp_nonce') }}">
             window.onAdminPageLoad(function () {
                 window.showAdminToast?.(@json(session('success')), 'success');
             });
@@ -18,7 +18,7 @@
 
 @if(session('error'))
     @push('scripts')
-        <script>
+        <script nonce="{{ request()->attributes->get('csp_nonce') }}">
             window.onAdminPageLoad(function () {
                 window.showAdminToast?.(@json(session('error')), 'error');
             });
@@ -298,7 +298,7 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
+    @vite('resources/css/admin/pages/stats.css')
 @endpush
 
 @push('scripts')

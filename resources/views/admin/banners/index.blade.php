@@ -5,7 +5,7 @@
 @section('header_subtitle', 'Quản lý banner quảng cáo hiển thị trên website.')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/pages/banners.css') }}?v={{ config('app.asset_version') }}">
+@vite('resources/css/admin/pages/banners.css')
 @endpush
 
 @section('content')

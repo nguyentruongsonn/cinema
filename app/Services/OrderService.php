@@ -213,6 +213,34 @@ class OrderService
                 }
             }
 
+            // Restore combo product stock
+            $comboItems = OrderItem::query()
+                ->where('order_id', $order->id)
+                ->where('item_type', \App\Models\Combo::class)
+                ->get();
+
+            foreach ($comboItems as $item) {
+                $combo = \App\Models\Combo::with('comboItems')->find($item->item_id);
+                if ($combo) {
+                    foreach ($combo->comboItems as $comboItem) {
+                        $requiredStock = (int) $comboItem->quantity * $item->quantity;
+                        $product = Product::query()
+                            ->where('id', $comboItem->product_id)
+                            ->lockForUpdate()
+                            ->first();
+                        if ($product) {
+                            $product->increment('stock', $requiredStock);
+                            Log::info('Combo child product stock restored after order cancellation', [
+                                'order_id' => $order->id,
+                                'combo_id' => $combo->id,
+                                'product_id' => $product->id,
+                                'quantity_restored' => $requiredStock,
+                            ]);
+                        }
+                    }
+                }
+            }
+
             // 4. Decrement promotion usage if promotion was used
             $payload = (array) $order->payload;
             $promotion = $payload['promotion'] ?? null;
@@ -244,7 +272,7 @@ class OrderService
             if ($seatHoldId !== null) {
                 SeatHold::query()
                     ->whereKey($seatHoldId)
-                    ->where('user_id', $order->user_id)
+                    ->where('user_id', (int) data_get($payload, 'seat_hold_user_id', $order->user_id))
                     ->where('showtime_id', $order->showtime_id)
                     ->lockForUpdate()
                     ->delete();
@@ -400,8 +428,7 @@ class OrderService
             'theater_name' => $order->showtime?->screen?->theater?->name,
             'screen_name' => $order->showtime?->screen?->name,
             'branch_name' => $order->showtime?->screen?->theater?->branch?->name,
-            'theater_address' => $order->showtime?->screen?->theater?->address
-                ?: $order->showtime?->screen?->theater?->branch?->address,
+            'theater_address' => $order->showtime?->screen?->theater?->address,
             'payload' => $payload,
             'invoice' => [
                 'tickets' => $ticketItems->all(),
@@ -583,8 +610,8 @@ class OrderService
             [
                 'id' => $promotion->id,
                 'code' => $promotion->code,
-                'type' => $promotion->type,
-                'value' => (float) $promotion->value,
+                'type' => $promotion->discount_type,
+                'value' => (float) $promotion->discount_value,
                 'discount_amount' => $discountAmount,
             ],
         ];
@@ -592,9 +619,9 @@ class OrderService
 
     private function calculatePromotionDiscount(Promotion $promotion, float $subtotal): float
     {
-        if ($promotion->type === 'percentage') {
-            $discount = $subtotal * ((float) $promotion->value / 100);
-            $maxDiscount = (float) ($promotion->max_discount ?? 0);
+        if ($promotion->discount_type === 'percentage') {
+            $discount = $subtotal * ((float) $promotion->discount_value / 100);
+            $maxDiscount = (float) ($promotion->max_discount_amount ?? 0);
 
             if ($maxDiscount > 0) {
                 $discount = min($discount, $maxDiscount);
@@ -603,8 +630,8 @@ class OrderService
             return round(min($discount, $subtotal), 0);
         }
 
-        if (in_array($promotion->type, ['fixed', 'amount'], true)) {
-            return round(min((float) $promotion->value, $subtotal), 0);
+        if (in_array($promotion->discount_type, ['fixed', 'amount'], true)) {
+            return round(min((float) $promotion->discount_value, $subtotal), 0);
         }
 
         return 0;
@@ -615,15 +642,15 @@ class OrderService
         $totalAmount = 0;
 
         // Lấy thông tin format và phụ thu phim
-        $formatName = $showtime->format?->name ?? '2D';
-        $movieSurcharge = (int) ($showtime->movie?->surcharge ?? 0);
+        $formatName = (string) data_get($showtime, 'format.name', '2D');
+        $movieSurcharge = (int) data_get($showtime, 'movie.surcharge', 0);
         $scheduledAt = $showtime->scheduled_at;
 
         foreach ($seats as $seat) {
             // Kiểm tra ghế đôi
             $isDoubleSeat = $this->isDoubleSeat(
-                $seat->seatType?->name ?? '',
-                $seat->seatType?->slug ?? ''
+                (string) data_get($seat, 'seatType.name', ''),
+                (string) data_get($seat, 'seatType.slug', '')
             );
 
             // Tính giá vé bằng TicketPricingService (mặc định adult cho đặt vé online)
@@ -634,9 +661,9 @@ class OrderService
                 isDoubleSeat: $isDoubleSeat,
                 movieSurcharge: $movieSurcharge,
                 extraHolidays: [],
-                formatSurcharge: (int) ($showtime->format?->surcharge ?? 0),
-                seatSurcharge: (int) ($seat->seatType?->surcharge ?? 0),
-                theaterPricing: $showtime->screen?->theater?->pricing_profile
+                formatSurcharge: (int) data_get($showtime, 'format.surcharge', 0),
+                seatSurcharge: (int) data_get($seat, 'seatType.surcharge', 0),
+                theaterPricing: data_get($showtime, 'screen.theater.pricing_profile')
             );
 
             $unitPrice = $pricingResult['total_price'];
@@ -656,7 +683,7 @@ class OrderService
                     'seat_label' => $seat->label ?: ($seat->row . $seat->number),
                     'row' => $seat->row,
                     'number' => $seat->number,
-                    'seat_type' => $seat->seatType?->name,
+                    'seat_type' => data_get($seat, 'seatType.name'),
                     'pricing_details' => [
                         'base_price' => $pricingResult['base_price'],
                         'surcharges' => $pricingResult['surcharges'],
@@ -691,18 +718,16 @@ class OrderService
         return false;
     }
 
-    private function ensureUserCanAccess(Order $order, $user): void
+    private function ensureUserCanAccess(Order $order, User $user): void
     {
         if ((int) $order->user_id !== (int) $user->id && !$this->isStaffUser($user)) {
             throw new \RuntimeException('Unauthorized', 403);
         }
     }
 
-    private function isStaffUser($user): bool
+    private function isStaffUser(User $user): bool
     {
-        return method_exists($user, 'role')
-            && $user->role
-            && in_array($user->role->slug, ['admin', 'manager', 'staff']);
+        return $user->hasAnyRole(['admin', 'manager', 'staff', 'ticket_seller']);
     }
 
 }

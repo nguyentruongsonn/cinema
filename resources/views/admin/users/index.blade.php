@@ -56,6 +56,7 @@
                     <th>Email</th>
                     <th>Số điện thoại</th>
                     <th>Vai trò</th>
+                    <th>Rạp phụ trách</th>
                     <th class="text-center">Trạng thái</th>
                     <th class="text-center">Xác thực</th>
                     <th>Ngày tạo</th>
@@ -63,7 +64,7 @@
                 </tr>
             </thead>
             <tbody id="usersTableBody">
-                <x-admin.skeleton-table cols="9" rows="5" :hasImage="false" />
+                <x-admin.skeleton-table cols="10" rows="5" :hasImage="false" />
             </tbody>
         </table>
     </div>
@@ -141,11 +142,22 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label for="userRoles" class="form-label text-secondary">Vai tr&#242;</label>
-                            <select class="form-select bg-dark text-white border-secondary admin-user-roles-select" id="userRoles" name="role_id">
-                                <option value="">-- Ch&#7885;n vai tr&#242; --</option>
+                            <label for="userRoles" class="form-label text-secondary">Vai trò</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="userRoles" name="role_id">
+                                <option value="">-- Chọn vai trò --</option>
                             </select>
-                            <small class="text-light opacity-75 admin-form-help">M&#7863;c &#273;&#7883;nh n&#234;n ch&#7885;n Kh&#225;ch h&#224;ng khi t&#7841;o t&#224;i kho&#7843;n m&#7899;i.</small>
+                        </div>
+
+                        <div class="col-md-6" id="theaterAssignmentWrapper">
+                            <label class="form-label text-secondary">Phân công rạp (Dành cho nhân viên)</label>
+                            <div class="dropdown">
+                                <button class="form-select bg-dark text-white border-secondary text-start" type="button" id="theaterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                    -- Chọn rạp --
+                                </button>
+                                <div class="dropdown-menu bg-dark border-secondary w-100 p-2 shadow" id="theaterDropdownMenu" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Theaters checkboxes populated by JS -->
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-12">
@@ -211,8 +223,7 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/users.css') }}?v={{ config('app.asset_version') }}">
+    @vite(['resources/css/admin/pages/stats.css', 'resources/css/admin/pages/users.css'])
 @endpush
 
 @push('scripts')

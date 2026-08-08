@@ -5,6 +5,7 @@
 @section('header_subtitle', 'Phân tích lượng vé bán ra, tỉ lệ lấp đầy theo thời gian và rạp chiếu.')
 
 @section('content')
+<div class="admin-stats-page">
 
 {{-- ── Row 1: Date Range Filter ─────────────────────────────────────── --}}
 <div class="filter-bar mb-4">
@@ -124,10 +125,12 @@
     </div>
 </div>
 
+</div>
+
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
+@vite('resources/css/admin/pages/stats.css')
 @endpush
 
 @push('scripts')

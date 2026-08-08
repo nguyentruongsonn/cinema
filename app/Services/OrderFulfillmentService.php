@@ -100,9 +100,10 @@ class OrderFulfillmentService
                 }
 
                 // Mark seat hold items as consumed (normalized model)
+                $seatHoldUserId = (int) data_get($order->payload, 'seat_hold_user_id', $order->user_id);
                 $seatHold = SeatHold::query()
                     ->whereKey(data_get($order->payload, 'seat_hold_id'))
-                    ->where('user_id', $order->user_id)
+                    ->where('user_id', $seatHoldUserId)
                     ->where('showtime_id', $order->showtime_id)
                     ->first();
 
@@ -160,32 +161,56 @@ class OrderFulfillmentService
             }
 
             $payload = $order->payload ?? [];
+            $isPos = str_starts_with($order->code, 'POS-') || ($payload['source'] ?? null) === 'pos';
 
-            // 1. Create Tickets for each seat FIRST, then create OrderItems (PHASE 5)
-            $seats = $payload['seats'] ?? [];
-            foreach ($seats as $seatData) {
-                $ticket = Ticket::forceCreate([
-                    'order_id' => $order->id,
-                    'user_id' => $order->user_id,
-                    'showtime_id' => $order->showtime_id,
-                    'seat_id' => $seatData['id'],
-                    'ticket_code' => Ticket::generateTicketCode(),
-                    'status' => Ticket::STATUS_VALID,
-                ]);
+            if ($isPos) {
+                // For POS orders, convert existing Seat order items to Ticket order items
+                $orderItems = $order->orderItems()->where('item_type', Seat::class)->get();
+                foreach ($orderItems as $item) {
+                    $ticket = Ticket::forceCreate([
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'showtime_id' => $order->showtime_id,
+                        'seat_id' => $item->item_id,
+                        'ticket_code' => Ticket::generateTicketCode(),
+                        'status' => Ticket::STATUS_VALID,
+                    ]);
 
-                // Create OrderItem pointing to the ticket
-                $orderItem = OrderItem::createFromTicket(
-                    $order,
-                    $ticket,
-                    (string) $seatData['price'],
-                    [
-                        'seat_label' => $seatData['name'],
-                        'row'        => $seatData['row'] ?? null,
-                        'number'     => $seatData['number'] ?? null,
-                        'seat_type'  => $seatData['type'] ?? null,
-                    ]
-                );
-                $orderItem->save();
+                    $item->forceFill([
+                        'item_type' => Ticket::class,
+                        'item_id' => $ticket->id,
+                        'metadata' => array_merge($item->metadata ?? [], [
+                            'ticket_code' => $ticket->ticket_code,
+                        ])
+                    ])->save();
+                }
+            } else {
+                // 1. Create Tickets for each seat FIRST, then create OrderItems (PHASE 5)
+                $seats = $payload['seats'] ?? [];
+                foreach ($seats as $seatData) {
+                    $ticket = Ticket::forceCreate([
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'showtime_id' => $order->showtime_id,
+                        'seat_id' => $seatData['id'],
+                        'ticket_code' => Ticket::generateTicketCode(),
+                        'status' => Ticket::STATUS_VALID,
+                    ]);
+
+                    // Create OrderItem pointing to the ticket
+                    $orderItem = OrderItem::createFromTicket(
+                        $order,
+                        $ticket,
+                        (string) $seatData['price'],
+                        [
+                            'seat_label' => $seatData['name'],
+                            'row'        => $seatData['row'] ?? null,
+                            'number'     => $seatData['number'] ?? null,
+                            'seat_type'  => $seatData['type'] ?? null,
+                        ]
+                    );
+                    $orderItem->save();
+                }
             }
 
             // 2. Create Product OrderItems and decrement stock SAFELY (PHASE 5)
@@ -239,9 +264,10 @@ class OrderFulfillmentService
             }
 
             // 4. PHASE 1.4: Release seat holds after successful payment (normalized model)
+            $seatHoldUserId = (int) data_get($order->payload, 'seat_hold_user_id', $order->user_id);
             $seatHold = SeatHold::query()
                 ->whereKey(data_get($order->payload, 'seat_hold_id'))
-                ->where('user_id', $order->user_id)
+                ->where('user_id', $seatHoldUserId)
                 ->where('showtime_id', $order->showtime_id)
                 ->first();
 
@@ -284,6 +310,13 @@ class OrderFulfillmentService
                 $user = $order->user;
                 if ($user) {
                     $user->decrement('loyalty_points', $pointsUsed);
+                    \App\Models\LoyaltyHistory::create([
+                        'user_id' => $user->id,
+                        'order_id' => $order->id,
+                        'type' => 'redeem',
+                        'points' => $pointsUsed,
+                        'description' => "Trừ điểm dùng cho đơn hàng #{$order->code}",
+                    ]);
                 }
             }
 
@@ -292,6 +325,13 @@ class OrderFulfillmentService
                 $pointsEarned = (int) floor($order->total_amount / 10000);
                 if ($pointsEarned > 0) {
                     $order->user->increment('loyalty_points', $pointsEarned);
+                    \App\Models\LoyaltyHistory::create([
+                        'user_id' => $order->user_id,
+                        'order_id' => $order->id,
+                        'type' => 'earn',
+                        'points' => $pointsEarned,
+                        'description' => "Tích điểm đơn hàng #{$order->code}",
+                    ]);
                 }
             }
 

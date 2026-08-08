@@ -21,6 +21,7 @@ class Branch extends Model
         'is_active' => 'boolean',
     ];
 
+    /** @return HasMany<Theater, $this> */
     public function theaters(): HasMany
     {
         return $this->hasMany(Theater::class);

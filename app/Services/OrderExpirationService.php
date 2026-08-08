@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Combo;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\SeatHold;
@@ -16,7 +17,6 @@ use Illuminate\Support\Facades\Log;
 
 class OrderExpirationService
 {
-    private const ORDER_STATUS_CANCELLED = 0;
     private const ORDER_STATUS_PENDING = 1;
     private const ORDER_STATUS_CONFIRMED = 2;
     private const TRANSACTION_ATTEMPTS = 3;
@@ -186,6 +186,27 @@ class OrderExpirationService
 
             $item->delete();
         }
+
+        $comboItems = OrderItem::query()
+            ->where('order_id', $order->id)
+            ->where('item_type', Combo::class)
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($comboItems as $item) {
+            $combo = Combo::query()->with('comboItems')->whereKey($item->item_id)->lockForUpdate()->first();
+            if ($combo === null) {
+                continue;
+            }
+
+            foreach ($combo->comboItems as $comboItem) {
+                Product::query()
+                    ->whereKey($comboItem->product_id)
+                    ->lockForUpdate()
+                    ->first()?->increment('stock', (int) $comboItem->quantity * (int) $item->quantity);
+            }
+            $item->delete();
+        }
     }
 
     /**
@@ -264,9 +285,10 @@ class OrderExpirationService
             return;
         }
 
+        $seatHoldUserId = (int) data_get($order->payload, 'seat_hold_user_id', $order->user_id);
         $seatHold = SeatHold::query()
             ->whereKey($seatHoldId)
-            ->where('user_id', $order->user_id)
+            ->where('user_id', $seatHoldUserId)
             ->where('showtime_id', $order->showtime_id)
             ->lockForUpdate()
             ->first();

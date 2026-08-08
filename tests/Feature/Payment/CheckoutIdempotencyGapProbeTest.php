@@ -33,6 +33,20 @@ class CheckoutIdempotencyGapProbeTest extends TestCase
                 ]);
         });
 
+        $this->mock(\App\Services\PricingService::class, function ($mock) {
+            $mock->shouldReceive('buildSnapshot')->andReturn([
+                'subtotal' => 100000,
+                'discount_amount' => 0,
+                'voucher_discount' => 0,
+                'point_discount' => 0,
+                'points_used' => 0,
+                'voucher' => null,
+                'seats' => [],
+                'products' => [],
+                'final_amount' => 100000,
+            ]);
+        });
+
         $user = User::factory()->create();
         $showtime = Showtime::factory()->create();
         $seat = Seat::factory()->create(['screen_id' => $showtime->screen_id]);

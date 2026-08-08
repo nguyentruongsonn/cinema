@@ -22,6 +22,8 @@ class Combo extends Model
 
     /**
      * Items included in the combo.
+     *
+     * @return HasMany<ComboItem, $this>
      */
     public function comboItems(): HasMany
     {
@@ -30,6 +32,8 @@ class Combo extends Model
 
     /**
      * Order items that reference this combo.
+     *
+     * @return MorphMany<OrderItem, $this>
      */
     public function orderItems(): MorphMany
     {
@@ -54,7 +58,7 @@ class Combo extends Model
         $minStock = PHP_INT_MAX;
         foreach ($items as $item) {
             // Guard against missing product
-            if (!$item->product) {
+            if (! $item->product) {
                 return 0;
             }
 

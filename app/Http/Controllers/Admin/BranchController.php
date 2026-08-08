@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\Response;
 
 class BranchController extends Controller
 {
@@ -193,7 +194,7 @@ class BranchController extends Controller
     /**
      * Toggle branch active status.
      */
-    public function toggleActive(Branch $branch): JsonResponse
+    public function toggleActive(Branch $branch): Response
     {
         try {
             $this->authorize('update', $branch);
@@ -252,7 +253,7 @@ class BranchController extends Controller
     /**
      * Delete branch.
      */
-    public function destroy(Branch $branch): JsonResponse
+    public function destroy(Branch $branch): Response
     {
         try {
             $this->authorize('delete', $branch);

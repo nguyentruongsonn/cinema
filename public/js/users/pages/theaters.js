@@ -211,13 +211,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (theater.phone) {
             const phoneEl = document.createElement('div');
             phoneEl.className = 'theater-contact-item';
-            phoneEl.innerHTML = `<i class="bi bi-telephone-fill"></i><span>${theater.phone}</span>`;
+            const phoneIcon = document.createElement('i');
+            phoneIcon.className = 'bi bi-telephone-fill';
+            const phone = document.createElement('span');
+            phone.textContent = String(theater.phone);
+            phoneEl.append(phoneIcon, phone);
             contacts.appendChild(phoneEl);
         }
         if (theater.email) {
             const emailEl = document.createElement('div');
             emailEl.className = 'theater-contact-item';
-            emailEl.innerHTML = `<i class="bi bi-envelope-fill"></i><span>${theater.email}</span>`;
+            const emailIcon = document.createElement('i');
+            emailIcon.className = 'bi bi-envelope-fill';
+            const email = document.createElement('span');
+            email.textContent = String(theater.email);
+            emailEl.append(emailIcon, email);
             contacts.appendChild(emailEl);
         }
 

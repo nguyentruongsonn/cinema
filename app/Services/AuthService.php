@@ -29,15 +29,60 @@ class AuthService
     public function register(array $data, string $ipAddress, ?string $userAgent = null): array
     {
         $data['email'] = $this->normalizeEmail($data['email']);
+        $rawPhone = $data['phone'] ?? null;
+        $normalizedPhone = null;
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'username' => $data['username'] ?? null,
-            'phone' => $data['phone'] ?? null,
-            'password' => Hash::make($data['password']),
-            'status' => 1,
-        ]);
+        if ($rawPhone) {
+            $normalizedPhone = preg_replace('/\D/', '', (string) $rawPhone);
+            if (str_starts_with($normalizedPhone, '84')) {
+                $normalizedPhone = '0' . substr($normalizedPhone, 2);
+            }
+        }
+
+        // Check if there is an unclaimed POS customer account with this phone number
+        $unclaimedUser = null;
+        if ($normalizedPhone) {
+            $unclaimedUser = User::query()
+                ->where('account_status', 'unclaimed')
+                ->where(function ($q) use ($normalizedPhone) {
+                    $q->where('phone', $normalizedPhone)
+                      ->orWhere('phone', ltrim($normalizedPhone, '0'))
+                      ->orWhere('phone', '0' . ltrim($normalizedPhone, '0'));
+                })
+                ->first();
+        }
+
+        if ($unclaimedUser) {
+            // Claim existing POS account: set name, email, password, username, account_status = claimed
+            // Keeps all accumulated loyalty_points!
+            $unclaimedUser->forceFill([
+                'name'           => $data['name'],
+                'email'          => $data['email'],
+                'username'       => $data['username'] ?? null,
+                'phone'          => $normalizedPhone ?: $rawPhone,
+                'password'       => Hash::make($data['password']),
+                'status'         => 1,
+                'account_status' => 'claimed',
+            ])->save();
+
+            $user = $unclaimedUser;
+
+            Log::info('POS unclaimed user account claimed via online registration', [
+                'user_id'         => $user->id,
+                'phone'           => $normalizedPhone,
+                'retained_points' => $user->loyalty_points,
+            ]);
+        } else {
+            $user = User::create([
+                'name'           => $data['name'],
+                'email'          => $data['email'],
+                'username'       => $data['username'] ?? null,
+                'phone'          => $normalizedPhone ?: $rawPhone,
+                'password'       => Hash::make($data['password']),
+                'status'         => 1,
+                'account_status' => 'claimed',
+            ]);
+        }
 
         $this->assignDefaultRole($user);
 
@@ -310,7 +355,7 @@ class AuthService
                 ->first()
                 ?->markLoggedOut();
 
-            JWTAuth::invalidate($token);
+            JWTAuth::setToken($token)->invalidate();
         }
 
         if ($plainRefreshToken) {
@@ -392,7 +437,7 @@ class AuthService
             'access_token' => $accessToken,
             'refresh_token' => $refreshToken,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'expires_in' => JWTAuth::factory()->getTTL() * 60,
             'refresh_expires_in' => config('auth.refresh_token_ttl', 30) * 24 * 60 * 60,
         ];
     }

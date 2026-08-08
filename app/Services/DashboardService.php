@@ -236,8 +236,8 @@ class DashboardService
             ->map(fn ($order) => [
                 'id' => $order->id,
                 'code' => $order->code,
-                'customer' => $order->user?->name ?? 'N/A',
-                'movie' => $order->showtime?->movie?->title ?? 'N/A',
+                'customer' => data_get($order, 'user.name', 'N/A'),
+                'movie' => data_get($order, 'showtime.movie.title', 'N/A'),
                 'total_amount' => (float) $order->total_amount,
                 'status' => $order->status,
                 'created_at' => $order->created_at,

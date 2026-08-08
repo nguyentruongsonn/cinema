@@ -85,7 +85,7 @@ class HomeController extends Controller
                 'description' => strip_tags((string) $banner->description),
                 'image_url' => asset('storage/' . $image->image_path),
                 'link_url' => $banner->link_url,
-            ]))
+            ])->all())
             ->take(5)
             ->values();
 
@@ -96,9 +96,10 @@ class HomeController extends Controller
             ->with('categories:id,name')
             ->active()
             ->where(function ($query) {
-                $query->where('is_hot', true)
-                    ->orWhereHas('showtimes', function ($showtimeQuery) {
-                        $showtimeQuery->available()->upcoming();
+                    $query->where('is_hot', true)
+                        ->orWhereHas('showtimes', function ($showtimeQuery) {
+                        $showtimeQuery->where('status', true)
+                            ->where('scheduled_at', '>=', now());
                     });
             })
             ->orderByDesc('is_hot')
@@ -124,7 +125,8 @@ class HomeController extends Controller
         $movieOptions = Movie::query()
             ->active()
             ->whereHas('showtimes', function ($query) {
-                $query->available()->upcoming();
+                $query->where('status', true)
+                    ->where('scheduled_at', '>=', now());
             })
             ->orderBy('title')
             ->limit(self::MOVIE_OPTION_LIMIT)
@@ -230,22 +232,7 @@ class HomeController extends Controller
             return [];
         }
 
-        if (is_array($movie->backdrops)) {
-            return $movie->backdrops;
-        }
-
-        $decoded = json_decode((string) $movie->backdrops, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
-            Log::warning('Invalid movie backdrops JSON on home data endpoint', [
-                'movie_id' => $movie->id,
-                'json_error' => json_last_error_msg(),
-            ]);
-
-            return [];
-        }
-
-        return $decoded;
+        return $movie->backdrops;
     }
 
     private function safeUrl(?string $url): ?string

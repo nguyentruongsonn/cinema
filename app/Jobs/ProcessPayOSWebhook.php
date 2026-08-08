@@ -12,7 +12,7 @@ use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class ProcessPayOSWebhook implements ShouldQueue, ShouldBeUnique
+class ProcessPayOSWebhook implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -25,15 +25,11 @@ class ProcessPayOSWebhook implements ShouldQueue, ShouldBeUnique
 
     /**
      * The maximum number of seconds the job can run before timing out.
-     *
-     * @var int
      */
     public int $timeout = 60;
 
     /**
      * The webhook payload data.
-     *
-     * @var array
      */
     protected array $webhookData;
 
@@ -48,26 +44,23 @@ class ProcessPayOSWebhook implements ShouldQueue, ShouldBeUnique
 
     /**
      * Get the unique ID for the job to prevent duplicate processing.
-     *
-     * @return string
      */
     public function uniqueId(): string
     {
         $orderCode = data_get($this->webhookData, 'data.orderCode', 'unknown');
-        return 'payos-webhook:' . $orderCode;
+
+        return 'payos-webhook:'.$orderCode;
     }
 
     /**
      * Get the middleware the job should pass through.
-     *
-     * @return array
      */
     public function middleware(): array
     {
         $orderCode = data_get($this->webhookData, 'data.orderCode', 'unknown');
 
         return [
-            (new WithoutOverlapping('payos-webhook:' . $orderCode))
+            (new WithoutOverlapping('payos-webhook:'.$orderCode))
                 ->expireAfter(300)
                 ->releaseAfter(10),
         ];
@@ -75,8 +68,6 @@ class ProcessPayOSWebhook implements ShouldQueue, ShouldBeUnique
 
     /**
      * Define exponential backoff for retries.
-     *
-     * @return array
      */
     public function backoff(): array
     {
@@ -85,8 +76,6 @@ class ProcessPayOSWebhook implements ShouldQueue, ShouldBeUnique
 
     /**
      * Get the tags that should be assigned to the job for monitoring.
-     *
-     * @return array
      */
     public function tags(): array
     {
@@ -94,7 +83,7 @@ class ProcessPayOSWebhook implements ShouldQueue, ShouldBeUnique
             'payments',
             'payos',
             'webhook',
-            'order:' . data_get($this->webhookData, 'data.orderCode', 'unknown'),
+            'order:'.data_get($this->webhookData, 'data.orderCode', 'unknown'),
         ];
     }
 
@@ -133,7 +122,7 @@ class ProcessPayOSWebhook implements ShouldQueue, ShouldBeUnique
                 'attempt' => $this->attempts(),
                 'error_class' => get_class($e),
                 // Log error type/code only - full message may contain sensitive data
-                'error_code' => method_exists($e, 'getCode') ? $e->getCode() : null,
+                'error_code' => $e->getCode(),
             ]);
 
             // Re-throw to trigger retry mechanism

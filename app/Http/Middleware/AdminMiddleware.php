@@ -32,7 +32,7 @@ class AdminMiddleware
                 return $this->errorResponse('Forbidden: management role required', 403);
             }
 
-            return redirect()->route('home')->with('error', 'B?n kh?ng c? quy?n truy c?p trang qu?n l?.');
+            return redirect()->route('home')->with('error', 'Bạn không có quyền truy cập trang quản lý.');
         }
 
         return $next($request);

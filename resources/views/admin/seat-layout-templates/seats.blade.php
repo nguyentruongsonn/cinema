@@ -135,7 +135,7 @@
     </div>{{-- end .row --}}
 
     {{-- Configuration for JS --}}
-    <script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
         window.SEAT_LAYOUT_TEMPLATE_CONFIG = {
             templateId: @json($templateId)
         };
@@ -144,8 +144,7 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/pages/seat-layout.css') }}?v={{ config('app.asset_version') }}">
+    @vite(['resources/css/admin/pages/stats.css', 'resources/css/admin/pages/seat-layout.css'])
 @endpush
 
 @push('scripts')

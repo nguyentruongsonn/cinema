@@ -41,9 +41,11 @@ class StoreOrderRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('seat_holds', 'id')
-                    ->where('showtime_id', $showtimeId)
-                    ->where('user_id', $userId)
-                    ->where('held_until', '>', now()),
+                    ->where(function ($query) use ($showtimeId, $userId): void {
+                        $query->where('showtime_id', $showtimeId)
+                            ->where('user_id', $userId)
+                            ->where('held_until', '>', now());
+                    }),
             ],
 
             'products' => ['nullable', 'array', 'max:20'],
@@ -52,9 +54,11 @@ class StoreOrderRequest extends FormRequest
                 'integer',
                 'distinct',
                 Rule::exists('products', 'id')
-                    ->where('status', 1)
-                    ->whereNull('deleted_at')
-                    ->where('stock', '>', 0),
+                    ->where(function ($query): void {
+                        $query->where('status', 1)
+                            ->whereNull('deleted_at')
+                            ->where('stock', '>', 0);
+                    }),
             ],
             'products.*.quantity' => ['required_with:products', 'integer', 'min:1', 'max:20'],
 

@@ -2,8 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\User;
+use App\Models\Screen;
 use App\Models\Showtime;
+use App\Models\User;
 
 class ShowtimePolicy
 {
@@ -83,7 +84,9 @@ class ShowtimePolicy
             $showtime->load('screen:id,theater_id');
         }
 
-        return $showtime->screen !== null
-            && $user->isAssignedToTheater((int) $showtime->screen->theater_id);
+        $screen = $showtime->screen;
+
+        return $screen instanceof Screen
+            && $user->isAssignedToTheater((int) $screen->theater_id);
     }
 }

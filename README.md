@@ -77,5 +77,5 @@ Laravel Horizon requires the Unix-only `pcntl` PHP extension and therefore is no
 
 - Architecture: `ARCHITECTURE.md`
 - API contract: `docs/api/README.md`
-- Remediation closure: `REVIEWS/SYSTEM_STRUCTURE_REVIEW.md`
-- Execution tracker: `REVIEWS/REMEDIATION_EXECUTION_TRACKER.md`
+- Codebase review: `PROJECT_CODEBASE_REVIEW_REPORT.md`
+- Remediation plan: `PROJECT_CODEBASE_REVIEW_PLAN.md`

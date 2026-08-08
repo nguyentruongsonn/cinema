@@ -5,7 +5,6 @@
 
 @push('styles')
 <link href="{{ asset('vendor/summernote/summernote-lite.min.css') }}" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('css/admin/posts.css') }}?v={{ config('app.asset_version') }}">
 @endpush
 
 @section('content')
@@ -163,7 +162,7 @@
 
 @push('styles')
 <link href="{{ asset('vendor/summernote/summernote-lite.min.css') }}" rel="stylesheet">
-<link href="{{ asset('css/admin/pages/posts.css') }}?v={{ config('app.asset_version') }}" rel="stylesheet">
+@vite('resources/css/admin/pages/posts.css')
 @endpush
 
 @push('scripts')

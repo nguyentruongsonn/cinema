@@ -42,6 +42,7 @@ class Promotion extends Model
         'status' => 'boolean',
     ];
 
+    /** @return BelongsToMany<User, $this> */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_promotion')
@@ -55,11 +56,11 @@ class Promotion extends Model
         return $query->where('status', 1)
             ->where(function ($q) {
                 $q->whereNull('start_date')
-                  ->orWhere('start_date', '<=', now());
+                    ->orWhere('start_date', '<=', now());
             })
             ->where(function ($q) {
                 $q->whereNull('end_date')
-                  ->orWhere('end_date', '>=', now());
+                    ->orWhere('end_date', '>=', now());
             });
     }
 
@@ -69,7 +70,7 @@ class Promotion extends Model
         return $query->where('status', 1)
             ->where(function ($q) {
                 $q->whereNull('usage_limit')
-                  ->orWhereColumn('usage_count', '<', 'usage_limit');
+                    ->orWhereColumn('usage_count', '<', 'usage_limit');
             });
     }
 
@@ -133,10 +134,12 @@ class Promotion extends Model
     public function isWithinDateRange(): bool
     {
         $now = now();
-        
-        $afterStart = is_null($this->start_date) || $this->start_date <= $now;
-        $beforeEnd = is_null($this->end_date) || $this->end_date >= $now;
-        
+        $startDate = $this->getAttribute('start_date');
+        $endDate = $this->getAttribute('end_date');
+
+        $afterStart = $startDate === null || $startDate <= $now;
+        $beforeEnd = $endDate === null || $endDate >= $now;
+
         return $afterStart && $beforeEnd;
     }
 
@@ -148,7 +151,7 @@ class Promotion extends Model
         if (is_null($this->usage_limit)) {
             return true;
         }
-        
+
         return $this->usage_count < $this->usage_limit;
     }
 
@@ -160,7 +163,7 @@ class Promotion extends Model
         if (is_null($this->usage_limit)) {
             return null; // unlimited
         }
-        
+
         return max(0, $this->usage_limit - $this->usage_count);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin \App\Models\Seat */
 class SeatResource extends JsonResource
 {
     /**
@@ -24,11 +25,9 @@ class SeatResource extends JsonResource
             'status' => (bool) $this->status,
             'screen' => $this->whenLoaded('screen', fn () => new ScreenResource($this->screen)),
             'seat_type' => $this->whenLoaded('seatType', fn () => [
-                'id' => $this->seatType?->id,
-                'name' => $this->seatType?->name,
-                'price_surcharge' => isset($this->seatType?->price_surcharge)
-                    ? (float) $this->seatType->price_surcharge
-                    : null,
+                'id' => $this->seatType->id,
+                'name' => $this->seatType->name,
+                'price_surcharge' => (float) $this->seatType->surcharge,
             ]),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

@@ -59,7 +59,7 @@
     {{-- Auth Modal --}}
     @include('partials.auth-modal')
 
-    <script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}">
         window.APP_CONFIG = {
             appName: @json(config('app.name', 'Cinema')),
             apiUrl: @json('/api/v1'),
@@ -90,7 +90,7 @@
     @if ((bool) env('REVERB_ENABLED', false))
         <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
-        <script>
+        <script nonce="{{ request()->attributes->get('csp_nonce') }}">
             /**
              * Initialize Laravel Echo with JWT token from localStorage.
              * Called once on page load, and can be re-called after login.
@@ -144,7 +144,7 @@
             window.addEventListener('echo:reinit', () => initEcho());
         </script>
     @else
-        <script>
+        <script nonce="{{ request()->attributes->get('csp_nonce') }}">
             window.Echo = null;
             window.initEcho = function () {
                 return null;

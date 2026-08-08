@@ -22,7 +22,7 @@
 
     @stack('styles')
 </head>
-<body>
+<body data-staff-role="{{ auth()->user()?->role?->slug ?? '' }}">
     <div class="admin-wrapper">
         <!-- Mobile Header (Tablet & Mobile Only) -->
         <div id="adminMobileHeader" class="mobile-header d-lg-none" data-turbo-permanent>
@@ -70,7 +70,7 @@
             @php
                 $adminUser = Auth::user();
                 $canAny = function (array $permissions) use ($adminUser): bool {
-                    return (bool) ($adminUser?->isAdmin() || collect($permissions)->contains(fn ($permission) => $adminUser?->hasPermission($permission)));
+                    return (bool) $adminUser?->hasAnyPermission($permissions);
                 };
                 $canRoute = fn (string $routeName): bool => Route::has($routeName);
                 $adminMenuGroups = [
@@ -236,6 +236,12 @@
                     </div>
                 </div>
 
+                @hasSection('topbar_center')
+                    <div class="admin-topbar-center">
+                        @yield('topbar_center')
+                    </div>
+                @endif
+
                 <div class="topbar-actions">
                     @if ($canAny(['tickets.verify']))
                         <button class="btn-icon" id="scanTicketBtn" aria-label="Quét mã vạch vé" title="Quét mã vạch vé">
@@ -327,7 +333,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" data-turbo-eval="false"></script>
 
     <!-- Admin Core JS -->
-    <script data-turbo-eval="false">
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}" data-turbo-eval="false">
         window.APP_CONFIG = {
             appName: @json(config('app.name', 'Cinema')),
             apiUrl: @json('/api/v1'),

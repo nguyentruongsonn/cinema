@@ -2,13 +2,14 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\AuthService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use Symfony\Component\HttpFoundation\Response;
-use App\Services\AuthService;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthenticateFromCookie
 {
@@ -24,24 +25,24 @@ class AuthenticateFromCookie
             try {
                 $user = JWTAuth::setToken($token)->authenticate();
                 $this->setUser($user);
-            } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+            } catch (TokenExpiredException $e) {
                 if ($refreshToken) {
                     try {
                         $newTokenResult = $this->authService->refreshAccessToken($refreshToken, $request->ip(), $request->userAgent());
                         $this->setUser($newTokenResult['user']);
                     } catch (\Exception $refreshEx) {
-                        Log::debug('SSR Auth - Refresh failed: ' . $refreshEx->getMessage());
+                        Log::debug('SSR Auth - Refresh failed: '.$refreshEx->getMessage());
                     }
                 }
             } catch (\Exception $e) {
-                Log::debug('SSR auth error: ' . $e->getMessage());
+                Log::debug('SSR auth error: '.$e->getMessage());
             }
-        } elseif (!$token && $refreshToken) {
-             try {
+        } elseif ($refreshToken) {
+            try {
                 $newTokenResult = $this->authService->refreshAccessToken($refreshToken, $request->ip(), $request->userAgent());
                 $this->setUser($newTokenResult['user']);
             } catch (\Exception $e) {
-                Log::debug('SSR Auth - Refresh fallback failed: ' . $e->getMessage());
+                Log::debug('SSR Auth - Refresh fallback failed: '.$e->getMessage());
             }
         }
 
@@ -49,10 +50,10 @@ class AuthenticateFromCookie
 
         if ($newTokenResult && $response instanceof Response) {
             $response->headers->setCookie(cookie(
-                'access_token', $newTokenResult['access_token'], (int)ceil($newTokenResult['expires_in']/60), '/', config('session.domain'), config('session.secure'), true, false, config('session.same_site', 'lax')
+                'access_token', $newTokenResult['access_token'], (int) ceil($newTokenResult['expires_in'] / 60), '/', config('session.domain'), config('session.secure'), true, false, config('session.same_site', 'lax')
             ));
             $response->headers->setCookie(cookie(
-                'refresh_token', $newTokenResult['refresh_token'], (int)ceil($newTokenResult['refresh_expires_in']/60), '/', config('session.domain'), config('session.secure'), true, false, config('session.same_site', 'lax')
+                'refresh_token', $newTokenResult['refresh_token'], (int) ceil($newTokenResult['refresh_expires_in'] / 60), '/', config('session.domain'), config('session.secure'), true, false, config('session.same_site', 'lax')
             ));
         }
 

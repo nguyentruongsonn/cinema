@@ -213,6 +213,13 @@ class OrderController extends Controller
             })
             ->latest('created_at');
 
+        // Theater scope: non-admin staff only see orders from their theaters
+        $actor = Auth::user();
+        if ($actor && $actor->requiresTheaterScope()) {
+            $actorTheaterIds = $actor->theaters()->pluck('theaters.id');
+            $query->whereHas('showtime.screen', fn ($q) => $q->whereIn('theater_id', $actorTheaterIds));
+        }
+
         $orders = $query->paginate($validated['per_page'] ?? 15);
 
         return $this->successResponse([

@@ -5,6 +5,7 @@
 @section('header_subtitle', 'Phân tích doanh thu và lượng combo bán ra theo thời gian.')
 
 @section('content')
+<div class="admin-stats-page">
 
 {{-- Shared statistics controls - cards and charts update when the scope changes --}}
 
@@ -116,7 +117,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Xu hướng lượng combo bán ra</h3>
             </div>
-            <div id="chartComboTrend" class="admin-skeleton admin-skeleton-chart"></div>
+            <div id="chartComboTrend" class="admin-skeleton admin-skeleton-chart admin-chart-h-300"></div>
         </div>
     </div>
     <div class="col-xl-4 col-lg-5">
@@ -124,7 +125,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Top combo bán chạy</h3>
             </div>
-            <div id="chartTopCombos" class="admin-skeleton admin-skeleton-chart"></div>
+            <div id="chartTopCombos" class="admin-skeleton admin-skeleton-chart admin-chart-h-300"></div>
         </div>
     </div>
 </div>
@@ -141,10 +142,12 @@
     </div>
 </div>
 
+</div>
+
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
+@vite('resources/css/admin/pages/stats.css')
 @endpush
 
 @push('scripts')

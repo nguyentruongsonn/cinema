@@ -18,6 +18,12 @@ class ScreenService
         $query = Screen::with(['theater', 'format', 'sound']);
 
         $this->applyFilters($query, $filters);
+
+        $actor = auth()->user();
+        if ($actor && $actor->requiresTheaterScope()) {
+            $query->whereIn('theater_id', $actor->theaters()->pluck('theaters.id'));
+        }
+
         $this->applySorting($query, $filters);
 
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 100);
@@ -90,7 +96,7 @@ class ScreenService
 
         $status = $filters['status'] ?? 'active';
         if ($status === 'active') {
-            $query->active();
+            $query->where('status', 1);
         } elseif ($status === 'inactive') {
             $query->where('status', 0);
         }

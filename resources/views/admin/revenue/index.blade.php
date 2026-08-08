@@ -4,6 +4,7 @@
 @section('header_title', 'Thống kê Doanh thu')
 
 @section('content')
+<div class="admin-stats-page">
 
 {{-- ── Row 1: Date Range Filter ─────────────────────────────────────── --}}
 <div class="filter-bar mb-4">
@@ -69,8 +70,7 @@
             </div>
             <div class="stat-value admin-skeleton admin-skeleton-text admin-stat-value-lg" id="cardTopMovieRevenue"></div>
             <div class="stat-trend mt-2">
-                <span class="fw-bold text-warning text-truncate d-block admin-skeleton admin-skeleton-text" id="cardTopMovieTitle"
-                      class="text-truncate admin-max-w-200"></span>
+                <span class="fw-bold text-warning text-truncate d-block admin-skeleton admin-skeleton-text admin-max-w-200" id="cardTopMovieTitle"></span>
                 <span class="trend-text admin-skeleton admin-skeleton-text" id="cardTopMovieTickets"></span>
             </div>
         </div>
@@ -100,7 +100,7 @@
                 <h3 class="chart-title">Doanh thu theo Rạp</h3>
                 <span class="badge bg-secondary" id="badgeTheaterCount"></span>
             </div>
-            <div id="chartTheaterPie" class="admin-skeleton admin-skeleton-text admin-chart-h-300"></div>
+            <div id="chartTheaterPie" class="admin-skeleton admin-skeleton-chart admin-chart-h-300"></div>
         </div>
     </div>
     <div class="col-xl-7 col-lg-7">
@@ -108,7 +108,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Doanh thu theo Phim (Top 10)</h3>
             </div>
-            <div id="chartMovieBar" class="admin-skeleton admin-skeleton-text admin-chart-h-300"></div>
+            <div id="chartMovieBar" class="admin-skeleton admin-skeleton-chart admin-chart-h-300"></div>
         </div>
     </div>
 </div>
@@ -120,7 +120,7 @@
             <div class="chart-header">
                 <h3 class="chart-title">Tỉ lệ Phương thức Thanh toán</h3>
             </div>
-            <div id="chartPaymentDonut" class="admin-skeleton admin-skeleton-text admin-chart-h-280"></div>
+            <div id="chartPaymentDonut" class="admin-skeleton admin-skeleton-chart admin-chart-h-280"></div>
             <div id="paymentLegend" class="mt-3 d-flex flex-column gap-2 px-2"></div>
         </div>
     </div>
@@ -129,16 +129,17 @@
             <div class="chart-header">
                 <h3 class="chart-title">Xu hướng Doanh thu theo Thời gian</h3>
             </div>
-            <div id="chartRevenueTrend" class="admin-skeleton admin-skeleton-text admin-chart-h-300"></div>
+            <div id="chartRevenueTrend" class="admin-skeleton admin-skeleton-chart admin-chart-h-300"></div>
         </div>
     </div>
+</div>
+
 </div>
 
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/admin/dashboard-redesign.css') }}?v={{ config('app.asset_version') }}">
-<link rel="stylesheet" href="{{ asset('css/admin/pages/stats.css') }}?v={{ config('app.asset_version') }}">
+@vite(['resources/css/admin/dashboard-redesign.css', 'resources/css/admin/pages/stats.css'])
 @endpush
 
 @push('scripts')

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
 
@@ -23,12 +24,14 @@ class PaymentPolicy
     public function view(User $user, Payment $payment): bool
     {
         // Load order relationship if not loaded
-        if (!$payment->relationLoaded('order')) {
+        if (! $payment->relationLoaded('order')) {
             $payment->load('order');
         }
 
         // User owns the order associated with this payment
-        if ($payment->order && $payment->order->user_id === $user->id) {
+        $order = $payment->order;
+
+        if ($order instanceof Order && $order->user_id === $user->id) {
             return true;
         }
 
@@ -44,7 +47,7 @@ class PaymentPolicy
      *
      * User must own the order they're paying for.
      */
-    public function create(User $user, $order = null): bool
+    public function create(User $user, ?Order $order = null): bool
     {
         // User must be active
         if (! $this->isActiveUser($user)) {

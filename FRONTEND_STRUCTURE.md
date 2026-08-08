@@ -1,8 +1,8 @@
 # Frontend Directory Structure
 
-**Cinema Booking System - Phase 1 & 2 Complete**  
-**Date:** July 9, 2026  
-**Status:** ✅ Foundation & Core UX Complete
+**Cinema Booking System — historical frontend structure reference**
+**Last reviewed:** August 8, 2026
+**Status:** The directory examples below are legacy documentation. Treat `vite.config.js`, the Blade layouts, and the active `public/css`/`public/js` files as the source of truth until this document is fully rewritten.
 
 ## Overview
 

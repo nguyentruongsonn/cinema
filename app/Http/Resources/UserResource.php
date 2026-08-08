@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin \App\Models\User */
 class UserResource extends JsonResource
 {
     /**
@@ -70,7 +71,7 @@ class UserResource extends JsonResource
                 fn() => $this->orders->take(10)->map(function ($order) {
                     return [
                         'id' => $order->id,
-                        'order_code' => $order->order_code,
+                        'order_code' => $order->code,
                         'total_amount' => $order->total_amount,
                         'status' => $order->status,
                         'created_at' => $order->created_at?->toISOString(),

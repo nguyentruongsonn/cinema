@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use DomainException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use InvalidArgumentException;
-use DomainException;
 
 /**
  * Order Item Model
- * 
+ *
  * Represents a line item in an order (ticket, product, or combo purchase).
- * 
+ *
  * @property int $id
  * @property int $order_id
  * @property string $item_type Morph alias: 'product', 'combo', 'ticket'
@@ -22,9 +23,8 @@ use DomainException;
  * @property string $unit_price Decimal(10,2)
  * @property string $total_price Decimal(10,2) - calculated as unit_price * quantity
  * @property array|null $metadata Item snapshot (name, SKU, seat_label, pricing_rule, etc.)
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
- * 
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Order $order
  * @property-read Model $item Polymorphic relation to Product, Combo, or Ticket
  */
@@ -33,17 +33,37 @@ class OrderItem extends Model
     use HasFactory;
 
     /**
-     * All fields are guarded to prevent mass assignment of financial data.
-     * Use factory methods to create order items.
+     * Allowed fields for mass assignment.
      */
-    protected $guarded = ['*'];
+    protected $fillable = [
+        'order_id',
+        'item_type',
+        'item_id',
+        'quantity',
+        'unit_price',
+        'total_price',
+        'metadata',
+        'fulfillment_status',
+        'fulfilled_by_user_id',
+        'fulfilled_at',
+    ];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
         'total_price' => 'decimal:2',
         'metadata' => 'json',
         'quantity' => 'integer',
+        'fulfilled_at' => 'datetime',
     ];
+
+    public const FULFILLMENT_PENDING = 'pending';
+
+    public const FULFILLMENT_FULFILLED = 'fulfilled';
+
+    public function fulfilledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'fulfilled_by_user_id');
+    }
 
     /**
      * Allowed polymorphic item types (using class names as required by existing codebase)
@@ -63,7 +83,7 @@ class OrderItem extends Model
         self::validateQuantity($quantity);
         self::validatePrice($unitPrice);
 
-        $item = new self();
+        $item = new self;
         $item->order_id = $order->id;
         $item->item_type = Product::class;
         $item->item_id = $product->id;
@@ -73,7 +93,7 @@ class OrderItem extends Model
         $item->metadata = array_merge([
             'name' => $product->name,
             'type' => $product->type,
-            'image' => $product->image,
+            'image' => $product->image_url,
         ], $metadata);
 
         return $item;
@@ -87,7 +107,7 @@ class OrderItem extends Model
         self::validateQuantity($quantity);
         self::validatePrice($unitPrice);
 
-        $item = new self();
+        $item = new self;
         $item->order_id = $order->id;
         $item->item_type = Combo::class;
         $item->item_id = $combo->id;
@@ -115,7 +135,7 @@ class OrderItem extends Model
     {
         self::validatePrice($unitPrice);
 
-        $item = new self();
+        $item = new self;
         $item->order_id = $order->id;
         $item->item_type = Seat::class;
         $item->item_id = $seat->id;
@@ -126,7 +146,7 @@ class OrderItem extends Model
             'seat_label' => $seat->label,
             'row' => $seat->row,
             'number' => $seat->number,
-            'seat_type' => $seat->seatType?->name ?? 'standard',
+            'seat_type' => $seat->seatType->name,
         ], $metadata);
 
         return $item;
@@ -139,7 +159,7 @@ class OrderItem extends Model
     {
         self::validatePrice($unitPrice);
 
-        $item = new self();
+        $item = new self;
         $item->order_id = $order->id;
         $item->item_type = Ticket::class;
         $item->item_id = $ticket->id;
@@ -181,12 +201,12 @@ class OrderItem extends Model
 
     /**
      * Assert that this order item can be modified
-     * 
+     *
      * @throws DomainException if order is paid
      */
     public function assertMutable(): void
     {
-        if ($this->order && $this->order->status === Order::STATUS_CONFIRMED) {
+        if ($this->order->status === Order::STATUS_CONFIRMED) {
             throw new DomainException('Order items from paid orders cannot be modified.');
         }
     }
@@ -194,6 +214,7 @@ class OrderItem extends Model
     /**
      * Get the order this item belongs to
      */
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
@@ -216,10 +237,10 @@ class OrderItem extends Model
 
         // Enforce allowed morph types on creation
         static::creating(function (OrderItem $item) {
-            if (!in_array($item->item_type, self::ALLOWED_ITEM_TYPES, true)) {
+            if (! in_array($item->item_type, self::ALLOWED_ITEM_TYPES, true)) {
                 throw new InvalidArgumentException(
                     "Invalid item_type: {$item->item_type}. Allowed types: "
-                    . implode(', ', self::ALLOWED_ITEM_TYPES)
+                    .implode(', ', self::ALLOWED_ITEM_TYPES)
                 );
             }
         });

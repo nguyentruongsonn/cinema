@@ -2,21 +2,25 @@
 
 namespace App\Providers;
 
-use App\Models\Branch;
 use App\Models\Banner;
+use App\Models\Branch;
+use App\Models\Combo;
 use App\Models\Movie;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\Promotion;
+use App\Models\Role;
 use App\Models\Screen;
+use App\Models\SeatHold;
 use App\Models\SeatLayoutTemplate;
 use App\Models\Showtime;
 use App\Models\Theater;
+use App\Models\Ticket;
 use App\Models\User;
-use App\Policies\BranchPolicy;
 use App\Policies\BannerPolicy;
+use App\Policies\BranchPolicy;
 use App\Policies\ComboPolicy;
 use App\Policies\MoviePolicy;
 use App\Policies\OrderPolicy;
@@ -30,12 +34,13 @@ use App\Policies\ShowtimePolicy;
 use App\Policies\TheaterPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 
@@ -68,24 +73,24 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureMorphMap(): void
     {
-        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
-            'user' => \App\Models\User::class,
-            'role' => \App\Models\Role::class,
-            'order' => \App\Models\Order::class,
-            'payment' => \App\Models\Payment::class,
-            'movie' => \App\Models\Movie::class,
-            'showtime' => \App\Models\Showtime::class,
-            'screen' => \App\Models\Screen::class,
-            'theater' => \App\Models\Theater::class,
-            'branch' => \App\Models\Branch::class,
-            'product' => \App\Models\Product::class,
-            'combo' => \App\Models\Combo::class,
-            'promotion' => \App\Models\Promotion::class,
-            'banner' => \App\Models\Banner::class,
-            'post' => \App\Models\Post::class,
-            'seat_layout_template' => \App\Models\SeatLayoutTemplate::class,
-            'ticket' => \App\Models\Ticket::class,
-            'seat_hold' => \App\Models\SeatHold::class,
+        Relation::morphMap([
+            'user' => User::class,
+            'role' => Role::class,
+            'order' => Order::class,
+            'payment' => Payment::class,
+            'movie' => Movie::class,
+            'showtime' => Showtime::class,
+            'screen' => Screen::class,
+            'theater' => Theater::class,
+            'branch' => Branch::class,
+            'product' => Product::class,
+            'combo' => Combo::class,
+            'promotion' => Promotion::class,
+            'banner' => Banner::class,
+            'post' => Post::class,
+            'seat_layout_template' => SeatLayoutTemplate::class,
+            'ticket' => Ticket::class,
+            'seat_hold' => SeatHold::class,
         ]);
     }
 
@@ -101,13 +106,13 @@ class AppServiceProvider extends ServiceProvider
         // Prevents brute-force attacks against specific accounts
         RateLimiter::for('login', function (Request $request) {
             $login = $this->normalizeLoginIdentifier($request);
-            $key = $request->ip() . '|' . $login;
+            $key = $request->ip().'|'.$login;
 
             return Limit::perMinute(5)
                 ->by($key)
                 ->response(function () {
                     return response()->json([
-                        'message' => 'Quá nhiều lần đăng nhập. Vui lòng thử lại sau.'
+                        'message' => 'Quá nhiều lần đăng nhập. Vui lòng thử lại sau.',
                     ], 429);
                 });
         });
@@ -121,13 +126,13 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(3)->by($request->ip())
                     ->response(function () {
                         return response()->json([
-                            'message' => 'Quá nhiều lần đăng ký. Vui lòng thử lại sau.'
+                            'message' => 'Quá nhiều lần đăng ký. Vui lòng thử lại sau.',
                         ], 429);
                     }),
-                Limit::perHour(5)->by('email:' . $email)
+                Limit::perHour(5)->by('email:'.$email)
                     ->response(function () {
                         return response()->json([
-                            'message' => 'Email này đã được sử dụng quá nhiều. Vui lòng thử lại sau.'
+                            'message' => 'Email này đã được sử dụng quá nhiều. Vui lòng thử lại sau.',
                         ], 429);
                     }),
             ];
@@ -142,13 +147,13 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(2)->by($request->ip())
                     ->response(function () {
                         return response()->json([
-                            'message' => 'Quá nhiều yêu cầu đặt lại mật khẩu. Vui lòng thử lại sau.'
+                            'message' => 'Quá nhiều yêu cầu đặt lại mật khẩu. Vui lòng thử lại sau.',
                         ], 429);
                     }),
-                Limit::perHour(3)->by('forgot:' . $email)
+                Limit::perHour(3)->by('forgot:'.$email)
                     ->response(function () {
                         return response()->json([
-                            'message' => 'Quá nhiều yêu cầu đặt lại mật khẩu cho email này. Vui lòng thử lại sau.'
+                            'message' => 'Quá nhiều yêu cầu đặt lại mật khẩu cho email này. Vui lòng thử lại sau.',
                         ], 429);
                     }),
             ];
@@ -158,13 +163,13 @@ class AppServiceProvider extends ServiceProvider
         // Prevents token brute-force and replay attacks
         RateLimiter::for('reset-password', function (Request $request) {
             $email = $this->normalizeEmail($request->input('email'));
-            $key = $request->ip() . '|reset:' . $email;
+            $key = $request->ip().'|reset:'.$email;
 
             return Limit::perMinute(3)
                 ->by($key)
                 ->response(function () {
                     return response()->json([
-                        'message' => 'Quá nhiều lần đặt lại mật khẩu. Vui lòng thử lại sau.'
+                        'message' => 'Quá nhiều lần đặt lại mật khẩu. Vui lòng thử lại sau.',
                     ], 429);
                 });
         });
@@ -202,6 +207,10 @@ class AppServiceProvider extends ServiceProvider
         // Booking page access - moderate limit to prevent showtime enumeration
         RateLimiter::for('booking', function (Request $request) {
             return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('pos', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
         });
 
         // Webhook callbacks - per hour limit by IP
@@ -275,9 +284,9 @@ class AppServiceProvider extends ServiceProvider
                 'time_ms' => round($query->time, 2),
                 'connection' => $query->connectionName,
                 'sql' => Str::limit($query->sql, 1000),
-                'route' => request()?->route()?->getName(),
-                'method' => request()?->method(),
-                'path' => request()?->path(),
+                'route' => request()->route()?->getName(),
+                'method' => request()->method(),
+                'path' => request()->path(),
                 'user_id' => Auth::id(),
             ]);
         });
@@ -292,7 +301,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Banner::class, BannerPolicy::class);
         Gate::policy(Branch::class, BranchPolicy::class);
-        Gate::policy(\App\Models\Combo::class, ComboPolicy::class);
+        Gate::policy(Combo::class, ComboPolicy::class);
         Gate::policy(Movie::class, MoviePolicy::class);
         Gate::policy(Order::class, OrderPolicy::class);
         Gate::policy(Payment::class, PaymentPolicy::class);
@@ -305,8 +314,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Theater::class, TheaterPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
 
-        Gate::define('viewDashboardMetrics', fn (User $user): bool =>
-            $user->hasPermission('dashboard.view')
+        Gate::define('viewDashboardMetrics', fn (User $user): bool => $user->hasPermission('dashboard.view')
         );
     }
 }

@@ -46,21 +46,25 @@ class Ticket extends Model
     protected $hidden = [
         'qr_code',
     ];
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Showtime, $this> */
     public function showtime(): BelongsTo
     {
         return $this->belongsTo(Showtime::class);
     }
 
+    /** @return BelongsTo<Seat, $this> */
     public function seat(): BelongsTo
     {
         return $this->belongsTo(Seat::class);

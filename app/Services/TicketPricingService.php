@@ -183,14 +183,20 @@ class TicketPricingService
 
     // ─── Private helpers ────────────────────────────────────────────────
 
+    private array $resolvedTimeSlots = [];
+    private array $resolvedDayTypes = [];
+
     /**
      * Tra cứu khung giờ chiếu từ Database dựa trên giờ bắt đầu suất chiếu.
      */
     private function resolveTimeSlotFromDb(Carbon $scheduledAt): ?TimeSlot
     {
         $timeStr = $scheduledAt->format('H:i:s');
+        if (array_key_exists($timeStr, $this->resolvedTimeSlots)) {
+            return $this->resolvedTimeSlots[$timeStr];
+        }
         
-        return TimeSlot::all()->first(function ($slot) use ($timeStr) {
+        $slot = TimeSlot::all()->first(function ($slot) use ($timeStr) {
             $start = $slot->start_time;
             $end = $slot->end_time;
             
@@ -201,6 +207,9 @@ class TicketPricingService
                 return $timeStr >= $start || $timeStr <= $end;
             }
         });
+
+        $this->resolvedTimeSlots[$timeStr] = $slot;
+        return $slot;
     }
 
     /**
@@ -209,6 +218,11 @@ class TicketPricingService
      */
     private function resolveDayType(Carbon $dt, int $dow, string $ddmm, array $extraHolidays): string
     {
+        $cacheKey = $ddmm . '_' . $dow . '_' . serialize($extraHolidays);
+        if (array_key_exists($cacheKey, $this->resolvedDayTypes)) {
+            return $this->resolvedDayTypes[$cacheKey];
+        }
+
         // 1. Kiểm tra ngày lễ động từ database hoặc danh sách ngoại lệ
         $isHoliday = in_array($ddmm, $extraHolidays, true) || 
             Holiday::where('date', $ddmm)
@@ -216,15 +230,18 @@ class TicketPricingService
                 ->exists();
 
         if ($isHoliday) {
+            $this->resolvedDayTypes[$cacheKey] = 'holiday';
             return 'holiday';
         }
 
         // 2. Tra cứu quy tắc ngày theo Thứ trong tuần từ database
         $dayRule = DayRule::where('day_of_week', $dow)->first();
         if ($dayRule) {
+            $this->resolvedDayTypes[$cacheKey] = $dayRule->day_type;
             return $dayRule->day_type;
         }
 
+        $this->resolvedDayTypes[$cacheKey] = 'standard';
         return 'standard';
     }
 }

@@ -124,10 +124,9 @@ class TheaterController extends Controller
             return $this->errorResponse('Validation failed', 422, $e->errors());
         } catch (\Exception $e) {
             Log::error('Failed to create theater', [
-                'data' => $request->validated(),
+                'fields' => array_keys($request->validated()),
                 'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'exception' => $e::class,
             ]);
             return $this->errorResponse('Failed to create theater', 500);
         }
@@ -251,10 +250,9 @@ class TheaterController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to update theater', [
                 'theater_id' => $id,
-                'data' => $request->validated(),
+                'fields' => array_keys($request->validated()),
                 'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'exception' => $e::class,
             ]);
             return $this->errorResponse('Failed to update theater', 500);
         }

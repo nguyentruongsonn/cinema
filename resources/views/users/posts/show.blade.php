@@ -106,7 +106,7 @@
                                 <p class="newsletter-subtitle mb-4">
                                     Nhận những bài viết phân tích chuyên sâu và tin tức độc quyền hàng tuần.
                                 </p>
-                                <form id="detailNewsletterForm" class="newsletter-form" onsubmit="event.preventDefault();">
+                                <form id="detailNewsletterForm" class="newsletter-form">
                                     <div class="mb-3">
                                         <input type="email" class="cinema-newsletter-input" placeholder="Email của bạn" required aria-label="Email đăng ký nhận bản tin">
                                     </div>

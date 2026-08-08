@@ -47,17 +47,15 @@ class ShowtimeSeatLayoutSnapshot extends Model
     /**
      * Create a new seat layout snapshot for a showtime.
      *
-     * @param Showtime $showtime
-     * @param array $layoutData Validated seat layout structure
-     * @param int $version Version number (should be derived from max existing version + 1)
-     * @return static
+     * @param  array  $layoutData  Validated seat layout structure
+     * @param  int  $version  Version number (should be derived from max existing version + 1)
      */
     public static function createSnapshot(Showtime $showtime, array $layoutData, int $version): self
     {
         // Generate checksum from canonical JSON representation
         $checksum = self::generateChecksum($layoutData);
 
-        $snapshot = new self();
+        $snapshot = new self;
         $snapshot->forceFill([
             'showtime_id' => $showtime->id,
             'layout_data' => $layoutData,
@@ -71,20 +69,16 @@ class ShowtimeSeatLayoutSnapshot extends Model
 
     /**
      * Generate a SHA-256 checksum from layout data.
-     *
-     * @param array $layoutData
-     * @return string
      */
     public static function generateChecksum(array $layoutData): string
     {
         $canonical = json_encode($layoutData, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
         return hash('sha256', $canonical);
     }
 
     /**
      * Verify that the stored checksum matches the layout data.
-     *
-     * @return bool
      */
     public function verifyChecksum(): bool
     {

@@ -404,7 +404,7 @@ class PostController extends Controller
         if (! $data['is_published']) {
             $data['published_at'] = null;
         } elseif (empty($data['published_at'])) {
-            $data['published_at'] = $existingPost?->published_at ?? now();
+            $data['published_at'] = $existingPost->published_at ?? now();
         }
 
         return $data;

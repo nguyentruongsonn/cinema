@@ -112,8 +112,8 @@ class ComboAnalyticsService
         return [
             'total_revenue'   => (string) ($row->total_revenue ?? '0.00'),
             'total_quantity'  => (int)   ($row->total_qty ?? 0),
-            'best_combo_name' => $bestCombo?->name ?? '—',
-            'best_combo_qty'  => (int) ($bestCombo?->qty ?? 0),
+            'best_combo_name' => data_get($bestCombo, 'name', '—'),
+            'best_combo_qty'  => (int) data_get($bestCombo, 'qty', 0),
         ];
     }
 

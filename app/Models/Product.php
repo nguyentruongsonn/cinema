@@ -14,6 +14,7 @@ class Product extends Model
     use SoftDeletes;
 
     public const TYPE_FOOD = 'food';
+
     public const TYPE_DRINK = 'drink';
 
     protected $fillable = [
@@ -70,7 +71,7 @@ class Product extends Model
      */
     public static function createManaged(array $attributes): self
     {
-        $product = new self();
+        $product = new self;
         $product->fill(Arr::only($attributes, [
             'name',
             'type',
@@ -131,7 +132,7 @@ class Product extends Model
             throw new InvalidArgumentException('Stock increase quantity must be positive.');
         }
 
-        return $this->increment('stock', $quantity, []);
+        return $this->increment('stock', $quantity, []) > 0;
     }
 
     public function decreaseStock(int $quantity): bool
@@ -144,7 +145,7 @@ class Product extends Model
             throw new InvalidArgumentException('Insufficient product stock.');
         }
 
-        return $this->decrement('stock', $quantity, []);
+        return $this->decrement('stock', $quantity, []) > 0;
     }
 
     public function activate(): bool

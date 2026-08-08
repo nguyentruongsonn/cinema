@@ -5,6 +5,7 @@ namespace App\Http\Resources\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin \App\Models\AuditLog */
 class AuditLogResource extends JsonResource
 {
     /**

@@ -146,6 +146,15 @@ function finishNavigation({ animate = false } = {}) {
     }
 }
 
+function notifyAdminLayoutStable() {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            window.dispatchEvent(new Event('resize'));
+            document.dispatchEvent(new CustomEvent('admin:layout-stable'));
+        });
+    });
+}
+
 document.addEventListener('click', (event) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return;
@@ -202,6 +211,7 @@ document.addEventListener('turbo:render', () => finishNavigation());
 document.addEventListener('turbo:load', () => {
     window.__adminTurboLoadedUrl = window.location.href;
     syncSidebar();
+    notifyAdminLayoutStable();
 });
 document.addEventListener('turbo:fetch-request-error', () => {
     cancelAnimationFrame(navigationCompletionFrame);

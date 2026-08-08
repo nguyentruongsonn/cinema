@@ -60,10 +60,8 @@ class PromotionController extends Controller
         $this->authorize('viewAny', Promotion::class);
 
         $categories = Promotion::whereNotNull('category')
-            ->select('category')
             ->distinct()
             ->orderBy('category')
-            ->get()
             ->pluck('category')
             ->filter()
             ->values();

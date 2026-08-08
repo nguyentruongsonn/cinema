@@ -13,7 +13,9 @@ class Order extends Model
     use HasFactory;
 
     public const STATUS_CANCELLED = 0;
+
     public const STATUS_PENDING = 1;
+
     public const STATUS_CONFIRMED = 2;
 
     /**
@@ -60,31 +62,49 @@ class Order extends Model
         'cancelled_at' => null,
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Showtime, $this> */
     public function showtime(): BelongsTo
     {
         return $this->belongsTo(Showtime::class);
     }
 
+    /** @return BelongsTo<Theater, $this> */
+    public function theater(): BelongsTo
+    {
+        return $this->belongsTo(Theater::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function servedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'served_by_user_id');
+    }
+
+    /** @return BelongsTo<Promotion, $this> */
     public function promotion(): BelongsTo
     {
         return $this->belongsTo(Promotion::class);
     }
 
+    /** @return HasMany<OrderItem, $this> */
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
+    /** @return HasOne<Payment, $this> */
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
     }
 
+    /** @return HasMany<Ticket, $this> */
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
@@ -177,26 +197,33 @@ class Order extends Model
      * Factory method: Create a new pending order with all required fields.
      * Uses forceFill to bypass mass assignment protection for trusted internal creation.
      *
-     * @param array $attributes Required: code, gateway_order_code, payment_provider, user_id, showtime_id, total_amount, expired_at
-     * @return self
+     * @param  array  $attributes  Required: code, gateway_order_code, payment_provider, user_id, showtime_id, total_amount, expired_at
      */
     public static function createPending(array $attributes): self
     {
-        $required = ['code', 'gateway_order_code', 'payment_provider', 'user_id', 'showtime_id', 'total_amount', 'expired_at'];
+        $required = ['code', 'gateway_order_code', 'payment_provider', 'user_id', 'total_amount', 'expired_at'];
 
         foreach ($required as $field) {
-            if (!isset($attributes[$field])) {
+            if (! isset($attributes[$field])) {
                 throw new \InvalidArgumentException("Missing required field for order creation: {$field}");
             }
         }
 
-        $order = new static();
+        if (! array_key_exists('showtime_id', $attributes)) {
+            throw new \InvalidArgumentException('Missing required field for order creation: showtime_id');
+        }
+
+        $order = new self;
         $order->forceFill([
             'code' => $attributes['code'],
             'gateway_order_code' => $attributes['gateway_order_code'],
             'payment_provider' => $attributes['payment_provider'],
             'user_id' => $attributes['user_id'],
             'showtime_id' => $attributes['showtime_id'],
+            'theater_id' => $attributes['theater_id'] ?? null,
+            'served_by_user_id' => $attributes['served_by_user_id'] ?? null,
+            'source' => $attributes['source'] ?? 'web',
+            'payment_method' => $attributes['payment_method'] ?? null,
             'checkout_fingerprint' => $attributes['checkout_fingerprint'] ?? null,
             'total_amount' => $attributes['total_amount'],
             'payload' => $attributes['payload'] ?? null,
@@ -257,6 +284,39 @@ class Order extends Model
     public function isPending(): bool
     {
         return (int) $this->status === self::STATUS_PENDING;
+    }
+
+    public function isPos(): bool
+    {
+        return str_starts_with((string) $this->code, 'POS-')
+            || $this->source === 'pos'
+            || data_get($this->payload, 'source') === 'pos';
+    }
+
+    public function posTheaterId(): ?int
+    {
+        if (is_numeric($this->theater_id)) {
+            return (int) $this->theater_id;
+        }
+
+        $theaterId = data_get($this->payload, 'theater_id');
+
+        if (is_numeric($theaterId)) {
+            return (int) $theaterId;
+        }
+
+        if (! $this->relationLoaded('showtime')) {
+            $this->load('showtime.screen:id,theater_id');
+        } elseif ($this->showtime && ! $this->showtime->relationLoaded('screen')) {
+            $this->showtime->load('screen:id,theater_id');
+        }
+
+        $showtime = $this->showtime;
+        $screen = $showtime?->screen;
+
+        return $screen?->theater_id
+            ? (int) $screen->theater_id
+            : null;
     }
 
     public function scopeByStatus($query, $status)

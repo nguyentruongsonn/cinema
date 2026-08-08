@@ -57,6 +57,7 @@ class AuditLog extends Model
         return self::query()->forceCreate($attributes);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

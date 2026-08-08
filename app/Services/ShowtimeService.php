@@ -35,12 +35,17 @@ class ShowtimeService
         ]);
 
         $query = $this->applyFilters($query, $filters);
+        $query = $this->applyTheaterScope($query, auth()->user());
         $query = $this->applySorting($query, $filters);
 
         $perPage = max(1, min((int) ($filters['per_page'] ?? 15), 100));
         $showtimes = $query->paginate($perPage);
 
-        $showtimes->getCollection()->transform(fn ($s) => $this->enrichShowtime($s));
+        foreach ($showtimes->items() as $showtime) {
+            if ($showtime instanceof Showtime) {
+                $this->enrichShowtime($showtime);
+            }
+        }
 
         return $showtimes;
     }
@@ -237,7 +242,7 @@ class ShowtimeService
             throw new HttpException(403, 'Chi nhánh của suất chiếu này tạm thời ngưng hoạt động.');
         }
 
-        if ($showtime->scheduled_at === null || $showtime->scheduled_at->isPast()) {
+        if ($showtime->scheduled_at->isPast()) {
             throw new HttpException(403, 'Suất chiếu này đã bắt đầu hoặc kết thúc. Không thể đặt vé.');
         }
 
@@ -272,6 +277,7 @@ class ShowtimeService
     /**
      * Get filtered showtimes (5 days, exclude past showtimes)
      */
+    /** @return Collection<int, Showtime> */
     private function getFilteredShowtimes(int $movieId): Collection
     {
         $now = Carbon::now();
@@ -304,6 +310,7 @@ class ShowtimeService
     /**
      * Group showtimes by theater -> format
      */
+    /** @param Collection<int, Showtime> $showtimes */
     private function groupShowtimes(Collection $showtimes): array
     {
         $grouped = [];
@@ -318,7 +325,7 @@ class ShowtimeService
                         'id' => $showtime->screen->theater->id,
                         'name' => $showtime->screen->theater->name,
                         'address' => $showtime->screen->theater->address,
-                        'city' => $showtime->screen->theater->branch?->name ?? '',
+                        'city' => $showtime->screen->theater->branch->name,
                     ],
                     'formats' => [],
                 ];
@@ -327,11 +334,11 @@ class ShowtimeService
             if (!isset($grouped[$theaterId]['formats'][$formatId])) {
                 $grouped[$theaterId]['formats'][$formatId] = [
                     'format' => [
-                        'id' => $showtime->format?->id,
-                        'name' => $showtime->format?->name ?? 'Standard',
-                        'slug' => $showtime->format?->name ? \Illuminate\Support\Str::slug($showtime->format->name) : 'standard',
+                        'id' => $showtime->format->id,
+                        'name' => $showtime->format->name,
+                        'slug' => \Illuminate\Support\Str::slug($showtime->format->name),
                         'description' => null,
-                        'surcharge' => $showtime->format?->surcharge ?? 0,
+                        'surcharge' => $showtime->format->surcharge,
                     ],
                     'showtimes' => [],
                 ];
@@ -346,9 +353,9 @@ class ShowtimeService
                     'name' => $showtime->screen->name,
                 ],
                 'version_type' => [
-                    'id' => $showtime->versionType?->id,
-                    'name' => $showtime->versionType?->name ?? 'N/A',
-                    'slug' => $showtime->versionType?->slug ?? 'standard',
+                    'id' => $showtime->versionType->id,
+                    'name' => $showtime->versionType->name,
+                    'slug' => $showtime->versionType->slug,
                 ],
                 'scheduled_date' => $showtime->scheduled_at->format('Y-m-d'),
             ];
@@ -527,14 +534,46 @@ class ShowtimeService
      */
     private function enrichShowtime(Showtime $showtime): Showtime
     {
-        $showtime->start_time = $showtime->scheduled_at
-            ? $showtime->scheduled_at->format('Y-m-d H:i:s')
-            : null;
-
-        $showtime->end_time_estimated = $showtime->scheduled_at && $showtime->movie
-            ? $showtime->scheduled_at->copy()->addMinutes($showtime->movie->duration)->format('Y-m-d H:i:s')
-            : null;
+        $showtime->setAttribute('start_time', $showtime->scheduled_at->format('Y-m-d H:i:s'));
+        $showtime->setAttribute(
+            'end_time_estimated',
+            $showtime->scheduled_at->copy()->addMinutes($showtime->movie->duration)->format('Y-m-d H:i:s')
+        );
 
         return $showtime;
+    }
+
+    private function applyTheaterScope(Builder $query, ?\App\Models\User $actor, string $theaterColumn = 'theater_id'): Builder
+    {
+        if ($actor && $actor->requiresTheaterScope()) {
+            $theaterIds = $actor->theaters()->pluck('theaters.id')->toArray();
+            $query->whereHas('screen', function ($q) use ($theaterIds, $theaterColumn) {
+                $q->whereIn($theaterColumn, $theaterIds);
+            });
+        }
+        return $query;
+    }
+
+    public function getForPosToday(?array $theaterIds): Collection
+    {
+        $query = Showtime::with([
+            'movie:id,title,slug,duration,age_rating,poster_url,poster_path',
+            'screen:id,name,code,format_id,theater_id,capacity',
+            'screen.theater:id,name,address,branch_id',
+            'format:id,name,surcharge',
+        ])
+        ->where('status', 1)
+        ->whereDate('scheduled_at', Carbon::today())
+        ->whereHas('screen', function ($q) {
+            $q->where('status', 1);
+        });
+
+        if (!empty($theaterIds)) {
+            $query->whereHas('screen', function ($q) use ($theaterIds) {
+                $q->whereIn('theater_id', $theaterIds);
+            });
+        }
+
+        return $query->orderBy('scheduled_at', 'asc')->get();
     }
 }

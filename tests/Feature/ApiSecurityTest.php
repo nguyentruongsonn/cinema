@@ -109,7 +109,7 @@ class ApiSecurityTest extends TestCase
                 $middleware = $route->gatherMiddleware();
 
                 $this->assertContains('auth:api', $middleware, "Admin route {$uri} must require API authentication.");
-                $this->assertContains('role:admin,super-admin', $middleware, "Admin route {$uri} must require admin role.");
+                $this->assertContains('role:admin,super-admin,theater_manager', $middleware, "Admin route {$uri} must require admin role.");
             }
         }
     }
@@ -263,7 +263,7 @@ class ApiSecurityTest extends TestCase
             $middleware = $route->gatherMiddleware();
 
             $this->assertContains('auth:api', $middleware, "Admin toggle route {$uri} must require API authentication.");
-            $this->assertContains('role:admin,super-admin', $middleware, "Admin toggle route {$uri} must require admin role.");
+            $this->assertContains('role:admin,super-admin,theater_manager', $middleware, "Admin toggle route {$uri} must require admin role.");
         }
     }
 

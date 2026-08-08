@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class Post extends Model
@@ -46,7 +47,8 @@ class Post extends Model
     /**
      * Get the author of the post.
      */
-    public function author()
+    /** @return BelongsTo<User, $this> */
+    public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
     }
@@ -57,8 +59,8 @@ class Post extends Model
     public function scopePublished($query)
     {
         return $query->where('is_published', true)
-                     ->whereNotNull('published_at')
-                     ->where('published_at', '<=', now());
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
     public function scopeScheduled($query)
@@ -108,6 +110,7 @@ class Post extends Model
         if ($value) {
             return $value;
         }
+
         return Str::limit(strip_tags($this->content), 150);
     }
 
@@ -124,7 +127,7 @@ class Post extends Model
             return $this->featured_image;
         }
 
-        return asset('storage/' . $this->featured_image);
+        return asset('storage/'.$this->featured_image);
     }
 
     /**
@@ -132,14 +135,15 @@ class Post extends Model
      */
     public function getCategoryLabelAttribute(): string
     {
-        return match ($this->category) {
+        $labels = [
             'promotion' => 'Ưu đãi & Khuyến mãi',
             'blog' => 'Review & Blog',
             'event' => 'Sự kiện',
             'news' => 'Tin phim',
             'announcement' => 'Thông báo',
-            default => 'Tin tức',
-        };
+        ];
+
+        return $labels[(string) $this->getAttribute('category')] ?? 'Tin tức';
     }
 
     /**
@@ -148,6 +152,7 @@ class Post extends Model
     public function getReadingTimeAttribute(): int
     {
         $words = count(preg_split('/\s+/', trim(strip_tags((string) $this->content))));
+
         return max(3, (int) ceil($words / 180));
     }
 
@@ -156,7 +161,7 @@ class Post extends Model
      */
     public function getAuthorNameAttribute(): string
     {
-        return $this->author?->name ?? 'Poly Cinema';
+        return (string) data_get($this, 'author.name', 'Poly Cinema');
     }
 
     /**
@@ -164,15 +169,15 @@ class Post extends Model
      */
     public function getBadgeTextAttribute(): string
     {
-        return match ($this->category) {
+        $badges = [
             'blog' => 'REVIEW',
             'news' => 'INDUSTRY',
             'promotion' => 'EXCLUSIVE',
             'event' => 'SỰ KIỆN',
             'announcement' => 'THÔNG BÁO',
-            default => strtoupper($this->category),
-        };
+        ];
+        $category = (string) $this->getAttribute('category');
+
+        return $badges[$category] ?? strtoupper($category);
     }
 }
-
-

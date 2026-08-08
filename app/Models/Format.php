@@ -20,4 +20,9 @@ class Format extends Model
     {
         return $this->hasMany(Showtime::class, 'format_id');
     }
+
+    public function screens(): HasMany
+    {
+        return $this->hasMany(Screen::class, 'format_id');
+    }
 }

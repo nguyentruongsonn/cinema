@@ -43,8 +43,10 @@ class ScreenController extends Controller
         $screens = $this->screenService->getAll($filters);
         
         return $this->paginatedResponse(
-            $screens->through(fn($screen) => new ScreenResource($screen)),
-            'Screens retrieved successfully'
+            $screens,
+            'Screens retrieved successfully',
+            200,
+            fn ($screen) => new ScreenResource($screen)
         );
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin \App\Models\Showtime */
 class ShowtimeResource extends JsonResource
 {
     /**
@@ -12,14 +13,16 @@ class ShowtimeResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $scheduledAt = $this->getAttribute('scheduled_at');
+
         return [
             'id' => $this->id,
             'movie_id' => $this->movie_id,
             'screen_id' => $this->screen_id,
             'format_id' => $this->format_id,
             'version_type_id' => $this->version_type_id,
-            'price_rule_id' => $this->price_rule_id,
-            'scheduled_at' => $this->scheduled_at?->toISOString(),
+            'price_rule_id' => $this->getAttribute('price_rule_id'),
+            'scheduled_at' => $scheduledAt?->toISOString(),
             'start_time' => $this->formatted_start_time,
             'start_date' => $this->formatted_start_date,
             'pricing_snapshot' => $this->pricing_snapshot,

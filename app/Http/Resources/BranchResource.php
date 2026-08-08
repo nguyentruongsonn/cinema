@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin \App\Models\Branch */
 class BranchResource extends JsonResource
 {
     /**
@@ -28,8 +29,8 @@ class BranchResource extends JsonResource
             ),
 
             'active_theaters_count' => $this->when(
-                isset($this->active_theaters_count),
-                fn () => (int) $this->active_theaters_count
+                $this->getAttribute('active_theaters_count') !== null,
+                fn () => (int) $this->getAttribute('active_theaters_count')
             ),
         ];
     }

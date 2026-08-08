@@ -51,6 +51,7 @@ class SeatStatusUpdated implements ShouldBroadcast, ShouldDispatchAfterCommit
             'seat_id'     => $this->seatId,
             'status'      => $this->status,
             'user_id'     => $this->userId,
+            'owner_key'   => $this->userId === null ? null : 'user:' . $this->userId,
         ];
     }
 }
