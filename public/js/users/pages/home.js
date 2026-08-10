@@ -370,8 +370,7 @@ import Modal from '../components/modal.js';
         // If movie or cinema is selected, could trigger showtime loading
         // For now, just a placeholder for future enhancement
         if (selectName === 'movie' || selectName === 'cinema' || selectName === 'date') {
-            // TODO: Load showtimes based on selections
-            console.log(`${selectName} selected:`, value);
+            // Selection state is consumed when the user submits the quick booking form.
         }
     }
 

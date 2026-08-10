@@ -37,6 +37,19 @@ class OperationalHealthController extends Controller
                     throw new \RuntimeException('Cache read/write check failed.');
                 }
             },
+            'runtime' => function (): void {
+                if (config('app.env') !== 'production') {
+                    return;
+                }
+
+                if (in_array(config('queue.default'), ['sync', 'null', 'background', 'deferred'], true)) {
+                    throw new \RuntimeException('Production requires a durable asynchronous queue driver.');
+                }
+
+                if (in_array(config('broadcasting.default'), ['log', 'null'], true)) {
+                    throw new \RuntimeException('Production requires a realtime broadcast driver.');
+                }
+            },
         ];
         $results = [];
         $ready = true;

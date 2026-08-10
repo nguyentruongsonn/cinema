@@ -36,10 +36,7 @@
         scannerModal = new bootstrap.Modal(modalEl);
         barcodeDetector = createBarcodeDetector();
 
-        // Button event listeners
-        document.addEventListener('click', (event) => {
-            if (event.target.closest('#scanTicketBtn')) openScanner();
-        });
+        // Scanner launch is lazy-loaded by the Vite bootstrap entry.
         document.getElementById('cameraScanBtn')?.addEventListener('click', showCameraMode);
         document.getElementById('manualScanBtn')?.addEventListener('click', showManualMode);
         document.getElementById('verifyTicketBtn')?.addEventListener('click', verifyTicket);

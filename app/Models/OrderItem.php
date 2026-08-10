@@ -146,7 +146,7 @@ class OrderItem extends Model
             'seat_label' => $seat->label,
             'row' => $seat->row,
             'number' => $seat->number,
-            'seat_type' => $seat->seatType->name,
+            'seat_type' => data_get($seat, 'seatType.name'),
         ], $metadata);
 
         return $item;

@@ -51,6 +51,19 @@ class OperationalHealthTest extends TestCase
             ->assertExitCode(1);
     }
 
+    public function test_production_readiness_rejects_non_durable_runtime_drivers(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('queue.default', 'sync');
+        config()->set('broadcasting.default', 'log');
+        config()->set('queue.monitoring.include_in_readiness', false);
+
+        $this->getJson('/api/v1/health/ready')
+            ->assertStatus(503)
+            ->assertJsonPath('status', 'not_ready')
+            ->assertJsonPath('checks.runtime', 'unavailable');
+    }
+
     public function test_future_delayed_jobs_do_not_fail_readiness_but_expired_reservations_do(): void
     {
         config()->set('queue.default', 'database');

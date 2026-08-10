@@ -795,8 +795,6 @@
 
     /* ── Edit Modal ──────────────────────────────────────── */
     async function openEditModal(showtime) {
-        console.log('[EDIT MODAL] Opening with showtime:', showtime);
-
         els.editIdInput.value = showtime.id;
         els.editFormMovieId.value = showtime.movie_id || '';
         els.editFormTheaterId.value = showtime.screen?.theater_id || '';
@@ -805,17 +803,10 @@
         els.editFormVersionTypeId.value = showtime.version_type_id || '';
         els.editFormStatus.checked = !!showtime.status;
 
-        console.log('[EDIT MODAL] Theater ID:', showtime.screen?.theater_id);
-        console.log('[EDIT MODAL] Screen ID to set:', showtime.screen_id);
-        console.log('[EDIT MODAL] editFormScreenId element:', els.editFormScreenId);
-
         // Load screens for theater and wait for completion
         if (showtime.screen?.theater_id) {
-            console.log('[EDIT MODAL] Loading screens for theater:', showtime.screen.theater_id);
             await loadScreensForTheater(showtime.screen.theater_id, els.editFormScreenId);
-            console.log('[EDIT MODAL] Screens loaded, setting value to:', showtime.screen_id);
             els.editFormScreenId.value = showtime.screen_id || '';
-            console.log('[EDIT MODAL] Screen dropdown value after set:', els.editFormScreenId.value);
         }
 
         const bsModal = new bootstrap.Modal(els.editModal);
@@ -823,8 +814,6 @@
     }
 
     async function loadScreensForTheater(theaterId, screenEl) {
-        console.log('[LOAD SCREENS] Called with theaterId:', theaterId, 'element:', screenEl);
-
         if (!screenEl) {
             console.error('[LOAD SCREENS] Screen element is null!');
             return;
@@ -838,19 +827,14 @@
 
         try {
             const url = `/api/v1/admin/screens?theater_id=${theaterId}&per_page=50&status=all`;
-            console.log('[LOAD SCREENS] Fetching from:', url);
-
             const res = await window.AdminCore.apiFetch(url);
-            console.log('[LOAD SCREENS] Response:', res);
 
             if (res && res.ok) {
                 const json = await res.json();
-                console.log('[LOAD SCREENS] JSON response:', json);
 
                 // Admin endpoint returns { screens: { data: [...] } }
                 const screens = json.screens?.data || json.data || [];
                 fillSelect(screenEl, screens, 'id', 'name', '-- Chọn phòng --');
-                console.log('[LOAD SCREENS] Dropdown populated with', screens.length, 'screens');
             } else {
                 console.error('[LOAD SCREENS] API call failed, response:', res);
             }
@@ -1019,8 +1003,6 @@
 
     /* ── Initialize ──────────────────────────────────────── */
     async function init() {
-        console.log('[Showtimes] Initializing...');
-
         // Do not pre-fill date filter so that clicking any movie displays all showtimes by default
         // setThisWeekDate();
 
@@ -1033,7 +1015,6 @@
         // Setup all event listeners
         setupEventListeners();
 
-        console.log('[Showtimes] Ready.');
     }
 
     window.onAdminPageLoad(init);

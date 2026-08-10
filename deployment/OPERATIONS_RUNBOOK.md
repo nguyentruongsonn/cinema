@@ -1,5 +1,17 @@
 # Cinema Production Operations Runbook
 
+## 0. Required production environment
+
+Before starting any process, verify these values are explicitly set in the production environment:
+
+- `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://...`.
+- `QUEUE_CONNECTION=redis` and `BROADCAST_CONNECTION=reverb`.
+- `REVERB_ENABLED=true` and `VITE_REVERB_ENABLED=true`, with matching Reverb app credentials.
+- `MAIL_MAILER=smtp` with valid credentials; never keep the `.env.example` mail logger in production.
+- `SESSION_SECURE=true`, a non-empty `METRICS_TOKEN`, and private alert webhook credentials.
+
+Build frontend assets only after setting every `VITE_REVERB_*` value because Vite embeds them at build time.
+
 ## 1. Process manager
 
 1. Copy `deployment/supervisor/cinema.conf.example` to `/etc/supervisor/conf.d/cinema.conf`.
@@ -14,6 +26,8 @@ Expected processes:
 - One worker for `broadcasts`.
 - One Laravel scheduler.
 - One Reverb server when realtime is enabled.
+
+All four process groups must report `RUNNING`. A healthy web process alone is not a successful deployment.
 
 ## 2. Health and alerts
 

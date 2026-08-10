@@ -119,8 +119,6 @@ class BookingManager {
         const echoOk = window.Echo && typeof window.Echo.channel === 'function';
         const showtimeId = this.config.showtimeId;
 
-        console.log('[Booking WS] Echo available:', echoOk, '| showtimeId:', showtimeId);
-
         if (!echoOk || !showtimeId) {
             console.warn('[Booking WS] WebSocket skipped — falling back to polling only.');
             return;
@@ -129,7 +127,6 @@ class BookingManager {
         try {
             const channel = window.Echo.channel(`showtime.${showtimeId}`);
             channel.listen('.seat.status.updated', (event) => {
-                console.log('[Booking WS] Event received:', event);
                 this.wsConnected = true;
                 this.applyRealtimeSeatStatus(event.seat_id, event.status, event.user_id);
             });
@@ -137,7 +134,6 @@ class BookingManager {
             // Detect connection state
             if (window.Echo.connector?.pusher) {
                 window.Echo.connector.pusher.connection.bind('connected', () => {
-                    console.log('[Booking WS] Pusher connected ✅');
                     this.wsConnected = true;
                 });
                 window.Echo.connector.pusher.connection.bind('disconnected', () => {
@@ -149,7 +145,6 @@ class BookingManager {
                 });
             }
 
-            console.log('[Booking WS] Subscribed to channel showtime.' + showtimeId);
         } catch (err) {
             console.error('[Booking WS] Subscription failed:', err);
         }
@@ -2504,7 +2499,6 @@ class BookingManager {
 
                     // If status changed → update in memory + re-render that seat incrementally
                     if (currentSeat.status !== freshSeat.status) {
-                        console.log(`[Polling] Seat ${freshSeat.id} changed: ${currentSeat.status} → ${freshSeat.status}`);
                         this.applyRealtimeSeatStatus(freshSeat.id, freshSeat.status);
                     }
                 });

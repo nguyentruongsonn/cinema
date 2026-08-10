@@ -152,7 +152,6 @@
         // Fallback for isolated environment without admin shell
         const container = document.getElementById('toastContainer');
         if (!container) {
-            console.log(`[Toast ${type}] ${message}`);
             return;
         }
         const el = document.createElement('div');

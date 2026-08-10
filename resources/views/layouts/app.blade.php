@@ -134,7 +134,6 @@
                         }
                     },
                 });
-                console.log('[Echo] Initialized. host=' + cfg.host + ':' + cfg.port);
             }
 
             // Boot Echo immediately

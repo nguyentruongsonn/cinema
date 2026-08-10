@@ -54,8 +54,6 @@ import Toast from '../components/toast.js';
     async function loadShowtimes() {
         try {
             const data = await window.apiClient.get(`/movies/${movieSlug}/showtimes`);
-            console.log('API Response:', data);
-
             if (data.success && data.data && data.data.showtimes_grouped) {
                 showtimeGroups = data.data.showtimes_grouped;
             } else if (data.showtimes_grouped) {
@@ -64,13 +62,9 @@ import Toast from '../components/toast.js';
                 showtimeGroups = [];
             }
 
-            console.log('Showtime groups:', showtimeGroups);
-
             // Set initial selected date
             const dates = getUniqueDates();
             selectedDate = dates[0] || null;
-            console.log('Available dates:', dates);
-            console.log('Selected date:', selectedDate);
         } catch (error) {
             console.error('Error loading showtimes:', error);
             showtimeGroups = [];

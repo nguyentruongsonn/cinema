@@ -701,17 +701,11 @@ class OrderService
             $unitPrice = $pricingResult['total_price'];
             $totalAmount += $unitPrice;
 
-            // PHASE 5 WORKAROUND: Use forceCreate to bypass guarded protection
-            // TODO Phase 6: Refactor seat reservation architecture to use Ticket references from the start
-            // Current issue: OrderService stores seat references (Seat::class), but OrderItem expects Ticket references
-            OrderItem::forceCreate([
-                'order_id' => $order->id,
-                'item_type' => Seat::class,
-                'item_id' => $seat->id,
-                'quantity' => 1,
-                'unit_price' => $unitPrice,
-                'total_price' => $unitPrice,
-                'metadata' => [
+            OrderItem::createFromSeat(
+                $order,
+                $seat,
+                (string) $unitPrice,
+                [
                     'seat_label' => $seat->label ?: ($seat->row . $seat->number),
                     'row' => $seat->row,
                     'number' => $seat->number,
@@ -725,7 +719,7 @@ class OrderService
                         'format' => $pricingResult['format'],
                     ],
                 ],
-            ]);
+            )->save();
         }
 
         return $totalAmount;
