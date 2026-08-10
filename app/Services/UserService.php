@@ -147,7 +147,6 @@ class UserService
             return $user->load(['role', 'theaters:id,name']);
         } catch (\Exception $e) {
             Log::error('Failed to create user', [
-                'user_id' => $user->id ?? null,
                 'error' => 'User creation failed'
             ]);
             throw $e;
