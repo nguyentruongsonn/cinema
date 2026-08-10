@@ -34,7 +34,12 @@ jobs:
       - run: npm run test:frontend:syntax
       - run: npm run test:frontend:security
       - run: npm run build
+      - run: touch database/testing.sqlite
       - run: php artisan test
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/testing.sqlite
       - run: npm run test:browser:smoke
       - run: npm run test:browser:auth-expiry
       - run: composer audit
