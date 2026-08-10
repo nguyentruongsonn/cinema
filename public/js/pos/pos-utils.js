@@ -30,7 +30,14 @@
         const token = getToken();
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const init = { method, headers };
+        const init = {
+            ...opts,
+            method,
+            headers: {
+                ...headers,
+                ...(opts.headers || {}),
+            },
+        };
         if (body !== null) init.body = JSON.stringify(body);
 
         const res = await fetch(url, init);
@@ -78,7 +85,9 @@
     }
 
     const PosAPI = {
-        get:    (path)        => typeof window.apiClient !== 'undefined' ? window.apiClient.get(normalizeApiClientPath(path)) : api('GET',    path),
+        get:    (path)        => typeof window.apiClient !== 'undefined'
+            ? window.apiClient.get(normalizeApiClientPath(path), { cache: 'no-store' })
+            : api('GET', path, null, { cache: 'no-store' }),
         post:   (path, body)  => typeof window.apiClient !== 'undefined' ? window.apiClient.post(normalizeApiClientPath(path), body) : api('POST',   path, body),
         put:    (path, body)  => typeof window.apiClient !== 'undefined' ? window.apiClient.put(normalizeApiClientPath(path), body) : api('PUT',    path, body),
         delete: (path)        => typeof window.apiClient !== 'undefined' ? window.apiClient.delete(normalizeApiClientPath(path)) : api('DELETE', path),
@@ -109,6 +118,12 @@
         const parts = name.trim().split(/\s+/);
         if (parts.length === 1) return parts[0][0].toUpperCase();
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function escapeHtml(value) {
+        const element = document.createElement('div');
+        element.textContent = String(value ?? '');
+        return element.innerHTML;
     }
 
     function renderEmptyState(container, message, icon = '⚠️') {
@@ -169,6 +184,6 @@
     }
 
     // ── Expose ────────────────────────────────────────────
-    global.PosUtils = { api: PosAPI, formatVnd, formatDate, formatTime, phoneNormalize, initials, renderEmptyState, toast, startClock };
+    global.PosUtils = { api: PosAPI, formatVnd, formatDate, formatTime, phoneNormalize, initials, escapeHtml, renderEmptyState, toast, startClock };
 
 })(window);

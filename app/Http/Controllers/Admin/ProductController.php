@@ -309,7 +309,7 @@ class ProductController extends Controller
     public function toggleActive(Product $product): JsonResponse
     {
         try {
-            $this->authorize('update', $product);
+            $this->authorize('toggleStatus', $product);
 
             DB::transaction(function () use ($product) {
                 $locked = Product::query()->whereKey($product->getKey())->lockForUpdate()->firstOrFail();

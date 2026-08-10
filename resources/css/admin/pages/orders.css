@@ -1,175 +1,239 @@
 /* ═══════════════════════════════════════════════════════════════════════
- * ADMIN ORDERS PAGE - CARD LAYOUT
- * Extends tickets.css for admin-specific order management
+ * ADMIN ORDERS PAGE
+ * Uses the shared admin cards, filters, badges, buttons and pagination.
  * ═══════════════════════════════════════════════════════════════════════ */
 
-/* ── Admin Filter Additions ──────────────────────────────────────────────── */
-
-.tickets-filters {
-    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 1.2rem;
-}
-
-.tickets-filters-grid {
+.admin-orders-page {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0.8rem;
+    gap: var(--admin-space-xl, 1.5rem);
+}
+
+.admin-orders-page > .admin-card,
+.admin-orders-page > .admin-filter-container,
+.admin-orders-page > .admin-table-container {
+    margin-bottom: 0;
+}
+
+.admin-orders-overview {
     align-items: center;
-}
-
-.tickets-filter-select,
-.tickets-filter-input {
-    width: 100%;
-    padding: 0.65rem 1rem;
-    background: rgba(30,30,35,0.6);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 8px;
-    color: #e5e5e7;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.tickets-filter-select:focus,
-.tickets-filter-input:focus {
-    outline: none;
-    border-color: rgba(255,17,29,0.4);
-    background: rgba(30,30,35,0.8);
-    box-shadow: 0 0 0 3px rgba(255,17,29,0.08);
-}
-
-.tickets-filter-select option {
-    background: #1e1e23;
-    color: #e5e5e7;
-}
-
-.tickets-filter-btn {
-    padding: 0.65rem 1.5rem;
-    background: linear-gradient(135deg, #FF111D 0%, #c70d17 100%);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.tickets-filter-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(255,17,29,0.3);
-}
-
-.tickets-filter-btn:active {
-    transform: translateY(0);
-}
-
-/* ── Admin-specific ticket card additions ──────────────────────────────── */
-
-.ticket-customer-info {
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    gap: var(--admin-space-xl, 1.5rem);
+    justify-content: space-between;
+    padding: var(--admin-space-xl, 1.5rem);
 }
 
-.ticket-customer-label {
-    color: rgba(242,201,195,0.6);
-    font-size: 0.65rem;
-    font-weight: 700;
+.admin-orders-overview-copy {
+    min-width: 220px;
+}
+
+.admin-orders-eyebrow,
+.admin-order-field-label {
+    color: var(--admin-text-muted, #a1a1aa);
+    display: block;
+    font-size: var(--admin-font-size-xs, 0.75rem);
+    font-weight: var(--admin-font-weight-bold, 700);
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
 
-.ticket-customer-name {
-    color: #f5f5f7;
-    font-size: 0.88rem;
-    font-weight: 600;
+.admin-orders-title {
+    color: var(--admin-text-primary, #f4f4f5);
+    font-size: var(--admin-font-size-xl, 1.25rem);
+    font-weight: var(--admin-font-weight-bold, 700);
+    margin: var(--admin-space-xs, 0.35rem) 0;
 }
 
-.ticket-customer-contact {
-    color: rgba(245,245,247,0.7);
-    font-size: 0.78rem;
-    font-weight: 400;
+.admin-orders-subtitle {
+    color: var(--admin-text-muted, #a1a1aa);
+    font-size: var(--admin-font-size-sm, 0.875rem);
+    margin: 0;
 }
 
-/* ── Status badges with admin colors ───────────────────────────────────── */
+#orderCount {
+    color: var(--admin-text-primary, #f4f4f5);
+    font-weight: var(--admin-font-weight-semibold, 600);
+}
 
-.ticket-status-badge {
-    display: inline-flex;
+.admin-orders-tabs {
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--admin-radius-lg, 10px);
+    display: flex;
+    gap: var(--admin-space-xs, 0.35rem);
+    overflow-x: auto;
+    padding: var(--admin-space-xs, 0.35rem);
+    scrollbar-width: none;
+}
+
+.admin-orders-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-orders-tab {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--admin-radius-md, 8px);
+    color: var(--admin-text-secondary, #d4d4d8);
+    cursor: pointer;
+    flex: 0 0 auto;
+    font-size: var(--admin-font-size-sm, 0.875rem);
+    font-weight: var(--admin-font-weight-semibold, 600);
+    min-height: 38px;
+    padding: 0 var(--admin-space-lg, 1rem);
+    transition: background-color var(--admin-transition-fast, 150ms), color var(--admin-transition-fast, 150ms);
+}
+
+.admin-orders-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--admin-text-primary, #fff);
+}
+
+.admin-orders-tab.active {
+    background: rgba(229, 9, 20, 0.14);
+    border-color: rgba(229, 9, 20, 0.32);
+    color: var(--admin-primary-light, #ff5865);
+}
+
+.admin-orders-tab:focus-visible {
+    outline: 2px solid var(--admin-primary, #e50914);
+    outline-offset: 2px;
+}
+
+.admin-order-identity {
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.7rem;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
+    display: flex;
+    gap: var(--admin-space-md, 0.75rem);
+    min-width: 0;
 }
 
-.ticket-status-badge--pending {
-    background: rgba(251,191,36,0.15);
-    color: #fbbf24;
-    border: 1px solid rgba(251,191,36,0.25);
+.admin-order-poster {
+    align-items: center;
+    background: var(--admin-surface-hover, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--admin-radius-md, 8px);
+    color: var(--admin-text-muted, #a1a1aa);
+    display: flex;
+    flex: 0 0 58px;
+    height: 82px;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
 }
 
-.ticket-status-badge--paid {
-    background: rgba(34,197,94,0.15);
-    color: #22c55e;
-    border: 1px solid rgba(34,197,94,0.25);
+.admin-order-poster img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
 }
 
-.ticket-status-badge--confirmed {
-    background: rgba(59,130,246,0.15);
-    color: #3b82f6;
-    border: 1px solid rgba(59,130,246,0.25);
+.admin-order-poster > i {
+    font-size: 1.4rem;
 }
 
-.ticket-status-badge--cancelled,
-.ticket-status-badge--expired {
-    background: rgba(239,68,68,0.15);
-    color: #ef4444;
-    border: 1px solid rgba(239,68,68,0.25);
+.admin-order-primary,
+.admin-order-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--admin-space-xs, 0.35rem);
+    min-width: 0;
 }
 
-/* ── Order count display ───────────────────────────────────────────────── */
-
-.tickets-count {
-    color: rgba(242,201,195,0.8);
-    font-size: 0.95rem;
+.admin-order-code {
+    color: var(--admin-text-muted, #a1a1aa);
+    font-family: var(--bs-font-monospace, monospace);
+    font-size: var(--admin-font-size-xs, 0.75rem);
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* ── Responsive adjustments ────────────────────────────────────────────── */
-
-@media (max-width: 1200px) {
-    .tickets-filters-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    }
+.admin-order-movie {
+    color: var(--admin-text-primary, #f4f4f5);
+    font-size: var(--admin-font-size-md, 0.95rem);
+    font-weight: var(--admin-font-weight-bold, 700);
+    line-height: 1.35;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-    .tickets-filters-grid {
-        grid-template-columns: 1fr;
+.admin-order-created,
+.admin-order-field-meta {
+    color: var(--admin-text-muted, #a1a1aa);
+    font-size: var(--admin-font-size-xs, 0.75rem);
+    line-height: 1.45;
+}
+
+.admin-order-field-meta {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--admin-space-xs, 0.35rem);
+}
+
+.admin-order-field-meta i {
+    flex: 0 0 auto;
+    margin-top: 2px;
+}
+
+.admin-order-field-value {
+    color: var(--admin-text-primary, #f4f4f5);
+    font-size: var(--admin-font-size-sm, 0.875rem);
+    font-weight: var(--admin-font-weight-semibold, 600);
+    line-height: 1.4;
+}
+
+.admin-order-seat-summary,
+.admin-order-contact {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.admin-order-amount {
+    color: var(--admin-text-primary, #f4f4f5);
+    font-size: var(--admin-font-size-lg, 1rem);
+    font-weight: var(--admin-font-weight-bold, 700);
+    white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+    .admin-orders-overview {
+        align-items: flex-start;
+        flex-direction: column;
     }
-    
-    .ticket-card {
-        grid-template-columns: 100px 1fr;
-        gap: 1rem;
+
+    .admin-orders-tabs {
+        max-width: 100%;
+        width: 100%;
     }
-    
-    .ticket-actions {
-        grid-column: 1 / -1;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid rgba(255,255,255,0.05);
+
+}
+
+@media (max-width: 767.98px) {
+    .admin-orders-page {
+        gap: var(--admin-space-lg, 1rem);
+    }
+
+    .admin-orders-overview {
+        padding: var(--admin-space-lg, 1rem);
+    }
+
+    .admin-orders-page .admin-table.table-responsive {
+        min-width: 0;
+    }
+
+    .admin-orders-page .admin-order-identity,
+    .admin-orders-page .admin-order-column {
+        align-items: flex-end;
+        justify-content: flex-end;
+    }
+
+    .admin-order-poster {
+        flex-basis: 50px;
+        height: 70px;
     }
 }
 

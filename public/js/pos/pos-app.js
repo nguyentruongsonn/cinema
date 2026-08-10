@@ -99,7 +99,7 @@
         try {
             const response = await global.PosUtils.api.delete(`/api/v1/seats/unlock/${currentHoldId}`);
             const payload = response?.data || response || {};
-            currentHoldId = null;
+            setCurrentHoldId(null);
             global.PosSeat?.clearSelection?.();
             if (global.PosUtils?.toast) {
                 global.PosUtils.toast(`Đã hủy giữ ${payload.released_seat_ids?.length || 0} ghế`, 'info');
@@ -127,7 +127,7 @@
                 seat_ids: remainingSeats.map(seat => seat.id),
             });
             const payload = response?.data || response || {};
-            currentHoldId = remainingSeats.length ? (payload.hold_id || currentHoldId) : null;
+            setCurrentHoldId(remainingSeats.length ? (payload.hold_id || currentHoldId) : null);
             global.PosSeat?.removeSeat?.(seatId);
             return true;
         } catch (error) {
@@ -167,7 +167,11 @@
     }
 
     function clearHold() {
-        currentHoldId = null;
+        setCurrentHoldId(null);
+    }
+
+    function setCurrentHoldId(holdId) {
+        currentHoldId = Number(holdId) > 0 ? Number(holdId) : null;
     }
 
     async function releaseTransactionHold() {
@@ -306,7 +310,7 @@
                                 seat_ids: seatIds
                             });
                             if (res.data?.hold_id) {
-                                currentHoldId = res.data.hold_id;
+                                setCurrentHoldId(res.data.hold_id);
                             }
                             // Lock successful
                             if (global.PosUtils && global.PosUtils.toast) {
@@ -370,10 +374,15 @@
         },
         getCurrentStep: () => currentStep,
         getConcessionTheaterId,
+        getCurrentHoldId: () => currentHoldId,
         removeTicket,
         clearHold,
         releaseTransactionHold,
     };
+
+    document.addEventListener('pos:hold:restored', (event) => {
+        setCurrentHoldId(event.detail?.hold_id);
+    });
 
     function checkNextButtonState() {
         if (currentStep === 1) {

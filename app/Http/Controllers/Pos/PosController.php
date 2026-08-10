@@ -23,6 +23,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PosController extends Controller
@@ -93,7 +94,9 @@ class PosController extends Controller
             ->with('comboItems.product')
             ->orderBy('name')
             ->limit(100)
-            ->get();
+            ->get()
+            ->filter(fn (Combo $combo): bool => $combo->available_stock > 0)
+            ->values();
 
         return $this->successResponse([
             'products' => ProductResource::collection($products)->resolve(),
@@ -208,9 +211,16 @@ class PosController extends Controller
 
             // Find or create customer
             $customer = null;
-            if (($validated['customer_mode'] ?? 'guest') === 'member' && !empty($validated['customer_phone'])) {
-                $customer = $this->customerService->lookupByPhone($validated['customer_phone']);
-                if (!$customer && !empty($validated['customer_name'])) {
+            if (($validated['customer_mode'] ?? 'guest') === 'member') {
+                if (! empty($validated['customer_id'])) {
+                    $customer = $this->customerService->lookupById((int) $validated['customer_id']);
+                }
+
+                if (! $customer && ! empty($validated['customer_phone'])) {
+                    $customer = $this->customerService->lookupByPhone($validated['customer_phone']);
+                }
+
+                if (!$customer && !empty($validated['customer_phone']) && !empty($validated['customer_name'])) {
                     $customer = $this->customerService->createWalkInCustomer(
                         $validated['customer_phone'],
                         $validated['customer_name']
@@ -231,17 +241,37 @@ class PosController extends Controller
 
             $validated['showtime_id'] = $showtime?->id;
             $validated['theater_id'] = $theaterId;
-            $order = $this->orderService->createPosOrder($validated, $staff, $customer);
-            
-            $details = $this->orderService->getPosOrderDetails($order);
+            $cashReceived = ($validated['cash_received'] ?? false)
+                && ($validated['payment_method'] ?? null) === 'cash';
 
-            return $this->successResponse($details, 'Đơn hàng POS tạo thành công', 201);
+            if ($cashReceived && ! $staff->hasAnyPermission(['payments.process_cash', 'payments.process'])) {
+                return $this->errorResponse('Bạn không có quyền xác nhận thanh toán tiền mặt.', 403);
+            }
+
+            $order = DB::transaction(function () use ($validated, $staff, $customer, $cashReceived): Order {
+                $order = $this->orderService->createPosOrder($validated, $staff, $customer);
+
+                if ($cashReceived && ! $order->isPaid()) {
+                    $this->authorize('confirmCash', $order);
+                    $order = $this->orderService->confirmCashPayment($order, $staff, $customer);
+                }
+
+                return $order;
+            });
+
+            $details = $this->orderService->getPosOrderDetails($order);
+            $message = $cashReceived
+                ? 'Thanh toán tiền mặt xác nhận thành công'
+                : 'Đơn hàng POS tạo thành công';
+
+            return $this->successResponse($details, $message, 201);
         } catch (\RuntimeException $e) {
+            $status = in_array($e->getCode(), [403, 409, 422], true) ? $e->getCode() : 422;
             Log::warning('POS order creation failed', [
                 'staff_id' => Auth::id(),
                 'error'    => $e->getMessage(),
             ]);
-            return $this->errorResponse('Không thể tạo đơn hàng. Vui lòng kiểm tra lại thông tin và thử lại.', 422);
+            return $this->errorResponse($e->getMessage(), $status);
         } catch (\Exception $e) {
             Log::error('POS order creation error', [
                 'staff_id' => Auth::id(),

@@ -16,6 +16,12 @@ return [
 
     'default' => env('MAIL_MAILER', 'log'),
 
+    'invoice' => [
+        'queue' => env('MAIL_INVOICE_QUEUE', 'emails'),
+        'dispatch_delay' => (int) env('MAIL_INVOICE_DISPATCH_DELAY', 3),
+        'after_response' => (bool) env('MAIL_INVOICE_AFTER_RESPONSE', false),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Mailer Configurations
@@ -39,13 +45,19 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'scheme' => env('MAIL_SCHEME'),
+            'scheme' => match (strtolower(trim((string) env('MAIL_SCHEME', 'smtp')))) {
+                '', 'null', 'smtp', 'starttls', 'tls' => 'smtp',
+                'ssl', 'smtps' => 'smtps',
+                default => env('MAIL_SCHEME'),
+            },
             'url' => env('MAIL_URL'),
             'host' => env('MAIL_HOST', '127.0.0.1'),
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            'password' => strtolower((string) env('MAIL_HOST')) === 'smtp.gmail.com'
+                ? preg_replace('/\s+/', '', (string) env('MAIL_PASSWORD'))
+                : env('MAIL_PASSWORD'),
+            'timeout' => (int) env('MAIL_TIMEOUT', 15),
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 

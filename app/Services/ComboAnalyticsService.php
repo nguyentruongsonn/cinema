@@ -32,9 +32,20 @@ class ComboAnalyticsService
     {
         $type = $this->normalizeType($type);
         [$start, $end] = $this->parseDateRange($startDate, $endDate);
+        $summary = $this->getSummary($start, $end, $type);
+        $days = $start->diffInDays($end);
+        $compareEnd = $start->copy()->subDay()->endOfDay();
+        $compareStart = $compareEnd->copy()->subDays($days)->startOfDay();
+        $previousTotals = $this->getTotals($compareStart, $compareEnd, $type);
+
+        $summary['trends'] = [
+            'total_quantity' => $this->calculateTrend((float) $summary['total_quantity'], (float) $previousTotals['total_quantity']),
+            'total_revenue' => $this->calculateTrend((float) $summary['total_revenue'], (float) $previousTotals['total_revenue']),
+            'avg_per_day' => $this->calculateTrend((float) $summary['total_quantity'], (float) $previousTotals['total_quantity']),
+        ];
 
         return [
-            'summary' => $this->getSummary($start, $end, $type),
+            'summary' => $summary,
             'top_combos' => $this->getTopCombos($start, $end, $type),
             'revenue_by_theater' => $this->getRevenueByTheater($start, $end, $type),
             'by_theater_combo' => $this->getByTheaterCombo($start, $end, $type),
@@ -96,10 +107,7 @@ class ComboAnalyticsService
     private function getSummary(Carbon $start, Carbon $end, string $type): array
     {
         $base = $this->baseComboQuery($start, $end, $type);
-
-        $row = (clone $base)
-            ->selectRaw('SUM(order_items.total_price) as total_revenue, SUM(order_items.quantity) as total_qty')
-            ->first();
+        $totals = $this->getTotals($start, $end, $type);
 
         // Best-selling combo
         $table = $this->getTableAlias($type);
@@ -110,11 +118,32 @@ class ComboAnalyticsService
             ->first();
 
         return [
-            'total_revenue'   => (string) ($row->total_revenue ?? '0.00'),
-            'total_quantity'  => (int)   ($row->total_qty ?? 0),
+            'total_revenue'   => $totals['total_revenue'],
+            'total_quantity'  => $totals['total_quantity'],
             'best_combo_name' => data_get($bestCombo, 'name', '—'),
             'best_combo_qty'  => (int) data_get($bestCombo, 'qty', 0),
         ];
+    }
+
+    private function getTotals(Carbon $start, Carbon $end, string $type): array
+    {
+        $row = $this->baseComboQuery($start, $end, $type)
+            ->selectRaw('SUM(order_items.total_price) as total_revenue, SUM(order_items.quantity) as total_qty')
+            ->first();
+
+        return [
+            'total_revenue' => (string) ($row->total_revenue ?? '0.00'),
+            'total_quantity' => (int) ($row->total_qty ?? 0),
+        ];
+    }
+
+    private function calculateTrend(float $current, float $previous): float
+    {
+        if ($previous === 0.0) {
+            return $current > 0.0 ? 100.0 : 0.0;
+        }
+
+        return round((($current - $previous) / $previous) * 100, 1);
     }
 
     /* ── Top Combos (by revenue) ────────────────────────────────────── */

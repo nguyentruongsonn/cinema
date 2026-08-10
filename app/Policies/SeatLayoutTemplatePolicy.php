@@ -10,19 +10,17 @@ class SeatLayoutTemplatePolicy
     /**
      * Determine if user can view any seat layout templates.
      */
-    public function viewAny(?User $user): bool
+    public function viewAny(User $user): bool
     {
-        // Public read access for listing templates
-        return true;
+        return $user->hasAnyPermission(['seat_layouts.view', 'screens.manage_seats']);
     }
 
     /**
      * Determine if user can view a specific seat layout template.
      */
-    public function view(?User $user, SeatLayoutTemplate $template): bool
+    public function view(User $user, SeatLayoutTemplate $template): bool
     {
-        // Public read access for individual templates
-        return true;
+        return $this->viewAny($user);
     }
 
     /**
@@ -30,7 +28,7 @@ class SeatLayoutTemplatePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('manage_seat_layouts');
+        return $user->hasAnyPermission(['seat_layouts.create', 'screens.manage_seats']);
     }
 
     /**
@@ -38,7 +36,7 @@ class SeatLayoutTemplatePolicy
      */
     public function update(User $user, SeatLayoutTemplate $template): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('manage_seat_layouts');
+        return $user->hasAnyPermission(['seat_layouts.update', 'screens.manage_seats']);
     }
 
     /**
@@ -46,6 +44,6 @@ class SeatLayoutTemplatePolicy
      */
     public function delete(User $user, SeatLayoutTemplate $template): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('manage_seat_layouts');
+        return $user->hasAnyPermission(['seat_layouts.delete', 'screens.manage_seats']);
     }
 }

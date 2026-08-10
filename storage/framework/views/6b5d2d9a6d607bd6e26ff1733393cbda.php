@@ -1,53 +1,38 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vé xem phim</title>
+    <title>Hóa đơn thanh toán CINEMA</title>
 </head>
-<body style="margin:0;background:#111;color:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">
-    <div style="max-width:680px;margin:0 auto;padding:28px 16px;">
-        <div style="background:#1b1b1f;border:1px solid #333;border-radius:14px;overflow:hidden;">
-            <div style="padding:22px 24px;border-bottom:1px solid #333;">
-                <div style="font-size:20px;font-weight:800;color:#ef233c;letter-spacing:.02em;">CINEMA</div>
-                <p style="margin:10px 0 0;color:#d4d4d8;font-size:15px;">Cảm ơn bạn đã đặt vé. Vui lòng xuất trình mã vé tại cửa phòng chiếu.</p>
-            </div>
-
-            <div style="padding:24px;">
-                <h1 style="margin:0 0 8px;font-size:24px;color:#fff;"><?php echo e($movie->title ?? 'Phim'); ?></h1>
-                <p style="margin:0 0 20px;color:#a1a1aa;font-size:14px;">Mã đơn: <strong style="color:#fff;"><?php echo e($order->code); ?></strong></p>
-
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:20px;">
-                    <tr>
-                        <td style="padding:8px 0;color:#a1a1aa;font-size:13px;">Thời gian</td>
-                        <td style="padding:8px 0;color:#fff;font-weight:700;text-align:right;font-size:13px;"><?php echo e($showtime?->scheduled_at?->format('H:i, d/m/Y') ?? 'N/A'); ?></td>
-                    </tr>
-                    <tr>
-                        <td style="padding:8px 0;color:#a1a1aa;font-size:13px;">Rạp / Phòng</td>
-                        <td style="padding:8px 0;color:#fff;font-weight:700;text-align:right;font-size:13px;"><?php echo e($theater->name ?? 'N/A'); ?> - <?php echo e($screen->name ?? 'N/A'); ?></td>
-                    </tr>
-                    <tr>
-                        <td style="padding:8px 0;color:#a1a1aa;font-size:13px;">Địa chỉ</td>
-                        <td style="padding:8px 0;color:#fff;font-weight:700;text-align:right;font-size:13px;"><?php echo e($theater->address ?? 'N/A'); ?></td>
-                    </tr>
-                </table>
-
-                <div style="display:block;">
-                    <?php $__currentLoopData = $tickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ticket): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <div style="margin-bottom:14px;padding:16px;border:1px solid #333;border-radius:12px;background:#151518;">
-                            <div style="font-size:12px;color:#a1a1aa;text-transform:uppercase;letter-spacing:.08em;">Mã vé</div>
-                            <div style="margin-top:6px;font-size:22px;line-height:1.2;font-weight:900;color:#fff;letter-spacing:.04em;"><?php echo e($ticket->ticket_code); ?></div>
-                            <div style="margin-top:12px;font-size:14px;color:#d4d4d8;">
-                                Ghế: <strong style="color:#ef233c;font-size:18px;"><?php echo e($ticket->seat?->label ?? 'N/A'); ?></strong>
-                            </div>
-                        </div>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                </div>
-
-                <p style="margin:18px 0 0;color:#a1a1aa;font-size:13px;line-height:1.6;">Mỗi mã vé chỉ được sử dụng một lần. Không chia sẻ mã vé cho người khác để tránh bị sử dụng trước.</p>
-            </div>
-        </div>
-    </div>
+<body style="margin:0;padding:0;background:#f2f2f2;color:#1f1f1f;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f2f2f2;border-collapse:collapse;width:100%;">
+    <tr>
+        <td align="center" style="padding:28px 12px;">
+            <table role="presentation" width="520" cellspacing="0" cellpadding="0" border="0" style="background:#fff;border:1px solid #dedede;border-collapse:collapse;max-width:520px;width:100%;">
+                <tr>
+                    <td align="center" style="border-bottom:1px solid #e5e5e5;padding:24px 20px;">
+                        <div style="color:#ed1c24;font-size:24px;font-weight:900;letter-spacing:.08em;">CINEMA</div>
+                        <h1 style="font-size:20px;line-height:28px;margin:12px 0 0;">Thanh toán thành công</h1>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-size:13px;line-height:21px;padding:22px 24px;">
+                        <p style="margin:0 0 12px;">Xin chào <?php echo e($order->user?->name ?? 'Quý khách'); ?>,</p>
+                        <p style="margin:0 0 12px;">Giao dịch cho đơn <strong><?php echo e($order->code); ?></strong> đã được xác nhận thành công.</p>
+                        <p style="margin:0 0 12px;">Hóa đơn thanh toán chính thức được đính kèm trong email dưới dạng PDF. File này được tạo trực tiếp từ cùng mẫu hóa đơn sử dụng tại quầy in.</p>
+                        <p style="margin:0;"><strong>Lưu ý:</strong> Hóa đơn không phải vé vào phòng chiếu. Vui lòng xuất trình Booking ID tại quầy để nhận vé xem phim chính thức.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" style="background:#fafafa;border-top:1px solid #e5e5e5;color:#777;font-size:11px;line-height:18px;padding:16px 20px;">
+                        Email được gửi tự động từ CINEMA, vui lòng không trả lời email này.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 </body>
 </html>
 <?php /**PATH C:\xampp\htdocs\cinema\resources\views/emails/tickets/issued.blade.php ENDPATH**/ ?>

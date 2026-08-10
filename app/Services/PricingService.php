@@ -167,10 +167,13 @@ class PricingService
 
         // Points (1 point = 1000 VND)
         $pointDiscount = 0;
-        if ($pointsUsed > 0 && $user->loyalty_points >= $pointsUsed) {
+        $availablePoints = max(0, (int) $user->loyalty_points);
+        $amountAfterVoucher = max(0, $subtotal - $voucherDiscount);
+        $maxUsefulPoints = (int) floor($amountAfterVoucher / 1000);
+        $pointsUsed = min(max(0, $pointsUsed), $availablePoints, $maxUsefulPoints);
+
+        if ($pointsUsed > 0) {
             $pointDiscount = $pointsUsed * 1000;
-        } else {
-            $pointsUsed = 0;
         }
 
         $totalDiscount = $voucherDiscount + $pointDiscount;

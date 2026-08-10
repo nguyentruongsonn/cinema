@@ -7,8 +7,8 @@
     const API = '/admin/tickets/stats';
 
     // Shared admin chart palette: keep ticket stats visually aligned with revenue/dashboard pages.
-    const PALETTE = ['#ff5a5f','#22c55e','#38bdf8','#fbbf24','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#60a5fa'];
-    const PRIMARY_COLOR = '#ff5a5f';
+    const PALETTE = ['#e50914','#22c55e','#38bdf8','#fbbf24','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#60a5fa'];
+    const PRIMARY_COLOR = '#e50914';
     const SURFACE_STROKE_COLOR = '#1e1e24';
     const TEXT_COLOR = '#e4e4e7';
     const MUTED_TEXT_COLOR = '#c7c7d1';
@@ -23,9 +23,12 @@
 
         // Cards
         cardTotalTickets: null,
+        cardTotalTicketsTrend: null,
         cardAvgPerDay: null,
+        cardAvgPerDayTrend: null,
         cardPeakHour: null,
         cardOccupancyRate: null,
+        cardOccupancyRateTrend: null,
 
         // Chart Containers
         chartTicketTrend: null,
@@ -47,9 +50,12 @@
         els.btnApply    = document.getElementById('btnApplyFilter');
 
         els.cardTotalTickets  = document.getElementById('cardTotalTickets');
+        els.cardTotalTicketsTrend = document.getElementById('cardTotalTicketsTrend');
         els.cardAvgPerDay     = document.getElementById('cardAvgPerDay');
+        els.cardAvgPerDayTrend = document.getElementById('cardAvgPerDayTrend');
         els.cardPeakHour      = document.getElementById('cardPeakHour');
         els.cardOccupancyRate = document.getElementById('cardOccupancyRate');
+        els.cardOccupancyRateTrend = document.getElementById('cardOccupancyRateTrend');
 
         els.chartTicketTrend      = document.getElementById('chartTicketTrend');
         els.chartTopMovies        = document.getElementById('chartTopMovies');
@@ -105,6 +111,19 @@
         });
     }
 
+    function renderTrend(element, value) {
+        if (!element) return;
+
+        const trend = Number(value || 0);
+        const absoluteTrend = Math.abs(trend).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+        element.className = trend > 0 ? 'text-success fw-bold' : trend < 0 ? 'text-danger fw-bold' : 'text-secondary fw-bold';
+        element.innerHTML = trend > 0
+            ? `<i class="bi bi-graph-up-arrow"></i> +${absoluteTrend}%`
+            : trend < 0
+                ? `<i class="bi bi-graph-down-arrow"></i> -${absoluteTrend}%`
+                : '<i class="bi bi-dash"></i> 0%';
+    }
+
     function hideLoading() {
         if (els.btnApply) {
             els.btnApply.disabled = false;
@@ -120,13 +139,14 @@
         if (!els.chartTicketTrend) return;
         const opts = {
             series: [{ name: 'Vé bán ra', data: [] }],
-            chart: { height: 300, type: 'area', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, zoom: { enabled: false } },
+            chart: { height: 300, width: '100%', type: 'area', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, zoom: { enabled: false }, parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true },
             colors: [PRIMARY_COLOR],
             stroke: { curve: 'smooth', width: 3 },
             fill: {
                 type: 'gradient',
                 gradient: { shadeIntensity: 0.6, opacityFrom: 0.22, opacityTo: 0.02, stops: [0, 100] },
             },
+            markers: { size: 4, strokeWidth: 2, hover: { size: 7, sizeOffset: 2 } },
             dataLabels: { enabled: false },
             xaxis: {
                 categories: [],
@@ -139,7 +159,7 @@
             },
             theme: { mode: 'dark' },
             grid: { borderColor: GRID_COLOR, strokeDashArray: 4 },
-            tooltip: { theme: 'dark' },
+            tooltip: { theme: 'dark', shared: false, intersect: false, followCursor: false, fixed: { enabled: true, position: 'topRight', offsetX: -16, offsetY: 12 } },
         };
         charts.trend = new ApexCharts(els.chartTicketTrend, opts);
         charts.trend.render();
@@ -149,13 +169,14 @@
         if (!els.chartTopMovies) return;
         const opts = {
             series: [],
-            chart: { type: 'pie', height: 300, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+            chart: { type: 'donut', height: 340, width: '100%', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true },
             labels: [],
             colors: PALETTE,
             stroke: { show: true, colors: [SURFACE_STROKE_COLOR], width: 2 },
-            dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 700, colors: ['#ffffff'] }, dropShadow: { enabled: false } },
+            plotOptions: { pie: { customScale: 0.78, offsetY: -8, donut: { size: '58%' } } },
+            dataLabels: { enabled: false },
             theme: { mode: 'dark' },
-            legend: { position: 'bottom', labels: { colors: TEXT_COLOR }, fontSize: '13px', fontWeight: 600, markers: { width: 10, height: 10, radius: 6 } },
+            legend: { position: 'bottom', height: 76, offsetY: 40, labels: { colors: TEXT_COLOR }, fontSize: '13px', fontWeight: 600, markers: { width: 10, height: 10, radius: 6 }, itemMargin: { horizontal: 8, vertical: 3 } },
             tooltip: { theme: 'dark' },
         };
         charts.movies = new ApexCharts(els.chartTopMovies, opts);
@@ -166,7 +187,7 @@
         if (!els.chartTheaterOccupancy) return;
         const opts = {
             series: [{ name: 'Tỉ lệ lấp đầy (%)', data: [] }],
-            chart: { type: 'bar', height: 350, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+            chart: { type: 'bar', height: 350, width: '100%', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true },
             colors: [PRIMARY_COLOR],
             plotOptions: {
                 bar: { horizontal: false, columnWidth: '45%', borderRadius: 4 }
@@ -198,10 +219,17 @@
     /* ── Render functions ───────────────────────────────────────────── */
     function renderCards(summary) {
         if (!summary) return;
+        const trends = summary.trends || {};
         if (els.cardTotalTickets)  els.cardTotalTickets.textContent  = (summary.total_tickets || 0).toLocaleString('vi-VN');
         if (els.cardAvgPerDay)     els.cardAvgPerDay.textContent     = summary.avg_per_day || 0;
         if (els.cardPeakHour)      els.cardPeakHour.textContent      = summary.peak_hour || 'N/A';
-        if (els.cardOccupancyRate) els.cardOccupancyRate.textContent = summary.occupancy_rate || 0;
+        if (els.cardOccupancyRate) {
+            const occupancyRate = Number(summary.occupancy_rate || 0);
+            els.cardOccupancyRate.textContent = `${occupancyRate.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`;
+        }
+        renderTrend(els.cardTotalTicketsTrend, trends.total_tickets);
+        renderTrend(els.cardAvgPerDayTrend, trends.avg_per_day);
+        renderTrend(els.cardOccupancyRateTrend, trends.occupancy_rate);
     }
 
     function renderTrendChart(trend) {

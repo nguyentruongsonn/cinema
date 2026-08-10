@@ -22,7 +22,6 @@ Route::get('health/live', [OperationalHealthController::class, 'live']);
 Route::get('health/ready', [OperationalHealthController::class, 'ready']);
 Route::get('docs/openapi.json', [OperationalHealthController::class, 'openApi'])->name('api.docs.openapi');
 Route::get('internal/metrics', [OperationalHealthController::class, 'metrics'])->middleware('internal.metrics');
-
 Route::prefix('movies')->group(function () {
     Route::get('/', [MovieController::class, 'index'])->name('api.movies.index');
     Route::get('now-showing', [MovieController::class, 'nowShowing'])->name('api.movies.now-showing');

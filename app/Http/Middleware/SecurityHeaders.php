@@ -20,6 +20,25 @@ class SecurityHeaders
 
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->headers->set('Permissions-Policy', 'camera=(self), geolocation=(), microphone=(), payment=(self), usb=()');
+        $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+        $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
+
+        if ($request->is(
+            'api/v1/auth/*',
+            'api/v1/admin/*',
+            'api/v1/pos/*',
+            'api/v1/orders/*',
+            'api/v1/payments/*',
+            'api/v1/tickets/*'
+        )) {
+            $response->headers->set('Cache-Control', 'no-store, private');
+            $response->headers->set('Pragma', 'no-cache');
+        }
+
+        if (app()->environment('production') && $request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
 
         if ($request->is('api/*')) {
             return $response;
@@ -58,6 +77,7 @@ class SecurityHeaders
             "img-src 'self' data: https: blob:",
             'connect-src '.implode(' ', $connectSources),
             "frame-src 'self' https://sandbox.vnpayment.vn",
+            "frame-ancestors 'none'",
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",

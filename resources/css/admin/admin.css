@@ -137,15 +137,15 @@
 }
 
 html.admin-navigating .admin-main {
-    opacity: 0.94;
-    transform: translate3d(0, 2px, 0);
+    cursor: progress;
+    opacity: 0.98;
     pointer-events: none;
 }
 
 .admin-main {
     view-transition-name: admin-content;
-    transition-property: opacity, transform;
-    transition-duration: 160ms;
+    transition-property: opacity;
+    transition-duration: 100ms;
     transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 

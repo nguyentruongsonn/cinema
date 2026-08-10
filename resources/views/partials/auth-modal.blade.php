@@ -52,6 +52,7 @@
                 <div class="tab-content">
                     {{-- Login Form --}}
                     <div class="tab-pane fade show active" id="loginForm" role="tabpanel">
+                        <div id="loginPanel">
                         <form id="loginFormElement" class="cinema-auth-form" novalidate autocomplete="off">
                             @csrf
                             <div class="mb-3">
@@ -110,6 +111,35 @@
 
                         {{-- Error display --}}
                         <div class="alert alert-danger d-none mt-3" id="loginAlert" role="alert"></div>
+                        </div>
+
+                        <section id="forgotPasswordPanel" class="d-none" aria-labelledby="forgotPasswordTitle">
+                            <button type="button" class="cinema-auth-back" id="backToLoginBtn">
+                                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                                Quay lại đăng nhập
+                            </button>
+                            <h3 class="cinema-auth-panel-title" id="forgotPasswordTitle">Khôi phục mật khẩu</h3>
+                            <p class="cinema-auth-panel-copy">Nhập email tài khoản. Nếu email tồn tại, hệ thống sẽ gửi liên kết đặt lại mật khẩu có hiệu lực trong 60 phút.</p>
+
+                            <form id="forgotPasswordFormElement" class="cinema-auth-form" novalidate>
+                                @csrf
+                                <div class="mb-4">
+                                    <label for="forgotPasswordEmail" class="form-label cinema-auth-label">EMAIL</label>
+                                    <div class="cinema-auth-input-wrapper">
+                                        <i class="bi bi-envelope cinema-auth-icon" aria-hidden="true"></i>
+                                        <input type="email" class="form-control cinema-auth-input" id="forgotPasswordEmail"
+                                            name="email" placeholder="email@example.com" required autocomplete="email">
+                                    </div>
+                                    <div class="invalid-feedback" id="forgotPasswordEmailError"></div>
+                                </div>
+
+                                <button type="submit" class="btn cinema-auth-submit w-100" id="forgotPasswordSubmitBtn">
+                                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <span class="btn-text">Gửi liên kết đặt lại</span>
+                                </button>
+                            </form>
+                            <div class="alert d-none mt-3" id="forgotPasswordAlert" role="status" aria-live="polite"></div>
+                        </section>
                     </div>
 
                     {{-- Register Form --}}

@@ -43,11 +43,14 @@ class SeatHold extends Model
      */
     public function normalizedSeatIds(): array
     {
-        // Use items relationship if loaded AND has records
         if ($this->relationLoaded('items') && $this->items->isNotEmpty()) {
             return $this->items
+                ->filter(fn ($item): bool => $item instanceof SeatHoldItem
+                    && $item->status === SeatHoldItem::STATUS_ACTIVE
+                    && $item->expires_at->isFuture())
                 ->pluck('seat_id')
                 ->map(fn ($id) => (int) $id)
+                ->unique()
                 ->values()
                 ->all();
         }

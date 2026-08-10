@@ -201,13 +201,13 @@
 
                     <div class="mb-3">
                         <label for="newPassword" class="form-label text-secondary">M&#7853;t kh&#7849;u m&#7899;i <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control bg-dark text-white border-secondary" id="newPassword" name="password" required minlength="8">
-                        <small class="text-light opacity-75 admin-form-help">T&#7889;i thi&#7875;u 8 k&#253; t&#7921;</small>
+                        <input type="password" class="form-control bg-dark text-white border-secondary" id="newPassword" name="password" required minlength="8" autocomplete="new-password">
+                        <small class="text-light opacity-75 admin-form-help">T&#7889;i thi&#7875;u 8 k&#253; t&#7921;, g&#7891;m ch&#7919; hoa, ch&#7919; th&#432;&#7901;ng, s&#7889; v&#224; k&#253; hi&#7879;u.</small>
                     </div>
 
                     <div class="mb-0">
                         <label for="newPasswordConfirmation" class="form-label text-secondary">X&#225;c nh&#7853;n m&#7853;t kh&#7849;u <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control bg-dark text-white border-secondary" id="newPasswordConfirmation" name="password_confirmation" required minlength="8">
+                        <input type="password" class="form-control bg-dark text-white border-secondary" id="newPasswordConfirmation" name="password_confirmation" required minlength="8" autocomplete="new-password">
                     </div>
                 </div>
 

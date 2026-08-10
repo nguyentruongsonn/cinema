@@ -26,7 +26,7 @@ class RevenueController extends Controller
     public function stats(StatFilterRequest $request): JsonResponse
     {
         abort_unless(
-            Auth::user()?->isAdmin() || Auth::user()?->hasPermission('analytics.view'),
+            Auth::user()?->hasAnyPermission(['reports.view', 'analytics.view']),
             403
         );
 

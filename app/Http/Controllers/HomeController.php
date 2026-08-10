@@ -8,6 +8,7 @@ use App\Models\Movie;
 use App\Models\Showtime;
 use App\Models\Theater;
 use App\Models\Banner;
+use App\Support\MediaUrl;
 use App\Traits\ApiResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +23,7 @@ class HomeController extends Controller
     private const HOME_MOVIE_LIMIT = 8;
     private const MOVIE_OPTION_LIMIT = 100;
     private const AVAILABLE_DATE_LIMIT = 7;
-    private const HOME_CACHE_KEY = 'home:data:v2';
+    private const HOME_CACHE_KEY = 'home:data:v3';
     private const HOME_CACHE_TTL_SECONDS = 300;
 
     private const MOVIE_COLUMNS = [
@@ -83,7 +84,7 @@ class HomeController extends Controller
                 'id' => $banner->id . '-' . $image->id,
                 'title' => strip_tags((string) $banner->title),
                 'description' => strip_tags((string) $banner->description),
-                'image_url' => asset('storage/' . $image->image_path),
+                'image_url' => MediaUrl::storage($image->image_path),
                 'link_url' => $banner->link_url,
             ])->all())
             ->take(5)
@@ -228,11 +229,27 @@ class HomeController extends Controller
 
     private function safeBackdrops(Movie $movie): array
     {
-        if (! $movie->backdrops) {
+        $rawBackdrops = $movie->getRawOriginal('backdrops');
+
+        if (! is_string($rawBackdrops) || trim($rawBackdrops) === '') {
             return [];
         }
 
-        return $movie->backdrops;
+        $decoded = json_decode($rawBackdrops, true);
+        if (is_string($decoded)) {
+            $decoded = json_decode($decoded, true);
+        }
+
+        if (! is_array($decoded)) {
+            Log::warning('Invalid movie backdrops JSON on home data endpoint', [
+                'movie_id' => $movie->id,
+                'json_error' => json_last_error_msg(),
+            ]);
+
+            return [];
+        }
+
+        return $decoded;
     }
 
     private function safeUrl(?string $url): ?string

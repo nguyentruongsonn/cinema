@@ -9,7 +9,7 @@
 @section('content')
     <!-- Header Section -->
     <section class="theaters-header">
-        <div class="container cinema-shell" id="theatersDataRegion" data-state="loading" aria-busy="true">
+        <div class="container cinema-shell">
             <h1 class="page-title text-center text-md-start">Hệ thống Rạp Chiếu</h1>
         </div>
     </section>
@@ -47,7 +47,7 @@
 
     <!-- Theaters Listing -->
     <section class="theaters-listing-section">
-        <div class="container cinema-shell">
+        <div class="container cinema-shell" id="theatersDataRegion" data-state="loading" aria-busy="true">
             
             <!-- Skeleton Loader -->
             <div id="theatersSkeleton" class="row g-4" data-state-panel="loading">

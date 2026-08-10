@@ -22,7 +22,7 @@ class TicketController extends Controller
         try {
             $user = $request->user();
 
-            if (!$user instanceof User) {
+            if (! $user instanceof User) {
                 return $this->unauthorized('Người dùng không được xác thực.');
             }
 
@@ -45,9 +45,9 @@ class TicketController extends Controller
             if ($status !== 'all') {
                 $validStatuses = ['valid', 'used', 'cancelled', 'refunded'];
 
-                if (!in_array($status, $validStatuses, true)) {
+                if (! in_array($status, $validStatuses, true)) {
                     return $this->error(
-                        'Trạng thái không hợp lệ. Giá trị: ' . implode(', ', $validStatuses),
+                        'Trạng thái không hợp lệ. Giá trị: '.implode(', ', $validStatuses),
                         422
                     );
                 }
@@ -80,7 +80,7 @@ class TicketController extends Controller
         try {
             $user = $request->user();
 
-            if (!$user instanceof User) {
+            if (! $user instanceof User) {
                 return $this->unauthorized('Người dùng không được xác thực.');
             }
 
@@ -99,7 +99,7 @@ class TicketController extends Controller
                 ])
                 ->first();
 
-            if (!$ticket) {
+            if (! $ticket) {
                 return $this->error('Vé không tìm thấy hoặc bạn không có quyền xem vé này.', 404);
             }
 
@@ -118,10 +118,17 @@ class TicketController extends Controller
                 'ticket_code' => 'required|string',
             ]);
 
-            $ticketCode = $this->extractTicketCode($request->input('ticket_code'));
+            $identifier = $this->extractVerificationIdentifier($request->input('ticket_code'));
 
-            if ($ticketCode === '') {
-                return $this->error('Vui lòng nhập mã vé.', 422);
+            if ($identifier['code'] === '') {
+                return $this->error('Vui lòng nhập mã vé hoặc Booking ID.', 422);
+            }
+
+            if ($identifier['type'] === 'booking') {
+                return $this->error(
+                    'QR hóa đơn chỉ dùng để tra cứu và in. Vui lòng dùng chức năng in hóa đơn/vé.',
+                    422
+                );
             }
 
             $user = $request->user();
@@ -130,7 +137,7 @@ class TicketController extends Controller
                 : [];
 
             $ticket = Ticket::query()
-                ->where('ticket_code', $ticketCode)
+                ->where('ticket_code', $identifier['code'])
                 ->when($theaterIds !== [], fn ($query) => $query->whereHas(
                     'showtime.screen',
                     fn ($screenQuery) => $screenQuery->whereIn('theater_id', $theaterIds)
@@ -153,7 +160,7 @@ class TicketController extends Controller
             if ($ticket->status === 'used') {
                 $checkedInAt = $ticket->checked_in_at?->format('d/m/Y H:i') ?? 'không xác định';
 
-                return $this->error('Vé đã được sử dụng trước đó vào lúc ' . $checkedInAt, 409);
+                return $this->error('Vé đã được sử dụng trước đó vào lúc '.$checkedInAt, 409);
             }
 
             if ($ticket->status === 'cancelled') {
@@ -195,33 +202,36 @@ class TicketController extends Controller
         }
     }
 
-    private function extractTicketCode(?string $raw): string
+    /** @return array{type: 'ticket'|'booking', code: string} */
+    private function extractVerificationIdentifier(?string $raw): array
     {
         $value = trim((string) $raw);
 
         if ($value === '') {
-            return '';
+            return ['type' => 'ticket', 'code' => ''];
         }
 
         $decoded = json_decode($value, true);
         if (is_array($decoded) && isset($decoded['ticket_code']) && is_scalar($decoded['ticket_code'])) {
-            return trim((string) $decoded['ticket_code']);
+            return ['type' => 'ticket', 'code' => strtoupper(trim((string) $decoded['ticket_code']))];
+        }
+        if (is_array($decoded) && isset($decoded['booking_id']) && is_scalar($decoded['booking_id'])) {
+            return ['type' => 'booking', 'code' => strtoupper(trim((string) $decoded['booking_id']))];
         }
 
         if (filter_var($value, FILTER_VALIDATE_URL)) {
             $path = trim((string) parse_url($value, PHP_URL_PATH), '/');
             $segments = array_values(array_filter(explode('/', $path)));
             $lastSegment = end($segments);
-            if (is_string($lastSegment) && str_starts_with(strtoupper($lastSegment), 'TKT-')) {
-                return trim(urldecode($lastSegment));
+            if (is_string($lastSegment)) {
+                $value = trim(urldecode($lastSegment));
             }
         }
 
         if (preg_match('/\b(TKT-[A-Z0-9_-]+)\b/i', $value, $matches) === 1) {
-            return strtoupper($matches[1]);
+            return ['type' => 'ticket', 'code' => strtoupper($matches[1])];
         }
 
-        return $value;
+        return ['type' => 'booking', 'code' => strtoupper($value)];
     }
-
 }

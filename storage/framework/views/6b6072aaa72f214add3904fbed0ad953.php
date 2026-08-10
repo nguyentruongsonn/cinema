@@ -52,6 +52,7 @@
                 <div class="tab-content">
                     
                     <div class="tab-pane fade show active" id="loginForm" role="tabpanel">
+                        <div id="loginPanel">
                         <form id="loginFormElement" class="cinema-auth-form" novalidate autocomplete="off">
                             <?php echo csrf_field(); ?>
                             <div class="mb-3">
@@ -78,7 +79,7 @@
                                         name="password" placeholder="••••••••"
                                         required minlength="6" autocomplete="current-password">
                                     <button class="cinema-auth-toggle-password" type="button"
-                                        data-target="#loginPassword">
+                                        data-target="#loginPassword" aria-label="Hiển thị mật khẩu" aria-pressed="false">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>
@@ -110,6 +111,35 @@
 
                         
                         <div class="alert alert-danger d-none mt-3" id="loginAlert" role="alert"></div>
+                        </div>
+
+                        <section id="forgotPasswordPanel" class="d-none" aria-labelledby="forgotPasswordTitle">
+                            <button type="button" class="cinema-auth-back" id="backToLoginBtn">
+                                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                                Quay lại đăng nhập
+                            </button>
+                            <h3 class="cinema-auth-panel-title" id="forgotPasswordTitle">Khôi phục mật khẩu</h3>
+                            <p class="cinema-auth-panel-copy">Nhập email tài khoản. Nếu email tồn tại, hệ thống sẽ gửi liên kết đặt lại mật khẩu có hiệu lực trong 60 phút.</p>
+
+                            <form id="forgotPasswordFormElement" class="cinema-auth-form" novalidate>
+                                <?php echo csrf_field(); ?>
+                                <div class="mb-4">
+                                    <label for="forgotPasswordEmail" class="form-label cinema-auth-label">EMAIL</label>
+                                    <div class="cinema-auth-input-wrapper">
+                                        <i class="bi bi-envelope cinema-auth-icon" aria-hidden="true"></i>
+                                        <input type="email" class="form-control cinema-auth-input" id="forgotPasswordEmail"
+                                            name="email" placeholder="email@example.com" required autocomplete="email">
+                                    </div>
+                                    <div class="invalid-feedback" id="forgotPasswordEmailError"></div>
+                                </div>
+
+                                <button type="submit" class="btn cinema-auth-submit w-100" id="forgotPasswordSubmitBtn">
+                                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <span class="btn-text">Gửi liên kết đặt lại</span>
+                                </button>
+                            </form>
+                            <div class="alert d-none mt-3" id="forgotPasswordAlert" role="status" aria-live="polite"></div>
+                        </section>
                     </div>
 
                     
@@ -154,7 +184,7 @@
                                         name="password" placeholder="Ít nhất 8 ký tự"
                                         required minlength="8" autocomplete="new-password">
                                     <button class="cinema-auth-toggle-password" type="button"
-                                        data-target="#regPassword">
+                                        data-target="#regPassword" aria-label="Hiển thị mật khẩu" aria-pressed="false">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>

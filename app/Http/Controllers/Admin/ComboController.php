@@ -361,7 +361,7 @@ class ComboController extends Controller
     public function toggleActive(Combo $combo): JsonResponse
     {
         try {
-            $this->authorize('update', $combo);
+            $this->authorize('toggleStatus', $combo);
 
             DB::transaction(function () use ($combo) {
                 $locked = Combo::where('id', $combo->id)->lockForUpdate()->first();

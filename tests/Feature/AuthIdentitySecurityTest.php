@@ -6,8 +6,11 @@ use App\Models\RefreshToken;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuthService;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -79,6 +82,54 @@ class AuthIdentitySecurityTest extends TestCase
         $known->assertOk();
         $unknown->assertOk();
         $this->assertSame($known->json('message'), $unknown->json('message'));
+    }
+
+    public function test_forgot_password_email_opens_reset_page_and_resets_password(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create(['email' => 'reset@example.com']);
+        $token = null;
+
+        $this->postJson('/api/v1/auth/forgot-password', ['email' => $user->email])->assertOk();
+
+        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use ($user, &$token): bool {
+            $token = $notification->token;
+            $mail = $notification->toMail($user);
+
+            return str_contains((string) $mail->actionUrl, '/reset-password/')
+                && str_contains((string) $mail->actionUrl, 'email=reset%40example.com');
+        });
+
+        $this->assertNotEmpty($token);
+        $this->get(route('password.reset', ['token' => $token, 'email' => $user->email]))
+            ->assertOk()
+            ->assertSee('Đặt lại mật khẩu');
+
+        $this->postJson('/api/v1/auth/reset-password', [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'NewPassword123',
+            'password_confirmation' => 'NewPassword123',
+        ])->assertOk();
+
+        $this->assertTrue(Hash::check('NewPassword123', $user->fresh()->password));
+    }
+
+    public function test_password_reset_token_expires_after_ten_minutes(): void
+    {
+        $user = User::factory()->create(['email' => 'expiring-reset@example.com']);
+        $token = Password::createToken($user);
+
+        $this->travel(11)->minutes();
+
+        $this->postJson('/api/v1/auth/reset-password', [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'NewPassword123',
+            'password_confirmation' => 'NewPassword123',
+        ])->assertStatus(400);
+
+        $this->assertFalse(Hash::check('NewPassword123', $user->fresh()->password));
     }
 
     public function test_email_verification_token_is_signed_and_expires(): void

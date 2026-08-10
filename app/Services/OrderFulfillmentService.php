@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Events\OrderPaid;
-use App\Mail\TicketsIssuedMail;
+use App\Jobs\SendIssuedTicketsEmail;
+use App\Models\Combo;
 use App\Models\IdempotencyKey;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -18,7 +19,6 @@ use App\Models\SeatHoldItem;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class OrderFulfillmentService
 {
@@ -46,6 +46,15 @@ class OrderFulfillmentService
                     'gateway_order_code' => $gatewayOrderCode,
                     'idempotency_key' => $idempotencyKeyValue,
                 ]);
+
+                $completedOrderId = Order::query()
+                    ->where('gateway_order_code', $gatewayOrderCode)
+                    ->value('id');
+
+                if ($completedOrderId) {
+                    $this->sendTicketsEmailAfterCommit((int) $completedOrderId);
+                }
+
                 return is_array($idempotencyKey->response_data)
                     ? $idempotencyKey->response_data
                     : ['already_processed' => true, 'skipped' => false];
@@ -139,6 +148,8 @@ class OrderFulfillmentService
                     );
                 }
 
+                $this->sendTicketsEmailAfterCommit($order->id);
+
                 return $result;
             }
 
@@ -165,7 +176,10 @@ class OrderFulfillmentService
 
             if ($isPos) {
                 // For POS orders, convert existing Seat order items to Ticket order items
-                $orderItems = $order->orderItems()->where('item_type', Seat::class)->get();
+                $orderItems = $order->orderItems()
+                    ->where('item_type', Seat::class)
+                    ->get()
+                    ->unique('item_id');
                 foreach ($orderItems as $item) {
                     $ticket = Ticket::forceCreate([
                         'order_id' => $order->id,
@@ -185,8 +199,10 @@ class OrderFulfillmentService
                     ])->save();
                 }
             } else {
-                // 1. Create Tickets for each seat FIRST, then create OrderItems (PHASE 5)
-                $seats = $payload['seats'] ?? [];
+                // Create one ticket per distinct seat and convert the reserved seat item when present.
+                $seats = collect($payload['seats'] ?? [])
+                    ->unique(fn (array $seatData): int => (int) $seatData['id'])
+                    ->values();
                 foreach ($seats as $seatData) {
                     $ticket = Ticket::forceCreate([
                         'order_id' => $order->id,
@@ -197,19 +213,34 @@ class OrderFulfillmentService
                         'status' => Ticket::STATUS_VALID,
                     ]);
 
-                    // Create OrderItem pointing to the ticket
-                    $orderItem = OrderItem::createFromTicket(
-                        $order,
-                        $ticket,
-                        (string) $seatData['price'],
-                        [
-                            'seat_label' => $seatData['name'],
-                            'row'        => $seatData['row'] ?? null,
-                            'number'     => $seatData['number'] ?? null,
-                            'seat_type'  => $seatData['type'] ?? null,
-                        ]
-                    );
-                    $orderItem->save();
+                    $seatItem = $order->orderItems()
+                        ->where('item_type', Seat::class)
+                        ->where('item_id', $seatData['id'])
+                        ->lockForUpdate()
+                        ->first();
+                    $ticketMetadata = [
+                        'seat_label' => $seatData['name'],
+                        'row' => $seatData['row'] ?? null,
+                        'number' => $seatData['number'] ?? null,
+                        'seat_type' => $seatData['type'] ?? null,
+                        'audience_type' => $seatData['audience_type'] ?? 'adult',
+                        'ticket_code' => $ticket->ticket_code,
+                    ];
+
+                    if ($seatItem) {
+                        $seatItem->forceFill([
+                            'item_type' => Ticket::class,
+                            'item_id' => $ticket->id,
+                            'metadata' => array_merge($seatItem->metadata ?? [], $ticketMetadata),
+                        ])->save();
+                    } else {
+                        OrderItem::createFromTicket(
+                            $order,
+                            $ticket,
+                            (string) $seatData['price'],
+                            $ticketMetadata,
+                        )->save();
+                    }
                 }
             }
 
@@ -217,15 +248,25 @@ class OrderFulfillmentService
             $products = $payload['products'] ?? [];
             foreach ($products as $productData) {
                 $quantity = (int)$productData['quantity'];
+                $isCombo = ($productData['item_type'] ?? $productData['type'] ?? null) === 'combo';
+                $itemClass = $isCombo ? Combo::class : Product::class;
 
                 $reservedItem = OrderItem::query()
                     ->where('order_id', $order->id)
-                    ->where('item_type', Product::class)
+                    ->where('item_type', $itemClass)
                     ->where('item_id', $productData['id'])
                     ->lockForUpdate()
                     ->first();
 
                 if ($reservedItem) {
+                    continue;
+                }
+
+                if ($isCombo) {
+                    Log::warning('Reserved combo item missing during fulfillment', [
+                        'order_id' => $order->id,
+                        'combo_id' => $productData['id'],
+                    ]);
                     continue;
                 }
 
@@ -378,43 +419,16 @@ class OrderFulfillmentService
     private function sendTicketsEmailAfterCommit(int $orderId): void
     {
         DB::afterCommit(function () use ($orderId): void {
-            try {
-                $order = Order::query()
-                    ->with([
-                        'user:id,name,email',
-                        'showtime:id,scheduled_at,screen_id,movie_id',
-                        'showtime.movie:id,title',
-                        'showtime.screen:id,name,theater_id',
-                        'showtime.screen.theater:id,name,address',
-                        'tickets:id,order_id,ticket_code,seat_id,status',
-                        'tickets.seat:id,label',
-                    ])
-                    ->find($orderId);
+            if ((bool) config('mail.invoice.after_response', false)) {
+                SendIssuedTicketsEmail::dispatchAfterResponse($orderId)
+                    ->onConnection('sync');
 
-                if (! $order || ! $order->user?->email || $order->tickets->isEmpty()) {
-                    Log::info('Issued tickets email skipped', [
-                        'order_id' => $orderId,
-                        'has_order' => (bool) $order,
-                        'has_email' => (bool) $order?->user?->email,
-                        'tickets_count' => $order?->tickets?->count() ?? 0,
-                    ]);
-
-                    return;
-                }
-
-                Mail::to($order->user->email)->send(new TicketsIssuedMail($order));
-
-                Log::info('Issued tickets email sent', [
-                    'order_id' => $order->id,
-                    'user_id' => $order->user_id,
-                    'tickets_count' => $order->tickets->count(),
-                ]);
-            } catch (\Throwable $e) {
-                Log::warning('Failed to send issued tickets email', [
-                    'order_id' => $orderId,
-                    'error' => $e->getMessage(),
-                ]);
+                return;
             }
+
+            SendIssuedTicketsEmail::dispatch($orderId)
+                ->onQueue((string) config('mail.invoice.queue', 'emails'))
+                ->delay(now()->addSeconds((int) config('mail.invoice.dispatch_delay', 3)));
         });
     }
 

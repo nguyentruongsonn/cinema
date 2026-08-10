@@ -18,6 +18,9 @@ class SecurityHeadersTest extends TestCase
 
         $this->assertSame('nosniff', $response->headers->get('X-Content-Type-Options'));
         $this->assertSame('strict-origin-when-cross-origin', $response->headers->get('Referrer-Policy'));
+        $this->assertSame('same-origin-allow-popups', $response->headers->get('Cross-Origin-Opener-Policy'));
+        $this->assertSame('none', $response->headers->get('X-Permitted-Cross-Domain-Policies'));
+        $this->assertStringContainsString('camera=(self)', (string) $response->headers->get('Permissions-Policy'));
     }
 
     public function test_html_responses_include_clickjacking_protection(): void
@@ -33,6 +36,7 @@ class SecurityHeadersTest extends TestCase
         $this->assertStringContainsString("script-src 'self' 'nonce-", $csp);
         $this->assertStringNotContainsString("script-src 'self' 'unsafe-inline'", $csp);
         $this->assertStringContainsString("style-src-attr 'unsafe-inline'", $csp);
+        $this->assertStringContainsString("frame-ancestors 'none'", $csp);
 
         $reportOnlyCsp = (string) $response->headers->get('Content-Security-Policy-Report-Only');
         $this->assertStringContainsString("style-src-attr 'none'", $reportOnlyCsp);

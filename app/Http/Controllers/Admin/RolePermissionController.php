@@ -169,12 +169,7 @@ class RolePermissionController extends Controller
 
         return collect($slugs)
             ->flatMap(function (string $slug) use ($aliases): array {
-                $expanded = [$slug];
-                $legacySlug = array_search($slug, $aliases, true);
-
-                if (is_string($legacySlug)) {
-                    $expanded[] = $legacySlug;
-                }
+                $expanded = array_merge([$slug], array_keys($aliases, $slug, true));
 
                 return $expanded;
             })

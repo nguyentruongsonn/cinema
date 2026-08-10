@@ -11,7 +11,7 @@ let contentSizeReleaseTimer = null;
 let navigationStartedAt = null;
 let navigationPrepared = false;
 
-const NAVIGATION_BUSY_DELAY = 1200;
+const NAVIGATION_BUSY_DELAY = 240;
 
 function normalizePath(pathname) {
     const normalized = pathname.replace(/\/+$/, '');
@@ -43,6 +43,7 @@ function syncSidebar(pathname = window.location.pathname) {
 
     links.forEach((link) => {
         const url = adminUrlForLink(link);
+        if (url) link.dataset.turbo = 'true';
         const isActive = url && normalizePath(url.pathname) === currentPath;
         link.classList.toggle('active', Boolean(isActive));
         if (isActive) activeLink = link;
@@ -111,7 +112,7 @@ function prepareForNavigation() {
     navigationPrepared = true;
     lockCurrentContentSize();
     getAdminPageContent()?.setAttribute('aria-busy', 'true');
-    window.runAdminPageCleanup?.();
+    window.runAdminPageCleanup?.({ defer: true });
     window.AdminCore?.abortAllRequests?.();
     window.ticketScanner?.cleanup?.();
     resetAdminModalState({ dispose: true });
@@ -149,7 +150,6 @@ function finishNavigation({ animate = false } = {}) {
 function notifyAdminLayoutStable() {
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            window.dispatchEvent(new Event('resize'));
             document.dispatchEvent(new CustomEvent('admin:layout-stable'));
         });
     });
@@ -169,7 +169,9 @@ document.addEventListener('click', (event) => {
     navigationPrepared = false;
     syncSidebar(url.pathname);
     showNavigationBusyState();
-    Turbo.visit(url.href, { action: link.dataset.turboAction || 'advance' });
+    requestAnimationFrame(() => {
+        Turbo.visit(url.href, { action: link.dataset.turboAction || 'advance' });
+    });
 }, true);
 
 document.addEventListener('turbo:before-visit', () => {

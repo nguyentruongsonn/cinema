@@ -21,6 +21,12 @@ class UserService
     public function getPaginatedUsers(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = User::with(['role', 'theaters:id,name']);
+        $actor = auth()->user();
+
+        if ($actor?->requiresTheaterScope()) {
+            $actorTheaterIds = $actor->theaters()->pluck('theaters.id');
+            $query->whereHas('theaters', fn ($theaters) => $theaters->whereIn('theaters.id', $actorTheaterIds));
+        }
 
         // Search by name or email - bounded and normalized
         if (!empty($filters['search'])) {
@@ -99,7 +105,7 @@ class UserService
             }
 
             $actor = auth()->user();
-            if ($actor && $actor->hasRole('theater_manager')) {
+            if ($actor?->requiresTheaterScope()) {
                 $actorTheaters = $this->getActorTheaters($actor)->pluck('id')->toArray();
                 $diff = array_diff($theaterIds, $actorTheaters);
                 if (!empty($diff)) {
@@ -205,6 +211,17 @@ class UserService
 
     public function syncAssignedTheaters(User $user, array $theaterIds): User
     {
+        $actor = auth()->user();
+
+        if ($actor?->requiresTheaterScope()) {
+            $actorTheaterIds = $actor->theaters()->pluck('theaters.id')->map(fn ($id) => (int) $id)->all();
+            $invalidTheaterIds = array_diff(array_map('intval', $theaterIds), $actorTheaterIds);
+
+            if ($invalidTheaterIds !== []) {
+                throw new \DomainException('You may only assign users to your assigned theaters.');
+            }
+        }
+
         $user->theaters()->sync(array_values(array_unique(array_map('intval', $theaterIds))));
 
         Log::info('User theater assignments updated', [
@@ -334,7 +351,7 @@ class UserService
     public function getAllRoles(): Collection
     {
         $actor = auth()->user();
-        if ($actor && $actor->hasRole('theater_manager')) {
+        if ($actor?->requiresTheaterScope()) {
             return Role::query()
                 ->select(['id', 'name', 'slug', 'display_name', 'description'])
                 ->whereIn('slug', ['ticket_seller', 'ticket_checker', 'concession_staff'])
@@ -354,7 +371,15 @@ class UserService
      */
     public function getUserStats(): array
     {
-        $stats = DB::table('users')
+        $query = User::query();
+        $actor = auth()->user();
+
+        if ($actor?->requiresTheaterScope()) {
+            $actorTheaterIds = $actor->theaters()->pluck('theaters.id');
+            $query->whereHas('theaters', fn ($theaters) => $theaters->whereIn('theaters.id', $actorTheaterIds));
+        }
+
+        $stats = $query
             ->selectRaw('
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active,
@@ -363,15 +388,16 @@ class UserService
                 SUM(CASE WHEN email_verified_at IS NULL THEN 1 ELSE 0 END) as unverified,
                 SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as recent
             ', [now()->subDays(7)])
+            ->toBase()
             ->first();
 
         return [
-            'total' => (int) $stats->total,
-            'active' => (int) $stats->active,
-            'inactive' => (int) $stats->inactive,
-            'verified' => (int) $stats->verified,
-            'unverified' => (int) $stats->unverified,
-            'recent' => (int) $stats->recent,
+            'total' => (int) ($stats->total ?? 0),
+            'active' => (int) ($stats->active ?? 0),
+            'inactive' => (int) ($stats->inactive ?? 0),
+            'verified' => (int) ($stats->verified ?? 0),
+            'unverified' => (int) ($stats->unverified ?? 0),
+            'recent' => (int) ($stats->recent ?? 0),
         ];
     }
 
@@ -385,7 +411,7 @@ class UserService
             throw new \DomainException('Only a super-admin may assign administrative roles.');
         }
 
-        if ($actor && $actor->hasRole('theater_manager')) {
+        if ($actor?->requiresTheaterScope()) {
             if (!in_array($role->slug, ['ticket_seller', 'ticket_checker', 'concession_staff'], true)) {
                 throw new \DomainException('Theater manager can only assign staff roles.');
             }

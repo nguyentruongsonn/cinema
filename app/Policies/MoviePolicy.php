@@ -19,26 +19,26 @@ class MoviePolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('create_movies');
+        return $user->hasPermission('movies.create');
     }
 
     public function update(User $user, Movie $movie): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_movies');
+        return $user->hasPermission('movies.update');
     }
 
     public function delete(User $user, Movie $movie): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('delete_movies');
+        return $user->hasPermission('movies.delete');
     }
 
     public function toggleStatus(User $user, Movie $movie): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_movies');
+        return $user->hasPermission('movies.update');
     }
 
     public function toggleHot(User $user, Movie $movie): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_movies');
+        return $user->hasPermission('movies.update');
     }
 }

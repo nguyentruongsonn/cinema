@@ -7,7 +7,8 @@
 
     const API_COMBO = '/admin/combos/stats';
     const API_FOOD = '/admin/food/stats';
-    const PALETTE = ['#ff5a5f','#22c55e','#38bdf8','#fbbf24','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#60a5fa'];
+    const PALETTE = ['#e50914','#22c55e','#38bdf8','#fbbf24','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#60a5fa'];
+    const PRIMARY_COLOR = '#e50914';
 
     let currentType = 'combo'; // Track current tab
 
@@ -27,8 +28,11 @@
 
             // Cards
             cardTotalCombos: document.getElementById('cardTotalCombos'),
+            cardTotalCombosTrend: document.getElementById('cardTotalCombosTrend'),
             cardRevenue: document.getElementById('cardRevenue'),
+            cardRevenueTrend: document.getElementById('cardRevenueTrend'),
             cardAvgPerDay: document.getElementById('cardAvgPerDay'),
+            cardAvgPerDayTrend: document.getElementById('cardAvgPerDayTrend'),
             cardTopCombo: document.getElementById('cardTopCombo'),
 
             // Charts
@@ -58,6 +62,19 @@
 
     function formatCurrencyFull(val) {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+    }
+
+    function renderTrend(element, value) {
+        if (!element) return;
+
+        const trend = Number(value || 0);
+        const absoluteTrend = Math.abs(trend).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+        element.className = trend > 0 ? 'text-success fw-bold' : trend < 0 ? 'text-danger fw-bold' : 'text-secondary fw-bold';
+        element.innerHTML = trend > 0
+            ? `<i class="bi bi-graph-up-arrow"></i> +${absoluteTrend}%`
+            : trend < 0
+                ? `<i class="bi bi-graph-down-arrow"></i> -${absoluteTrend}%`
+                : '<i class="bi bi-dash"></i> 0%';
     }
 
     function toDateStr(d) {
@@ -166,14 +183,14 @@
         if (!els.chartComboTrend) return;
         const opts = {
             series: [{ name: 'Combo bán ra', data: [] }],
-            chart: { height: 300, type: 'area', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, zoom: { enabled: false } },
-            colors: ['#e50914'],
+            chart: { height: 300, width: '100%', type: 'area', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, zoom: { enabled: false }, parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true },
+            colors: [PRIMARY_COLOR],
             stroke: { curve: 'smooth', width: 3 },
             fill: {
                 type: 'gradient',
                 gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] },
             },
-            markers: { size: 0, hover: { size: 6 } },
+            markers: { size: 4, strokeWidth: 2, hover: { size: 7, sizeOffset: 2 } },
             dataLabels: { enabled: false },
             xaxis: {
                 categories: [],
@@ -187,6 +204,7 @@
             },
             theme: { mode: 'dark' },
             grid: { borderColor: '#2e2e33', strokeDashArray: 4 },
+            tooltip: { enabled: true, shared: false, intersect: false, followCursor: false, theme: 'dark', fixed: { enabled: true, position: 'topRight', offsetX: -16, offsetY: 12 } },
         };
         charts.trend = new ApexCharts(els.chartComboTrend, opts);
         charts.trend.render();
@@ -197,10 +215,10 @@
         const opts = {
             series: [],
             labels: [],
-            chart: { type: 'donut', height: 300, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+            chart: { type: 'donut', height: 340, width: '100%', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true },
             colors: PALETTE,
-            stroke: { width: 0 },
-            plotOptions: { pie: { donut: { size: '65%', labels: {
+            stroke: { show: true, width: 2, colors: ['#1e1e24'] },
+            plotOptions: { pie: { customScale: 0.78, offsetY: -8, donut: { size: '58%', labels: {
                 show: true,
                 total: {
                     show: true,
@@ -212,7 +230,7 @@
                 value: { color: '#ffffff', fontSize: '24px', fontWeight: 700, formatter: v => Number(v).toLocaleString('vi-VN') },
             } } } },
             dataLabels: { enabled: false },
-            legend: { position: 'bottom', labels: { colors: '#a1a1aa' }, fontSize: '12px' },
+            legend: { position: 'bottom', height: 76, offsetY: 40, labels: { colors: '#e4e4e7' }, fontSize: '13px', fontWeight: 600, markers: { width: 10, height: 10, radius: 6 }, itemMargin: { horizontal: 8, vertical: 3 } },
             tooltip: { theme: 'dark', style: { fontSize: '13px' } },
         };
         charts.topCombos = new ApexCharts(els.chartTopCombos, opts);
@@ -223,8 +241,8 @@
         if (!els.chartComboRevenue) return;
         const opts = {
             series: [{ name: 'Doanh thu', data: [] }],
-            chart: { type: 'bar', height: 350, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
-            colors: ['#3b82f6'],
+            chart: { type: 'bar', height: 350, width: '100%', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true },
+            colors: [PRIMARY_COLOR],
             plotOptions: {
                 bar: { horizontal: true, borderRadius: 4, barHeight: '50%' }
             },
@@ -254,11 +272,15 @@
         const qty = summary.total_quantity || 0;
         const rev = summary.total_revenue || 0;
         const avg = diffDays > 0 ? (qty / diffDays) : qty;
+        const trends = summary.trends || {};
 
         if (els.cardTotalCombos) els.cardTotalCombos.textContent = qty.toLocaleString('vi-VN');
         if (els.cardRevenue)     els.cardRevenue.textContent     = formatCurrencyFull(rev);
         if (els.cardAvgPerDay)    els.cardAvgPerDay.textContent    = avg.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
         if (els.cardTopCombo)     els.cardTopCombo.textContent     = summary.best_combo_name || 'N/A';
+        renderTrend(els.cardTotalCombosTrend, trends.total_quantity);
+        renderTrend(els.cardRevenueTrend, trends.total_revenue);
+        renderTrend(els.cardAvgPerDayTrend, trends.avg_per_day);
     }
 
     function renderTrendChart(trend) {

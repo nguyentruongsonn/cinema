@@ -26,11 +26,17 @@ class PosAccessMiddleware
             return redirect('/login')->with('error', 'Vui lòng đăng nhập để sử dụng POS.');
         }
 
-        if (! $user->hasAnyRole(['ticket_seller', 'admin', 'super-admin'])) {
+        if (! $user->canAccessAdminPanel()
+            || ! $user->hasAnyPermission([
+                'orders.create',
+                'booking.create_order',
+                'tickets.verify',
+                'tickets.issue',
+            ])) {
             return redirect('/')->with('error', 'Bạn không có quyền truy cập hệ thống POS.');
         }
 
-        if ($user->hasRole('ticket_seller') && ! $user->theaters()->exists()) {
+        if ($user->requiresTheaterScope() && ! $user->theaters()->exists()) {
             return redirect('/login')->with('error', 'Bạn chưa được phân công rạp chiếu. Vui lòng liên hệ quản lý.');
         }
 

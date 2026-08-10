@@ -58,5 +58,6 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: root
       - run: npm run test:browser:smoke
+      - run: npm run test:browser:auth-expiry
       - run: composer audit
       - run: npm audit --audit-level=moderate

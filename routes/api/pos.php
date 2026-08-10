@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('pos')->middleware([
     'auth:api',
-    'role:ticket_seller,admin,super-admin',
+    'admin',
     'theater.scope',
     'throttle:pos',
 ])->group(function () {

@@ -94,9 +94,19 @@ class FoodAnalyticsService
         }
 
         $types = $type ? [$type] : self::FOOD_TYPES;
+        $summary = $this->getSummaryCompatible($start, $end, $types);
+        $compareEnd = $start->copy()->subDay()->endOfDay();
+        $compareStart = $compareEnd->copy()->subDays($rangeDays)->startOfDay();
+        $previousTotals = $this->getTotals($compareStart, $compareEnd, $types);
+
+        $summary['trends'] = [
+            'total_quantity' => $this->calculateTrend((float) $summary['total_quantity'], (float) $previousTotals['total_quantity']),
+            'total_revenue' => $this->calculateTrend((float) $summary['total_revenue'], (float) $previousTotals['total_revenue']),
+            'avg_per_day' => $this->calculateTrend((float) $summary['total_quantity'], (float) $previousTotals['total_quantity']),
+        ];
 
         return [
-            'summary'           => $this->getSummaryCompatible($start, $end, $types),
+            'summary'           => $summary,
             'top_combos'        => $this->getTopProducts($start, $end, $types), // Renamed for compatibility
             'revenue_by_theater'=> [], // Food stats don't have theater breakdown
             'by_theater_combo'  => ['theater_names' => [], 'combo_names' => [], 'revenue_series' => [], 'qty_series' => []],
@@ -110,10 +120,7 @@ class FoodAnalyticsService
     private function getSummaryCompatible(Carbon $start, Carbon $end, array $types): array
     {
         $base = $this->baseQuery($start, $end, $types);
-
-        $totals = (clone $base)
-            ->selectRaw('SUM(order_items.total_price) as total_revenue, SUM(order_items.quantity) as total_qty')
-            ->first();
+        $totals = $this->getTotals($start, $end, $types);
 
         // Best-selling product by quantity
         $best = (clone $base)
@@ -124,11 +131,32 @@ class FoodAnalyticsService
 
         // Return money as string to avoid float precision issues
         return [
-            'total_revenue'   => number_format((float) ($totals->total_revenue ?? 0), 2, '.', ''),
-            'total_quantity'  => (int) ($totals->total_qty ?? 0),
+            'total_revenue'   => $totals['total_revenue'],
+            'total_quantity'  => $totals['total_quantity'],
             'best_combo_name' => data_get($best, 'name', '—'),  // "combo" for frontend compatibility
             'best_combo_qty'  => (int) data_get($best, 'qty', 0),
         ];
+    }
+
+    private function getTotals(Carbon $start, Carbon $end, array $types): array
+    {
+        $totals = $this->baseQuery($start, $end, $types)
+            ->selectRaw('SUM(order_items.total_price) as total_revenue, SUM(order_items.quantity) as total_qty')
+            ->first();
+
+        return [
+            'total_revenue' => number_format((float) ($totals->total_revenue ?? 0), 2, '.', ''),
+            'total_quantity' => (int) ($totals->total_qty ?? 0),
+        ];
+    }
+
+    private function calculateTrend(float $current, float $previous): float
+    {
+        if ($previous === 0.0) {
+            return $current > 0.0 ? 100.0 : 0.0;
+        }
+
+        return round((($current - $previous) / $previous) * 100, 1);
     }
 
     /**

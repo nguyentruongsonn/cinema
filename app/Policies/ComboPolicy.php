@@ -27,6 +27,11 @@ class ComboPolicy
         return $user->hasPermission('combos.update');
     }
 
+    public function toggleStatus(User $user, Combo $combo): bool
+    {
+        return $user->hasAnyPermission(['combos.toggle_status', 'combos.update']);
+    }
+
     public function delete(User $user, Combo $combo): bool
     {
         return $user->hasPermission('combos.delete');

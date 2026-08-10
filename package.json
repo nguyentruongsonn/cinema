@@ -9,6 +9,9 @@
         "test:frontend:security": "node scripts/frontend-security-gate.mjs",
         "test:frontend:syntax": "node scripts/frontend-syntax-gate.mjs",
         "test:browser:smoke": "node scripts/release-browser-smoke.mjs",
+        "test:browser:auth-expiry": "node scripts/auth-expiry-browser-smoke.mjs",
+        "test:browser:staging": "node scripts/staging-browser-smoke.mjs",
+        "test:booking:concurrency": "node scripts/booking-concurrency-probe.mjs",
         "test:browser:roles": "node scripts/role-browser-smoke.mjs",
         "test:structure": "node scripts/repository-hygiene-gate.mjs"
     },

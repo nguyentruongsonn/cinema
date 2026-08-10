@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\LoyaltyHistory;
 use App\Models\OrderItem;
 use App\Models\Combo;
 use App\Models\Product;
@@ -262,6 +263,11 @@ class OrderExpirationService
 
         $user = User::query()->whereKey($order->user_id)->lockForUpdate()->first();
         $user?->increment('loyalty_points', $pointsUsed);
+        LoyaltyHistory::query()
+            ->where('order_id', $order->id)
+            ->where('user_id', $order->user_id)
+            ->where('type', 'redeem')
+            ->delete();
     }
 
     /**

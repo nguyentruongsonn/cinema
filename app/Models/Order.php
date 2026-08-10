@@ -51,6 +51,7 @@ class Order extends Model
         'payload' => 'json',
         'status' => 'integer',
         'paid_at' => 'datetime',
+        'ticket_email_sent_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'expired_at' => 'datetime',
     ];
@@ -108,6 +109,12 @@ class Order extends Model
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    /** @return HasMany<OrderPrintLog, $this> */
+    public function printLogs(): HasMany
+    {
+        return $this->hasMany(OrderPrintLog::class);
     }
 
     public function markPending(?\DateTimeInterface $expiresAt = null): self

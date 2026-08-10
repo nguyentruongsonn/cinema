@@ -15,7 +15,7 @@
 
     let charts = {
         revenue: null,
-        heatmap: null
+        traffic: null
     };
 
     /* ------------------------------------------------------------------ */
@@ -131,14 +131,16 @@
             chart: {
                 type: 'area',
                 height: 300,
+                width: '100%',
                 toolbar: { show: false },
                 fontFamily: 'Inter, sans-serif',
                 background: 'transparent',
                 parentHeightOffset: 0,
                 redrawOnParentResize: true,
-                redrawOnWindowResize: true
+                redrawOnWindowResize: true,
+                animations: { enabled: false }
             },
-            colors: ['#ff4d57'],
+            colors: ['#e50914'],
             stroke: {
                 curve: 'smooth',
                 width: 3,
@@ -147,7 +149,7 @@
                     top: 5,
                     left: 0,
                     blur: 4,
-                    color: '#ff4d57',
+                    color: '#e50914',
                     opacity: 0.18
                 }
             },
@@ -162,6 +164,11 @@
             },
             dataLabels: {
                 enabled: false
+            },
+            markers: {
+                size: 4,
+                strokeWidth: 2,
+                hover: { size: 6, sizeOffset: 2 }
             },
             xaxis: {
                 categories: [''],
@@ -202,9 +209,11 @@
             tooltip: {
                 enabled: true,
                 theme: 'dark',
-                shared: true,
+                shared: false,
                 intersect: false,
+                followCursor: false,
                 marker: { show: true },
+                fixed: { enabled: true, position: 'topRight', offsetX: -16, offsetY: 12 },
                 x: { show: true },
                 y: {
                     title: { formatter: () => 'Doanh thu: ' },
@@ -217,61 +226,88 @@
         charts.revenue.render();
     }
 
-    function initHeatmapChart() {
+    function initTrafficChart() {
         if (!els.trafficHeatmap) return;
 
         const options = {
-            series: [{ name: 'Chủ nhật', data: new Array(17).fill(0) }],
+            series: [
+                { name: 'Sáng 07–11h', data: new Array(7).fill(0) },
+                { name: 'Trưa 12–16h', data: new Array(7).fill(0) },
+                { name: 'Tối 17–20h', data: new Array(7).fill(0) },
+                { name: 'Muộn 21–23h', data: new Array(7).fill(0) },
+            ],
             noData: {
                 text: 'Chưa có dữ liệu',
                 style: { color: '#a1a1aa', fontSize: '14px' }
             },
             chart: {
-                height: 350,
-                type: 'heatmap',
+                height: 360,
+                type: 'bar',
+                stacked: true,
+                width: '100%',
                 fontFamily: 'Inter, sans-serif',
                 background: 'transparent',
-                toolbar: { show: false }
+                toolbar: { show: false },
+                parentHeightOffset: 0,
+                redrawOnParentResize: true,
+                redrawOnWindowResize: true,
+                animations: { enabled: false }
             },
+            colors: ['#e50914', '#ef4444', '#a1a1aa', '#52525b'],
             plotOptions: {
-                heatmap: {
-                    shadeIntensity: 0.6,
-                    radius: 6,
-                    useFillColorAsStroke: false,
-                    colorScale: {
-                        ranges: [
-                            { from: 0, to: 0, color: 'rgba(255, 255, 255, 0.02)', name: 'Trống' },
-                            { from: 1, to: 10, color: '#312e81', name: 'Rất thấp' },
-                            { from: 11, to: 30, color: '#4f46e5', name: 'Thấp' },
-                            { from: 31, to: 60, color: '#8b5cf6', name: 'Trung bình' },
-                            { from: 61, to: 1000, color: '#d946ef', name: 'Cao' }
-                        ]
-                    }
+                bar: {
+                    horizontal: true,
+                    barHeight: '62%',
+                    borderRadius: 4,
+                    borderRadiusApplication: 'end',
                 }
             },
             dataLabels: { enabled: false },
-            stroke: { width: 2, colors: ['#18181b'] },
+            stroke: { width: 1, colors: ['#18181b'] },
             xaxis: {
-                categories: ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
-                labels: { style: { colors: '#d4d4d8', fontWeight: 600 } },
+                categories: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'],
+                labels: {
+                    style: { colors: '#d4d4d8', fontWeight: 600 },
+                    formatter: (value) => Math.round(Number(value) || 0),
+                },
                 axisBorder: { show: false },
-                axisTicks: { show: false }
+                axisTicks: { show: false },
+                title: {
+                    text: 'Số khách',
+                    style: { color: '#a1a1aa', fontSize: '12px', fontWeight: 600 },
+                },
             },
             yaxis: {
                 labels: { style: { colors: '#d4d4d8', fontWeight: 600 } }
             },
-            grid: { show: false },
+            legend: {
+                show: true,
+                position: 'top',
+                horizontalAlign: 'left',
+                fontSize: '12px',
+                labels: { colors: '#d4d4d8' },
+                markers: { size: 5 },
+            },
+            grid: {
+                borderColor: 'rgba(255,255,255,0.08)',
+                strokeDashArray: 4,
+                xaxis: { lines: { show: true } },
+                yaxis: { lines: { show: false } },
+            },
             tooltip: { 
                 theme: 'dark',
+                shared: false,
+                intersect: false,
                 style: {
                     fontSize: '13px',
                     fontFamily: 'Inter, sans-serif'
-                }
+                },
+                y: { formatter: (value) => `${value} khách` }
             }
         };
 
-        charts.heatmap = new ApexCharts(els.trafficHeatmap, options);
-        charts.heatmap.render();
+        charts.traffic = new ApexCharts(els.trafficHeatmap, options);
+        charts.traffic.render();
     }
 
     /* ------------------------------------------------------------------ */
@@ -303,50 +339,50 @@
         });
         const data = revenueData.map(item => parseFloat(item.revenue));
         
-        let opts = { xaxis: { categories } };
+        const upperGridLine = Math.max(...data, 500000);
+        let opts = {
+            xaxis: { categories },
+            annotations: {
+                yaxis: [
+                    { y: 0, borderColor: 'rgba(255,255,255,0.08)', strokeDashArray: 4 },
+                    { y: upperGridLine, borderColor: 'rgba(255,255,255,0.08)', strokeDashArray: 4 },
+                ],
+            },
+        };
         
         // FIX: Area/Line charts won't render a single data point without markers. 
         // If there's only 1 point, force a marker to show up.
         if (data.length === 1) {
-            opts.markers = { size: 6, strokeWidth: 2, hover: { size: 8 } };
+            opts.markers = { size: 6, strokeWidth: 2, hover: { size: 8, sizeOffset: 2 } };
         } else {
-            opts.markers = { size: 0 };
+            opts.markers = { size: 4, strokeWidth: 2, hover: { size: 7, sizeOffset: 2 } };
         }
         
         charts.revenue.updateOptions(opts);
         charts.revenue.updateSeries([{ name: 'Doanh thu', data }]);
     }
 
-    function updateHeatmapChart(heatmapData) {
-        if (!charts.heatmap || !heatmapData) return;
+    function updateTrafficChart(trafficData) {
+        if (!charts.traffic || !Array.isArray(trafficData)) return;
 
-        // Init blank matrix: 7 days x 17 hours (7 to 23)
-        const days = ['Chủ nhật', 'Thứ 7', 'Thứ 6', 'Thứ 5', 'Thứ 4', 'Thứ 3', 'Thứ 2'];
-        const matrix = days.map(day => ({ name: day, data: new Array(17).fill(0) }));
+        const series = [
+            { name: 'Sáng 07–11h', data: new Array(7).fill(0) },
+            { name: 'Trưa 12–16h', data: new Array(7).fill(0) },
+            { name: 'Tối 17–20h', data: new Array(7).fill(0) },
+            { name: 'Muộn 21–23h', data: new Array(7).fill(0) },
+        ];
+        const dayIndexes = { 2: 0, 3: 1, 4: 2, 5: 3, 6: 4, 7: 5, 1: 6 };
 
-        // Map data to matrix
-        // day_of_week in DB: 1=Sun, 2=Mon... 7=Sat
-        // Our matrix index: 0=Sun, 1=Sat, 2=Fri... 6=Mon (Apex Heatmap draws bottom-up usually, or top-down based on array order)
-        heatmapData.forEach(item => {
-            if (item.hour >= 7 && item.hour <= 23) {
-                const hourIndex = item.hour - 7;
-                let dayIndex;
-                switch (item.day_of_week) {
-                    case 2: dayIndex = 6; break; // Thứ 2
-                    case 3: dayIndex = 5; break;
-                    case 4: dayIndex = 4; break;
-                    case 5: dayIndex = 3; break;
-                    case 6: dayIndex = 2; break;
-                    case 7: dayIndex = 1; break; // Thứ 7
-                    case 1: dayIndex = 0; break; // Chủ nhật
-                }
-                if (dayIndex !== undefined) {
-                    matrix[dayIndex].data[hourIndex] = parseInt(item.customer_count);
-                }
-            }
+        trafficData.forEach((item) => {
+            const hour = Number(item.hour);
+            const dayIndex = dayIndexes[Number(item.day_of_week)];
+            if (dayIndex === undefined || hour < 7 || hour > 23) return;
+
+            const bucketIndex = hour <= 11 ? 0 : hour <= 16 ? 1 : hour <= 20 ? 2 : 3;
+            series[bucketIndex].data[dayIndex] += Number(item.customer_count) || 0;
         });
 
-        charts.heatmap.updateSeries(matrix);
+        charts.traffic.updateSeries(series);
     }
 
     function renderTopMovies(movies) {
@@ -429,7 +465,7 @@
                 
                 if (target === 'all' || target === 'cards') renderCards(data.cards);
                 if (target === 'all' || target === 'revenue') updateRevenueChart(data.revenue_by_day);
-                if (target === 'all' || target === 'heatmap') updateHeatmapChart(data.traffic_heatmap);
+                if (target === 'all' || target === 'traffic') updateTrafficChart(data.traffic_heatmap);
                 if (target === 'all' || target === 'topMovies') renderTopMovies(data.top_movies);
             }
         } catch (e) {
@@ -473,7 +509,7 @@
 
     function init() {
         initRevenueChart();
-        initHeatmapChart();
+        initTrafficChart();
         bindEvents();
         
         // Set default date range (week)
@@ -494,8 +530,8 @@
         if (state.pollInterval) clearInterval(state.pollInterval);
         state.pollInterval = null;
         charts.revenue?.destroy?.();
-        charts.heatmap?.destroy?.();
-        charts = { revenue: null, heatmap: null };
+        charts.traffic?.destroy?.();
+        charts = { revenue: null, traffic: null };
     });
 
     window.onAdminPageLoad(function () {

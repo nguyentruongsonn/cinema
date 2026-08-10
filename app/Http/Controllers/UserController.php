@@ -50,7 +50,7 @@ class UserController extends Controller
             'sort_order' => $request->input('sort_order', 'desc'),
         ];
 
-        $perPage = $request->input('per_page', 15);
+        $perPage = (int) $request->input('per_page', 15);
         $users = $this->userService->getPaginatedUsers($filters, $perPage);
 
         return response()->json([

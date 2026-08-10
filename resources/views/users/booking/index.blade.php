@@ -355,7 +355,7 @@
                             </div>
                         </div>
 
-                        <p class="result-note mt-4 mb-4 mx-auto">Cảm ơn bạn đã đặt vé. Thông báo đã được gửi đến email<br>của bạn, hãy để ý điện thoại nhé.</p>
+                        <p class="result-note mt-4 mb-4 mx-auto">Cảm ơn bạn đã đặt vé. Hóa đơn điện tử sẽ được gửi đến email<br>của bạn sau khi thanh toán được xác nhận.</p>
                         
                         <div class="d-flex justify-content-center gap-3 result-actions">
                             <a href="{{ route('home') }}" class="btn btn-result btn-home">Quay về trang chủ</a>

@@ -16,6 +16,9 @@ class AdminOrderSummaryResource extends JsonResource
             'total_amount' => (float) $this->total_amount,
             'status' => $this->status,
             'payment_status' => $this->payment_status,
+            'payment_method' => $this->payment_method,
+            'payment_provider' => $this->payment_provider,
+            'source' => $this->source,
             'created_at' => $this->created_at?->toISOString(),
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user?->id,
@@ -43,6 +46,10 @@ class AdminOrderSummaryResource extends JsonResource
                     ] : null,
                 ] : null,
             ]),
+            'theater' => $this->whenLoaded('theater', fn () => $this->theater ? [
+                'id' => $this->theater->id,
+                'name' => $this->theater->name,
+            ] : null),
             'items' => $this->whenLoaded('orderItems', fn () => $this->orderItems->map(fn ($item) => [
                 'id' => $item->id,
                 'type' => class_basename($item->item_type),

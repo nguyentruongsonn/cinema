@@ -5,6 +5,7 @@ import '../../public/js/admin/admin-core.js';
 import '../../public/js/admin/app.js';
 import '../../public/js/admin/components/dialog.js';
 import '../../public/js/admin/components/media-input.js';
+import '../../public/js/admin/order-printing.js';
 import '../../public/js/shared/data-region.js';
 import '../../public/js/shared/tabs.js';
 import '../../public/js/admin/responsive-menu.js';

@@ -55,8 +55,8 @@
             </div>
             <div class="stat-value text-truncate admin-skeleton admin-skeleton-text admin-stat-value-lg" id="cardTopTheaterRevenue"></div>
             <div class="stat-trend mt-2">
-                <span class="fw-bold text-info admin-skeleton admin-skeleton-text" id="cardTopTheaterName"></span>
-                <span class="trend-text ms-2 admin-skeleton admin-skeleton-text" id="cardTopTheaterPct"></span>
+                <span class="fw-bold text-info text-truncate admin-skeleton admin-skeleton-text admin-stat-meta-name" id="cardTopTheaterName"></span>
+                <span class="trend-text admin-skeleton admin-skeleton-text admin-stat-meta-value" id="cardTopTheaterPct"></span>
             </div>
         </div>
     </div>
@@ -70,8 +70,8 @@
             </div>
             <div class="stat-value admin-skeleton admin-skeleton-text admin-stat-value-lg" id="cardTopMovieRevenue"></div>
             <div class="stat-trend mt-2">
-                <span class="fw-bold text-warning text-truncate d-block admin-skeleton admin-skeleton-text admin-max-w-200" id="cardTopMovieTitle"></span>
-                <span class="trend-text admin-skeleton admin-skeleton-text" id="cardTopMovieTickets"></span>
+                <span class="fw-bold text-warning text-truncate d-block admin-skeleton admin-skeleton-text admin-stat-meta-name" id="cardTopMovieTitle"></span>
+                <span class="trend-text admin-skeleton admin-skeleton-text admin-stat-meta-value" id="cardTopMovieTickets"></span>
             </div>
         </div>
     </div>
@@ -86,7 +86,7 @@
             <div class="stat-value admin-skeleton admin-skeleton-text admin-stat-value-lg admin-uppercase" id="cardTopPayMethod"></div>
             <div class="stat-trend mt-2">
                 <span class="fw-bold text-success admin-skeleton admin-skeleton-text" id="cardTopPayMethodPct"></span>
-                <span class="trend-text ms-2">tổng lượt thanh toán</span>
+                <span class="trend-text">lượt thanh toán</span>
             </div>
         </div>
     </div>

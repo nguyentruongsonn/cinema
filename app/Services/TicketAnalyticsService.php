@@ -73,6 +73,8 @@ class TicketAnalyticsService
         }
 
         $totalDays = $days + 1;
+        $compareEnd = $start->copy()->subDay()->endOfDay();
+        $compareStart = $compareEnd->copy()->subDays($days)->startOfDay();
 
         // 1. Total sold tickets (based on successful payments and valid tickets)
         $totalTickets = DB::table('tickets')
@@ -82,6 +84,15 @@ class TicketAnalyticsService
             ->where('payments.status', Payment::STATUS_SUCCESS)
             ->whereIn('tickets.status', [Ticket::STATUS_VALID, Ticket::STATUS_USED])
             ->whereBetween('orders.paid_at', [$start, $end])
+            ->count('tickets.id');
+
+        $previousTotalTickets = DB::table('tickets')
+            ->join('orders', 'orders.id', '=', 'tickets.order_id')
+            ->join('payments', 'payments.order_id', '=', 'orders.id')
+            ->where('orders.status', Order::STATUS_CONFIRMED)
+            ->where('payments.status', Payment::STATUS_SUCCESS)
+            ->whereIn('tickets.status', [Ticket::STATUS_VALID, Ticket::STATUS_USED])
+            ->whereBetween('orders.paid_at', [$compareStart, $compareEnd])
             ->count('tickets.id');
 
         // 2. Average tickets per day
@@ -111,6 +122,7 @@ class TicketAnalyticsService
 
         // 4. Occupancy rate (based on showtime date, not payment date)
         $occupancyData = $this->calculateOccupancyRate($start, $end);
+        $previousOccupancyData = $this->calculateOccupancyRate($compareStart, $compareEnd);
 
         // 5. Ticket sales trend (daily grouping by payment date)
         $trendRows = DB::table('tickets')
@@ -160,6 +172,14 @@ class TicketAnalyticsService
                 'avg_per_day' => $avgTicketsPerDay,
                 'peak_hour' => $peakHour,
                 'occupancy_rate' => $occupancyData['overall_rate'],
+                'trends' => [
+                    'total_tickets' => $this->calculateTrend($totalTickets, $previousTotalTickets),
+                    'avg_per_day' => $this->calculateTrend($avgTicketsPerDay, round($previousTotalTickets / max($totalDays, 1), 1)),
+                    'occupancy_rate' => $this->calculateTrend(
+                        (float) $occupancyData['overall_rate'],
+                        (float) $previousOccupancyData['overall_rate']
+                    ),
+                ],
             ],
             'trend' => $trend,
             'top_movies' => $topMovies,
@@ -265,5 +285,14 @@ class TicketAnalyticsService
             'overall_rate' => $overallRate,
             'by_theater' => $byTheater,
         ];
+    }
+
+    private function calculateTrend(float|int $current, float|int $previous): float
+    {
+        if ((float) $previous === 0.0) {
+            return (float) $current > 0.0 ? 100.0 : 0.0;
+        }
+
+        return round((((float) $current - (float) $previous) / (float) $previous) * 100, 1);
     }
 }

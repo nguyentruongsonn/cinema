@@ -5,8 +5,11 @@
 
 @section('topbar_center')
     <div class="pos-topbar-theater">
-        <label class="visually-hidden" for="concessionTheater">Rạp phục vụ</label>
-        <select class="admin-select" id="concessionTheater" aria-label="Rạp phục vụ">
+        <label class="pos-topbar-theater-label" for="concessionTheater">
+            <i class="bi bi-building" aria-hidden="true"></i>
+            <span>Rạp phụ trách</span>
+        </label>
+        <select class="admin-select pos-topbar-theater-select" id="concessionTheater" aria-label="Rạp phục vụ">
             <option value="">Đang tải rạp...</option>
         </select>
     </div>
@@ -336,22 +339,48 @@
 </div>
 
 <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-white border-secondary">
+    <div class="modal-dialog modal-dialog-centered pos-success-dialog">
+        <div class="modal-content bg-dark text-white border-secondary pos-success-modal">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title text-success"><i class="bi bi-check-circle-fill me-2"></i>Giao dịch thành công!</h5>
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle me-2"></i>Hoàn tất giao dịch
+                </h5>
             </div>
-            <div class="modal-body py-4">
-                <div class="text-center mb-3">
-                    <div class="display-4 text-success"><i class="bi bi-check-lg"></i></div>
-                    <h4 class="mt-2" id="successOrderCode">Mã đơn: –</h4>
+            <div class="modal-body">
+                <div class="pos-success-state" role="status" aria-live="polite">
+                    <div class="pos-success-icon" aria-hidden="true">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                    <div class="pos-success-heading">
+                        <p class="pos-success-eyebrow">Thanh toán hoàn tất</p>
+                        <h4>Giao dịch thành công</h4>
+                        <div class="pos-success-code">
+                            <span>Mã đơn</span>
+                            <strong id="successOrderCode">–</strong>
+                        </div>
+                    </div>
                 </div>
-                <div id="successDetails" class="border border-secondary rounded p-3 bg-secondary bg-opacity-10 text-secondary">
-                </div>
+                <div id="successDetails" class="pos-success-details"></div>
                 <div class="pos-ui-hidden"><span id="successPointsEarned">0</span></div>
             </div>
-            <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-primary w-100" id="btnNewTransaction" data-bs-dismiss="modal">Giao dịch mới</button>
+            <div class="modal-footer border-secondary pos-success-actions">
+                <button type="button" class="admin-btn admin-btn-outline" id="btnNewTransaction" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-counterclockwise"></i> Giao dịch mới
+                </button>
+                <div class="pos-success-print-actions">
+                    <button type="button" class="admin-btn admin-btn-outline" id="btnPrintTickets">
+                        <i class="bi bi-ticket-perforated"></i> In vé
+                    </button>
+                    <button type="button" class="admin-btn admin-btn-outline" id="btnPrintConcessions">
+                        <i class="bi bi-cup-straw"></i> In bắp nước
+                    </button>
+                    <button type="button" class="admin-btn admin-btn-outline" id="btnPrintInvoice">
+                        <i class="bi bi-receipt"></i> In hóa đơn
+                    </button>
+                    <button type="button" class="btn-primary-custom border-0" id="btnPrintAll">
+                        <i class="bi bi-printer me-1"></i> In tất cả
+                    </button>
+                </div>
             </div>
         </div>
     </div>

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Banner;
+use App\Models\Movie;
 use App\Models\Post;
 use App\Models\Role;
 use App\Models\User;
@@ -10,6 +11,7 @@ use App\Services\HtmlContentSanitizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -134,6 +136,26 @@ class ContentManagementTest extends TestCase
         Storage::disk('public')->assertMissing('banners/old.jpg');
         Storage::disk('public')->assertExists($banner->images()->firstOrFail()->image_path);
         $this->getJson('/api/v1/home')->assertOk()->assertJsonPath('data.featured_banner.title', 'Banner mới');
+    }
+
+    public function test_home_api_normalizes_legacy_double_encoded_movie_backdrops(): void
+    {
+        Cache::flush();
+        $movie = Movie::factory()->create([
+            'release_date' => now()->subDay(),
+            'end_date' => now()->addDay(),
+            'status' => true,
+            'is_hidden' => false,
+        ]);
+        $backdropUrl = 'https://cinema.test/images/movie-backdrop.jpg';
+
+        DB::table('movies')->where('id', $movie->id)->update([
+            'backdrops' => json_encode(json_encode([$backdropUrl], JSON_THROW_ON_ERROR), JSON_THROW_ON_ERROR),
+        ]);
+
+        $this->getJson('/api/v1/home')
+            ->assertOk()
+            ->assertJsonPath('data.now_showing_movies.0.backdrops.0', $backdropUrl);
     }
 
     public function test_admin_creates_one_banner_row_with_multiple_images(): void

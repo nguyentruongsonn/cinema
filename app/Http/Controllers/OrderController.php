@@ -157,6 +157,13 @@ class OrderController extends Controller
 
     public function adminOrders(Request $request)
     {
+        $actor = Auth::user();
+        abort_unless(
+            $actor && ($actor->hasPermission('orders.view_all') || $actor->hasPermission('orders.view_theater')),
+            403,
+            'Forbidden: insufficient permissions.'
+        );
+
         $this->orderExpirationService->expirePendingOrders();
 
         $validated = $request->validate([
@@ -177,9 +184,13 @@ class OrderController extends Controller
                 'code',
                 'user_id',
                 'showtime_id',
+                'theater_id',
                 'total_amount',
                 'status',
                 'payment_status',
+                'payment_method',
+                'payment_provider',
+                'source',
                 'created_at',
             ])
             ->with([
@@ -188,6 +199,7 @@ class OrderController extends Controller
                 'showtime.movie:id,title,poster_url,poster_path,duration,age_rating',
                 'showtime.screen:id,name,theater_id',
                 'showtime.screen.theater:id,name',
+                'theater:id,name,branch_id',
                 'orderItems:id,order_id,item_type,metadata',
             ])
             ->when(($validated['status'] ?? 'all') !== 'all', function ($query) use ($validated) {
@@ -196,8 +208,14 @@ class OrderController extends Controller
 
                 $query->where('payment_status', $paymentStatus);
             })
-            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime.screen.theater', fn ($theater) => $theater->where('branch_id', $id)))
-            ->when($validated['theater_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime.screen', fn ($screen) => $screen->where('theater_id', $id)))
+            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where(function ($scope) use ($id) {
+                $scope->whereHas('showtime.screen.theater', fn ($theater) => $theater->where('branch_id', $id))
+                    ->orWhereHas('theater', fn ($theater) => $theater->where('branch_id', $id));
+            }))
+            ->when($validated['theater_id'] ?? null, fn ($q, $id) => $q->where(function ($scope) use ($id) {
+                $scope->where('theater_id', $id)
+                    ->orWhereHas('showtime.screen', fn ($screen) => $screen->where('theater_id', $id));
+            }))
             ->when($validated['movie_id'] ?? null, fn ($q, $id) => $q->whereHas('showtime', fn ($showtime) => $showtime->where('movie_id', $id)))
             ->when($validated['date'] ?? null, fn ($q, $date) => $q->whereBetween('created_at', [
                 Carbon::createFromFormat('Y-m-d', $date)->startOfDay(),
@@ -208,16 +226,22 @@ class OrderController extends Controller
             ->when($validated['search'] ?? null, function ($q, $search) {
                 $q->where(function ($searchQuery) use ($search) {
                     $searchQuery->where('code', 'like', "%{$search}%")
-                        ->orWhereHas('user', fn ($user) => $user->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
+                        ->orWhereHas('user', fn ($user) => $user
+                            ->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%"));
                 });
             })
-            ->latest('created_at');
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         // Theater scope: non-admin staff only see orders from their theaters
-        $actor = Auth::user();
-        if ($actor && $actor->requiresTheaterScope()) {
+        if ($actor->requiresTheaterScope()) {
             $actorTheaterIds = $actor->theaters()->pluck('theaters.id');
-            $query->whereHas('showtime.screen', fn ($q) => $q->whereIn('theater_id', $actorTheaterIds));
+            $query->where(function ($scope) use ($actorTheaterIds) {
+                $scope->whereIn('theater_id', $actorTheaterIds)
+                    ->orWhereHas('showtime.screen', fn ($q) => $q->whereIn('theater_id', $actorTheaterIds));
+            });
         }
 
         $orders = $query->paginate($validated['per_page'] ?? 15);
@@ -238,6 +262,8 @@ class OrderController extends Controller
         $order = Order::query()
             ->with(['user', 'showtime.movie', 'showtime.screen.theater.branch', 'orderItems', 'tickets.seat.seatType', 'payment'])
             ->findOrFail($id);
+
+        $this->authorize('view', $order);
 
         $order = $this->orderExpirationService->expireOrder($order)->load([
             'user',

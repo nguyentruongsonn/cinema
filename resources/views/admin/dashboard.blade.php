@@ -1,13 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Overview')
-@section('header_title', 'Overview')
-
-@section('topbar_action')
-    <button class="btn-primary-custom">
-        <i class="bi bi-plus-lg"></i> New Screening
-    </button>
-@endsection
+@section('title', 'Tổng quan')
+@section('header_title', 'Tổng quan')
 
 @section('content')
 <div class="admin-stats-page">
@@ -116,7 +110,10 @@
     <div class="col-12">
         <div class="admin-table-container">
             <div class="chart-header">
-                <h3 class="chart-title">Lượng Khách Hàng Theo Giờ & Tuần</h3>
+                <div class="chart-heading">
+                    <h3 class="chart-title">Lượng khách theo ngày & khung giờ</h3>
+                    <p class="chart-subtitle">So sánh lượng khách sáng, trưa, tối và khung giờ muộn trong tuần.</p>
+                </div>
             </div>
             <div id="trafficHeatmap" class="admin-chart-h-350"></div>
         </div>

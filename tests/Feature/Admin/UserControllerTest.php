@@ -266,6 +266,20 @@ class UserControllerTest extends TestCase
     }
 
     #[Test]
+    public function password_reset_returns_specific_validation_errors()
+    {
+        $this->actingAs($this->admin);
+
+        $user = User::factory()->create(['role_id' => $this->userRole->id]);
+
+        $this->postJson("/api/v1/admin/users/{$user->id}/reset-password", [
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors('password');
+    }
+
+    #[Test]
     public function admin_can_delete_user_without_orders()
     {
         $this->actingAs($this->admin);

@@ -2,58 +2,41 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Observability\QueueHealthService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Queue;
-use Throwable;
 
 class MonitorQueueHealth extends Command
 {
     protected $signature = 'queue:monitor-health {--json : Print machine-readable output}';
 
-    protected $description = 'Check queue depth and failed jobs against configured alert thresholds';
+    protected $description = 'Check queue depth, pending age, and failed jobs against configured alert thresholds';
 
-    public function handle(): int
+    public function handle(QueueHealthService $queueHealth): int
     {
-        $depths = [];
-        $healthy = true;
-        $maxDepth = config('queue.monitoring.max_depth', 100);
+        $context = $queueHealth->snapshot();
 
-        foreach (config('queue.monitoring.queues', ['default']) as $queue) {
-            $depths[$queue] = Queue::size($queue);
-            $healthy = $healthy && $depths[$queue] <= $maxDepth;
-        }
-
-        $failedJobs = $this->failedJobCount();
-        $healthy = $healthy && $failedJobs <= config('queue.monitoring.max_failed_jobs', 0);
-        $context = [
-            'healthy' => $healthy,
-            'connection' => config('queue.default'),
-            'depths' => $depths,
-            'failed_jobs' => $failedJobs,
-        ];
-
-        if (! $healthy) {
+        if (! $context['healthy']) {
             Log::critical('Queue health threshold exceeded', $context);
         }
 
         if ($this->option('json')) {
             $this->line((string) json_encode($context, JSON_THROW_ON_ERROR));
         } else {
-            $this->table(['Queue', 'Depth'], collect($depths)->map(fn ($depth, $queue) => [$queue, $depth]));
-            $this->line("Failed jobs: {$failedJobs}");
+            $this->table(
+                ['Queue', 'Depth', 'Oldest pending', 'Status'],
+                collect($context['queues'])->map(fn (array $status, string $queue): array => [
+                    $queue,
+                    $status['depth'],
+                    $status['oldest_pending_age_seconds'] === null
+                        ? 'N/A'
+                        : $status['oldest_pending_age_seconds'].'s',
+                    $status['healthy'] ? 'OK' : 'ALERT',
+                ])
+            );
+            $this->line("Failed jobs: {$context['failed_jobs']}");
         }
 
-        return $healthy ? self::SUCCESS : self::FAILURE;
-    }
-
-    private function failedJobCount(): int
-    {
-        try {
-            return (int) DB::table(config('queue.failed.table', 'failed_jobs'))->count();
-        } catch (Throwable) {
-            return 0;
-        }
+        return $context['healthy'] ? self::SUCCESS : self::FAILURE;
     }
 }

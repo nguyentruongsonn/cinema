@@ -6,15 +6,12 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StatFilterRequest extends FormRequest
 {
-    /**
-     * Only admins/super-admins can access revenue stats.
-     * Uses the same hasAnyRole() convention as RoleMiddleware.
-     */
     public function authorize(): bool
     {
         $user = $this->user();
 
-        return $user !== null && $user->hasAnyRole(['admin', 'super-admin']);
+        return $user !== null
+            && $user->hasAnyPermission(['reports.view', 'analytics.view']);
     }
 
     public function rules(): array

@@ -62,7 +62,7 @@ class UpdateUserRequest extends FormRequest
                 }
             }
 
-            if ($this->has('theater_ids') && !$actor->hasAnyRole(['admin', 'super-admin'])) {
+            if ($this->has('theater_ids') && ! $actor->hasPermission('users.update')) {
                 $validator->errors()->add('theater_ids', 'You are not authorized to assign theaters.');
             }
 

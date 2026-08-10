@@ -156,7 +156,8 @@ class User extends Authenticatable implements JWTSubject
 
     public function adminLandingRouteName(): string
     {
-        if ($this->hasRole('ticket_seller')) {
+        if ($this->hasRole('ticket_seller')
+            && $this->hasAnyPermission(['orders.create', 'booking.create_order'])) {
             return 'pos.index';
         }
 
@@ -285,8 +286,7 @@ class User extends Authenticatable implements JWTSubject
             $candidates[] = $aliases[$permissionSlug];
         }
 
-        $legacySlug = array_search($permissionSlug, $aliases, true);
-        if (is_string($legacySlug)) {
+        foreach (array_keys($aliases, $permissionSlug, true) as $legacySlug) {
             $candidates[] = $legacySlug;
         }
 

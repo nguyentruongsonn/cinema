@@ -27,6 +27,11 @@ class ProductPolicy
         return $user->hasPermission('products.update');
     }
 
+    public function toggleStatus(User $user, Product $product): bool
+    {
+        return $user->hasAnyPermission(['products.toggle_status', 'products.update']);
+    }
+
     public function delete(User $user, Product $product): bool
     {
         return $user->hasPermission('products.delete');

@@ -90,7 +90,7 @@ class ApiSecurityTest extends TestCase
         }
     }
 
-    public function test_admin_routes_are_protected_by_auth_and_role_middleware(): void
+    public function test_admin_routes_are_protected_by_auth_and_management_middleware(): void
     {
         $adminUris = [
             'api/v1/admin/dashboard/stats',
@@ -109,7 +109,7 @@ class ApiSecurityTest extends TestCase
                 $middleware = $route->gatherMiddleware();
 
                 $this->assertContains('auth:api', $middleware, "Admin route {$uri} must require API authentication.");
-                $this->assertContains('role:admin,super-admin,theater_manager', $middleware, "Admin route {$uri} must require admin role.");
+                $this->assertContains('admin', $middleware, "Admin route {$uri} must require management access.");
             }
         }
     }
@@ -247,7 +247,7 @@ class ApiSecurityTest extends TestCase
         }
     }
 
-    public function test_admin_toggle_routes_are_protected_by_api_auth_and_admin_role(): void
+    public function test_admin_toggle_routes_are_protected_by_api_auth_and_management_access(): void
     {
         $adminToggleUris = [
             'api/v1/admin/branches/{branch}/toggle-active',
@@ -263,7 +263,7 @@ class ApiSecurityTest extends TestCase
             $middleware = $route->gatherMiddleware();
 
             $this->assertContains('auth:api', $middleware, "Admin toggle route {$uri} must require API authentication.");
-            $this->assertContains('role:admin,super-admin,theater_manager', $middleware, "Admin toggle route {$uri} must require admin role.");
+            $this->assertContains('admin', $middleware, "Admin toggle route {$uri} must require management access.");
         }
     }
 

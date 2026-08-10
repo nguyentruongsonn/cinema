@@ -10,9 +10,13 @@ class AuthManager {
         this.user = ssrAuth.authenticated ? ssrAuth.user : null;
         this.modal = null;
         this.isCheckingAuth = false;
+        this.authCheckPromise = null;
         this.authChecked = !!ssrAuth.checked;
         this.isRefreshing = false;
         this.refreshPromise = null;
+        this.hadAuthenticatedSession = !!ssrAuth.authenticated;
+        this.sessionExpired = false;
+        this.sessionExpiredNotified = false;
         this.init();
     }
 
@@ -20,7 +24,7 @@ class AuthManager {
         document.addEventListener('DOMContentLoaded', () => {
             const modalEl = document.getElementById('authModal');
             if (modalEl) {
-                this.modal = new bootstrap.Modal(modalEl);
+                this.ensureModal();
             }
             this.setupEventListeners();
             if (this.authChecked) {
@@ -45,6 +49,16 @@ class AuthManager {
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         }
+
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        const backToLoginBtn = document.getElementById('backToLoginBtn');
+        const forgotPasswordForm = document.getElementById('forgotPasswordFormElement');
+        forgotPasswordLink?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showForgotPasswordPanel();
+        });
+        backToLoginBtn?.addEventListener('click', () => this.showLoginPanel());
+        forgotPasswordForm?.addEventListener('submit', (e) => this.handleForgotPassword(e));
 
         // Register form submit
         const registerForm = document.getElementById('registerFormElement');
@@ -125,7 +139,7 @@ class AuthManager {
 
             if (response.success) {
                 // Cookies are automatically set by server (HttpOnly)
-                this.user = response.data.user;
+                this.setAuthenticatedUser(response.data.user);
                 this.modal.hide();
                 this.showToast('Đăng nhập thành công!', 'success');
 
@@ -197,7 +211,7 @@ class AuthManager {
 
             if (response.success) {
                 // Cookies are automatically set by server (HttpOnly)
-                this.user = response.data.user;
+                this.setAuthenticatedUser(response.data.user);
                 this.modal.hide();
                 this.showToast('Đăng ký thành công!', 'success');
 
@@ -212,6 +226,34 @@ class AuthManager {
             submitBtn.disabled = false;
             spinner.classList.add('d-none');
             btnText.textContent = 'Đăng ký';
+        }
+    }
+
+    async handleForgotPassword(e) {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = document.getElementById('forgotPasswordSubmitBtn');
+        const email = String(new FormData(form).get('email') || '').trim();
+
+        this.clearForgotPasswordState();
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+            this.showFieldError('forgotPasswordEmail', 'Vui lòng nhập email hợp lệ');
+            return;
+        }
+
+        try {
+            this.setButtonLoading(submitBtn, true, 'Đang gửi...');
+            await this.fetchAPI('/auth/forgot-password', {
+                method: 'POST',
+                body: { email },
+                skipRefresh: true,
+            });
+            form.reset();
+            this.showForgotPasswordAlert('Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư và thư rác.', 'success');
+        } catch (error) {
+            this.showForgotPasswordAlert(error?.message || 'Không thể gửi liên kết. Vui lòng thử lại sau.', 'danger');
+        } finally {
+            this.setButtonLoading(submitBtn, false, 'Gửi liên kết đặt lại');
         }
     }
 
@@ -238,6 +280,9 @@ class AuthManager {
             // Cookies are cleared by server; never try to refresh after logout.
             this.user = null;
             this.authChecked = true;
+            this.hadAuthenticatedSession = false;
+            this.sessionExpired = false;
+            this.sessionExpiredNotified = false;
             this.updateUI();
             this.showToast('Đã đăng xuất', 'info');
             setTimeout(() => window.location.replace('/'), 500);
@@ -245,32 +290,39 @@ class AuthManager {
     }
 
     async checkAuthStatus() {
-        // Prevent multiple simultaneous auth checks
-        if (this.isCheckingAuth) {
-            return;
+        if (this.authCheckPromise) {
+            return this.authCheckPromise;
         }
 
         this.isCheckingAuth = true;
+        this.authCheckPromise = (async () => {
+            try {
+                const response = await this.fetchAPI('/auth/me', {
+                    skipRefresh: false,
+                    silentAuth: true,
+                });
 
-        try {
-            const response = await this.fetchAPI('/auth/me', {
-                skipRefresh: false,
-                silentAuth: true,
-            });
-
-            if (response.success && response.data) {
-                this.user = response.data.user || response.data;
-            } else {
+                if (response.success && response.data) {
+                    this.setAuthenticatedUser(response.data.user || response.data);
+                } else {
+                    this.user = null;
+                }
+            } catch (error) {
+                // Expected for guest users. A previously authenticated session is
+                // handled by fetchAPI and announced through cinema:session-expired.
                 this.user = null;
+            } finally {
+                this.isCheckingAuth = false;
+                this.authChecked = true;
+                this.updateUI();
             }
-        } catch (error) {
-            // Expected for guest users
-            this.user = null;
-        } finally {
-            this.isCheckingAuth = false;
-            this.authChecked = true;
-            this.updateUI();
-        }
+
+            return !!this.user;
+        })().finally(() => {
+            this.authCheckPromise = null;
+        });
+
+        return this.authCheckPromise;
     }
 
     async fetchAPI(endpoint, options = {}) {
@@ -292,9 +344,12 @@ class AuthManager {
                     return window.apiClient.request(endpoint, requestOptions);
                 }
 
-                this.user = null;
-                this.updateUI();
-                throw new Error('Session expired. Please login again.');
+                this.expireSession({ notify: !options.silentAuth });
+                const sessionError = new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                sessionError.status = 401;
+                sessionError.code = 'SESSION_EXPIRED';
+                sessionError.isSessionExpired = true;
+                throw sessionError;
             }
 
             throw error;
@@ -312,7 +367,7 @@ class AuthManager {
                 const data = await window.apiClient.post('/auth/refresh');
 
                 if (data.success && data.data.user) {
-                    this.user = data.data.user;
+                    this.setAuthenticatedUser(data.data.user);
                     return true;
                 }
 
@@ -415,17 +470,77 @@ class AuthManager {
     }
 
     showModal(tab = 'login') {
+        if (!this.ensureModal()) {
+            this.showToast('Không thể mở form đăng nhập. Vui lòng tải lại trang.', 'warning');
+            return false;
+        }
+
         this.showAuthForms(tab);
         this.clearErrors();
         this.modal.show();
+        return true;
     }
 
     showAuthRequired() {
         // Khi người dùng chưa đăng nhập vào trang đặt vé, hiển thị trực tiếp form
         // đăng nhập đầy đủ thay vì màn hình trung gian chỉ có 2 nút Đăng nhập/Đăng ký.
-        this.showAuthForms('login');
-        this.clearErrors();
-        this.modal.show();
+        return this.showModal('login');
+    }
+
+    ensureModal() {
+        if (this.modal) {
+            return true;
+        }
+
+        const modalEl = document.getElementById('authModal');
+        const ModalClass = window.bootstrap?.Modal;
+        if (!modalEl || !ModalClass) {
+            return false;
+        }
+
+        this.modal = ModalClass.getOrCreateInstance
+            ? ModalClass.getOrCreateInstance(modalEl)
+            : new ModalClass(modalEl);
+
+        return true;
+    }
+
+    setAuthenticatedUser(user) {
+        this.user = user || null;
+        this.authChecked = true;
+        this.hadAuthenticatedSession = !!this.user;
+        this.sessionExpired = false;
+        this.sessionExpiredNotified = false;
+    }
+
+    expireSession({ notify = true } = {}) {
+        const shouldNotify = notify
+            && this.hadAuthenticatedSession
+            && !this.sessionExpiredNotified;
+
+        this.user = null;
+        this.authChecked = true;
+        this.sessionExpired = this.hadAuthenticatedSession;
+        this.updateUI();
+
+        if (!shouldNotify) {
+            return;
+        }
+
+        this.sessionExpiredNotified = true;
+        window.dispatchEvent(new CustomEvent('cinema:session-expired', {
+            detail: {
+                message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.',
+            },
+        }));
+    }
+
+    async ensureAuthenticated() {
+        if (!this.authChecked) {
+            await this.checkAuthStatus();
+        }
+
+        return !!this.user;
     }
 
     showAuthForms(tab = 'login') {
@@ -438,11 +553,59 @@ class AuthManager {
             authFormsSection.classList.remove('d-none');
         }
 
+        this.showLoginPanel();
+
         if (tab === 'register') {
             document.getElementById('register-tab')?.click();
         } else {
             document.getElementById('login-tab')?.click();
         }
+    }
+
+    showForgotPasswordPanel() {
+        document.getElementById('login-tab')?.click();
+        document.getElementById('loginPanel')?.classList.add('d-none');
+        document.getElementById('forgotPasswordPanel')?.classList.remove('d-none');
+        this.clearForgotPasswordState();
+
+        const loginEmail = document.getElementById('loginEmail')?.value?.trim();
+        const forgotEmail = document.getElementById('forgotPasswordEmail');
+        if (forgotEmail) {
+            forgotEmail.value = loginEmail || '';
+            window.setTimeout(() => forgotEmail.focus(), 50);
+        }
+    }
+
+    showLoginPanel() {
+        document.getElementById('forgotPasswordPanel')?.classList.add('d-none');
+        document.getElementById('loginPanel')?.classList.remove('d-none');
+        this.clearForgotPasswordState();
+    }
+
+    clearForgotPasswordState() {
+        document.getElementById('forgotPasswordEmail')?.classList.remove('is-invalid');
+        const error = document.getElementById('forgotPasswordEmailError');
+        if (error) error.textContent = '';
+        const alert = document.getElementById('forgotPasswordAlert');
+        if (alert) {
+            alert.className = 'alert d-none mt-3';
+            alert.textContent = '';
+        }
+    }
+
+    showForgotPasswordAlert(message, type) {
+        const alert = document.getElementById('forgotPasswordAlert');
+        if (!alert) return;
+        alert.textContent = message;
+        alert.className = `alert alert-${type} mt-3`;
+    }
+
+    setButtonLoading(button, loading, label) {
+        if (!button) return;
+        button.disabled = loading;
+        button.querySelector('.spinner-border')?.classList.toggle('d-none', !loading);
+        const text = button.querySelector('.btn-text');
+        if (text) text.textContent = label;
     }
 
     updateUI() {

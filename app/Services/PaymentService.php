@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Exceptions\PaymentGatewayException;
 use App\Models\Combo;
 use App\Models\IdempotencyKey;
+use App\Models\LoyaltyHistory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -83,6 +84,8 @@ class PaymentService
                 $checkoutFingerprint = $seatHold
                     ? $this->checkoutFingerprint($user, $showtime, $validated, $seatHold)
                     : null;
+                $isPosCashPayment = ($validated['source'] ?? 'web') === 'pos'
+                    && ($validated['payment_method'] ?? null) === 'cash';
 
                 if ($checkoutFingerprint) {
                     $existingOrder = Order::query()
@@ -109,7 +112,8 @@ class PaymentService
                 $checkoutFingerprint,
                 $seatHold,
                 $seatIds,
-                $seatHolder
+                $seatHolder,
+                $isPosCashPayment
             ): array {
                 $theaterId = $validated['theater_id'] ?? $showtime?->screen?->theater_id;
                 $theaterId = is_numeric($theaterId) && Theater::query()->whereKey((int) $theaterId)->exists()
@@ -146,10 +150,15 @@ class PaymentService
                 );
                 $isZeroAmountCheckout = (float) $pricing['final_amount'] <= 0.0;
 
+                $orderContext = array_intersect_key(
+                    (array) ($validated['order_context'] ?? []),
+                    array_flip(['customer_id', 'customer_name', 'customer_phone', 'customer_mode', 'staff_id', 'staff_name'])
+                );
+
                 $order = Order::createPending([
-                    'code' => $this->generateOrderNumber(),
+                    'code' => (string) ($validated['order_code'] ?? $this->generateOrderNumber()),
                     'gateway_order_code' => $this->generateOrderCode(),
-                    'payment_provider' => $isZeroAmountCheckout ? 'internal' : 'payos',
+                    'payment_provider' => ($isZeroAmountCheckout || $isPosCashPayment) ? 'internal' : 'payos',
                     'user_id' => $user->id,
                     'showtime_id' => $showtime?->id,
                     'theater_id' => $theaterId,
@@ -158,7 +167,7 @@ class PaymentService
                     'payment_method' => $validated['payment_method'] ?? ($isZeroAmountCheckout ? 'zero_amount' : 'payos'),
                     'checkout_fingerprint' => $checkoutFingerprint,
                     'total_amount' => $pricing['final_amount'],
-                    'payload' => [
+                    'payload' => array_merge($orderContext, [
                         'seat_hold_id' => $seatHold?->id,
                         'seat_hold_user_id' => $seatHold ? $seatHolder->id : null,
                         'source' => $validated['source'] ?? 'web',
@@ -166,6 +175,8 @@ class PaymentService
                         'served_by_user_id' => $validated['served_by_user_id'] ?? null,
                         'payment_method' => $validated['payment_method'] ?? ($isZeroAmountCheckout ? 'zero_amount' : 'payos'),
                         'subtotal' => $pricing['subtotal'],
+                        'seat_total' => $pricing['seat_total'] ?? 0,
+                        'product_total' => $pricing['product_total'] ?? 0,
                         'discount_amount' => $pricing['discount_amount'],
                         'voucher_discount' => $pricing['voucher_discount'],
                         'point_discount' => $pricing['point_discount'],
@@ -176,7 +187,7 @@ class PaymentService
                         'product_stock_reserved' => ! empty($pricing['products']),
                         'points_reserved' => $pricing['points_used'] > 0,
                         'voucher_reserved' => $pricing['voucher'] !== null,
-                    ],
+                    ]),
                     'expired_at' => now()->addMinutes(15),
                 ]);
 
@@ -189,6 +200,13 @@ class PaymentService
                     }
 
                     $lockedUser->decrement('loyalty_points', $pointsUsed);
+                    LoyaltyHistory::create([
+                        'user_id' => $lockedUser->id,
+                        'order_id' => $order->id,
+                        'type' => 'redeem',
+                        'points' => $pointsUsed,
+                        'description' => "Trừ điểm dùng cho đơn hàng #{$order->code}",
+                    ]);
                 }
 
                 if ($pricing['voucher'] !== null) {
@@ -301,10 +319,14 @@ class PaymentService
                     )->save();
                 }
 
+                $paymentMethod = $isPosCashPayment
+                    ? 'cash'
+                    : ($isZeroAmountCheckout ? 'zero_amount' : 'payos');
+
                 $payment = Payment::createPending([
                     'order_id' => $order->id,
                     'user_id' => $user->id,
-                    'method' => $isZeroAmountCheckout ? 'zero_amount' : 'payos',
+                    'method' => $paymentMethod,
                     'gateway_order_code' => $order->gateway_order_code,
                     'amount' => $order->total_amount,
                     'payload' => [
@@ -347,6 +369,30 @@ class PaymentService
                 return [
                     'status' => 200,
                     'data' => $this->formatInitiateResponse($order->fresh()),
+                    'payment_id' => $payment->id,
+                ];
+            }
+
+            if ($isPosCashPayment) {
+                app(AuditLogService::class)->record(
+                    $actor,
+                    'order.created',
+                    $order,
+                    [],
+                    $this->auditSnapshots->order($order)
+                );
+
+                app(AuditLogService::class)->record(
+                    $actor,
+                    'payment.created',
+                    $payment,
+                    [],
+                    $this->auditSnapshots->payment($payment)
+                );
+
+                return [
+                    'status' => 200,
+                    'data' => $this->formatInitiateResponse($order),
                     'payment_id' => $payment->id,
                 ];
             }
@@ -561,6 +607,11 @@ class PaymentService
             $pointsUsed = (int) ($payload['points_used'] ?? 0);
             if (($payload['points_reserved'] ?? false) && $pointsUsed > 0) {
                 User::query()->whereKey($lockedOrder->user_id)->lockForUpdate()->first()?->increment('loyalty_points', $pointsUsed);
+                LoyaltyHistory::query()
+                    ->where('order_id', $lockedOrder->id)
+                    ->where('user_id', $lockedOrder->user_id)
+                    ->where('type', 'redeem')
+                    ->delete();
             }
 
             $voucher = $payload['voucher'] ?? null;

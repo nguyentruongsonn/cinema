@@ -12,4 +12,4 @@ Artisan::command('inspire', function () {
 
 Schedule::job(new CleanupExpiredSeatHolds)->everyMinute();
 Schedule::job(new ExpirePendingOrders)->everyMinute();
-Schedule::command('queue:monitor-health')->everyMinute()->withoutOverlapping();
+Schedule::command('operations:monitor-health')->everyMinute()->withoutOverlapping();

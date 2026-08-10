@@ -67,9 +67,15 @@ GitHub Actions runs static analysis, formatting, frontend checks, the production
 - Readiness: `GET /api/v1/health/ready`
 - OpenAPI: `GET /api/v1/docs/openapi.json`
 - Metrics: `GET /api/v1/internal/metrics` with `Authorization: Bearer <METRICS_TOKEN>`
-- Queue monitor: `php artisan queue:monitor-health --json`
+- Queue monitor: `php artisan queue:monitor-health --json` (depth, oldest pending age, failed jobs)
+- Operations monitor: `php artisan operations:monitor-health --json` (queue, overdue payments, unsent invoice emails)
 - Scheduler: `php artisan schedule:work`
-- Redis worker: `php artisan queue:work redis --queue=payments,broadcasts,default,cleanup --tries=3`
+- Business queue worker: `php artisan queue:work --queue=emails,payments,default,cleanup --sleep=1 --tries=3 --timeout=120`
+- Realtime queue worker: `php artisan queue:work --queue=broadcasts --sleep=1 --tries=3 --timeout=30`
+
+Readiness fails when a monitored queue exceeds `QUEUE_MONITOR_MAX_DEPTH` or its oldest ready job exceeds `QUEUE_MONITOR_MAX_AGE_SECONDS`. Keep the `broadcasts` worker separate so realtime traffic cannot be starved by business jobs.
+
+Production Supervisor, deployment verification, staging browser checks, booking concurrency probe, and backup/restore procedures are documented in `deployment/OPERATIONS_RUNBOOK.md`.
 
 Laravel Horizon requires the Unix-only `pcntl` PHP extension and therefore is not installed in the Windows/XAMPP development environment. The application uses Redis queues and a cross-platform queue monitor locally; Horizon can be added on a Linux runtime without changing queue contracts.
 

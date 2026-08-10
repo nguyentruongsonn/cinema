@@ -31,11 +31,13 @@ class PosCreateOrderRequest extends FormRequest
             'products.*.id' => ['required_with:products', 'integer'],
             'products.*.type' => ['required_with:products', 'string', 'in:product,combo'],
             'products.*.quantity' => ['required_with:products', 'integer', 'min:1', 'max:20'],
+            'customer_id' => ['nullable', 'integer', 'exists:users,id'],
             'customer_phone' => ['nullable', 'string', 'max:20'],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_mode' => ['nullable', 'string', 'in:guest,member'],
             'customer_type' => ['nullable', 'string', 'in:adult,student,child,senior'],
             'payment_method' => ['required', 'string', 'in:cash,payos_qr'],
+            'cash_received' => ['nullable', 'boolean'],
             'loyalty_points_to_use' => ['nullable', 'integer', 'min:0'],
             'promotion_code' => ['nullable', 'string', 'max:50'],
         ];
@@ -75,7 +77,7 @@ class PosCreateOrderRequest extends FormRequest
                 : null,
             'tickets' => $tickets,
             'customer_mode' => $this->input('customer_mode')
-                ?: ($this->filled('customer_phone') ? 'member' : 'guest'),
+                ?: ($this->filled('customer_id') || $this->filled('customer_phone') ? 'member' : 'guest'),
             'seat_ids' => $this->filled('seat_ids')
                 ? array_map('intval', (array) $this->input('seat_ids'))
                 : array_column($tickets, 'seat_id'),
@@ -107,6 +109,9 @@ class PosCreateOrderRequest extends FormRequest
 
             if (count((array) $this->input('seat_ids', [])) > 0 && ! $this->filled('showtime_id')) {
                 $validator->errors()->add('showtime_id', 'Vui lòng chọn suất chiếu khi bán vé có ghế.');
+            }
+            if ($this->boolean('cash_received') && $this->input('payment_method') !== 'cash') {
+                $validator->errors()->add('cash_received', 'Chỉ có thể xác nhận đã nhận tiền với thanh toán tiền mặt.');
             }
         });
     }

@@ -14,6 +14,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('lock', [SeatController::class, 'lock']);
         Route::delete('unlock/{holdId}', [SeatController::class, 'unlock']);
         Route::post('holds/{holdId}/release', [SeatController::class, 'unlock']);
+        Route::delete('holds/{holdId}/seats/{seatId}', [SeatController::class, 'releaseSeat']);
     });
 
     Route::prefix('orders')->middleware('throttle:orders')->group(function () {

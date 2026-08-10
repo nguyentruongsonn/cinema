@@ -538,8 +538,13 @@
             return;
         }
 
-        if (password.length < 6) {
-            window.showAdminToast('Mật khẩu phải có ít nhất 6 ký tự!', 'danger');
+        if (password.length < 8) {
+            window.showAdminToast('Mật khẩu phải có ít nhất 8 ký tự!', 'danger');
+            return;
+        }
+
+        if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+            window.showAdminToast('Mật khẩu phải gồm chữ hoa, chữ thường, số và ký hiệu!', 'danger');
             return;
         }
 
@@ -555,7 +560,7 @@
                 getModalInstance(els.resetPasswordModal).hide();
             } else {
                 const error = await res.json();
-                window.showAdminToast(error.message || 'Lỗi đặt lại mật khẩu!', 'danger');
+                window.showAdminToast(formatValidationError(error, 'Lỗi đặt lại mật khẩu!'), 'danger');
             }
         } catch (error) {
             console.error('Error resetting password:', error);

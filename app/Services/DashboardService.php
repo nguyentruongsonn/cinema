@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Support\MediaUrl;
 use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -218,7 +219,7 @@ class DashboardService
             ->get()
             ->map(function ($movie) {
                 $movie->poster_url = $movie->poster_path
-                    ? asset('storage/' . $movie->poster_path)
+                    ? MediaUrl::storage($movie->poster_path)
                     : $movie->poster_url;
                 unset($movie->poster_path);
 

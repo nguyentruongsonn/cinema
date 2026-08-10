@@ -215,8 +215,17 @@
     if (btnApplyPoints) {
         btnApplyPoints.addEventListener('click', () => {
             pointsToRedeem = Math.min(parseInt(pointsInput.value, 10) || 0, loyaltyInfo.points);
-            toast(`Áp dụng ${pointsToRedeem} điểm (${formatVnd(pointsToRedeem * cfg.pointsToVnd)})`, 'success');
             notifyChange();
+
+            const appliedPoints = global.PosCart?.getOrderData?.().loyaltyPointsApplied;
+            if (Number.isInteger(appliedPoints) && appliedPoints < pointsToRedeem) {
+                pointsToRedeem = appliedPoints;
+                pointsInput.value = appliedPoints;
+                if (pointsDisplay) pointsDisplay.textContent = '= ' + formatVnd(appliedPoints * cfg.pointsToVnd);
+                notifyChange();
+            }
+
+            toast(`Áp dụng ${pointsToRedeem} điểm (${formatVnd(pointsToRedeem * cfg.pointsToVnd)})`, 'success');
         });
     }
 

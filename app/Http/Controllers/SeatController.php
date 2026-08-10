@@ -7,12 +7,14 @@ namespace App\Http\Controllers;
 use App\Exceptions\SeatConflictException;
 use App\Http\Requests\GetSeatsRequest;
 use App\Http\Requests\LockSeatRequest;
+use App\Http\Requests\ReleaseHeldSeatRequest;
 use App\Http\Requests\UnlockSeatsRequest;
-use App\Models\SeatHold;
 use App\Models\Order;
+use App\Models\SeatHold;
 use App\Services\SeatService;
 use App\Traits\ApiResponse;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
@@ -23,8 +25,7 @@ class SeatController extends Controller
 
     public function __construct(
         private readonly SeatService $seatService
-    ) {
-    }
+    ) {}
 
     /**
      * Get seats by showtime with availability status.
@@ -193,6 +194,72 @@ class SeatController extends Controller
                 'user_id' => $user->id,
                 'hold_id' => (int) $holdId,
                 'error' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse(__('seats.unlock_failed'), 500);
+        }
+    }
+
+    public function releaseSeat(ReleaseHeldSeatRequest $request, $holdId, $seatId): JsonResponse
+    {
+        $user = Auth::user();
+
+        if ($user === null) {
+            return $this->errorResponse(__('auth.unauthenticated'), 401);
+        }
+
+        try {
+            $hold = SeatHold::query()
+                ->whereKey((int) $holdId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($hold === null) {
+                return $this->successResponse([
+                    'hold_id' => (int) $holdId,
+                    'released_seat_id' => (int) $seatId,
+                    'remaining_seat_ids' => [],
+                ], __('seats.unlocked'));
+            }
+
+            if (! $hold->isValid()) {
+                return $this->errorResponse(__('seats.hold_expired'), 422);
+            }
+
+            $boundToCheckout = Order::query()
+                ->where('user_id', $user->id)
+                ->where('showtime_id', $hold->showtime_id)
+                ->where('status', Order::STATUS_PENDING)
+                ->where('payload->seat_hold_id', $hold->id)
+                ->exists();
+
+            if ($boundToCheckout) {
+                return $this->errorResponse('Không thể đổi ghế khi đơn hàng đang chờ thanh toán.', 409);
+            }
+
+            $data = $this->seatService->releaseSeat((int) $holdId, (int) $seatId, $user);
+
+            return $this->successResponse($data, __('seats.unlocked'));
+        } catch (\RuntimeException $exception) {
+            $statusCode = in_array($exception->getCode(), [403, 404, 422], true)
+                ? $exception->getCode()
+                : 500;
+
+            Log::warning('Held seat release rejected', [
+                'user_id' => $user->id,
+                'hold_id' => (int) $holdId,
+                'seat_id' => (int) $seatId,
+                'status_code' => $statusCode,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return $this->errorResponse($exception->getMessage(), $statusCode);
+        } catch (\Throwable $exception) {
+            Log::error('Held seat release failed', [
+                'user_id' => $user->id,
+                'hold_id' => (int) $holdId,
+                'seat_id' => (int) $seatId,
+                'error' => $exception->getMessage(),
             ]);
 
             return $this->errorResponse(__('seats.unlock_failed'), 500);

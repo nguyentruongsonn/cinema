@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -83,7 +84,7 @@ class Movie extends Model
     public function getPosterDisplayUrlAttribute(): ?string
     {
         if ($this->poster_path) {
-            return asset('storage/' . $this->poster_path);
+            return MediaUrl::storage($this->poster_path);
         }
         if ($this->poster_url) {
             return $this->poster_url;
@@ -97,7 +98,7 @@ class Movie extends Model
     public function getBannerDisplayUrlAttribute(): ?string
     {
         if ($this->banner_path) {
-            return asset('storage/' . $this->banner_path);
+            return MediaUrl::storage($this->banner_path);
         }
         return null;
     }

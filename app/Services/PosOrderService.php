@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Combo;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Seat;
 use App\Models\Showtime;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -98,6 +100,7 @@ class PosOrderService
 
         $validated = [
             'idempotency_key' => $posIdempotencyKey,
+            'order_code' => 'POS-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4)),
             'showtime_id' => $showtime?->id,
             'theater_id' => (int) $theaterId,
             'source' => 'pos',
@@ -105,6 +108,14 @@ class PosOrderService
             'items' => $items,
             'points_used' => (int) ($data['loyalty_points_to_use'] ?? 0),
             'voucher_code' => $data['promotion_code'] ?? null,
+            'order_context' => [
+                'customer_id' => $customer->id,
+                'customer_name' => $customer->name ?? 'Khách vãng lai',
+                'customer_phone' => $customer->phone,
+                'customer_mode' => $data['customer_mode'] ?? ($customer->isSystemGuest() ? 'guest' : 'member'),
+                'staff_id' => $staff->id,
+                'staff_name' => $staff->name,
+            ],
         ];
 
         $customerType = $data['customer_type'] ?? 'adult';
@@ -148,7 +159,6 @@ class PosOrderService
         ]);
 
         $order->forceFill([
-            'code' => 'POS-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4)),
             'theater_id' => (int) $theaterId,
             'served_by_user_id' => $staff->id,
             'source' => 'pos',
@@ -165,7 +175,7 @@ class PosOrderService
             'payment_method' => $paymentMethod,
         ]);
 
-        return $order->load(['orderItems', 'showtime.movie', 'showtime.screen.theater']);
+        return $order->load(['orderItems', 'tickets.seat.seatType', 'showtime.movie', 'showtime.format', 'showtime.screen.theater']);
     }
 
     /**
@@ -190,44 +200,72 @@ class PosOrderService
      */
     public function getPosOrderDetails(Order $order): array
     {
-        $order->load(['user', 'orderItems', 'showtime.movie', 'showtime.screen.theater', 'payment']);
+        $order->load([
+            'user',
+            'orderItems',
+            'tickets.seat.seatType',
+            'showtime.movie',
+            'showtime.format',
+            'showtime.screen.theater',
+            'theater',
+            'payment',
+        ]);
         $payload = (array) $order->payload;
+        $showtime = $order->showtime_id !== null ? $order->showtime : null;
+        $theater = $showtime !== null
+            ? $showtime->screen->theater
+            : ($order->theater_id !== null ? $order->theater : null);
+        $paymentMethod = (string) ($order->payment_method ?? $payload['payment_method'] ?? data_get($order->payment, 'method', 'cash'));
 
         return [
             'id'             => $order->id,
             'code'           => $order->code,
             'checkout_url'   => $order->checkout_url,
             'status'         => $order->payment_status,
-            'payment_method' => $order->payment_method ?? 'cash',
-            'customer_type'  => $order->customer_type ?? 'adult',
+            'payment_status' => $order->payment_status,
+            'requires_payment' => ! $order->isPaid() && (float) $order->total_amount > 0,
+            'payment_method' => $paymentMethod,
+            'payment_provider' => $order->payment_provider,
+            'customer_type'  => $payload['customer_type'] ?? 'adult',
             'total_amount'   => (float) $order->total_amount,
             'subtotal'       => (float) ($payload['subtotal'] ?? $order->total_amount),
             'seat_total'     => (float) ($payload['seat_total'] ?? 0),
             'product_total'  => (float) ($payload['product_total'] ?? 0),
-            'loyalty_discount'    => (float) ($payload['loyalty_discount'] ?? 0),
-            'loyalty_points_used' => (int) ($payload['loyalty_points_used'] ?? 0),
+            'discount_amount' => (float) ($payload['discount_amount'] ?? 0),
+            'voucher_discount' => (float) ($payload['voucher_discount'] ?? 0),
+            'point_discount' => (float) ($payload['point_discount'] ?? 0),
+            'loyalty_discount' => (float) ($payload['point_discount'] ?? 0),
+            'points_used' => (int) ($payload['points_used'] ?? 0),
+            'loyalty_points_used' => (int) ($payload['points_used'] ?? 0),
             'loyalty_points_earned' => (int) ($payload['loyalty_points_earned'] ?? 0),
+            'customer_id' => $order->user_id,
             'customer_name'  => $payload['customer_name'] ?? $order->user?->name,
             'customer_phone' => $payload['customer_phone'] ?? $order->user?->phone,
             'staff_name'     => $payload['staff_name'] ?? null,
-            'movie_title'    => $order->showtime?->movie?->title,
-            'theater_name'   => $order->showtime?->screen?->theater?->name,
-            'screen_name'    => $order->showtime?->screen?->name,
-            'showtime'       => $order->showtime?->scheduled_at,
+            'movie_title'    => $showtime?->movie?->title,
+            'movie_duration' => $showtime?->movie?->duration,
+            'movie_age_rating' => $showtime?->movie?->age_rating,
+            'format_name' => $showtime?->format?->name,
+            'theater_name'   => $theater?->name,
+            'theater_address' => $theater?->address,
+            'screen_name'    => $showtime?->screen?->name,
+            'showtime'       => $showtime?->scheduled_at?->toISOString(),
             'seats'          => $order->orderItems
-                ->filter(fn ($item) => $item->item_type === Seat::class)
+                ->filter(fn ($item) => in_array($item->item_type, [Seat::class, Ticket::class], true))
                 ->map(fn ($item) => [
                     'label'  => $item->metadata['seat_label'] ?? '?',
                     'type'   => $item->metadata['seat_type'] ?? 'Thường',
                     'price'  => (float) $item->unit_price,
+                    'ticket_code' => $item->metadata['ticket_code'] ?? null,
                 ])->values()->toArray(),
             'products'       => $order->orderItems
-                ->filter(fn ($item) => $item->item_type === Product::class)
+                ->filter(fn ($item) => in_array($item->item_type, [Product::class, Combo::class], true))
                 ->map(fn ($item) => [
-                    'name'     => $item->metadata['product_name'] ?? '?',
+                    'name'     => $item->metadata['product_name'] ?? $item->metadata['combo_name'] ?? $item->metadata['name'] ?? '?',
                     'quantity' => $item->quantity,
                     'price'    => (float) $item->unit_price,
                     'total'    => (float) $item->total_price,
+                    'type' => $item->item_type === Combo::class ? 'combo' : 'product',
                 ])->values()->toArray(),
             'created_at'  => $order->created_at,
             'paid_at'     => $order->paid_at,

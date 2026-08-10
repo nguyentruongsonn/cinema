@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\LoyaltyHistory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -243,7 +244,7 @@ class OrderService
 
             // 4. Decrement promotion usage if promotion was used
             $payload = (array) $order->payload;
-            $promotion = $payload['promotion'] ?? null;
+            $promotion = $payload['voucher'] ?? $payload['promotion'] ?? null;
 
             if ($promotion && isset($promotion['id'])) {
                 $promotionModel = Promotion::query()
@@ -261,7 +262,38 @@ class OrderService
                         'new_usage_count' => $promotionModel->usage_count,
                     ]);
                 }
+
+                DB::table('user_promotion')
+                    ->where('user_id', $order->user_id)
+                    ->where('promotion_id', $promotion['id'])
+                    ->where('order_id', $order->id)
+                    ->where('status', 2)
+                    ->update([
+                        'status' => 1,
+                        'order_id' => null,
+                        'updated_at' => now(),
+                    ]);
             }
+
+            $pointsUsed = (int) ($payload['points_used'] ?? 0);
+            if (($payload['points_reserved'] ?? false) && $pointsUsed > 0 && $order->user_id) {
+                User::query()
+                    ->whereKey($order->user_id)
+                    ->lockForUpdate()
+                    ->first()
+                    ?->increment('loyalty_points', $pointsUsed);
+
+                LoyaltyHistory::query()
+                    ->where('order_id', $order->id)
+                    ->where('user_id', $order->user_id)
+                    ->where('type', 'redeem')
+                    ->delete();
+            }
+
+            $payload['product_stock_reserved'] = false;
+            $payload['voucher_reserved'] = false;
+            $payload['points_reserved'] = false;
+            $order->forceFill(['payload' => $payload])->save();
 
             // 5. Clean up only the hold associated with this order.
             // Never delete unrelated active holds belonging to the same user/showtime.
@@ -720,14 +752,9 @@ class OrderService
 
     private function ensureUserCanAccess(Order $order, User $user): void
     {
-        if ((int) $order->user_id !== (int) $user->id && !$this->isStaffUser($user)) {
+        if (! $user->can('view', $order)) {
             throw new \RuntimeException('Unauthorized', 403);
         }
-    }
-
-    private function isStaffUser(User $user): bool
-    {
-        return $user->hasAnyRole(['admin', 'manager', 'staff', 'ticket_seller']);
     }
 
 }

@@ -23,6 +23,7 @@
     let eventsBound = false;
     let permissionQuery = '';
     let showSelectedOnly = false;
+    const canEditPermissions = document.querySelector('.roles-permissions-page')?.dataset.canEditPermissions === 'true';
     const groupLabels = {
         users: 'Người dùng',
         movies: 'Phim',
@@ -115,11 +116,12 @@
         selectedRole = role;
         renderRoles();
         els.selectedRoleTitle.textContent = role.display_name || role.name;
+        const isReadonly = role.is_readonly || !canEditPermissions;
         els.selectedRoleMeta.textContent = role.is_readonly
             ? 'Vai trò quản trị viên được khóa để tránh tự vô hiệu hóa quyền hệ thống.'
-            : `${role.slug} · có thể cập nhật quyền runtime`;
-        els.selectedRoleStatus.textContent = role.is_readonly ? 'Chỉ xem' : 'Có thể chỉnh sửa';
-        els.selectedRoleStatus.className = `permission-panel-status ${role.is_readonly ? 'readonly' : 'editable'}`;
+            : (canEditPermissions ? `${role.slug} · có thể cập nhật quyền runtime` : `${role.slug} · bạn chỉ có quyền xem`);
+        els.selectedRoleStatus.textContent = isReadonly ? 'Chỉ xem' : 'Có thể chỉnh sửa';
+        els.selectedRoleStatus.className = `permission-panel-status ${isReadonly ? 'readonly' : 'editable'}`;
         els.permissionsPanel.innerHTML = '<div class="admin-empty-state">Đang tải quyền...</div>';
 
         try {
@@ -152,7 +154,8 @@
     }
 
     function renderPermissions() {
-        const disabled = selectedRole?.is_readonly ? 'disabled' : '';
+        const isReadonly = selectedRole?.is_readonly || !canEditPermissions;
+        const disabled = isReadonly ? 'disabled' : '';
 
         els.permissionsPanel.innerHTML = permissionGroups.map((group) => {
             const filteredPermissions = group.permissions.filter((permission) => {
@@ -182,8 +185,8 @@
                         </div>
                         <div class="permission-group-actions">
                             <span>${escapeHtml(group.group)}</span>
-                            <button type="button" class="permission-mini-btn" data-group="${escapeHtml(group.group)}" data-action="select" ${selectedRole?.is_readonly ? 'disabled' : ''}>Bật nhóm</button>
-                            <button type="button" class="permission-mini-btn muted" data-group="${escapeHtml(group.group)}" data-action="clear" ${selectedRole?.is_readonly ? 'disabled' : ''}>Tắt nhóm</button>
+                            <button type="button" class="permission-mini-btn" data-group="${escapeHtml(group.group)}" data-action="select" ${isReadonly ? 'disabled' : ''}>Bật nhóm</button>
+                            <button type="button" class="permission-mini-btn muted" data-group="${escapeHtml(group.group)}" data-action="clear" ${isReadonly ? 'disabled' : ''}>Tắt nhóm</button>
                         </div>
                     </div>
                     <div class="admin-permission-grid">
@@ -213,11 +216,11 @@
         els.selectedPermissionCount.textContent = `${selectedPermissions.size} quyền`;
         els.dirtyIndicator.textContent = isDirty ? 'Chưa lưu' : 'Đã lưu';
         els.dirtyIndicator.className = `role-permission-dirty ${isDirty ? 'dirty' : ''}`;
-        els.saveBtn.disabled = !isDirty || selectedRole?.is_readonly;
+        els.saveBtn.disabled = !isDirty || selectedRole?.is_readonly || !canEditPermissions;
     }
 
     async function savePermissions() {
-        if (!selectedRole || selectedRole.is_readonly) return;
+        if (!selectedRole || selectedRole.is_readonly || !canEditPermissions) return;
 
         const confirmed = await window.AdminDialog.confirm({
             message: 'Lưu thay đổi phân quyền?',
@@ -277,7 +280,7 @@
 
         els.permissionsPanel.addEventListener('click', (event) => {
             const button = event.target.closest('.permission-mini-btn');
-            if (!button || selectedRole?.is_readonly) return;
+            if (!button || selectedRole?.is_readonly || !canEditPermissions) return;
 
             const group = permissionGroups.find((item) => item.group === button.dataset.group);
             if (!group) return;

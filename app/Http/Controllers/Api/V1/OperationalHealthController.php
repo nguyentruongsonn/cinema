@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Services\Api\OpenApiService;
 use App\Services\Observability\MetricsService;
+use App\Services\Observability\QueueHealthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ class OperationalHealthController extends Controller
         ]);
     }
 
-    public function ready(): JsonResponse
+    public function ready(QueueHealthService $queueHealth): JsonResponse
     {
         $checks = [
             'database' => fn () => DB::select('select 1'),
@@ -48,6 +49,12 @@ class OperationalHealthController extends Controller
                 $results[$name] = 'unavailable';
                 $ready = false;
             }
+        }
+
+        if ((bool) config('queue.monitoring.include_in_readiness', true)) {
+            $queueSnapshot = $queueHealth->snapshot();
+            $results['queue'] = $queueSnapshot['healthy'] ? 'ok' : 'unavailable';
+            $ready = $ready && $queueSnapshot['healthy'];
         }
 
         return response()->json([

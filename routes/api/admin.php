@@ -25,13 +25,19 @@ use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin,theater_manager'])->group(function () {
-    Route::get('dashboard/stats', [DashboardController::class, 'stats']);
-    Route::get('revenue/stats', [RevenueController::class, 'stats']);
-    Route::get('tickets/stats', [TicketStatController::class, 'stats']);
-    Route::get('combos/stats', [ComboStatController::class, 'stats']);
-    Route::get('food/stats', [FoodStatController::class, 'stats']);
-    Route::get('orders', [OrderController::class, 'adminOrders']);
+Route::prefix('admin')->middleware(['auth:api', 'admin'])->group(function () {
+    Route::get('dashboard/stats', [DashboardController::class, 'stats'])
+        ->middleware('permission:dashboard.view');
+    Route::get('revenue/stats', [RevenueController::class, 'stats'])
+        ->middleware('permission:reports.view,analytics.view');
+    Route::get('tickets/stats', [TicketStatController::class, 'stats'])
+        ->middleware('permission:analytics.view');
+    Route::get('combos/stats', [ComboStatController::class, 'stats'])
+        ->middleware('permission:analytics.view');
+    Route::get('food/stats', [FoodStatController::class, 'stats'])
+        ->middleware('permission:analytics.view');
+    Route::get('orders', [OrderController::class, 'adminOrders'])
+        ->middleware('permission:orders.view_all,orders.view_theater');
     Route::get('orders/{id}', [OrderController::class, 'adminOrder'])->whereNumber('id');
 
     Route::prefix('roles-permissions')->group(function () {
@@ -72,20 +78,32 @@ Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin,theater_
     });
 
     Route::prefix('pricing-rules')->group(function () {
-        Route::get('holidays', [PricingRuleController::class, 'getHolidays']);
-        Route::post('holidays', [PricingRuleController::class, 'storeHoliday']);
-        Route::put('holidays/{holiday}', [PricingRuleController::class, 'updateHoliday']);
-        Route::delete('holidays/{holiday}', [PricingRuleController::class, 'destroyHoliday']);
-        Route::post('holidays/{holiday}/toggle-active', [PricingRuleController::class, 'toggleHolidayActive']);
+        Route::get('holidays', [PricingRuleController::class, 'getHolidays'])
+            ->middleware('permission:pricing.view,pricing.update');
+        Route::post('holidays', [PricingRuleController::class, 'storeHoliday'])
+            ->middleware('permission:pricing.update');
+        Route::put('holidays/{holiday}', [PricingRuleController::class, 'updateHoliday'])
+            ->middleware('permission:pricing.update');
+        Route::delete('holidays/{holiday}', [PricingRuleController::class, 'destroyHoliday'])
+            ->middleware('permission:pricing.update');
+        Route::post('holidays/{holiday}/toggle-active', [PricingRuleController::class, 'toggleHolidayActive'])
+            ->middleware('permission:pricing.update');
 
-        Route::get('day-rules', [PricingRuleController::class, 'getDayRules']);
-        Route::put('day-rules', [PricingRuleController::class, 'updateDayRules']);
+        Route::get('day-rules', [PricingRuleController::class, 'getDayRules'])
+            ->middleware('permission:pricing.view,pricing.update');
+        Route::put('day-rules', [PricingRuleController::class, 'updateDayRules'])
+            ->middleware('permission:pricing.update');
 
-        Route::get('time-slots', [PricingRuleController::class, 'getTimeSlots']);
-        Route::post('time-slots', [PricingRuleController::class, 'storeTimeSlot']);
-        Route::put('time-slots/{timeSlot}', [PricingRuleController::class, 'updateTimeSlot']);
-        Route::delete('time-slots/{timeSlot}', [PricingRuleController::class, 'destroyTimeSlot']);
-        Route::post('time-slots/{timeSlot}/toggle-active', [PricingRuleController::class, 'toggleTimeSlotActive']);
+        Route::get('time-slots', [PricingRuleController::class, 'getTimeSlots'])
+            ->middleware('permission:pricing.view,pricing.update');
+        Route::post('time-slots', [PricingRuleController::class, 'storeTimeSlot'])
+            ->middleware('permission:pricing.update');
+        Route::put('time-slots/{timeSlot}', [PricingRuleController::class, 'updateTimeSlot'])
+            ->middleware('permission:pricing.update');
+        Route::delete('time-slots/{timeSlot}', [PricingRuleController::class, 'destroyTimeSlot'])
+            ->middleware('permission:pricing.update');
+        Route::post('time-slots/{timeSlot}/toggle-active', [PricingRuleController::class, 'toggleTimeSlotActive'])
+            ->middleware('permission:pricing.update');
     });
 
     Route::prefix('seat-layout-templates')->group(function () {
@@ -161,7 +179,8 @@ Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin,theater_
         Route::post('{promotion}/reset-usage', [PromotionController::class, 'resetUsageCount']);
     });
 
-    Route::post('tickets/verify', [TicketController::class, 'verify']);
+    Route::post('tickets/verify', [TicketController::class, 'verify'])
+        ->middleware('permission:tickets.verify');
 
     Route::prefix('posts')->group(function () {
         Route::get('/', [PostController::class, 'list']);
@@ -195,11 +214,16 @@ Route::prefix('admin')->middleware(['auth:api', 'role:admin,super-admin,theater_
     });
 
     // ── Staff Management (theater_manager) ──
-    Route::prefix('my-theaters')->middleware(['role:theater_manager,admin,super-admin'])->group(function () {
-        Route::get('/', [StaffManagementController::class, 'listMyTheaters']);
-        Route::get('/staff', [StaffManagementController::class, 'listStaff']);
-        Route::post('/staff', [StaffManagementController::class, 'createStaff']);
-        Route::put('/staff/{user}', [StaffManagementController::class, 'updateStaff']);
-        Route::post('/staff/{user}/toggle-status', [StaffManagementController::class, 'toggleStatus']);
+    Route::prefix('my-theaters')->group(function () {
+        Route::get('/', [StaffManagementController::class, 'listMyTheaters'])
+            ->middleware('permission:theaters.view');
+        Route::get('/staff', [StaffManagementController::class, 'listStaff'])
+            ->middleware('permission:users.view');
+        Route::post('/staff', [StaffManagementController::class, 'createStaff'])
+            ->middleware('permission:users.create');
+        Route::put('/staff/{user}', [StaffManagementController::class, 'updateStaff'])
+            ->middleware('permission:users.update');
+        Route::post('/staff/{user}/toggle-status', [StaffManagementController::class, 'toggleStatus'])
+            ->middleware('permission:users.manage_status');
     });
 });

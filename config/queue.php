@@ -92,9 +92,11 @@ return [
     ],
 
     'monitoring' => [
-        'queues' => array_filter(array_map('trim', explode(',', env('QUEUE_MONITOR_QUEUES', 'default,payments,cleanup,broadcasts')))),
+        'queues' => array_filter(array_map('trim', explode(',', env('QUEUE_MONITOR_QUEUES', 'broadcasts,emails,payments,default,cleanup')))),
         'max_depth' => (int) env('QUEUE_MONITOR_MAX_DEPTH', 100),
+        'max_age_seconds' => (int) env('QUEUE_MONITOR_MAX_AGE_SECONDS', 300),
         'max_failed_jobs' => (int) env('QUEUE_MONITOR_MAX_FAILED', 0),
+        'include_in_readiness' => (bool) env('QUEUE_MONITOR_INCLUDE_IN_READINESS', true),
     ],
 
     /*

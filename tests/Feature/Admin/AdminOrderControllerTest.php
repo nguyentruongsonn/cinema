@@ -3,8 +3,10 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Order;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Showtime;
+use App\Models\Theater;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,14 +23,23 @@ class AdminOrderControllerTest extends TestCase
         $firstUser = User::factory()->create(['name' => 'First Customer']);
         $secondUser = User::factory()->create(['name' => 'Second Customer']);
         $showtime = Showtime::factory()->create();
-        Order::factory()->create(['user_id' => $firstUser->id, 'showtime_id' => $showtime->id]);
-        Order::factory()->create(['user_id' => $secondUser->id, 'showtime_id' => $showtime->id]);
+        $olderOrder = Order::factory()->create([
+            'user_id' => $firstUser->id,
+            'showtime_id' => $showtime->id,
+            'created_at' => now()->subHour(),
+        ]);
+        $newerOrder = Order::factory()->create([
+            'user_id' => $secondUser->id,
+            'showtime_id' => $showtime->id,
+            'created_at' => now(),
+        ]);
 
         $response = $this->actingAs($admin)->getJson('/api/v1/admin/orders?per_page=1');
 
         $response->assertOk()
             ->assertJsonPath('data.meta.per_page', 1)
             ->assertJsonPath('data.meta.total', 2)
+            ->assertJsonPath('data.data.0.id', $newerOrder->id)
             ->assertJsonCount(1, 'data.data')
             ->assertJsonStructure([
                 'data' => [
@@ -37,6 +48,9 @@ class AdminOrderControllerTest extends TestCase
                         'code',
                         'total_amount',
                         'payment_status',
+                        'payment_method',
+                        'payment_provider',
+                        'source',
                         'user' => ['id', 'name', 'email', 'phone'],
                         'showtime' => ['id', 'scheduled_at', 'movie', 'screen'],
                         'items',
@@ -45,6 +59,8 @@ class AdminOrderControllerTest extends TestCase
             ])
             ->assertJsonMissingPath('data.data.0.tickets')
             ->assertJsonMissingPath('data.data.0.payment');
+
+        $this->assertNotSame($olderOrder->id, $response->json('data.data.0.id'));
     }
 
     #[Test]
@@ -55,6 +71,50 @@ class AdminOrderControllerTest extends TestCase
         $this->actingAs($user)
             ->getJson('/api/v1/admin/orders')
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function theater_manager_without_order_permissions_cannot_access_admin_orders(): void
+    {
+        $manager = $this->userWithRole('theater_manager');
+        $order = Order::factory()->create([
+            'user_id' => User::factory()->create()->id,
+            'showtime_id' => Showtime::factory()->create()->id,
+        ]);
+
+        $this->actingAs($manager, 'api')
+            ->getJson('/api/v1/admin/orders')
+            ->assertForbidden();
+
+        $this->actingAs($manager, 'api')
+            ->getJson("/api/v1/admin/orders/{$order->id}")
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function theater_staff_can_list_product_only_pos_orders_for_their_theater(): void
+    {
+        $manager = $this->userWithRole('theater_manager');
+        $permission = Permission::create([
+            'name' => 'Xem đơn hàng theo rạp',
+            'slug' => 'orders.view_theater',
+            'group' => 'orders',
+        ]);
+        $manager->role->permissions()->attach($permission);
+        $theater = Theater::forceCreate(['name' => 'Rạp phụ trách', 'address' => 'Hà Nội']);
+        $manager->theaters()->attach($theater);
+        $order = Order::factory()->create([
+            'showtime_id' => null,
+            'theater_id' => $theater->id,
+            'source' => 'pos',
+        ]);
+
+        $this->actingAs($manager, 'api')
+            ->getJson('/api/v1/admin/orders')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.data.0.id', $order->id)
+            ->assertJsonPath('data.data.0.theater.id', $theater->id);
     }
 
     #[Test]

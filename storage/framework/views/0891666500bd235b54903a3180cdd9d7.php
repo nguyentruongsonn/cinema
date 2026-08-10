@@ -22,7 +22,10 @@
 
     <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
-<body>
+<body
+    data-staff-role="<?php echo e(auth()->user()?->role?->slug ?? ''); ?>"
+    data-can-print-orders="<?php echo e(auth()->user()?->hasPermission('tickets.issue') ? 'true' : 'false'); ?>"
+>
     <div class="admin-wrapper">
         <!-- Mobile Header (Tablet & Mobile Only) -->
         <div id="adminMobileHeader" class="mobile-header d-lg-none" data-turbo-permanent>
@@ -70,7 +73,7 @@
             <?php
                 $adminUser = Auth::user();
                 $canAny = function (array $permissions) use ($adminUser): bool {
-                    return (bool) ($adminUser?->isAdmin() || collect($permissions)->contains(fn ($permission) => $adminUser?->hasPermission($permission)));
+                    return (bool) $adminUser?->hasAnyPermission($permissions);
                 };
                 $canRoute = fn (string $routeName): bool => Route::has($routeName);
                 $adminMenuGroups = [
@@ -237,9 +240,15 @@
                     </div>
                 </div>
 
+                <?php if (! empty(trim($__env->yieldContent('topbar_center')))): ?>
+                    <div class="admin-topbar-center" role="group" aria-label="Ngữ cảnh trang">
+                        <?php echo $__env->yieldContent('topbar_center'); ?>
+                    </div>
+                <?php endif; ?>
+
                 <div class="topbar-actions">
-                    <?php if($canAny(['tickets.verify'])): ?>
-                        <button class="btn-icon" id="scanTicketBtn" aria-label="Quét mã vạch vé" title="Quét mã vạch vé">
+                    <?php if($canAny(['tickets.verify', 'tickets.issue'])): ?>
+                        <button class="btn-icon" id="scanTicketBtn" aria-label="<?php echo e($adminUser?->hasPermission('tickets.issue') ? 'Quét QR vé hoặc hóa đơn' : 'Quét mã vé'); ?>" title="<?php echo e($adminUser?->hasPermission('tickets.issue') ? 'Quét QR vé hoặc hóa đơn' : 'Quét mã vé'); ?>">
                             <i class="bi bi-qr-code-scan"></i>
                         </button>
                     <?php endif; ?>
@@ -277,7 +286,7 @@
                         </span>
                         <div>
                             <p class="admin-scanner-eyebrow mb-1">Ticket Control</p>
-                            <h5 class="modal-title" id="ticketScannerModalLabel">Quét mã vạch / QR vé</h5>
+                            <h5 class="modal-title" id="ticketScannerModalLabel"><?php echo e($adminUser?->hasPermission('tickets.issue') ? 'Quét QR vé / hóa đơn' : 'Quét mã vé'); ?></h5>
                         </div>
                     </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
@@ -305,15 +314,15 @@
                     </div>
 
                     <div id="manualScanner" class="scanner-mode admin-scanner-panel">
-                        <label for="ticketCodeInput" class="form-label">Mã vé / barcode</label>
+                        <label for="ticketCodeInput" class="form-label"><?php echo e($adminUser?->hasPermission('tickets.issue') ? 'Mã vé / Booking ID' : 'Mã vé'); ?></label>
                         <div class="admin-scanner-input-row">
                             <div class="admin-scanner-input-wrap">
                                 <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
-                                <input type="text" class="form-control form-control-lg" id="ticketCodeInput" placeholder="Nhập hoặc quét mã vé..." autocomplete="off" autofocus>
+                                <input type="text" class="form-control form-control-lg" id="ticketCodeInput" placeholder="<?php echo e($adminUser?->hasPermission('tickets.issue') ? 'Nhập mã vé để soát hoặc Booking ID để in...' : 'Nhập mã vé cần xác thực...'); ?>" autocomplete="off" autofocus>
                             </div>
                             <button type="button" class="admin-scanner-submit" id="verifyTicketBtn">
                                 <i class="bi bi-check2-circle"></i>
-                                <span>Xác thực</span>
+                                <span>Tiếp tục</span>
                             </button>
                         </div>
                     </div>
@@ -328,7 +337,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" data-turbo-eval="false"></script>
 
     <!-- Admin Core JS -->
-    <script data-turbo-eval="false">
+    <script nonce="<?php echo e(request()->attributes->get('csp_nonce')); ?>" data-turbo-eval="false">
         window.APP_CONFIG = {
             appName: <?php echo json_encode(config('app.name', 'Cinema'), 512) ?>,
             apiUrl: <?php echo json_encode('/api/v1', 15, 512) ?>,

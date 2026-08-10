@@ -329,7 +329,7 @@ class BannerController extends Controller
     public function toggleActive(Banner $banner): JsonResponse
     {
         try {
-            $this->authorize('update', $banner);
+            $this->authorize('toggleStatus', $banner);
 
             $updated = DB::transaction(function () use ($banner) {
                 $locked = Banner::whereKey($banner->id)

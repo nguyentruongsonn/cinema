@@ -270,6 +270,17 @@
     box-shadow: var(--admin-shadow-sm);
     cursor: pointer;
 }
+
+.chart-heading {
+    min-width: 0;
+}
+
+.chart-subtitle {
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-sm);
+    line-height: 1.45;
+    margin: 0.35rem 0 0;
+}
 .movie-card-poster { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
 .movie-card--skeleton { background: var(--admin-surface); border-color: transparent; }
 .dashboard-stat-skeleton { height: 28px; margin-bottom: 0; width: 60%; }

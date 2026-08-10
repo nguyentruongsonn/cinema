@@ -1,26 +1,29 @@
 <?php $__env->startSection('title', 'Tin Tức & Sự Kiện Điện Ảnh - Poly Cinema'); ?>
 
 <?php $__env->startPush('styles'); ?>
-    <link rel="stylesheet" href="<?php echo e(asset('css/users/pages/posts.css')); ?>?v=<?php echo e(config('app.asset_version', time())); ?>">
+    <link rel="stylesheet" href="<?php echo e(asset('css/users/skeleton.css')); ?>?v=<?php echo e(config('app.asset_version')); ?>">
+    <link rel="stylesheet" href="<?php echo e(asset('css/users/pages/posts-index.css')); ?>?v=<?php echo e(config('app.asset_version', time())); ?>">
 <?php $__env->stopPush(); ?>
 
 <?php $__env->startSection('content'); ?>
 <div class="posts-page" id="postsSpaContainer">
 
     
+    <section class="posts-hero-shell" aria-label="Bài viết nổi bật">
     <div id="heroSkeleton" class="hero-skeleton-container" aria-hidden="true">
         <div class="skeleton-hero-banner"></div>
     </div>
 
-    <section id="heroContent" class="posts-hero-section d-none" style="background-image: url('');">
+    <div id="heroContent" class="posts-hero-section d-none">
         <div class="posts-hero-overlay"></div>
-        <div class="container posts-hero-content">
+        <div class="container posts-hero-container">
+            <div class="posts-hero-content">
             <span class="hero-badge-exclusive" id="heroBadge">ĐỘC QUYỀN</span>
             <h1 class="posts-hero-title">
                 <a href="#" id="heroTitleLink" class="text-white text-decoration-none"></a>
             </h1>
             <p class="posts-hero-excerpt" id="heroExcerpt"></p>
-            <div class="d-flex align-items-center flex-wrap gap-3 mt-3">
+            <div class="posts-hero-actions">
                 <a href="#" id="heroReadBtn" class="hero-read-btn">
                     <span>Đọc Ngay</span>
                     <i class="bi bi-arrow-right"></i>
@@ -30,18 +33,20 @@
                     <span id="heroReadTime">5 phút đọc</span>
                 </span>
             </div>
+            </div>
         </div>
+    </div>
     </section>
 
     
-    <section class="posts-main-section py-5">
+    <section class="posts-main-section" id="postsMainSection" aria-labelledby="postsSectionTitle">
         <div class="container">
             <div class="row g-5">
 
                 
                 <div class="col-lg-8">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-                        <h2 class="section-title mb-0">Tin Tức Mới Nhất</h2>
+                        <h2 class="section-title mb-0" id="postsSectionTitle">Tin Tức Mới Nhất</h2>
                         <div class="posts-search-box">
                             <i class="bi bi-search search-icon"></i>
                             <input type="search" id="postSearchInput" class="cinema-search-input" placeholder="Tìm bài viết, diễn viên, đạo diễn..." aria-label="Tìm bài viết">
@@ -49,13 +54,13 @@
                     </div>
 
                     
-                    <div class="posts-filter-tabs d-flex flex-wrap gap-2 mb-4" id="postsFilterTabs" role="tablist">
-                        <button type="button" class="cinema-pill-tab active" data-category="">Tất cả</button>
-                        <button type="button" class="cinema-pill-tab" data-category="news">Review Phim</button>
-                        <button type="button" class="cinema-pill-tab" data-category="blog">Hậu Trường</button>
-                        <button type="button" class="cinema-pill-tab" data-category="promotion">Khuyến Mãi</button>
-                        <button type="button" class="cinema-pill-tab" data-category="event">Sự Kiện</button>
-                        <button type="button" class="cinema-pill-tab" data-category="announcement">Thông Báo</button>
+                    <div class="posts-filter-tabs mb-4" id="postsFilterTabs" role="tablist" aria-label="Lọc bài viết theo chuyên mục">
+                        <button type="button" class="cinema-pill-tab active" role="tab" aria-selected="true" data-category="">Tất cả</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-category="news">Review Phim</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-category="blog">Hậu Trường</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-category="promotion">Khuyến Mãi</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-category="event">Sự Kiện</button>
+                        <button type="button" class="cinema-pill-tab" role="tab" aria-selected="false" data-category="announcement">Thông Báo</button>
                     </div>
 
                     

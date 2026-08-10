@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -120,14 +121,14 @@ class Post extends Model
     public function getImageUrlAttribute(): string
     {
         if (empty($this->featured_image)) {
-            return asset('images/default-banner.jpg');
+            return '/images/default-banner.jpg';
         }
 
         if (Str::startsWith($this->featured_image, ['http://', 'https://', '/'])) {
             return $this->featured_image;
         }
 
-        return asset('storage/'.$this->featured_image);
+        return MediaUrl::storage($this->featured_image) ?? '/images/default-banner.jpg';
     }
 
     /**

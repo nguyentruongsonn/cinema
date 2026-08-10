@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Banner;
 use App\Models\Branch;
 use App\Models\Combo;
+use App\Models\Format;
 use App\Models\Movie;
 use App\Models\Order;
 use App\Models\Payment;
@@ -16,12 +17,14 @@ use App\Models\Screen;
 use App\Models\SeatHold;
 use App\Models\SeatLayoutTemplate;
 use App\Models\Showtime;
+use App\Models\Sound;
 use App\Models\Theater;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Policies\BannerPolicy;
 use App\Policies\BranchPolicy;
 use App\Policies\ComboPolicy;
+use App\Policies\FormatPolicy;
 use App\Policies\MoviePolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\PaymentPolicy;
@@ -31,11 +34,14 @@ use App\Policies\PromotionPolicy;
 use App\Policies\ScreenPolicy;
 use App\Policies\SeatLayoutTemplatePolicy;
 use App\Policies\ShowtimePolicy;
+use App\Policies\SoundPolicy;
 use App\Policies\TheaterPolicy;
 use App\Policies\UserPolicy;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -60,9 +66,36 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiters();
+        $this->configurePasswordResetNotification();
         $this->registerPolicies();
         $this->configureMorphMap();
         $this->configureSlowQueryLogging();
+    }
+
+    private function configurePasswordResetNotification(): void
+    {
+        ResetPassword::createUrlUsing(function (User $user, string $token): string {
+            return route('password.reset', [
+                'token' => $token,
+                'email' => $user->getEmailForPasswordReset(),
+            ]);
+        });
+
+        ResetPassword::toMailUsing(function (User $user, string $token): MailMessage {
+            $url = route('password.reset', [
+                'token' => $token,
+                'email' => $user->getEmailForPasswordReset(),
+            ]);
+            $expiresIn = (int) config('auth.passwords.'.config('auth.defaults.passwords').'.expire');
+
+            return (new MailMessage)
+                ->subject('Đặt lại mật khẩu tài khoản CINEMA')
+                ->greeting('Xin chào '.$user->name.',')
+                ->line('Hệ thống nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.')
+                ->action('Đổi mật khẩu', $url)
+                ->line("Liên kết này chỉ có hiệu lực trong {$expiresIn} phút và chỉ sử dụng được một lần.")
+                ->line('Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.');
+        });
     }
 
     /**
@@ -302,6 +335,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Banner::class, BannerPolicy::class);
         Gate::policy(Branch::class, BranchPolicy::class);
         Gate::policy(Combo::class, ComboPolicy::class);
+        Gate::policy(Format::class, FormatPolicy::class);
         Gate::policy(Movie::class, MoviePolicy::class);
         Gate::policy(Order::class, OrderPolicy::class);
         Gate::policy(Payment::class, PaymentPolicy::class);
@@ -311,6 +345,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Screen::class, ScreenPolicy::class);
         Gate::policy(SeatLayoutTemplate::class, SeatLayoutTemplatePolicy::class);
         Gate::policy(Showtime::class, ShowtimePolicy::class);
+        Gate::policy(Sound::class, SoundPolicy::class);
         Gate::policy(Theater::class, TheaterPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
 

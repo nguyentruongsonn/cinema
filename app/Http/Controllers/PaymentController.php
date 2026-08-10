@@ -240,9 +240,8 @@ class PaymentController extends Controller
         }
 
         $user = Auth::user();
-        $isStaff = $user && $user->hasRole('ticket_seller');
 
-        if (!$isStaff && (int) $order->user_id !== (int) Auth::id()) {
+        if (! $user || ! $user->can('view', $order)) {
             Log::warning('Payment return ownership check failed', [
                 'action' => $action,
                 'order_id' => $order->id,

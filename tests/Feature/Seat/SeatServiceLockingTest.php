@@ -3,14 +3,14 @@
 namespace Tests\Feature\Seat;
 
 use App\Exceptions\SeatConflictException;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Screen;
 use App\Models\Seat;
 use App\Models\SeatHold;
 use App\Models\SeatHoldItem;
 use App\Models\Showtime;
 use App\Models\User;
-use App\Models\Order;
-use App\Models\OrderItem;
 use App\Services\SeatService;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -79,6 +79,30 @@ class SeatServiceLockingTest extends TestCase
             $hold->normalizedSeatIds()
         );
         $this->assertCount(2, $hold->items);
+    }
+
+    #[Test]
+    public function owner_can_recover_and_release_an_active_hold_after_a_fresh_request(): void
+    {
+        $seat = Seat::factory()->create([
+            'screen_id' => $this->showtime->screen_id,
+        ]);
+        $locked = $this->seatService->lock([
+            'showtime_id' => $this->showtime->id,
+            'seat_ids' => [$seat->id],
+        ], $this->firstUser);
+
+        $freshService = app(SeatService::class);
+        $availability = $freshService->getByShowtime($this->showtime->id, $this->firstUser);
+
+        $this->assertSame($locked['hold_id'], $availability['current_user_holds'][0]['id']);
+        $this->assertSame([$seat->id], $availability['current_user_holds'][0]['seat_ids']);
+        $this->assertSame('holding', collect($availability['seats'])->firstWhere('id', $seat->id)['status']);
+
+        $released = $freshService->unlock($locked['hold_id'], $this->firstUser);
+
+        $this->assertSame([$seat->id], $released['released_seat_ids']);
+        $this->assertDatabaseMissing('seat_holds', ['id' => $locked['hold_id']]);
     }
 
     #[Test]
@@ -202,6 +226,80 @@ class SeatServiceLockingTest extends TestCase
             'seat_hold_id' => $firstResult['hold_id'],
             'seat_id' => $seats[0]->id,
         ]);
+    }
+
+    #[Test]
+    public function owner_can_release_one_held_seat_without_resetting_the_remaining_hold(): void
+    {
+        $seats = Seat::factory()
+            ->count(2)
+            ->create(['screen_id' => $this->showtime->screen_id]);
+
+        $hold = $this->seatService->lock([
+            'showtime_id' => $this->showtime->id,
+            'seat_ids' => $seats->pluck('id')->all(),
+        ], $this->firstUser);
+
+        $result = $this->seatService->releaseSeat(
+            $hold['hold_id'],
+            $seats[0]->id,
+            $this->firstUser
+        );
+
+        $this->assertSame([$seats[1]->id], $result['remaining_seat_ids']);
+        $this->assertDatabaseHas('seat_hold_items', [
+            'seat_hold_id' => $hold['hold_id'],
+            'seat_id' => $seats[0]->id,
+            'status' => SeatHoldItem::STATUS_EXPIRED,
+            'active_lock_key' => null,
+        ]);
+        $this->assertDatabaseHas('seat_hold_items', [
+            'seat_hold_id' => $hold['hold_id'],
+            'seat_id' => $seats[1]->id,
+            'status' => SeatHoldItem::STATUS_ACTIVE,
+        ]);
+        $this->assertDatabaseHas('seat_holds', ['id' => $hold['hold_id']]);
+    }
+
+    #[Test]
+    public function normalized_hold_seat_ids_exclude_released_items(): void
+    {
+        $seats = Seat::factory()
+            ->count(2)
+            ->create(['screen_id' => $this->showtime->screen_id]);
+
+        $holdResult = $this->seatService->lock([
+            'showtime_id' => $this->showtime->id,
+            'seat_ids' => $seats->pluck('id')->all(),
+        ], $this->firstUser);
+
+        SeatHoldItem::query()
+            ->where('seat_hold_id', $holdResult['hold_id'])
+            ->where('seat_id', $seats[0]->id)
+            ->firstOrFail()
+            ->markExpired();
+
+        $hold = SeatHold::query()->with('items')->findOrFail($holdResult['hold_id']);
+
+        $this->assertSame([$seats[1]->id], $hold->normalizedSeatIds());
+    }
+
+    #[Test]
+    public function another_user_cannot_release_a_seat_from_the_owners_hold(): void
+    {
+        $seat = Seat::factory()->create([
+            'screen_id' => $this->showtime->screen_id,
+        ]);
+
+        $hold = $this->seatService->lock([
+            'showtime_id' => $this->showtime->id,
+            'seat_ids' => [$seat->id],
+        ], $this->firstUser);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(403);
+
+        $this->seatService->releaseSeat($hold['hold_id'], $seat->id, $this->secondUser);
     }
 
     #[Test]

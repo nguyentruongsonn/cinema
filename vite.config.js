@@ -20,6 +20,7 @@ export default defineConfig({
                 'resources/css/admin/pages/showtimes.css',
                 'resources/css/admin/pages/stats.css',
                 'resources/css/admin/pages/users.css',
+                'resources/css/staff/order-print.css',
                 'resources/css/user.css',
                 'resources/js/main.js',
                 'resources/js/user-shell.js',

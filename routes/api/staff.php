@@ -1,23 +1,26 @@
 <?php
 
-use App\Http\Controllers\Api\V1\TicketController;
-use App\Http\Controllers\Api\V1\StaffCatalogController;
 use App\Http\Controllers\Api\V1\ConcessionController;
+use App\Http\Controllers\Api\V1\StaffCatalogController;
+use App\Http\Controllers\Api\V1\TicketController;
+use App\Http\Controllers\OrderPrintController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('staff')->middleware([
     'auth:api',
-    'role:ticket_checker,admin,super-admin,theater_manager',
+    'admin',
     'theater.scope',
     'throttle:pos',
 ])->group(function (): void {
     Route::post('tickets/verify', [TicketController::class, 'verify'])
         ->middleware('permission:tickets.verify');
+    Route::post('orders/print-lookup', [OrderPrintController::class, 'lookup'])
+        ->middleware('permission:tickets.issue');
 });
 
 Route::prefix('staff/concessions')->middleware([
     'auth:api',
-    'role:concession_staff,admin,super-admin,theater_manager',
+    'admin',
     'theater.scope',
     'throttle:pos',
 ])->group(function (): void {

@@ -43,6 +43,16 @@ class PosCustomerService
             ->first();
     }
 
+    public function lookupById(int $customerId): ?User
+    {
+        return User::query()
+            ->whereKey($customerId)
+            ->whereHas('role', fn ($query) => $query->whereIn('slug', ['customer', 'user']))
+            ->where('status', 1)
+            ->whereNull('system_key')
+            ->first();
+    }
+
     /**
      * Tạo khách vãng lai từ SĐT và tên (Không tạo email/password giả).
      */

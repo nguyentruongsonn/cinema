@@ -1,0 +1,56 @@
+[program:cinema-queue-business]
+process_name=%(program_name)s_%(process_num)02d
+command=/usr/bin/php /var/www/cinema/artisan queue:work --queue=emails,payments,default,cleanup --sleep=1 --tries=3 --timeout=120 --max-time=3600
+directory=/var/www/cinema
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/cinema/storage/logs/queue-business.log
+stopwaitsecs=130
+
+[program:cinema-queue-broadcasts]
+command=/usr/bin/php /var/www/cinema/artisan queue:work --queue=broadcasts --sleep=1 --tries=3 --timeout=30 --max-time=3600
+directory=/var/www/cinema
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/cinema/storage/logs/queue-broadcasts.log
+stopwaitsecs=40
+
+[program:cinema-scheduler]
+command=/usr/bin/php /var/www/cinema/artisan schedule:work
+directory=/var/www/cinema
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/cinema/storage/logs/scheduler.log
+stopwaitsecs=10
+
+[program:cinema-reverb]
+command=/usr/bin/php /var/www/cinema/artisan reverb:start --host=0.0.0.0 --port=8080
+directory=/var/www/cinema
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/cinema/storage/logs/reverb.log
+stopwaitsecs=20
+
+[group:cinema]
+programs=cinema-queue-business,cinema-queue-broadcasts,cinema-scheduler,cinema-reverb
+priority=999

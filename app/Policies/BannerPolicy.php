@@ -27,6 +27,11 @@ class BannerPolicy
         return $user->hasPermission('banners.update');
     }
 
+    public function toggleStatus(User $user, Banner $banner): bool
+    {
+        return $user->hasAnyPermission(['banners.toggle_status', 'banners.update']);
+    }
+
     public function delete(User $user, Banner $banner): bool
     {
         return $user->hasPermission('banners.delete');

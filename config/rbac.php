@@ -272,6 +272,8 @@ return [
             'orders.view_theater',
             'orders.cancel',
             'tickets.issue',
+            'tickets.verify',
+            'tickets.mark_used',
             'payments.process',
             'payments.process_cash',
             'pricing.quote_pos',

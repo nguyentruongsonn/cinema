@@ -15,6 +15,7 @@
     let subtotal      = 0;
     let grandTotal    = 0;
     let earnedPoints  = 0;
+    let loyaltyPointsApplied = 0;
     let activeProductCategory = 'all';
     const ticketClassifications = new Map();
 
@@ -79,7 +80,19 @@
             const payload = res.data?.data ?? res.data ?? {};
             const combos = Array.isArray(payload.combos) ? payload.combos : [];
             const prods = Array.isArray(payload.products) ? payload.products : [];
-            products = [...combos.map(c => ({ ...c, _type: 'combo' })), ...prods.map(p => ({ ...p, _type: 'product' }))].filter(p => p.status !== 0);
+            products = [
+                ...combos.map(combo => ({
+                    ...combo,
+                    _type: 'combo',
+                    max_quantity: Number(combo.max_quantity ?? combo.available_stock ?? combo.stock ?? 0),
+                })),
+                ...prods.map(product => ({
+                    ...product,
+                    _type: 'product',
+                    max_quantity: Number(product.max_quantity ?? product.stock ?? 0),
+                })),
+            ].filter(product => product.status !== 0 && product.max_quantity > 0);
+            reconcileCartWithCatalog();
             renderProducts();
         } catch (err) {
             // Fallback: try public API
@@ -94,6 +107,31 @@
             } catch (e) {
                 productGrid.innerHTML = '<div class="pos-empty"><div class="pos-empty-icon">🍿</div><div class="pos-empty-text">Không thể tải sản phẩm</div></div>';
             }
+        }
+    }
+
+    function reconcileCartWithCatalog() {
+        if (!productItems.length) return;
+
+        const catalog = new Map(products.map(product => [`${product._type}:${product.id}`, product]));
+        let changed = false;
+        productItems = productItems.flatMap(item => {
+            const current = catalog.get(`${item._type}:${item.id}`);
+            if (!current) {
+                changed = true;
+                return [];
+            }
+
+            const maxQuantity = Number(current.max_quantity || 0);
+            const quantity = Math.min(item.quantity, maxQuantity);
+            if (quantity !== item.quantity || item.max_quantity !== maxQuantity) changed = true;
+
+            return [{ ...item, quantity, max_quantity: maxQuantity }];
+        });
+
+        if (changed) {
+            toast('Giỏ hàng đã được cập nhật theo tồn kho mới nhất', 'warning');
+            refreshCart();
         }
     }
 
@@ -153,10 +191,22 @@
             if (delta <= 0) return;
             const p = products.find(pr => pr.id === productId && pr._type === productType);
             if (!p) return;
-            item = { id: p.id, name: p.name, price: p.price || p.total_price || 0, quantity: 0, _type: p._type || 'product' };
+            item = {
+                id: p.id,
+                name: p.name,
+                price: p.price || p.total_price || 0,
+                quantity: 0,
+                max_quantity: Number(p.max_quantity ?? p.available_stock ?? p.stock ?? 20),
+                _type: p._type || 'product',
+            };
             productItems.push(item);
         }
-        item.quantity = Math.max(0, item.quantity + delta);
+        const nextQuantity = Math.max(0, item.quantity + delta);
+        if (delta > 0 && nextQuantity > item.max_quantity) {
+            toast(`Chỉ còn tối đa ${item.max_quantity} ${item.name}`, 'warning');
+            return;
+        }
+        item.quantity = nextQuantity;
         if (item.quantity <= 0) return removeProduct(productId, productType);
         renderProducts();
         refreshCart();
@@ -238,8 +288,11 @@
 
         // Discounts
         discounts.student = Math.max(0, seatTotalNormal - seatTotal);
-        discounts.loyalty = pointsToRedeem * cfg.pointsToVnd;
         discounts.voucher = 0;
+        const amountBeforePoints = Math.max(0, subtotal - discounts.student - discounts.voucher);
+        const maxUsefulPoints = Math.floor(amountBeforePoints / cfg.pointsToVnd);
+        loyaltyPointsApplied = Math.min(pointsToRedeem, maxUsefulPoints);
+        discounts.loyalty = loyaltyPointsApplied * cfg.pointsToVnd;
 
         grandTotal = Math.max(0, subtotal - discounts.student - discounts.loyalty - discounts.voucher);
         earnedPoints = Math.floor(grandTotal / cfg.earnRate);
@@ -278,13 +331,13 @@
                 <div class="pos-cart-item-icon product"><i class="bi bi-cup-straw"></i></div>
                 <div class="pos-cart-item-main"><div class="pos-cart-item-name">${p.name}</div>
                     <div class="pos-qty-ctrl">
-                        <button class="pos-qty-btn" data-product-id="${p.id}" data-delta="-1" type="button">−</button>
+                        <button class="pos-qty-btn" data-product-id="${p.id}" data-product-type="${p._type}" data-delta="-1" type="button">−</button>
                         <span class="pos-qty-val">${p.quantity}</span>
-                        <button class="pos-qty-btn" data-product-id="${p.id}" data-delta="1" type="button">+</button>
+                        <button class="pos-qty-btn" data-product-id="${p.id}" data-product-type="${p._type}" data-delta="1" type="button" ${p.quantity >= p.max_quantity ? 'disabled' : ''}>+</button>
                     </div>
                 </div>
                 <div class="pos-cart-item-price">${formatVnd(p.price * p.quantity)}</div>
-                <button class="pos-cart-remove" data-product-id="${p.id}" type="button" title="Xóa">×</button>
+                <button class="pos-cart-remove" data-product-id="${p.id}" data-product-type="${p._type}" type="button" title="Xóa">×</button>
             </div>`;
         });
         if (productItemsEl) {
@@ -292,10 +345,17 @@
 
             // Bind qty buttons
             productItemsEl.querySelectorAll('.pos-qty-btn').forEach(btn => {
-                btn.addEventListener('click', () => changeQty(parseInt(btn.dataset.productId, 10), parseInt(btn.dataset.delta, 10)));
+                btn.addEventListener('click', () => changeQty(
+                    parseInt(btn.dataset.productId, 10),
+                    btn.dataset.productType,
+                    parseInt(btn.dataset.delta, 10)
+                ));
             });
             productItemsEl.querySelectorAll('.pos-cart-remove').forEach(btn => {
-                btn.addEventListener('click', () => removeProduct(parseInt(btn.dataset.productId, 10)));
+                btn.addEventListener('click', () => removeProduct(
+                    parseInt(btn.dataset.productId, 10),
+                    btn.dataset.productType
+                ));
             });
         }
 
@@ -305,7 +365,7 @@
             discHtml += `<div class="pos-discount-item"><span class="pos-discount-label">🎓 Ưu đãi sinh viên</span><span class="pos-discount-amount">-${formatVnd(discounts.student)}</span></div>`;
         }
         if (discounts.loyalty > 0) {
-            discHtml += `<div class="pos-discount-item"><span class="pos-discount-label">⭐ ${pointsToRedeem} điểm</span><span class="pos-discount-amount">-${formatVnd(discounts.loyalty)}</span></div>`;
+            discHtml += `<div class="pos-discount-item"><span class="pos-discount-label">⭐ ${loyaltyPointsApplied} điểm</span><span class="pos-discount-amount">-${formatVnd(discounts.loyalty)}</span></div>`;
         }
         if (discountItemsEl) discountItemsEl.innerHTML = discHtml;
 
@@ -330,6 +390,7 @@
         seatItems = []; productItems = []; discounts = { student: 0, loyalty: 0, voucher: 0 };
         ticketClassifications.clear();
         subtotal = 0; grandTotal = 0; earnedPoints = 0;
+        loyaltyPointsApplied = 0;
         refreshCart();
     }
 
@@ -341,6 +402,7 @@
             grandTotal,
             discounts,
             earnedPoints,
+            loyaltyPointsApplied,
             ticketClassifications: Object.fromEntries(ticketClassifications),
         };
     }

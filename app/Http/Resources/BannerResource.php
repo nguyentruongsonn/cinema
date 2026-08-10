@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\MediaUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,7 +19,7 @@ class BannerResource extends JsonResource
         $images = $this->images->map(fn ($image) => [
             'id' => $image->id,
             'image_path' => $image->image_path,
-            'image_url' => asset('storage/' . $image->image_path),
+            'image_url' => MediaUrl::storage($image->image_path),
         ])->values();
 
         return [

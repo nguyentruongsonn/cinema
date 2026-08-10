@@ -8,28 +8,29 @@
 @endpush
 
 @section('content')
-<div class="roles-permissions-page">
-    <div class="role-permission-hero">
+<div
+    class="roles-permissions-page"
+    data-can-edit-permissions="{{ auth()->user()?->hasPermission('roles.update') && auth()->user()?->hasPermission('permissions.assign') ? 'true' : 'false' }}"
+>
+    <section class="role-permission-hero admin-card">
         <div class="role-hero-copy">
-            <span class="admin-eyebrow">Access Control</span>
-            <h1>Vai trò & quyền truy cập</h1>
+            <h1>Vai trò và quyền truy cập</h1>
             <p>Quản lý quyền theo từng vai trò nghiệp vụ. Thay đổi sẽ áp dụng ngay cho người dùng thuộc vai trò đó.</p>
         </div>
         <div class="role-permission-actions">
             <div class="role-permission-dirty" id="rolePermissionDirty">Đã lưu</div>
             <div class="role-permission-counter" id="selectedPermissionCount">0 quyền</div>
-            <button type="button" class="admin-action-btn" id="saveRolePermissionsBtn" disabled>
+            <button type="button" class="admin-action-btn admin-filter-primary-action" id="saveRolePermissionsBtn" disabled>
                 <i class="bi bi-shield-check"></i>
                 <span>Lưu thay đổi</span>
             </button>
         </div>
-    </div>
+    </section>
 
     <div class="role-permission-layout">
         <aside class="role-permission-sidebar admin-card-container">
             <div class="role-panel-header">
                 <div>
-                    <span class="admin-eyebrow">Roles</span>
                     <h2>Vai trò</h2>
                 </div>
                 <span class="role-panel-total" id="rolesTotal">0</span>
@@ -42,7 +43,6 @@
         <section class="role-permission-main admin-card-container">
             <div class="permission-panel-header">
                 <div>
-                    <span class="admin-eyebrow">Permissions</span>
                     <h2 id="selectedRoleTitle">Chọn vai trò</h2>
                     <p id="selectedRoleMeta">Chưa có vai trò nào được chọn.</p>
                 </div>

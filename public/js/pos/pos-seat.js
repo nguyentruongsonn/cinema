@@ -34,11 +34,13 @@
 
         try {
             const res = await api.get(`${cfg.apiBase}/showtimes/${stId}/seats`);
-            seats = res.data?.seats || res.data || [];
+            const payload = res?.data?.data ?? res?.data ?? res ?? {};
+            seats = Array.isArray(payload) ? payload : (payload.seats || []);
+            restoreCurrentUserHold(payload.current_user_holds || []);
             
             // Clean up selectedSeats that are no longer available (booked/locked by someone else)
             for (const [seatId, seat] of selectedSeats.entries()) {
-                const freshSeat = seats.find(s => s.id === seatId);
+                const freshSeat = seats.find(s => Number(s.id) === Number(seatId));
                 if (freshSeat && ['booked', 'locked', 'maintenance'].includes(freshSeat.status)) {
                     selectedSeats.delete(seatId);
                 }
@@ -53,6 +55,28 @@
                 renderEmptyState(seatMap, err.message || 'Không thể tải sơ đồ ghế');
             }
         }
+    }
+
+    function restoreCurrentUserHold(holds) {
+        const activeHolds = Array.isArray(holds) ? holds : [];
+        const activeHold = activeHolds
+            .filter(hold => Number(hold?.id) > 0)
+            .sort((left, right) => new Date(right.held_until || 0) - new Date(left.held_until || 0))[0] || null;
+        const heldSeatIds = new Set((activeHold?.seat_ids || []).map(Number));
+
+        selectedSeats.clear();
+        seats.forEach(seat => {
+            if (heldSeatIds.has(Number(seat.id))) selectedSeats.set(Number(seat.id), seat);
+        });
+
+        document.dispatchEvent(new CustomEvent('pos:hold:restored', {
+            detail: {
+                hold_id: activeHold?.id || null,
+                showtime_id: showtimeId,
+                seat_ids: Array.from(heldSeatIds),
+            },
+        }));
+        notifySelectionChange();
     }
 
     // ── Render ─────────────────────────────────────────────
@@ -170,7 +194,7 @@
     }
 
     function getSeatStatus(seat) {
-        if (selectedSeats.has(seat.id)) return 'selected';
+        if (selectedSeats.has(Number(seat.id))) return 'selected';
         if (seat.is_booked || seat.status === 'booked') return 'booked';
         if (seat.is_locked || seat.status === 'locked') return 'locked';
         if (seat.is_maintenance || seat.status === 'maintenance') return 'maintenance';
@@ -252,11 +276,16 @@
     }
 
     // ── Toggle seat ───────────────────────────────────────
-    function toggleSeat(seat) {
-        if (selectedSeats.has(seat.id)) {
-            selectedSeats.delete(seat.id);
+    async function toggleSeat(seat) {
+        const seatId = Number(seat.id);
+        if (selectedSeats.has(seatId)) {
+            if (seat.status === 'holding' && global.PosApp?.getCurrentHoldId?.()) {
+                await global.PosApp.removeTicket?.(seatId);
+                return;
+            }
+            selectedSeats.delete(seatId);
         } else {
-            selectedSeats.set(seat.id, seat);
+            selectedSeats.set(seatId, seat);
         }
 
         renderSeatMap();
@@ -268,17 +297,30 @@
     }
 
     function removeSeat(seatId) {
-        selectedSeats.delete(Number(seatId));
+        const normalizedSeatId = Number(seatId);
+        selectedSeats.delete(normalizedSeatId);
+        markSeatAvailable(normalizedSeatId);
         renderSeatMap();
         updateUI();
         notifySelectionChange();
     }
 
     function clearSelection() {
+        Array.from(selectedSeats.keys()).forEach(markSeatAvailable);
         selectedSeats.clear();
         renderSeatMap();
         updateUI();
         notifySelectionChange();
+    }
+
+    function markSeatAvailable(seatId) {
+        const seat = seats.find(item => Number(item.id) === Number(seatId));
+        if (!seat || !['holding', 'held'].includes(seat.status)) return;
+
+        seat.status = 'available';
+        seat.is_holding = false;
+        seat.is_held = false;
+        seat.is_locked = false;
     }
 
     function notifySelectionChange() {

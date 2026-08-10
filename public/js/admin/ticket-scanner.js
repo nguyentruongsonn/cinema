@@ -184,7 +184,7 @@
 
         try {
             const parsed = JSON.parse(value);
-            const parsedCode = parsed?.ticket_code;
+            const parsedCode = parsed?.ticket_code || parsed?.booking_id;
             if (parsedCode) return String(parsedCode).trim();
         } catch (_) {}
 
@@ -196,7 +196,7 @@
         } catch (_) {}
 
         const prefixedCode = value.match(/\b(TKT-[A-Z0-9_-]+)\b/i)?.[1];
-        return (prefixedCode || value).trim();
+        return (prefixedCode || value).trim().toUpperCase();
     }
 
     function createBarcodeDetector() {
@@ -228,7 +228,7 @@
         const code = normalizeScanCode(input.value);
 
         if (!code) {
-            showResult('warning', 'Vui lòng nhập mã vé.');
+            showResult('warning', 'Vui lòng nhập mã vé hoặc Booking ID.');
             return;
         }
 
@@ -236,30 +236,40 @@
         const btn = document.getElementById('verifyTicketBtn');
         const originalHtml = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span>Đang xác thực...</span>';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span>Đang xử lý...</span>';
         verificationController = new AbortController();
 
         try {
-            const verifyEndpoint = document.body.dataset.staffRole === 'ticket_checker'
+            const isTicket = /^TKT-/i.test(code);
+            if (!isTicket && document.body.dataset.canPrintOrders !== 'true') {
+                showResult('warning', 'Tài khoản này chỉ được soát vé, không có quyền tra cứu để in hóa đơn.');
+                return;
+            }
+            const endpoint = isTicket
                 ? '/api/v1/staff/tickets/verify'
-                : '/api/v1/admin/tickets/verify';
-            const response = await window.AdminCore.apiFetch(verifyEndpoint, {
+                : '/api/v1/staff/orders/print-lookup';
+            const body = isTicket ? { ticket_code: code } : { identifier: code };
+            const response = await window.AdminCore.apiFetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
                 signal: verificationController.signal,
-                body: JSON.stringify({ ticket_code: code })
+                body: JSON.stringify(body)
             });
 
             const data = await response.json().catch(() => ({}));
 
             if (response.ok && data.success) {
-                showResult('success', 'Xác thực thành công!', data.data);
+                if (isTicket) {
+                    showResult('success', 'Xác thực vé thành công!', data.data);
+                } else {
+                    showPrintableOrder(data.data);
+                }
                 input.value = '';
             } else {
-                showResult('error', data.message || 'Mã vé không hợp lệ');
+                showResult('error', data.message || 'Mã vé hoặc Booking ID không hợp lệ');
             }
         } catch (error) {
             if (error.name !== 'AbortError') showResult('error', 'Lỗi kết nối: ' + error.message);
@@ -283,13 +293,15 @@
         if (type === 'success' && ticketData) {
             const details = document.createElement('div');
             details.className = 'row g-2 small mt-2';
-            [
-                ['M? v?', ticketData.code],
+            const resultRows = [
+                [ticketData.type === 'booking' ? 'Booking ID' : 'Mã vé', ticketData.code],
                 ['Phim', ticketData.movie],
-                ['Su?t chi?u', ticketData.showtime],
-                ['Gh?', ticketData.seat],
-                ['Tr?ng th?i', ticketData.status],
-            ].forEach(([label, value]) => {
+                ['Suất chiếu', ticketData.showtime],
+                ['Ghế', ticketData.seat],
+            ];
+            if (ticketData.type === 'booking') resultRows.push(['Số vé', ticketData.ticket_count]);
+            resultRows.push(['Trạng thái', ticketData.status]);
+            resultRows.forEach(([label, value]) => {
                 const labelNode = document.createElement('strong');
                 labelNode.className = 'col-6';
                 labelNode.textContent = label;
@@ -310,6 +322,94 @@
                 resultDiv.classList.add('d-none');
             }, 5000);
         }
+    }
+
+    function showPrintableOrder(order) {
+        const resultDiv = document.getElementById('scanResult');
+        resultDiv.textContent = '';
+
+        const panel = document.createElement('section');
+        panel.className = 'admin-scanner-print-result';
+
+        const heading = document.createElement('div');
+        heading.className = 'admin-scanner-print-heading';
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-check-circle-fill';
+        icon.setAttribute('aria-hidden', 'true');
+        const headingCopy = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = 'Đơn hàng hợp lệ';
+        const subtitle = document.createElement('span');
+        subtitle.textContent = `Booking ID: ${order.code}`;
+        headingCopy.append(title, subtitle);
+        heading.append(icon, headingCopy);
+        panel.appendChild(heading);
+
+        const details = document.createElement('dl');
+        details.className = 'admin-scanner-print-details';
+        const rows = [
+            ['Khách hàng', order.customer?.name || 'Khách vãng lai'],
+            ['Phim', order.movie?.title || 'Đơn bắp nước'],
+            ['Rạp / Phòng', [order.theater?.name, order.screen].filter(Boolean).join(' · ') || 'N/A'],
+            ['Ghế', (order.tickets || []).map(ticket => ticket.seat_label).join(', ') || 'Không có'],
+            ['Bắp nước', `${(order.concessions || []).length} loại`],
+            ['Tổng tiền', new Intl.NumberFormat('vi-VN').format(Number(order.total_amount || 0)) + 'đ'],
+        ];
+        rows.forEach(([label, value]) => {
+            const term = document.createElement('dt');
+            term.textContent = label;
+            const description = document.createElement('dd');
+            description.textContent = value;
+            details.append(term, description);
+        });
+        panel.appendChild(details);
+
+        if (Number(order.print_count || 0) > 0) {
+            const warning = document.createElement('p');
+            warning.className = 'admin-scanner-reprint-warning';
+            warning.textContent = `Đơn đã được yêu cầu in ${order.print_count} lần. Lần tiếp theo sẽ được ghi nhận là in lại.`;
+            panel.appendChild(warning);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'admin-scanner-print-actions';
+        const available = Array.isArray(order.available_sections) ? order.available_sections : [];
+        const buttonDefinitions = [
+            ['In tất cả', available, 'bi-printer-fill', 'primary'],
+            ['In vé', ['tickets'], 'bi-ticket-perforated', 'secondary'],
+            ['In bắp nước', ['concessions'], 'bi-cup-straw', 'secondary'],
+            ['In hóa đơn', ['invoice'], 'bi-receipt', 'secondary'],
+        ];
+
+        buttonDefinitions.forEach(([label, sections, iconName, variant], index) => {
+            const printableSections = sections.filter(section => available.includes(section));
+            if (printableSections.length === 0) return;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = `admin-scanner-print-button is-${variant}`;
+            const buttonIcon = document.createElement('i');
+            buttonIcon.className = `bi ${iconName}`;
+            buttonIcon.setAttribute('aria-hidden', 'true');
+            const buttonLabel = document.createElement('span');
+            buttonLabel.textContent = label;
+            button.append(buttonIcon, buttonLabel);
+            if (index === 0) button.classList.add('is-wide');
+            button.addEventListener('click', () => {
+                if (!window.OrderPrinting) {
+                    showResult('error', 'Chức năng in chưa sẵn sàng. Vui lòng tải lại trang.');
+                    return;
+                }
+                window.OrderPrinting.open(order.id, printableSections, {
+                    reason: Number(order.print_count || 0) > 0 ? 'In lại sau khi tra cứu QR hóa đơn' : '',
+                });
+            });
+            actions.appendChild(button);
+        });
+        panel.appendChild(actions);
+
+        resultDiv.appendChild(panel);
+        resultDiv.classList.remove('d-none');
+        playScanSound('success');
     }
 
 

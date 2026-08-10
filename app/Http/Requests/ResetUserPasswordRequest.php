@@ -27,4 +27,13 @@ class ResetUserPasswordRequest extends FormRequest
     {
         return $this->validated('password');
     }
+
+    public function messages(): array
+    {
+        return [
+            'password.required' => 'Vui lòng nhập mật khẩu mới.',
+            'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
+            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
+        ];
+    }
 }

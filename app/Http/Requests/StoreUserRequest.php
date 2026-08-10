@@ -83,7 +83,7 @@ class StoreUserRequest extends FormRequest
                 $validator->errors()->add('role_id', 'Chỉ super-admin mới được gán vai trò quản trị.');
             }
 
-            if ($this->has('theater_ids') && !($this->user()?->isAdmin() || $this->user()?->hasRole('theater_manager'))) {
+            if ($this->has('theater_ids') && ! $this->user()?->hasPermission('users.create')) {
                 $validator->errors()->add('theater_ids', 'Bạn không có quyền gán rạp cho tài khoản.');
             }
         });

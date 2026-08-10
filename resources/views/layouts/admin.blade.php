@@ -22,7 +22,10 @@
 
     @stack('styles')
 </head>
-<body data-staff-role="{{ auth()->user()?->role?->slug ?? '' }}">
+<body
+    data-staff-role="{{ auth()->user()?->role?->slug ?? '' }}"
+    data-can-print-orders="{{ auth()->user()?->hasPermission('tickets.issue') ? 'true' : 'false' }}"
+>
     <div class="admin-wrapper">
         <!-- Mobile Header (Tablet & Mobile Only) -->
         <div id="adminMobileHeader" class="mobile-header d-lg-none" data-turbo-permanent>
@@ -237,14 +240,14 @@
                 </div>
 
                 @hasSection('topbar_center')
-                    <div class="admin-topbar-center">
+                    <div class="admin-topbar-center" role="group" aria-label="Ngữ cảnh trang">
                         @yield('topbar_center')
                     </div>
                 @endif
 
                 <div class="topbar-actions">
-                    @if ($canAny(['tickets.verify']))
-                        <button class="btn-icon" id="scanTicketBtn" aria-label="Quét mã vạch vé" title="Quét mã vạch vé">
+                    @if ($canAny(['tickets.verify', 'tickets.issue']))
+                        <button class="btn-icon" id="scanTicketBtn" aria-label="{{ $adminUser?->hasPermission('tickets.issue') ? 'Quét QR vé hoặc hóa đơn' : 'Quét mã vé' }}" title="{{ $adminUser?->hasPermission('tickets.issue') ? 'Quét QR vé hoặc hóa đơn' : 'Quét mã vé' }}">
                             <i class="bi bi-qr-code-scan"></i>
                         </button>
                     @endif
@@ -282,7 +285,7 @@
                         </span>
                         <div>
                             <p class="admin-scanner-eyebrow mb-1">Ticket Control</p>
-                            <h5 class="modal-title" id="ticketScannerModalLabel">Quét mã vạch / QR vé</h5>
+                            <h5 class="modal-title" id="ticketScannerModalLabel">{{ $adminUser?->hasPermission('tickets.issue') ? 'Quét QR vé / hóa đơn' : 'Quét mã vé' }}</h5>
                         </div>
                     </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
@@ -310,15 +313,15 @@
                     </div>
 
                     <div id="manualScanner" class="scanner-mode admin-scanner-panel">
-                        <label for="ticketCodeInput" class="form-label">Mã vé / barcode</label>
+                        <label for="ticketCodeInput" class="form-label">{{ $adminUser?->hasPermission('tickets.issue') ? 'Mã vé / Booking ID' : 'Mã vé' }}</label>
                         <div class="admin-scanner-input-row">
                             <div class="admin-scanner-input-wrap">
                                 <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
-                                <input type="text" class="form-control form-control-lg" id="ticketCodeInput" placeholder="Nhập hoặc quét mã vé..." autocomplete="off" autofocus>
+                                <input type="text" class="form-control form-control-lg" id="ticketCodeInput" placeholder="{{ $adminUser?->hasPermission('tickets.issue') ? 'Nhập mã vé để soát hoặc Booking ID để in...' : 'Nhập mã vé cần xác thực...' }}" autocomplete="off" autofocus>
                             </div>
                             <button type="button" class="admin-scanner-submit" id="verifyTicketBtn">
                                 <i class="bi bi-check2-circle"></i>
-                                <span>Xác thực</span>
+                                <span>Tiếp tục</span>
                             </button>
                         </div>
                     </div>

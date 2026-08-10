@@ -7,6 +7,8 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "bacon/bacon-qr-code": "3.0",
+        "dompdf/dompdf": "^3.1.6",
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.0",
         "laravel/tinker": "^2.10.1",
@@ -49,7 +51,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74,#86efac\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm run dev\" \"php artisan reverb:start\" --names=server,queue,logs,vite,reverb --kill-others"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fda4af,#fb7185,#fdba74,#86efac\" \"php artisan serve\" \"php artisan queue:work --queue=emails,payments,default,cleanup --sleep=1 --tries=3 --timeout=120\" \"php artisan queue:work --queue=broadcasts --sleep=1 --tries=3 --timeout=30\" \"php artisan pail --timeout=0\" \"npm run dev\" \"php artisan reverb:start\" --names=server,queue,broadcasts,logs,vite,reverb --kill-others"
         ],
         "test": [
             "@php artisan config:clear --ansi",
@@ -63,7 +65,7 @@
             "@php vendor/bin/phpstan analyse --memory-limit=1G"
         ],
         "test:modern-format": [
-            "@php vendor/bin/pint --test app/Console/Commands/MonitorQueueHealth.php app/Http/Controllers/Api/V1/OperationalHealthController.php app/Http/Middleware/InternalMetricsAccess.php app/Http/Middleware/RequestIdMiddleware.php app/Services/Api/OpenApiService.php app/Services/Observability config/observability.php config/sentry.php routes/api/public.php routes/console.php"
+            "@php vendor/bin/pint --test app/Console/Commands/MonitorOperationalHealth.php app/Console/Commands/MonitorQueueHealth.php app/Http/Controllers/Api/V1/OperationalHealthController.php app/Http/Middleware/InternalMetricsAccess.php app/Http/Middleware/RequestIdMiddleware.php app/Services/Api/OpenApiService.php app/Services/Observability config/observability.php config/sentry.php routes/api/public.php routes/console.php scripts/php-dev-router.php"
         ],
         "format": [
             "@php vendor/bin/pint"

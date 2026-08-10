@@ -299,17 +299,31 @@ window.onAdminPageLoad = function (callback) {
 const adminPageCleanupCallbacks = window.__adminPageCleanupCallbacks || new Set();
 window.__adminPageCleanupCallbacks = adminPageCleanupCallbacks;
 
-window.runAdminPageCleanup = function () {
+window.runAdminPageCleanup = function (options = {}) {
     const callbacks = [...adminPageCleanupCallbacks];
     adminPageCleanupCallbacks.clear();
 
-    callbacks.forEach((callback) => {
-        try {
-            callback();
-        } catch (error) {
-            console.error('Admin page cleanup failed:', error);
-        }
-    });
+    const runCallbacks = () => {
+        callbacks.forEach((callback) => {
+            try {
+                callback();
+            } catch (error) {
+                console.error('Admin page cleanup failed:', error);
+            }
+        });
+    };
+
+    if (options?.defer === true && typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(runCallbacks, { timeout: 400 });
+        return;
+    }
+
+    if (options?.defer === true) {
+        window.setTimeout(runCallbacks, 32);
+        return;
+    }
+
+    runCallbacks();
 };
 
 window.onAdminPageCleanup = function (callback) {
@@ -347,4 +361,3 @@ window.renderAdminTableSkeleton = function (tbody, cols = 6, rows = 5, hasImage 
 if (typeof window.AdminCore === 'object' && window.AdminCore) {
     window.AdminCore.renderTableSkeleton = window.renderAdminTableSkeleton;
 }
-

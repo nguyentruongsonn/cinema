@@ -14,7 +14,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('view_users');
+        return $user->hasPermission('users.view');
     }
 
     /**
@@ -29,21 +29,8 @@ class UserPolicy
             return true;
         }
 
-        // Admin can view any user
-        if ($user->hasAnyRole(['admin', 'super-admin'])) {
-            return true;
-        }
-
-        // Staff with user viewing permission
-        if ($user->hasPermission('view_users')) {
-            return true;
-        }
-
-        if ($user->hasRole('theater_manager') && $this->sharesTheater($user, $targetUser)) {
-            return true;
-        }
-
-        return false;
+        return $user->hasPermission('users.view')
+            && (! $user->requiresTheaterScope() || $this->sharesTheater($user, $targetUser));
     }
 
     /**
@@ -53,7 +40,7 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasRole('theater_manager') || $user->hasPermission('users.create') || $user->hasPermission('staff.create') || $user->hasPermission('create_users');
+        return $user->hasPermission('users.create');
     }
 
     /**
@@ -73,21 +60,8 @@ class UserPolicy
             return false;
         }
 
-        // Admin can update non-administrative users; only super-admin can update administrators.
-        if ($user->hasAnyRole(['admin', 'super-admin'])) {
-            return true;
-        }
-
-        // Staff with user update permission
-        if ($user->hasPermission('edit_users')) {
-            return true;
-        }
-
-        if ($user->hasRole('theater_manager') && $this->sharesTheater($user, $targetUser)) {
-            return true;
-        }
-
-        return false;
+        return $user->hasPermission('users.update')
+            && (! $user->requiresTheaterScope() || $this->sharesTheater($user, $targetUser));
     }
 
     /**
@@ -102,8 +76,7 @@ class UserPolicy
             return false;
         }
 
-        // Only admin with delete permission
-        if (!$user->hasAnyRole(['admin', 'super-admin']) && !$user->hasPermission('delete_users')) {
+        if (! $user->hasPermission('users.delete')) {
             return false;
         }
 
@@ -112,11 +85,7 @@ class UserPolicy
             return false;
         }
 
-        if ($user->hasRole('theater_manager') && $this->sharesTheater($user, $targetUser)) {
-            return true;
-        }
-
-        return true;
+        return ! $user->requiresTheaterScope() || $this->sharesTheater($user, $targetUser);
     }
 
     /**
@@ -136,14 +105,8 @@ class UserPolicy
             return false;
         }
 
-        if ($user->hasRole('theater_manager') && $this->sharesTheater($user, $targetUser)) {
-            return true;
-        }
-
-        // Only super-admin or delegated role managers can change non-administrative users.
-        return $user->hasRole('super-admin')
-            || $user->hasPermission('manage_user_roles')
-            || $user->hasPermission('users.manage_roles');
+        return $user->hasPermission('users.manage_roles')
+            && (! $user->requiresTheaterScope() || $this->sharesTheater($user, $targetUser));
     }
 
     /**
@@ -160,7 +123,8 @@ class UserPolicy
         }
 
         // Only admin with loyalty management permission
-        return $user->hasRole('super-admin') || $user->hasPermission('users.manage_loyalty');
+        return $user->hasPermission('users.manage_loyalty')
+            && (! $user->requiresTheaterScope() || $this->sharesTheater($user, $targetUser));
     }
 
     /**
@@ -181,7 +145,8 @@ class UserPolicy
         }
 
         // Only admin with user management permission
-        return $user->hasRole('super-admin') || $user->hasPermission('users.manage_status');
+        return $user->hasPermission('users.manage_status')
+            && (! $user->requiresTheaterScope() || $this->sharesTheater($user, $targetUser));
     }
 
     /**
@@ -248,7 +213,8 @@ class UserPolicy
             return $user->hasRole('super-admin');
         }
 
-        return $user->hasAnyRole(['admin', 'super-admin']) || $user->hasPermission('edit_users');
+        return $user->hasPermission('users.update')
+            && (! $user->requiresTheaterScope() || $this->sharesTheater($user, $targetUser));
     }
 
     private function isAdministrativeUser(User $user): bool

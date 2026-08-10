@@ -29,6 +29,7 @@ class BookingManager {
         this.isCreatingPayment = false;
         this.lockPromise = null;
         this.checkoutCompleted = false;
+        this.sessionExpiredHandler = (event) => this.handleSessionExpired(event);
 
         // DOM Elements
         this.seatMapContainer = document.getElementById('seatMap');
@@ -155,13 +156,30 @@ class BookingManager {
     }
 
     subscribeToOrderChannel(orderCode) {
-        if (!window.Echo || !orderCode) return;
+        const echo = window.Echo;
 
-        window.Echo.private(`order.${orderCode}`)
-            .listen('.order.paid', () => {
-                // Auto-transition to success screen in real-time (no redirect needed)
+        if (!orderCode || !echo || typeof echo.private !== 'function') {
+            console.warn('[Booking WS] Private order channel unavailable — payment polling remains active.');
+            return false;
+        }
+
+        try {
+            const channel = echo.private(`order.${orderCode}`);
+
+            if (!channel || typeof channel.listen !== 'function') {
+                console.warn('[Booking WS] Invalid private order channel — payment polling remains active.');
+                return false;
+            }
+
+            channel.listen('.order.paid', () => {
                 this.showSuccessScreen(orderCode);
             });
+
+            return true;
+        } catch (error) {
+            console.warn('[Booking WS] Private order subscription failed — payment flow will continue.', error);
+            return false;
+        }
     }
 
     /**
@@ -339,6 +357,8 @@ class BookingManager {
     }
 
     setupEventListeners() {
+        window.addEventListener('cinema:session-expired', this.sessionExpiredHandler);
+
         // Tab navigation - scoped to booking page only, avoid affecting Bootstrap/auth modal tabs
         document.querySelectorAll('.booking-page .tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -550,11 +570,13 @@ class BookingManager {
         }
     }
 
-    validateCurrentStep() {
+    validateCurrentStep(showFeedback = true) {
         switch (this.currentStep) {
             case 1: // Seats
                 if (this.selectedSeats.size === 0) {
-                    this.showToast('Vui lòng chọn ghế trước', 'warning');
+                    if (showFeedback) {
+                        this.showToast('Vui lòng chọn ghế trước', 'warning');
+                    }
                     return false;
                 }
                 return true;
@@ -575,7 +597,7 @@ class BookingManager {
 
     updateStepButtons() {
         // Update "Tiếp tục" button
-        const canProceed = this.validateCurrentStep();
+        const canProceed = this.validateCurrentStep(false);
         const isLockingFirstStep = this.currentStep === 1 && this.isLockingSeats;
         const nextLabel = isLockingFirstStep ? 'Đang giữ ghế...' : 'Tiếp tục';
         const isZeroAmountCheckout = this.getPayableTotal() <= 0;
@@ -1045,16 +1067,14 @@ class BookingManager {
     }
 
     async handleSeatClick(seat) {
-        // Check authentication when user tries to select seats
-        if (!this.auth?.isAuthenticated()) {
-            if (window.authManager?.showAuthRequired) {
-                window.authManager.showAuthRequired();
-            } else {
-                this.showToast('Vui lòng đăng nhập để chọn ghế', 'warning');
-                setTimeout(() => {
-                    this.auth?.showModal('login');
-                }, 500);
-            }
+        const authManager = window.authManager || this.auth;
+        this.auth = authManager;
+        const authenticated = typeof authManager?.ensureAuthenticated === 'function'
+            ? await authManager.ensureAuthenticated()
+            : !!authManager?.isAuthenticated?.();
+
+        if (!authenticated) {
+            this.promptForAuthentication();
             return;
         }
 
@@ -1067,6 +1087,9 @@ class BookingManager {
         }
 
         // Toggle selection
+        const shouldReleaseHeldSeat = this.selectedSeats.has(seatId)
+            && this.currentHold?.seat_ids?.includes(seatId);
+
         if (this.selectedSeats.has(seatId)) {
             this.selectedSeats.delete(seatId);
         } else {
@@ -1093,6 +1116,10 @@ class BookingManager {
 
         // Update summary
         this.updateSummary();
+
+        if (shouldReleaseHeldSeat) {
+            await this.releaseHeldSeat(seatId);
+        }
     }
 
     async ensureSeatsHeldBeforeContinue() {
@@ -1170,6 +1197,13 @@ class BookingManager {
         } catch (error) {
             console.error('Lock seats error:', error);
 
+            if (error?.isSessionExpired || error?.code === 'SESSION_EXPIRED') {
+                if (!window.authManager?.sessionExpiredNotified) {
+                    this.promptForAuthentication(error.message);
+                }
+                return false;
+            }
+
             if (this.handleSeatLockConflict(error)) {
                 return false;
             }
@@ -1241,6 +1275,8 @@ class BookingManager {
             if (response.success) {
                 this.currentHold = null;
                 this.stopTimer();
+                this.timerSeconds = 600;
+                this.updateTimerDisplay();
                 this.showToast('Đã hủy giữ ghế', 'info');
             }
         } catch (error) {
@@ -1248,8 +1284,95 @@ class BookingManager {
         }
     }
 
+    async releaseHeldSeat(seatId) {
+        const holdId = this.getCurrentHoldId();
+        if (!holdId) return true;
+
+        const seat = this.seats.find(item => parseInt(item.id, 10) === parseInt(seatId, 10));
+
+        try {
+            const response = await this.fetchAPI(
+                `/seats/holds/${holdId}/seats/${seatId}`,
+                { method: 'DELETE' }
+            );
+
+            if (!response.success) {
+                throw new Error(response.message || 'Không thể bỏ giữ ghế');
+            }
+
+            const remainingSeatIds = (response.data?.remaining_seat_ids || [])
+                .map(id => parseInt(id, 10))
+                .filter(Number.isFinite);
+
+            if (remainingSeatIds.length === 0) {
+                this.currentHold = null;
+                this.stopTimer();
+                this.timerSeconds = 600;
+                this.updateTimerDisplay();
+            } else {
+                this.currentHold = {
+                    ...this.currentHold,
+                    hold_id: response.data?.hold_id || holdId,
+                    id: response.data?.hold_id || holdId,
+                    seat_ids: remainingSeatIds,
+                };
+            }
+
+            if (seat) {
+                seat.status = 'available';
+                seat.is_available = true;
+                seat.is_holding = false;
+                seat.is_locked = false;
+            }
+
+            this.renderSeatMap();
+            this.updateSummary();
+            this.showToast(`Đã bỏ giữ ghế ${seat?.label || ''}`.trim(), 'info');
+
+            return true;
+        } catch (error) {
+            this.selectedSeats.add(parseInt(seatId, 10));
+            this.renderSeatMap();
+            this.updateSummary();
+            this.showToast(
+                error.message || 'Không thể bỏ giữ ghế lúc này. Vui lòng thử lại.',
+                'warning'
+            );
+
+            return false;
+        }
+    }
+
+    handleSessionExpired(event) {
+        if (this.checkoutCompleted || this.currentStep === 5) {
+            return;
+        }
+
+        this.isLockingSeats = false;
+        this.updateStepButtons();
+        this.showToast(
+            event?.detail?.message || 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.',
+            'warning'
+        );
+        (window.authManager || this.auth)?.showAuthRequired?.();
+    }
+
+    promptForAuthentication(message = null) {
+        const authManager = window.authManager || this.auth;
+        const defaultMessage = authManager?.sessionExpired
+            ? 'Phiên đăng nhập đã hết hạn. Ghế bạn chọn vẫn được giữ trên màn hình; vui lòng đăng nhập lại để tiếp tục.'
+            : 'Vui lòng đăng nhập để chọn ghế.';
+
+        this.showToast(message || defaultMessage, 'warning');
+        const modalOpened = authManager?.showAuthRequired?.();
+
+        if (modalOpened === false) {
+            window.setTimeout(() => window.location.reload(), 1200);
+        }
+    }
+
     async cancelSelection() {
-        if (this.selectedSeats.size === 0) return;
+        if (this.selectedSeats.size === 0 && !this.currentHold) return;
 
         const confirmed = await window.Modal.confirmAsync('Hủy chọn ghế', 'Bạn có chắc muốn hủy toàn bộ ghế đang chọn?', {
             variant: 'warning'
@@ -1346,7 +1469,7 @@ class BookingManager {
         }
 
         if (this.cancelBtn) {
-            this.cancelBtn.disabled = this.selectedSeats.size === 0;
+            this.cancelBtn.disabled = this.selectedSeats.size === 0 && !this.currentHold;
         }
 
         // Update sidebar summary
@@ -1606,7 +1729,7 @@ class BookingManager {
             .filter(Boolean);
 
         this.setTextById('successStatusTitle', 'Thanh toán thành công');
-        this.setTextById('successStatusMessage', 'Vé và hóa đơn đã được hệ thống xác nhận.');
+        this.setTextById('successStatusMessage', 'Thanh toán đã được xác nhận. Hóa đơn điện tử đang được gửi qua email.');
         this.setStatusIcon('bi-check-lg');
         this.setTextById('successOrderCode', order.order_code || order.code || order.gateway_order_code || '---');
         this.setTextById('successMovieTitle', order.movie_title || showtime.movie?.title || 'N/A');
@@ -2358,6 +2481,15 @@ class BookingManager {
                 if (!response.success) return;
 
                 const freshSeats = response.data.seats || [];
+                const freshHold = this.normalizeHold(response.data.current_user_holds?.[0] || null);
+                const ownHeldSeatIds = new Set(freshHold?.seat_ids || []);
+
+                if (freshHold) {
+                    this.currentHold = freshHold;
+                } else if (this.currentHold) {
+                    this.currentHold = null;
+                    this.stopTimer();
+                }
 
                 // Compare each seat status with what we have in memory
                 // Only update seats that changed AND are not selected by current user
@@ -2366,8 +2498,9 @@ class BookingManager {
                     const currentSeat = this.seats.find(s => s.id === freshSeat.id);
                     if (!currentSeat) return;
 
-                    // Skip seats the current user has selected
-                    if (this.selectedSeats.has(freshSeat.id)) return;
+                    if (this.selectedSeats.has(freshSeat.id)) {
+                        if (ownHeldSeatIds.has(freshSeat.id) || freshSeat.status === 'available') return;
+                    }
 
                     // If status changed → update in memory + re-render that seat incrementally
                     if (currentSeat.status !== freshSeat.status) {
@@ -2385,20 +2518,21 @@ class BookingManager {
 
     destroy() {
         this.stopTimer();
+        window.removeEventListener('cinema:session-expired', this.sessionExpiredHandler);
         if (this._pollInterval) {
             clearInterval(this._pollInterval);
             this._pollInterval = null;
         }
         // Unsubscribe from Reverb channels to prevent memory/connection leaks
         const showtimeId = this.config.showtimeId;
-        if (window.Echo && showtimeId) {
+        if (window.Echo && typeof window.Echo.leave === 'function' && showtimeId) {
             try {
                 window.Echo.leave(`showtime.${showtimeId}`);
             } catch (e) {
                 console.warn('[Booking] Error leaving showtime channel:', e);
             }
         }
-        if (window.Echo && this.currentOrderCode) {
+        if (window.Echo && typeof window.Echo.leave === 'function' && this.currentOrderCode) {
             try {
                 window.Echo.leave(`order.${this.currentOrderCode}`);
             } catch (e) {

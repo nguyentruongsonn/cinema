@@ -8,7 +8,9 @@
     const API = '/admin/revenue/stats';
 
     // Palette for charts
-    const PALETTE = ['#ff5a5f','#22c55e','#38bdf8','#fbbf24','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#60a5fa'];
+    const PALETTE = ['#e50914','#22c55e','#38bdf8','#fbbf24','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#60a5fa'];
+    const PRIMARY_COLOR = '#e50914';
+    const SECONDARY_SERIES_COLOR = '#94a3b8';
     const TEXT_COLOR = '#e4e4e7';
     const MUTED_TEXT_COLOR = '#c7c7d1';
     const GRID_COLOR = 'rgba(255,255,255,0.08)';
@@ -61,6 +63,17 @@
 
     function formatCurrencyFull(val) {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+    }
+
+    function formatPaymentMethod(method) {
+        const labels = {
+            cash: 'Tiền mặt',
+            payos: 'PayOS',
+            payos_qr: 'QR PayOS',
+            zero_amount: 'Đơn 0đ',
+        };
+
+        return labels[method] || method || 'Khác';
     }
 
     function toDateStr(d) {
@@ -123,11 +136,12 @@
         const opts = {
             series: [],
             labels: [],
-            chart : { type: 'pie', height: 300, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+            chart : { type: 'donut', height: 340, width: '100%', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true },
             colors: PALETTE,
             stroke: { width: 2, colors: ['#1e1e24'] },
-            legend: { position: 'bottom', labels: { colors: TEXT_COLOR }, fontSize: '13px', fontWeight: 600, markers: { width: 10, height: 10, radius: 6 } },
-            dataLabels: { style: { fontSize: '12px', fontWeight: 700, colors: ['#ffffff'] }, dropShadow: { enabled: false } },
+            legend: { position: 'bottom', height: 76, offsetY: 40, labels: { colors: TEXT_COLOR }, fontSize: '13px', fontWeight: 600, markers: { width: 10, height: 10, radius: 6 }, itemMargin: { horizontal: 8, vertical: 3 } },
+            plotOptions: { pie: { customScale: 0.78, offsetY: -8, donut: { size: '58%' } } },
+            dataLabels: { enabled: false },
             tooltip : { theme: 'dark', y: { formatter: formatCurrencyFull } },
         };
         charts.theater = new ApexCharts(els.chartTheaterPie, opts);
@@ -138,10 +152,11 @@
         const opts = {
             series: [{ name: 'Doanh thu', data: [] }],
             chart : {
-                type: 'bar', height: 300, background: 'transparent',
+                type: 'bar', height: 300, width: '100%', background: 'transparent',
                 fontFamily: 'Inter, sans-serif', toolbar: { show: false },
+                parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true,
             },
-            colors: ['#ff5a5f'],
+            colors: [PRIMARY_COLOR],
             plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } },
             dataLabels: { enabled: false },
             xaxis: {
@@ -164,7 +179,7 @@
         const opts = {
             series: [],
             labels: [],
-            chart : { type: 'donut', height: 280, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+            chart : { type: 'donut', height: 280, width: '100%', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true },
             colors: PALETTE,
             stroke : { width: 2, colors: ['#1e1e24'] },
             plotOptions: { pie: { donut: { size: '65%', labels: {
@@ -189,17 +204,13 @@
     function initTrendArea() {
         const opts = {
             series: [
-                { name: 'Doanh thu', data: [], type: 'area' },
+                { name: 'Doanh thu', data: [], type: 'line' },
                 { name: 'Đơn hàng',  data: [], type: 'line' },
             ],
-            chart  : { height: 300, background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, zoom: { enabled: false } },
-            colors : ['#ff5a5f', '#38bdf8'],
-            stroke : { curve: 'smooth', width: [3, 2], dashArray: [0, 4] },
-            fill   : {
-                type: ['gradient', 'none'],
-                gradient: { shadeIntensity: 0.6, opacityFrom: 0.22, opacityTo: 0.02, stops: [0, 100] },
-            },
-            markers: { size: [0, 4], colors: ['#ff5a5f','#38bdf8'], strokeColors: '#1e1e24', strokeWidth: 2 },
+            chart  : { height: 300, width: '100%', background: 'transparent', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, zoom: { enabled: false }, parentHeightOffset: 0, redrawOnParentResize: true, redrawOnWindowResize: true },
+            colors : [PRIMARY_COLOR, SECONDARY_SERIES_COLOR],
+            stroke : { colors: [PRIMARY_COLOR, SECONDARY_SERIES_COLOR], curve: 'smooth', width: [3, 2], dashArray: [0, 4] },
+            markers: { size: [4, 4], colors: [PRIMARY_COLOR, SECONDARY_SERIES_COLOR], strokeColors: '#1e1e24', strokeWidth: 2, hover: { size: 7 } },
             dataLabels: { enabled: false },
             xaxis: {
                 categories: [],
@@ -218,14 +229,15 @@
                 },
                 {
                     opposite: true,
-                    title : { text: 'Đơn hàng', style: { color: '#3b82f6', fontSize: '11px' } },
+                    title : { text: 'Đơn hàng', style: { color: SECONDARY_SERIES_COLOR, fontSize: '11px' } },
                     min   : 0,
-                    labels: { style: { colors: '#38bdf8', fontSize: '12px', fontWeight: 600 } },
+                    labels: { style: { colors: SECONDARY_SERIES_COLOR, fontSize: '12px', fontWeight: 600 } },
                 },
             ],
             grid   : { borderColor: GRID_COLOR, strokeDashArray: 4 },
             legend : { position: 'top', horizontalAlign: 'center', labels: { colors: TEXT_COLOR }, fontSize: '13px', fontWeight: 700, markers: { width: 10, height: 10, radius: 6 }, itemMargin: { horizontal: 14, vertical: 4 } },
-            tooltip: { theme: 'dark', shared: true, intersect: false,
+            tooltip: { theme: 'dark', shared: false, intersect: false, followCursor: false,
+                fixed: { enabled: true, position: 'topRight', offsetX: -16, offsetY: 12 },
                 y: [
                     { formatter: formatCurrencyFull },
                     { formatter: v => v + ' đơn' },
@@ -248,13 +260,13 @@
 
         if (els.cardTopTheaterRevenue) els.cardTopTheaterRevenue.textContent = formatCurrency(t.revenue);
         if (els.cardTopTheaterName)    els.cardTopTheaterName.textContent    = t.name || 'N/A';
-        if (els.cardTopTheaterPct)     els.cardTopTheaterPct.textContent     = 'chiếm ' + (t.percentage || 0) + '% tổng DT';
+        if (els.cardTopTheaterPct)     els.cardTopTheaterPct.textContent     = (t.percentage || 0) + '% tổng DT';
 
         if (els.cardTopMovieRevenue) els.cardTopMovieRevenue.textContent = formatCurrency(m.revenue);
         if (els.cardTopMovieTitle)   els.cardTopMovieTitle.textContent   = m.title || 'N/A';
-        if (els.cardTopMovieTickets) els.cardTopMovieTickets.textContent = (m.tickets || 0).toLocaleString('vi-VN') + ' vé bán ra';
+        if (els.cardTopMovieTickets) els.cardTopMovieTickets.textContent = (m.tickets || 0).toLocaleString('vi-VN') + ' vé';
 
-        if (els.cardTopPayMethod)    els.cardTopPayMethod.textContent    = p.top_method || 'N/A';
+        if (els.cardTopPayMethod)    els.cardTopPayMethod.textContent    = formatPaymentMethod(p.top_method) || 'N/A';
         if (els.cardTopPayMethodPct) els.cardTopPayMethodPct.textContent = (p.top_method_pct || 0) + '%';
     }
 
@@ -278,7 +290,7 @@
     function renderPaymentDonut(paymentMethods) {
         if (!charts.payment) return;
         const breakdown = paymentMethods?.breakdown || [];
-        const labels  = breakdown.map(b => b.method || 'Khác');
+        const labels  = breakdown.map(b => formatPaymentMethod(b.method));
         const series  = breakdown.map(b => b.count);
 
         charts.payment.updateOptions({ labels });
@@ -296,9 +308,9 @@
                 <div class="pay-legend-row">
                     <span>
               <span class="pay-legend-dot pay-legend-dot--${i % PALETTE.length}"></span>
-                        <span class="text-secondary">${sanitize(b.method || 'Khác')}</span>
+                        <span class="text-secondary">${sanitize(formatPaymentMethod(b.method))}</span>
                     </span>
-                    <span class="fw-bold">${b.count.toLocaleString('vi-VN')} lượt <span class="text-secondary">(${b.percent}%)</span></span>
+                    <span class="fw-bold">${b.count.toLocaleString('vi-VN')} lượt <span class="text-secondary">(${b.count_percent || 0}%)</span></span>
                 </div>
             `).join('');
         }
@@ -311,8 +323,8 @@
         const orders     = byTrend.map(r => parseInt(r.orders));
         charts.trend.updateOptions({ xaxis: { categories } });
         charts.trend.updateSeries([
-            { name: 'Doanh thu', data: revenues },
-            { name: 'Đơn hàng',  data: orders   },
+            { name: 'Doanh thu', data: revenues, type: 'line' },
+            { name: 'Đơn hàng',  data: orders, type: 'line' },
         ]);
     }
 

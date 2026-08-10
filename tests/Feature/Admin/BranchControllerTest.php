@@ -43,7 +43,7 @@ class BranchControllerTest extends TestCase
             ->getJson('/api/v1/admin/branches');
 
         $response->assertStatus(403)
-            ->assertJson(['success' => false, 'message' => 'Forbidden: insufficient role']);
+            ->assertJson(['success' => false, 'message' => 'Forbidden: management role required']);
     }
 
     #[Test]

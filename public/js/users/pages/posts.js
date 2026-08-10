@@ -19,6 +19,8 @@ import Toast from '../components/toast.js';
     let currentCategory = '';
     let currentSearch = '';
     let searchDebounceTimer = null;
+    let heroReady = false;
+    let sidebarReady = false;
 
     function init() {
         setupNewsletterForms();
@@ -41,6 +43,19 @@ import Toast from '../components/toast.js';
             .replace(/'/g, '&#039;');
     }
 
+    function safeAssetUrl(value) {
+        const candidate = String(value || '').trim();
+        if (!candidate) return '';
+        if (candidate.startsWith('/') && !candidate.startsWith('//') && !candidate.includes('..')) return candidate;
+
+        try {
+            const parsed = new URL(candidate, window.location.origin);
+            return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
+        } catch {
+            return '';
+        }
+    }
+
     /* ─── Tab & Search listeners ──────────────────────────────────────────── */
     function setupSpaEventListeners() {
         // Category tabs
@@ -48,7 +63,9 @@ import Toast from '../components/toast.js';
             tab.addEventListener('click', e => {
                 e.preventDefault();
                 document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('#postsFilterTabs .cinema-pill-tab').forEach(t => t.setAttribute('aria-selected', 'false'));
                 tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
                 currentCategory = tab.dataset.category || '';
                 loadPosts(1, currentCategory, currentSearch);
             });
@@ -97,11 +114,17 @@ import Toast from '../components/toast.js';
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
             const data = await resp.json();
-            renderHero(data.featured_post, page, category, search);
+            if (!heroReady) {
+                renderHero(data.featured_post);
+                heroReady = true;
+            }
             renderPostsGrid(data.data || []);
             renderPagination(data.pagination || {});
-            renderTrailers(data.sidebar_trailers || []);
-            renderTags(data.popular_tags || []);
+            if (!sidebarReady) {
+                renderTrailers(data.sidebar_trailers || []);
+                renderTags(data.popular_tags || []);
+                sidebarReady = true;
+            }
         } catch (err) {
             console.error('SPA posts fetch error:', err);
             Toast.error('Không thể tải bài viết, vui lòng kiểm tra kết nối.');
@@ -111,9 +134,15 @@ import Toast from '../components/toast.js';
 
     /* ─── Skeleton helpers ────────────────────────────────────────────────── */
     function showSkeletons() {
-        show('heroSkeleton');   hide('heroContent');
+        if (!heroReady) {
+            show('heroSkeleton');
+            hide('heroContent');
+        }
         show('postsSkeletonGrid'); hide('postsGrid'); hide('postsEmptyState');
-        show('sidebarTrailersSkeleton'); hide('sidebarTrailersGrid');
+        if (!sidebarReady) {
+            show('sidebarTrailersSkeleton');
+            hide('sidebarTrailersGrid');
+        }
     }
 
     function hideSkeletons() {
@@ -126,15 +155,15 @@ import Toast from '../components/toast.js';
     function hide(id) { document.getElementById(id)?.classList.add('d-none'); }
 
     /* ─── 1. Hero Banner ──────────────────────────────────────────────────── */
-    function renderHero(featured, page, category, search) {
+    function renderHero(featured) {
         hide('heroSkeleton');
         const heroEl = document.getElementById('heroContent');
         if (!heroEl) return;
 
-        if (page === 1 && !category && !search && featured) {
+        if (featured) {
             const slugUrl  = `/posts/${esc(featured.slug)}`;
-            const bgUrl    = esc(featured.image_url || featured.featured_image_url || '');
-            heroEl.style.backgroundImage = `url('${bgUrl}')`;
+            const bgUrl = safeAssetUrl(featured.image_url || featured.featured_image_url || '');
+            heroEl.style.backgroundImage = bgUrl ? `url("${bgUrl.replace(/"/g, '%22')}")` : '';
 
             const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
             const href = (id, url) => { const el = document.getElementById(id); if (el) el.setAttribute('href', url); };
@@ -307,6 +336,10 @@ import Toast from '../components/toast.js';
         grid.querySelectorAll('[data-trailer-image]').forEach((image) => {
             image.addEventListener('load', () => image.classList.remove('d-none'), { once: true });
             image.addEventListener('error', () => image.classList.add('d-none'), { once: true });
+
+            if (image.complete && image.naturalWidth > 0) {
+                image.classList.remove('d-none');
+            }
         });
         grid.classList.remove('d-none');
     }
