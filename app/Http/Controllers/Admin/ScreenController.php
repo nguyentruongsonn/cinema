@@ -106,17 +106,16 @@ class ScreenController extends Controller
         $validated['status'] = $request->has('status') ? 1 : 0;
 
         try {
-            DB::beginTransaction();
+            $screen = DB::transaction(function () use ($validated): Screen {
+                $screen = Screen::create($validated);
+                $this->generateSeatsForScreen($screen);
 
-            $screen = Screen::create($validated);
-            $this->generateSeatsForScreen($screen);
-
-            DB::commit();
+                return $screen;
+            });
 
             Log::info('Screen created', ['screen_id' => $screen->id, 'admin' => auth()->id()]);
             return response()->json(['success' => true, 'message' => 'Tạo phòng chiếu và sơ đồ ghế thành công.']);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Error creating screen', ['error' => $e->getMessage(), 'admin' => auth()->id()]);
             return response()->json(['success' => false, 'message' => 'Không thể tạo phòng chiếu.'], 500);
         }
@@ -142,22 +141,19 @@ class ScreenController extends Controller
         }
 
         try {
-            DB::beginTransaction();
+            DB::transaction(function () use ($screen, $validated): void {
+                $oldTemplateId = $screen->seat_layout_template_id;
+                $screen->update($validated);
 
-            $oldTemplateId = $screen->seat_layout_template_id;
-            $screen->update($validated);
-
-            // Re-generate seats only if template has changed
-            if ($oldTemplateId != $screen->seat_layout_template_id) {
-                $this->generateSeatsForScreen($screen);
-            }
-
-            DB::commit();
+                // Re-generate seats only if template has changed
+                if ($oldTemplateId != $screen->seat_layout_template_id) {
+                    $this->generateSeatsForScreen($screen);
+                }
+            });
 
             Log::info('Screen updated', ['screen_id' => $screen->id, 'admin' => auth()->id()]);
             return response()->json(['success' => true, 'message' => 'Cập nhật phòng chiếu thành công.']);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Error updating screen', ['screen_id' => $screen->id, 'error' => $e->getMessage(), 'admin' => auth()->id()]);
             return response()->json(['success' => false, 'message' => 'Không thể cập nhật phòng chiếu.'], 500);
         }
@@ -198,16 +194,15 @@ class ScreenController extends Controller
         }
 
         try {
-            DB::beginTransaction();
-            // Delete associated seats
-            Seat::where('screen_id', $screen->id)->delete();
-            $screen->delete();
-            DB::commit();
+            DB::transaction(function () use ($screen): void {
+                // Delete associated seats
+                Seat::where('screen_id', $screen->id)->delete();
+                $screen->delete();
+            });
 
             Log::info('Screen deleted', ['screen_id' => $screen->id, 'admin' => auth()->id()]);
             return response()->json(['success' => true, 'message' => 'Xóa phòng chiếu thành công.']);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Error deleting screen', ['screen_id' => $screen->id, 'error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Không thể xóa phòng chiếu.'], 500);
         }

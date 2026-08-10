@@ -94,60 +94,58 @@ class UserService
     public function createUser(array $data, ?int $roleId = null, bool $status = true, array $theaterIds = []): User
     {
         try {
-            DB::beginTransaction();
-
-            if (isset($data['email'])) {
-                $data['email'] = $this->normalizeEmail($data['email']);
-            }
-
-            if ($roleId !== null) {
-                $this->ensureActorCanAssignRole($roleId);
-            }
-
-            $actor = auth()->user();
-            if ($actor?->requiresTheaterScope()) {
-                $actorTheaters = $this->getActorTheaters($actor)->pluck('id')->toArray();
-                $diff = array_diff($theaterIds, $actorTheaters);
-                if (!empty($diff)) {
-                    throw new \DomainException('Theater manager can only assign users to their own theaters.');
+            $user = DB::transaction(function () use ($data, $roleId, $status, $theaterIds): User {
+                if (isset($data['email'])) {
+                    $data['email'] = $this->normalizeEmail($data['email']);
                 }
-            }
 
-            // Hash password if provided
-            if (!empty($data['password'])) {
-                $data['password'] = Hash::make($data['password']);
-            }
+                if ($roleId !== null) {
+                    $this->ensureActorCanAssignRole($roleId);
+                }
 
-            $allowedFields = [
-                'name',
-                'username',
-                'email',
-                'phone',
-                'birthday',
-                'gender',
-                'avatar_url',
-                'password',
-            ];
-            $userData = array_intersect_key($data, array_flip($allowedFields));
-            $userData['status'] = $status;
-            $userData['loyalty_points'] = 0;
+                $actor = auth()->user();
+                if ($actor?->requiresTheaterScope()) {
+                    $actorTheaters = $this->getActorTheaters($actor)->pluck('id')->toArray();
+                    $diff = array_diff($theaterIds, $actorTheaters);
+                    if (!empty($diff)) {
+                        throw new \DomainException('Theater manager can only assign users to their own theaters.');
+                    }
+                }
 
-            $user = User::create($userData);
+                if (!empty($data['password'])) {
+                    $data['password'] = Hash::make($data['password']);
+                }
 
-            if ($roleId !== null) {
-                $user->role_id = $roleId;
-                $user->save();
-            }
+                $allowedFields = [
+                    'name',
+                    'username',
+                    'email',
+                    'phone',
+                    'birthday',
+                    'gender',
+                    'avatar_url',
+                    'password',
+                ];
+                $userData = array_intersect_key($data, array_flip($allowedFields));
+                $userData['status'] = $status;
+                $userData['loyalty_points'] = 0;
 
-            $this->syncAssignedTheaters($user, $theaterIds);
+                $user = User::create($userData);
 
-            DB::commit();
+                if ($roleId !== null) {
+                    $user->role_id = $roleId;
+                    $user->save();
+                }
+
+                $this->syncAssignedTheaters($user, $theaterIds);
+
+                return $user;
+            });
 
             Log::info('User created', ['user_id' => $user->id]);
 
             return $user->load(['role', 'theaters:id,name']);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Failed to create user', [
                 'user_id' => $user->id ?? null,
                 'error' => 'User creation failed'
