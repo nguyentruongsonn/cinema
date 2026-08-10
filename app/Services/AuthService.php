@@ -19,12 +19,14 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\JWTAuth;
 
 class AuthService
 {
     private const MAX_LOGIN_ATTEMPTS = 10;
     private const LOCKOUT_SECONDS = 900;
+
+    public function __construct(private readonly JWTAuth $jwt) {}
 
     public function register(array $data, string $ipAddress, ?string $userAgent = null): array
     {
@@ -86,7 +88,7 @@ class AuthService
 
         $this->assignDefaultRole($user);
 
-        $accessToken = JWTAuth::fromUser($user);
+        $accessToken = $this->jwt->fromUser($user);
         $refreshTokenData = RefreshToken::generate(
             $user->id,
             $data['device_name'] ?? null,
@@ -124,7 +126,7 @@ class AuthService
             'status' => 1,
         ];
 
-        $accessToken = JWTAuth::attempt($loginCredentials);
+        $accessToken = $this->jwt->attempt($loginCredentials);
 
         if (!$accessToken) {
             $this->hitRateLimit($rateKey);
@@ -206,7 +208,7 @@ class AuthService
         $this->assignDefaultRole($user);
         $this->updateLastLogin($user, $ipAddress);
 
-        $accessToken = JWTAuth::fromUser($user);
+        $accessToken = $this->jwt->fromUser($user);
         $sessionToken = hash('sha256', $accessToken);
 
         LoginHistory::record(
@@ -344,7 +346,7 @@ class AuthService
 
     public function logout(?string $plainRefreshToken = null): void
     {
-        $token = JWTAuth::getToken();
+        $token = $this->jwt->getToken();
         $userId = auth()->id();
 
         if ($token && $userId) {
@@ -355,7 +357,7 @@ class AuthService
                 ->first()
                 ?->markLoggedOut();
 
-            JWTAuth::setToken($token)->invalidate();
+            $this->jwt->setToken($token)->invalidate();
         }
 
         if ($plainRefreshToken) {
@@ -387,7 +389,7 @@ class AuthService
         $refreshToken->markAsUsed();
         $refreshToken->revoke();
 
-        $accessToken = JWTAuth::fromUser($user);
+        $accessToken = $this->jwt->fromUser($user);
         $newRefreshTokenData = RefreshToken::generate(
             $user->id,
             $refreshToken->device_name,
@@ -437,7 +439,7 @@ class AuthService
             'access_token' => $accessToken,
             'refresh_token' => $refreshToken,
             'token_type' => 'bearer',
-            'expires_in' => JWTAuth::factory()->getTTL() * 60,
+            'expires_in' => $this->jwt->factory()->getTTL() * 60,
             'refresh_expires_in' => config('auth.refresh_token_ttl', 30) * 24 * 60 * 60,
         ];
     }

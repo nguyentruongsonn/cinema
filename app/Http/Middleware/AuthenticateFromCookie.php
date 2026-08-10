@@ -9,11 +9,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
-use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\JWTAuth;
 
 class AuthenticateFromCookie
 {
-    public function __construct(private readonly AuthService $authService) {}
+    public function __construct(
+        private readonly AuthService $authService,
+        private readonly JWTAuth $jwt
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -23,7 +26,7 @@ class AuthenticateFromCookie
 
         if ($token) {
             try {
-                $user = JWTAuth::setToken($token)->authenticate();
+                $user = $this->jwt->setToken($token)->authenticate();
                 $this->setUser($user);
             } catch (TokenExpiredException $e) {
                 if ($refreshToken) {
