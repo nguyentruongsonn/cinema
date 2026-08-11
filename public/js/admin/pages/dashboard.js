@@ -521,9 +521,9 @@
         // Refresh quietly only while the dashboard is visible.
         state.pollInterval = setInterval(() => {
             if (!document.hidden) {
-                fetchStats('all', { showSkeleton: false, skipCache: true });
+                fetchStats('all', { showSkeleton: false });
             }
-        }, 15000);
+        }, 60000);
     }
 
     window.onAdminPageCleanup(function () {

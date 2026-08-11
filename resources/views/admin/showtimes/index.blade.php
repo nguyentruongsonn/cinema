@@ -7,8 +7,14 @@
 
 {{-- ── Dòng 1: Header, Filters & Add Button ─────────────────── --}}
 <div class="admin-filter-container">
-    <div class="admin-filter-bar align-items-end">
-        <div class="admin-filter-fields align-items-end">
+    <div class="admin-filter-bar showtimes-filter-bar align-items-end">
+        <div class="admin-filter-fields showtimes-filter-fields align-items-end">
+            <div class="admin-filter-group auto-width showtimes-list-only d-none">
+                <select id="movieFilter" class="admin-filter-select filter-select-md" aria-label="Lọc theo phim">
+                    <option value="">Tất cả phim</option>
+                </select>
+            </div>
+
             <div class="admin-filter-group auto-width">
                 <label for="dateFromFilter" class="filter-label mb-1">Từ ngày</label>
                 <input type="date" id="dateFromFilter" class="admin-filter-input filter-date-md" title="Từ ngày">
@@ -38,9 +44,18 @@
                     <option value="inactive">Đóng</option>
                 </select>
             </div>
+
+            <div class="admin-filter-group auto-width showtimes-list-only d-none">
+                <select id="timeScopeFilter" class="admin-filter-select filter-select-md" aria-label="Phạm vi thời gian">
+                    <option value="upcoming" selected>Từ hiện tại trở đi</option>
+                    <option value="past">Đã qua</option>
+                    <option value="all">Tất cả thời gian</option>
+                </select>
+            </div>
+
         </div>
 
-        <form id="filterForm" class="admin-filter-search d-flex gap-2">
+        <form id="filterForm" class="admin-filter-search showtimes-filter-actions d-flex gap-2">
             <button class="admin-filter-btn" type="submit" title="Tìm kiếm">
                 <i class="bi bi-search"></i>
                 <span>Tìm kiếm</span>
@@ -51,10 +66,19 @@
             </button>
         </form>
 
-        <button type="button" class="admin-action-btn admin-filter-primary-action ms-auto" id="addShowtimeBtn">
+        <button type="button" class="admin-action-btn admin-filter-primary-action showtimes-primary-action" id="addShowtimeBtn">
             <i class="bi bi-plus-lg"></i> Thêm suất chiếu
         </button>
     </div>
+</div>
+
+<div class="showtimes-view-switch" role="group" aria-label="Kiểu hiển thị suất chiếu">
+    <button type="button" class="showtimes-view-switch-btn" data-showtimes-view="movies" aria-pressed="true">
+        <i class="bi bi-collection-play"></i> Theo phim
+    </button>
+    <button type="button" class="showtimes-view-switch-btn" data-showtimes-view="list" aria-pressed="false">
+        <i class="bi bi-list-ul"></i> Danh sách suất chiếu
+    </button>
 </div>
 
 {{-- ── Dòng 2: Bảng danh sách phim ────────────────────── --}}
@@ -169,6 +193,8 @@
             <thead>
                 <tr>
                     <th class="text-center showtime-stt-col">STT</th>
+                    <th class="text-center showtime-poster-col d-none" id="showtimePosterColumn">Poster</th>
+                    <th class="showtime-movie-col d-none" id="showtimeMovieColumn">Phim</th>
                     <th class="showtime-time-col">Thời gian</th>
                     <th class="showtime-screen-col">Phòng</th>
                     <th class="text-center showtime-capacity-col">Ghế</th>
@@ -178,7 +204,7 @@
                 </tr>
             </thead>
             <tbody id="showtimesTableBody">
-                <x-admin.skeleton-table cols="7" rows="5" :hasImage="false" />
+                <x-admin.skeleton-table cols="9" rows="5" :hasImage="true" />
             </tbody>
         </table>
     </div>

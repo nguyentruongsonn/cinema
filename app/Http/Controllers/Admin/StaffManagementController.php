@@ -52,7 +52,7 @@ class StaffManagementController extends Controller
         $actor = Auth::user();
         $theaterIds = $actor->theaters()->pluck('theaters.id')->toArray();
 
-        if (empty($theaterIds) && !$actor->hasAnyRole(['admin', 'super-admin'])) {
+        if (empty($theaterIds) && ! $actor->isAdmin()) {
             return $this->errorResponse('Bạn chưa được phân công rạp.', 403);
         }
 
@@ -63,7 +63,7 @@ class StaffManagementController extends Controller
             ->whereHas('role', fn ($q) => $q->whereIn('slug', $staffRoleSlugs));
 
         // Scope to manager's theaters (admin sees all)
-        if (!$actor->hasAnyRole(['admin', 'super-admin'])) {
+        if (! $actor->isAdmin()) {
             $query->whereHas('theaters', fn ($q) => $q->whereIn('theaters.id', $theaterIds));
         }
 
@@ -117,7 +117,7 @@ class StaffManagementController extends Controller
         }
 
         // Validate theaters are within manager's scope
-        if (!$actor->hasAnyRole(['admin', 'super-admin'])) {
+        if (! $actor->isAdmin()) {
             $requestedTheaterIds = array_map('intval', $validated['theater_ids']);
             $invalidTheaters = array_diff($requestedTheaterIds, $actorTheaterIds);
             if (!empty($invalidTheaters)) {
@@ -192,7 +192,7 @@ class StaffManagementController extends Controller
      */
     private function canManageUser(User $actor, User $target): bool
     {
-        if ($actor->hasAnyRole(['admin', 'super-admin'])) {
+        if ($actor->isAdmin()) {
             return true;
         }
 

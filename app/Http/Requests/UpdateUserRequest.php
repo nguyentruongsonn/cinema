@@ -56,9 +56,10 @@ class UpdateUserRequest extends FormRequest
 
             if ($this->has('role_id')) {
                 $role = Role::query()->find($this->input('role_id'));
-                if ($role?->slug && in_array($role->slug, ['admin', 'super-admin'], true)
-                    && !$actor->hasRole('super-admin')) {
-                    $validator->errors()->add('role_id', 'Only a super-admin may assign administrative roles.');
+                if ($role?->slug
+                    && ! array_key_exists($role->slug, config('rbac.roles', []))
+                    && ! array_key_exists($role->slug, config('rbac.legacy_role_map', []))) {
+                    $validator->errors()->add('role_id', 'Selected role is not assignable.');
                 }
             }
 

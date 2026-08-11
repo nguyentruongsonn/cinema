@@ -21,6 +21,7 @@ class OrderExpirationService
     private const ORDER_STATUS_PENDING = 1;
     private const ORDER_STATUS_CONFIRMED = 2;
     private const TRANSACTION_ATTEMPTS = 3;
+    private const EXPIRATION_BATCH_SIZE = 100;
 
     public function __construct(
         private readonly AuditSnapshotService $auditSnapshots
@@ -34,42 +35,60 @@ class OrderExpirationService
      */
     public function expirePendingOrders(?int $showtimeId = null): int
     {
-        return DB::transaction(function () use ($showtimeId) {
-            $now = now();
+        $totalExpired = 0;
 
-            // Lock orders before expiring to prevent payment races
-            $orders = Order::query()
+        do {
+            $orderIds = Order::query()
                 ->where('status', self::ORDER_STATUS_PENDING)
                 ->whereNull('paid_at')
                 ->whereNotNull('expired_at')
-                ->where('expired_at', '<=', $now)
+                ->where('expired_at', '<=', now())
                 ->when($showtimeId !== null, fn ($q) => $q->where('showtime_id', $showtimeId))
+                ->orderBy('expired_at')
+                ->orderBy('id')
+                ->limit(self::EXPIRATION_BATCH_SIZE)
+                ->pluck('id')
+                ->all();
+
+            if ($orderIds === []) {
+                break;
+            }
+
+            $expiredCount = DB::transaction(function () use ($orderIds) {
+                $orders = Order::query()
+                ->where('status', self::ORDER_STATUS_PENDING)
+                ->whereNull('paid_at')
+                ->whereNotNull('expired_at')
+                    ->where('expired_at', '<=', now())
+                    ->whereIn('id', $orderIds)
+                    ->orderBy('expired_at')
+                    ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
 
-            if ($orders->isEmpty()) {
-                return 0;
-            }
+                $expiredCount = 0;
 
-            $expiredCount = 0;
-
-            foreach ($orders as $order) {
-                // Double-check order is still expirable after lock
-                if ($this->canExpireOrder($order)) {
-                    $this->expireOrderAtomic($order);
-                    $expiredCount++;
+                foreach ($orders as $order) {
+                    if ($this->canExpireOrder($order)) {
+                        $this->expireOrderAtomic($order);
+                        $expiredCount++;
+                    }
                 }
-            }
 
-            if ($expiredCount > 0) {
-                Log::info('Expired pending orders cleaned up', [
-                    'showtime_id' => $showtimeId,
-                    'expired_count' => $expiredCount,
-                ]);
-            }
+                return $expiredCount;
+            }, self::TRANSACTION_ATTEMPTS);
 
-            return $expiredCount;
-        }, self::TRANSACTION_ATTEMPTS);
+            $totalExpired += $expiredCount;
+        } while (count($orderIds) === self::EXPIRATION_BATCH_SIZE);
+
+        if ($totalExpired > 0) {
+            Log::info('Expired pending orders cleaned up', [
+                'showtime_id' => $showtimeId,
+                'expired_count' => $totalExpired,
+            ]);
+        }
+
+        return $totalExpired;
     }
 
     /**

@@ -26,8 +26,12 @@
         dateFromFilter: document.getElementById('dateFromFilter'),
         dateToFilter: document.getElementById('dateToFilter'),
         statusFilter: document.getElementById('statusFilter'),
+        movieFilter: document.getElementById('movieFilter'),
+        timeScopeFilter: document.getElementById('timeScopeFilter'),
         resetFilterBtn: document.getElementById('resetFilterBtn'),
         addShowtimeBtn: document.getElementById('addShowtimeBtn'),
+        viewModeButtons: document.querySelectorAll('[data-showtimes-view]'),
+        listOnlyFilters: document.querySelectorAll('.showtimes-list-only'),
 
         // Movies table
         moviesTableBody: document.getElementById('moviesTableBody'),
@@ -38,6 +42,8 @@
         selectedMovieTitle: document.getElementById('selectedMovieTitle'),
         showtimesTableBody: document.getElementById('showtimesTableBody'),
         showtimeCount: document.getElementById('showtimeCount'),
+        showtimePosterColumn: document.getElementById('showtimePosterColumn'),
+        showtimeMovieColumn: document.getElementById('showtimeMovieColumn'),
         backToMoviesBtn: document.getElementById('backToMoviesBtn'),
         pagination: document.getElementById('paginationContainer'),
         paginationContainer: document.getElementById('paginationContainer'),
@@ -104,6 +110,14 @@
     let singleSlotCount = 0;
     let selectedMovieId = null;
     let currentShowtimePage = 1;
+    let viewMode = getInitialViewMode();
+
+    function getInitialViewMode() {
+        const urlView = new URLSearchParams(window.location.search).get('view');
+        if (urlView === 'movies' || urlView === 'list') return urlView;
+
+        return localStorage.getItem('admin:showtimes:view') === 'list' ? 'list' : 'movies';
+    }
 
     /* ── Utility Functions ───────────────────────────────── */
     function fillSelect(el, items, valueKey, labelKey, emptyLabel = '-- Chọn --') {
@@ -167,7 +181,7 @@
             if (mRes.ok) {
                 const mData = await mRes.json();
                 cachedMovies = mData.data || [];
-                [els.mMovieId, els.sMovieId, els.editFormMovieId].forEach(el =>
+                [els.movieFilter, els.mMovieId, els.sMovieId, els.editFormMovieId].forEach(el =>
                     fillSelect(el, cachedMovies, 'id', 'title', '-- Chọn phim --')
                 );
             }
@@ -289,6 +303,8 @@
 
     /* ── Show Showtimes for Selected Movie ───────────────── */
     async function showMovieShowtimes(movie) {
+        viewMode = 'movies';
+        syncViewMode();
         // Hide movies table, show showtimes panel
         document.getElementById('moviesPanel').classList.add('d-none');
         els.showtimesPanel.classList.remove('showtimes-panel-hidden');
@@ -306,22 +322,7 @@
         }
 
         try {
-            const url = new URL(window.location.origin + '/api/v1/admin/showtimes');
-            url.searchParams.append('page', page);
-            url.searchParams.append('per_page', '10');
-            url.searchParams.append('movie_id', movieId);
-            const rawStatusValue = els.statusFilter?.value || '';
-            const statusValue = rawStatusValue === '1'
-                ? 'active'
-                : rawStatusValue === '0'
-                    ? 'inactive'
-                    : rawStatusValue;
-            if (statusValue) url.searchParams.append('status', statusValue);
-
-            // Apply filters
-            if (els.dateFromFilter?.value) url.searchParams.append('date_from', els.dateFromFilter.value);
-            if (els.dateToFilter?.value) url.searchParams.append('date_to', els.dateToFilter.value);
-            if (els.theaterFilter?.value) url.searchParams.append('theater_id', els.theaterFilter.value);
+            const url = buildShowtimeUrl(page, movieId);
 
             const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'showtimes:list' });
             if (!res || !res.ok) throw new Error();
@@ -330,7 +331,7 @@
             const showtimes = json.data || [];
             const pagination = json.pagination || {};
 
-            renderShowtimesTable(showtimes, pagination.from ?? 1);
+            renderShowtimesTable(showtimes, pagination.from ?? 1, false);
             renderPagination(pagination);
             els.showtimeCount.textContent = `${pagination.total ?? showtimes.length} suất chiếu`;
 
@@ -343,7 +344,55 @@
         }
     }
 
-    function renderShowtimesTable(showtimes, startIndex) {
+    async function loadShowtimesList(page = 1) {
+        currentShowtimePage = page;
+        if (window.renderAdminTableSkeleton && els.showtimesTableBody) {
+            window.renderAdminTableSkeleton(els.showtimesTableBody, 8, 5, false);
+        }
+
+        try {
+            const res = await window.AdminCore.apiFetch(buildShowtimeUrl(page).toString(), { requestKey: 'showtimes:list' });
+            if (!res || !res.ok) throw new Error();
+
+            const json = await res.json();
+            const showtimes = json.data || [];
+            const pagination = json.pagination || {};
+
+            renderShowtimesTable(showtimes, pagination.from ?? 1, true);
+            renderPagination(pagination);
+            els.showtimeCount.textContent = `${pagination.total ?? showtimes.length} suất chiếu`;
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+            console.error(err);
+            els.showtimesTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted"><i class="bi bi-exclamation-circle fs-1 d-block mb-3 opacity-50"></i>Không thể tải suất chiếu lúc này.</td></tr>';
+            els.showtimeCount.textContent = '0 suất chiếu';
+            renderPagination({});
+        }
+    }
+
+    function buildShowtimeUrl(page, movieId = null) {
+        const url = new URL(window.location.origin + '/api/v1/admin/showtimes');
+        url.searchParams.set('page', String(page));
+        url.searchParams.set('per_page', viewMode === 'list' ? '15' : '10');
+        url.searchParams.set('time_scope', els.timeScopeFilter?.value || 'upcoming');
+        url.searchParams.set('sort_by', 'scheduled_at');
+        url.searchParams.set('sort_dir', 'asc');
+
+        if (movieId || els.movieFilter?.value) url.searchParams.set('movie_id', String(movieId || els.movieFilter.value));
+        if (els.statusFilter?.value) url.searchParams.set('status', els.statusFilter.value);
+        if (els.dateFromFilter?.value) url.searchParams.set('date_from', els.dateFromFilter.value);
+        if (els.dateToFilter?.value) url.searchParams.set('date_to', els.dateToFilter.value);
+        if (els.theaterFilter?.value) url.searchParams.set('theater_id', els.theaterFilter.value);
+
+        return url;
+    }
+
+    function renderShowtimesTable(showtimes, startIndex, includeMovie = false) {
+        if (includeMovie && (!showtimes || showtimes.length === 0)) {
+            els.showtimesTableBody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>Không có suất chiếu phù hợp.</td></tr>';
+            return;
+        }
+
         if (!showtimes || showtimes.length === 0) {
             els.showtimesTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>Không có suất chiếu nào.</td></tr>`;
             return;
@@ -374,9 +423,27 @@
             // Toggle switch for status
             const toggleId = `toggle-${st.id}`;
             const checked = st.status ? 'checked' : '';
+            const posterUrl = st.movie?.poster_display_url || (st.movie?.poster_path
+                ? `/storage/${st.movie.poster_path}`
+                : (st.movie?.poster_url || ''));
+            const posterCell = includeMovie ? `
+                <td class="text-center showtime-poster-cell">
+                    <div class="showtime-list-poster">
+                        ${posterUrl
+                            ? `<img src="${escapeHtml(posterUrl)}" alt="Poster ${escapeHtml(st.movie?.title || '')}" loading="lazy">`
+                            : '<i class="bi bi-image text-white-50" aria-hidden="true"></i>'}
+                    </div>
+                </td>` : '';
+            const movieCell = includeMovie ? `
+                <td class="showtime-movie-cell">
+                    <div class="showtime-movie-title">${escapeHtml(st.movie?.title || '—')}</div>
+                    <div class="showtime-movie-duration">${escapeHtml(st.movie?.duration || '—')} phút</div>
+                </td>` : '';
 
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
+                ${posterCell}
+                ${movieCell}
                 <td class="showtime-time-cell">
                     <div class="showtime-time text-white">${startTimeStr} - ${endTimeStr}</div>
                     <div class="showtime-date">${dateStr}</div>
@@ -418,7 +485,9 @@
     function renderPagination(pagination) {
         const normalizedPagination = pagination || {};
         window.AdminCore.renderAdminPagination(els.pagination, normalizedPagination, (page) => {
-            if (selectedMovieId) {
+            if (viewMode === 'list') {
+                loadShowtimesList(page);
+            } else if (selectedMovieId) {
                 loadShowtimesForMovie(selectedMovieId, page);
             }
         });
@@ -432,10 +501,50 @@
         selectedMovieId = null;
     }
 
+    function setViewMode(nextView) {
+        if (!['movies', 'list'].includes(nextView)) return;
+
+        viewMode = nextView;
+        localStorage.setItem('admin:showtimes:view', viewMode);
+        syncViewMode();
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('view', viewMode);
+        window.history.replaceState({}, '', url);
+
+        if (viewMode === 'list') {
+            document.getElementById('moviesPanel').classList.add('d-none');
+            els.showtimesPanel.classList.remove('showtimes-panel-hidden');
+            els.showtimesPanel.classList.add('showtimes-panel-visible');
+            els.selectedMovieTitle.textContent = 'Danh sách suất chiếu';
+            selectedMovieId = null;
+            loadShowtimesList(1);
+            return;
+        }
+
+        backToMoviesList();
+        loadMoviesList(1);
+    }
+
+    function syncViewMode() {
+        const isList = viewMode === 'list';
+        els.listOnlyFilters.forEach((element) => element.classList.toggle('d-none', !isList));
+        els.viewModeButtons.forEach((button) => {
+            const isActive = button.dataset.showtimesView === viewMode;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', String(isActive));
+        });
+        els.showtimeMovieColumn?.classList.toggle('d-none', !isList);
+        els.showtimePosterColumn?.classList.toggle('d-none', !isList);
+        els.backToMoviesBtn?.classList.toggle('d-none', isList);
+    }
+
     /* ── Filter Handlers ─────────────────────────────────── */
     function handleFilterSubmit(e) {
         if (e) e.preventDefault();
-        if (selectedMovieId) {
+        if (viewMode === 'list') {
+            loadShowtimesList(1);
+        } else if (selectedMovieId) {
             // Reload showtimes with filters
             loadShowtimesForMovie(selectedMovieId, 1);
         } else {
@@ -451,11 +560,14 @@
             fillSelect(els.theaterFilter, cachedTheaters, 'id', 'name', 'Tất cả rạp');
             els.theaterFilter.value = '';
         }
-        if (els.dateFromFilter) els.dateFromFilter.value = '';
-        if (els.dateToFilter) els.dateToFilter.value = '';
+        setThisWeekDate();
         if (els.statusFilter) els.statusFilter.value = '';
+        if (els.movieFilter) els.movieFilter.value = '';
+        if (els.timeScopeFilter) els.timeScopeFilter.value = 'upcoming';
 
-        if (selectedMovieId) {
+        if (viewMode === 'list') {
+            loadShowtimesList(1);
+        } else if (selectedMovieId) {
             loadShowtimesForMovie(selectedMovieId, 1);
         } else {
             loadMoviesList();
@@ -860,7 +972,9 @@
 
             window.showAdminToast(json.message || 'Cập nhật thành công!', 'success');
             bootstrap.Modal.getInstance(els.editModal)?.hide();
-            if (selectedMovieId) {
+            if (viewMode === 'list') {
+                loadShowtimesList(currentShowtimePage);
+            } else if (selectedMovieId) {
                 loadShowtimesForMovie(selectedMovieId, currentShowtimePage);
             }
         } catch (err) {
@@ -882,7 +996,9 @@
             const json = await res.json();
 
             window.showAdminToast(json.message || 'Xóa thành công!', 'success');
-            if (selectedMovieId) {
+            if (viewMode === 'list') {
+                loadShowtimesList(currentShowtimePage);
+            } else if (selectedMovieId) {
                 loadShowtimesForMovie(selectedMovieId, currentShowtimePage);
             }
         } catch (err) {
@@ -897,6 +1013,14 @@
         els.filterForm?.addEventListener('submit', handleFilterSubmit);
         els.resetFilterBtn?.addEventListener('click', handleResetFilter);
         els.branchFilter?.addEventListener('change', handleBranchChange);
+        els.viewModeButtons.forEach((button) => {
+            button.addEventListener('click', () => setViewMode(button.dataset.showtimesView));
+        });
+        [els.movieFilter, els.timeScopeFilter].forEach((element) => {
+            element?.addEventListener('change', () => {
+                if (viewMode === 'list') loadShowtimesList(1);
+            });
+        });
 
         // Back to movies
         els.backToMoviesBtn?.addEventListener('click', backToMoviesList);
@@ -1003,17 +1127,26 @@
 
     /* ── Initialize ──────────────────────────────────────── */
     async function init() {
-        // Do not pre-fill date filter so that clicking any movie displays all showtimes by default
-        // setThisWeekDate();
+        setThisWeekDate();
 
         // Fetch all prerequisites
         await fetchPrerequisites();
 
-        // Load movies list
-        await loadMoviesList();
-
         // Setup all event listeners
         setupEventListeners();
+
+        syncViewMode();
+        if (viewMode === 'list') {
+            document.getElementById('moviesPanel').classList.add('d-none');
+            els.showtimesPanel.classList.remove('showtimes-panel-hidden');
+            els.showtimesPanel.classList.add('showtimes-panel-visible');
+            els.selectedMovieTitle.textContent = 'Danh sách suất chiếu';
+            await loadShowtimesList();
+            return;
+        }
+
+        // Load movies list
+        await loadMoviesList();
 
     }
 

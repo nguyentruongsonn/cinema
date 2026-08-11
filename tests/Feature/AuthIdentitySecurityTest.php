@@ -18,7 +18,7 @@ class AuthIdentitySecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_cannot_create_or_promote_a_super_admin(): void
+    public function test_admin_cannot_create_or_promote_to_non_catalog_role(): void
     {
         [$admin, $regularUser, $superAdminRole] = $this->identityFixture();
         $this->actingAs($admin);
@@ -39,7 +39,7 @@ class AuthIdentitySecurityTest extends TestCase
         $this->assertFalse($regularUser->fresh()->hasRole('super-admin'));
     }
 
-    public function test_admin_cannot_modify_or_reset_super_admin_credentials(): void
+    public function test_admin_cannot_modify_or_reset_non_catalog_role_credentials(): void
     {
         [$admin, , $superAdminRole] = $this->identityFixture();
         $superAdmin = User::factory()->create(['role_id' => $superAdminRole->id]);
@@ -205,7 +205,7 @@ class AuthIdentitySecurityTest extends TestCase
     private function identityFixture(): array
     {
         $adminRole = Role::create(['name' => 'Admin', 'slug' => 'admin']);
-        $userRole = Role::create(['name' => 'User', 'slug' => 'user']);
+        $userRole = Role::create(['name' => 'Customer', 'slug' => 'customer']);
         $superAdminRole = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin']);
 
         return [

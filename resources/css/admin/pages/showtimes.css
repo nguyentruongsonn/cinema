@@ -950,8 +950,181 @@
     max-width: 120px !important;
 }
 
+#movieFilter,
+#timeScopeFilter {
+    width: 170px !important;
+    min-width: 170px !important;
+    max-width: 170px !important;
+}
+
+.showtimes-view-switch {
+    display: inline-flex;
+    gap: 2px;
+    margin: 0 0 1rem;
+    padding: 3px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+}
+
+.showtimes-view-switch-btn {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: #a1a1aa;
+    display: inline-flex;
+    font-size: 0.82rem;
+    font-weight: 600;
+    gap: 0.45rem;
+    padding: 0.5rem 0.8rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.showtimes-view-switch-btn:hover,
+.showtimes-view-switch-btn:focus-visible {
+    color: #f4f4f5;
+}
+
+.showtimes-view-switch-btn:focus-visible {
+    outline: 2px solid rgba(229, 9, 20, 0.7);
+    outline-offset: 2px;
+}
+
+.showtimes-view-switch-btn.is-active {
+    background: rgba(229, 9, 20, 0.14);
+    color: #fff;
+}
+
+.showtime-movie-col {
+    min-width: 200px;
+}
+
+.showtime-poster-col,
+.showtime-poster-cell {
+    width: 62px;
+}
+
+.showtime-list-poster {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    display: inline-flex;
+    height: 48px;
+    justify-content: center;
+    overflow: hidden;
+    width: 34px;
+}
+
+.showtime-list-poster img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.showtime-movie-title {
+    color: #f4f4f5;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.showtime-movie-duration {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.78rem;
+    margin-top: 0.2rem;
+}
+
+@media (max-width: 767.98px) {
+    .showtimes-view-switch {
+        display: flex;
+        width: 100%;
+    }
+
+    .showtimes-view-switch-btn {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+}
+
 #dateFilter {
     width: 150px !important;
     min-width: 150px !important;
     max-width: 150px !important;
+}
+
+.showtimes-filter-bar {
+    align-items: flex-end;
+    gap: 0.75rem;
+}
+
+.showtimes-filter-fields {
+    display: grid !important;
+    flex: 1 1 100% !important;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    width: 100%;
+}
+
+.showtimes-filter-fields .admin-filter-group {
+    min-width: 0;
+    width: auto;
+}
+
+.showtimes-filter-fields .admin-filter-group:has(#dateFromFilter) {
+    order: -2;
+}
+
+.showtimes-filter-fields .admin-filter-group:has(#dateToFilter) {
+    order: -1;
+}
+
+.showtimes-filter-fields .admin-filter-input,
+.showtimes-filter-fields .admin-filter-select {
+    max-width: none !important;
+    min-width: 0 !important;
+    width: 100% !important;
+}
+
+.showtimes-filter-fields #branchFilter,
+.showtimes-filter-fields #theaterFilter,
+.showtimes-filter-fields #statusFilter,
+.showtimes-filter-fields #movieFilter,
+.showtimes-filter-fields #timeScopeFilter {
+    max-width: none !important;
+    min-width: 0 !important;
+    width: 100% !important;
+}
+
+.showtimes-filter-actions {
+    flex: 0 0 auto;
+}
+
+.showtimes-primary-action {
+    margin-left: auto;
+}
+
+.showtimes-filter-actions .admin-filter-btn,
+.showtimes-primary-action {
+    min-height: 38px;
+    white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+    .showtimes-filter-fields {
+        flex-basis: 100%;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .showtimes-filter-actions,
+    .showtimes-primary-action {
+        flex: 1 1 calc(50% - 0.375rem);
+        margin-left: 0;
+    }
+
+    .showtimes-filter-actions .admin-filter-btn {
+        flex: 1 1 0;
+        justify-content: center;
+    }
 }

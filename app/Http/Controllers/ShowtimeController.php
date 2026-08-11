@@ -41,6 +41,7 @@ class ShowtimeController extends Controller
             'date' => ['nullable', 'date_format:Y-m-d'],
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            'time_scope' => ['nullable', Rule::in(['upcoming', 'past', 'all'])],
             'q' => ['nullable', 'string', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'sort_by' => ['nullable', Rule::in(['scheduled_at', 'created_at'])],
@@ -48,7 +49,7 @@ class ShowtimeController extends Controller
         ]);
 
         $filters['status'] = $filters['status'] ?? 'all';
-        $filters['upcoming'] = false;
+        $filters['time_scope'] = $filters['time_scope'] ?? 'upcoming';
 
         try {
             $showtimes = $this->showtimeService->getAll($filters);

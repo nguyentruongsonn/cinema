@@ -6,6 +6,7 @@ use App\Models\Movie;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\Screen;
 use App\Models\Showtime;
 use App\Models\Theater;
@@ -55,6 +56,36 @@ class RevenueServiceAnalyticsTest extends TestCase
     }
 
     #[Test]
+    public function revenue_stats_allocate_order_discounts_to_ticket_revenue(): void
+    {
+        $paidAt = now()->startOfDay()->addHours(12);
+        $movie = Movie::factory()->create(['title' => 'Discounted Movie']);
+        $theater = Theater::factory()->create(['name' => 'Discounted Theater']);
+        $screen = Screen::factory()->create(['theater_id' => $theater->id]);
+        $showtime = Showtime::factory()->create([
+            'movie_id' => $movie->id,
+            'screen_id' => $screen->id,
+        ]);
+
+        $order = $this->createPaidOrder($showtime, 150000, $paidAt, Payment::STATUS_SUCCESS);
+        $this->createTicketItem($order, 2, 100000);
+        $this->createProductItem($order, 1, 100000);
+
+        $stats = app(RevenueService::class)->getStats(
+            $paidAt->toDateString(),
+            $paidAt->toDateString()
+        );
+
+        $this->assertSame('150000.00', $stats['summary']['total_revenue']);
+        $this->assertSame('300000.00', $stats['summary']['gross_revenue']);
+        $this->assertSame('150000.00', $stats['summary']['discount_amount']);
+        $this->assertSame('100000.00', $stats['top_theater']['revenue']);
+        $this->assertSame('200000.00', $stats['top_theater']['gross_revenue']);
+        $this->assertSame('100000.00', $stats['top_movie']['revenue']);
+        $this->assertSame('200000.00', $stats['top_movie']['gross_revenue']);
+    }
+
+    #[Test]
     public function revenue_stats_reject_unbounded_or_reversed_ranges(): void
     {
         $service = app(RevenueService::class);
@@ -98,6 +129,18 @@ class RevenueServiceAnalyticsTest extends TestCase
         OrderItem::query()->forceCreate([
             'order_id' => $order->id,
             'item_type' => Ticket::class,
+            'item_id' => $order->id,
+            'quantity' => $quantity,
+            'unit_price' => $unitPrice,
+            'total_price' => $quantity * $unitPrice,
+        ]);
+    }
+
+    private function createProductItem(Order $order, int $quantity, int $unitPrice): void
+    {
+        OrderItem::query()->forceCreate([
+            'order_id' => $order->id,
+            'item_type' => Product::class,
             'item_id' => $order->id,
             'quantity' => $quantity,
             'unit_price' => $unitPrice,

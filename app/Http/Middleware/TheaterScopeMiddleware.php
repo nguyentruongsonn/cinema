@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Injects the authenticated user's assigned theater IDs into the request
  * so that controllers and services can scope data to the user's theaters.
- * Admin/super-admin users bypass scoping entirely.
+ * Admin users bypass scoping entirely.
  */
 class TheaterScopeMiddleware
 {
@@ -26,8 +26,8 @@ class TheaterScopeMiddleware
             return $next($request);
         }
 
-        // Admin/super-admin – no scope restrictions
-        if ($user->hasAnyRole(['admin', 'super-admin'])) {
+        // Admin: no scope restrictions
+        if ($user->isAdmin()) {
             $request->attributes->set('actor_is_scoped', false);
             return $next($request);
         }

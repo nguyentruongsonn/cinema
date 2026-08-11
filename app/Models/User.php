@@ -147,10 +147,6 @@ class User extends Authenticatable implements JWTSubject
             return false;
         }
 
-        if ($this->hasRole('super-admin')) {
-            return true;
-        }
-
         return array_key_exists($this->role->slug, config('rbac.roles', []));
     }
 
@@ -223,7 +219,7 @@ class User extends Authenticatable implements JWTSubject
     // Helper: check admin role
     public function isAdmin(): bool
     {
-        return $this->hasAnyRole(['admin', 'super-admin']);
+        return $this->hasRole('admin');
     }
 
     // Helper: check permission via role

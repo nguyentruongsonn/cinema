@@ -151,26 +151,22 @@ class UserControllerTest extends TestCase
     }
 
     #[Test]
-    public function cannot_mass_assign_role_via_update()
+    public function admin_can_update_user_role_via_update()
     {
         $this->actingAs($this->admin);
 
         $user = User::factory()->create(['role_id' => $this->userRole->id]);
-        $originalRoleId = $user->role_id;
-
         $updateData = [
             'name' => 'Updated Name',
-            'role_id' => $this->adminRole->id, // Attempting privilege escalation
+            'role_id' => $this->adminRole->id,
         ];
 
         $response = $this->putJson("/api/v1/admin/users/{$user->id}", $updateData);
 
-        // Request should be rejected because role changes require a dedicated permission.
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['role_id']);
+        $response->assertStatus(200);
 
         $user->refresh();
-        $this->assertEquals($originalRoleId, $user->role_id);
+        $this->assertEquals($this->adminRole->id, $user->role_id);
     }
 
     #[Test]

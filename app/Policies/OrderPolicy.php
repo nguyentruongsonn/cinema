@@ -118,7 +118,7 @@ class OrderPolicy
      */
     public function update(User $user, Order $order): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->isAdmin();
     }
 
     /**
@@ -128,7 +128,7 @@ class OrderPolicy
      */
     public function delete(User $user, Order $order): bool
     {
-        if (!$user->hasAnyRole(['admin', 'super-admin'])) {
+        if (!$user->isAdmin()) {
             return false;
         }
 

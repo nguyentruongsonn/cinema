@@ -499,8 +499,11 @@ class ShowtimeService
             $query->where('status', 0);
         }
 
-        if (($filters['upcoming'] ?? true) === true) {
+        $timeScope = $filters['time_scope'] ?? (($filters['upcoming'] ?? true) ? 'upcoming' : 'all');
+        if ($timeScope === 'upcoming') {
             $query->where('scheduled_at', '>=', now());
+        } elseif ($timeScope === 'past') {
+            $query->where('scheduled_at', '<', now());
         }
 
         if (! empty($filters['q'])) {

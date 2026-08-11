@@ -395,9 +395,9 @@
         loadStats();
         pollInterval = setInterval(() => {
             if (!document.hidden) {
-                loadStats({ showSkeleton: false, skipCache: true });
+                loadStats({ showSkeleton: false });
             }
-        }, 15000);
+        }, 60000);
     }
 
     window.onAdminPageLoad(() => {

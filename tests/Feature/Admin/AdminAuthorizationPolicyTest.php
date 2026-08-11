@@ -64,7 +64,7 @@ class AdminAuthorizationPolicyTest extends TestCase
             'delete_users',
             'manage_user_roles',
         ]);
-        $target = User::factory()->create();
+        $target = $this->makeUserWithRole('customer');
         $policy = new UserPolicy();
 
         $this->assertTrue($policy->viewAny($actor));
@@ -77,21 +77,19 @@ class AdminAuthorizationPolicyTest extends TestCase
         $this->assertFalse($policy->updateStatus($actor, $actor));
     }
 
-    public function test_admin_and_super_admin_roles_match_admin_route_policy_expectations(): void
+    public function test_admin_role_matches_admin_route_policy_expectations(): void
     {
         $admin = $this->makeUserWithRole('admin');
-        $superAdmin = $this->makeUserWithRole('super-admin');
         $targetAdmin = $this->makeUserWithRole('admin');
         $movie = new Movie();
         $promotion = new Promotion();
         $userPolicy = new UserPolicy();
 
         $this->assertTrue((new MoviePolicy())->create($admin));
-        $this->assertTrue((new MoviePolicy())->update($superAdmin, $movie));
+        $this->assertTrue((new MoviePolicy())->update($admin, $movie));
         $this->assertTrue((new PromotionPolicy())->create($admin));
-        $this->assertTrue((new PromotionPolicy())->resetUsageCount($superAdmin, $promotion));
-        $this->assertFalse($userPolicy->delete($admin, $targetAdmin));
-        $this->assertTrue($userPolicy->delete($superAdmin, $targetAdmin));
+        $this->assertTrue((new PromotionPolicy())->resetUsageCount($admin, $promotion));
+        $this->assertTrue($userPolicy->delete($admin, $targetAdmin));
     }
 
     public function test_media_resource_policies_are_registered_for_admin_routes(): void

@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\Payment;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -20,8 +21,8 @@ use InvalidArgumentException;
  * Ticket metrics count actual ticket order items (item_type = 'App\Models\Ticket'),
  * not order counts.
  *
- * Theater/movie revenue reports ticket revenue only, excluding food/combos.
- * Use dashboard service for gross order revenue.
+ * Theater/movie revenue is net ticket revenue. Discounts are allocated
+ * proportionally from successful payment totals to ticket line items.
  */
 class RevenueService
 {
@@ -43,7 +44,13 @@ class RevenueService
     {
         [$start, $end] = $this->validateAndParseDates($startDate, $endDate);
 
-        return [
+        $cacheKey = sprintf(
+            'admin:revenue:stats:%s:%s',
+            $start->toDateString(),
+            $end->toDateString()
+        );
+
+        return Cache::remember($cacheKey, now()->addSeconds(30), fn () => [
             'summary'           => $this->getSummary($start, $end),
             'top_theater'       => $this->getTopTheater($start, $end),
             'top_movie'         => $this->getTopMovie($start, $end),
@@ -51,7 +58,7 @@ class RevenueService
             'by_theater'        => $this->getRevenueByTheater($start, $end),
             'by_movie'          => $this->getRevenueByMovie($start, $end),
             'by_trend'          => $this->getRevenueTrend($start, $end),
-        ];
+        ]);
     }
 
     /**
@@ -95,28 +102,31 @@ class RevenueService
      */
     private function getSummary(Carbon $start, Carbon $end): array
     {
-        // Single query for both revenue and order count
-        $summary = DB::table('payments')
-            ->join('orders', 'orders.id', '=', 'payments.order_id')
-            ->where('payments.status', Payment::STATUS_SUCCESS)
-            ->whereBetween('payments.paid_at', [$start, $end])
+        $paidOrders = $this->paidOrdersSubquery($start, $end);
+
+        $summary = DB::query()
+            ->fromSub($paidOrders, 'paid_orders')
+            ->join('orders', 'orders.id', '=', 'paid_orders.order_id')
+            ->leftJoinSub($this->orderGrossSubquery(), 'order_gross', 'order_gross.order_id', '=', 'orders.id')
             ->selectRaw('
-                SUM(payments.amount) as total_revenue,
+                SUM(paid_orders.paid_amount) as total_revenue,
+                SUM(COALESCE(order_gross.gross_total, 0)) as gross_revenue,
                 COUNT(DISTINCT orders.id) as total_orders
             ')
             ->first();
 
-        // Count actual tickets sold (not orders)
         $ticketCount = DB::table('order_items')
-            ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->join('payments', 'payments.order_id', '=', 'orders.id')
+            ->joinSub($paidOrders, 'paid_orders', 'paid_orders.order_id', '=', 'order_items.order_id')
             ->where('order_items.item_type', 'App\\Models\\Ticket')
-            ->where('payments.status', Payment::STATUS_SUCCESS)
-            ->whereBetween('payments.paid_at', [$start, $end])
             ->sum('order_items.quantity');
 
+        $totalRevenue = (float) ($summary->total_revenue ?? 0);
+        $grossRevenue = (float) ($summary->gross_revenue ?? 0);
+
         return [
-            'total_revenue' => (string) ($summary->total_revenue ?? '0.00'),
+            'total_revenue' => $this->formatMoney($totalRevenue),
+            'gross_revenue' => $this->formatMoney($grossRevenue),
+            'discount_amount' => $this->formatMoney(max(0, $grossRevenue - $totalRevenue)),
             'total_orders'  => (int) ($summary->total_orders ?? 0),
             'total_tickets' => (int) $ticketCount,
         ];
@@ -127,30 +137,31 @@ class RevenueService
      */
     private function getTopTheater(Carbon $start, Carbon $end): array
     {
-        // Calculate total ticket revenue for percentage
-        $totalRevenue = DB::table('order_items')
-            ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->join('payments', 'payments.order_id', '=', 'orders.id')
-            ->where('order_items.item_type', 'App\\Models\\Ticket')
-            ->where('payments.status', Payment::STATUS_SUCCESS)
-            ->whereBetween('payments.paid_at', [$start, $end])
-            ->sum(DB::raw('order_items.quantity * order_items.unit_price'));
+        $paidOrders = $this->paidOrdersSubquery($start, $end);
+        $orderGross = $this->orderGrossSubquery();
+        $netTicketRevenue = $this->netTicketRevenueExpression();
 
-        // Get top theater by ticket revenue
+        $totalRevenue = DB::table('order_items')
+            ->joinSub($paidOrders, 'paid_orders', 'paid_orders.order_id', '=', 'order_items.order_id')
+            ->joinSub($orderGross, 'order_gross', 'order_gross.order_id', '=', 'order_items.order_id')
+            ->where('order_items.item_type', 'App\\Models\\Ticket')
+            ->selectRaw("{$netTicketRevenue} as revenue")
+            ->value('revenue') ?? 0;
+
         $top = DB::table('order_items')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->join('payments', 'payments.order_id', '=', 'orders.id')
+            ->joinSub($paidOrders, 'paid_orders', 'paid_orders.order_id', '=', 'orders.id')
+            ->joinSub($orderGross, 'order_gross', 'order_gross.order_id', '=', 'orders.id')
             ->join('showtimes', 'showtimes.id', '=', 'orders.showtime_id')
             ->join('screens', 'screens.id', '=', 'showtimes.screen_id')
             ->join('theaters', 'theaters.id', '=', 'screens.theater_id')
             ->where('order_items.item_type', 'App\\Models\\Ticket')
-            ->where('payments.status', Payment::STATUS_SUCCESS)
-            ->whereBetween('payments.paid_at', [$start, $end])
-            ->selectRaw('
+            ->selectRaw("
                 theaters.id,
                 theaters.name,
-                SUM(order_items.quantity * order_items.unit_price) as revenue
-            ')
+                {$netTicketRevenue} as revenue,
+                SUM(order_items.quantity * order_items.unit_price) as gross_revenue
+            ")
             ->groupBy('theaters.id', 'theaters.name')
             ->orderByDesc('revenue')
             ->first();
@@ -163,7 +174,8 @@ class RevenueService
 
         return [
             'name'       => $top->name,
-            'revenue'    => (string) number_format((float) $top->revenue, 2, '.', ''),
+            'revenue'    => $this->formatMoney((float) $top->revenue),
+            'gross_revenue' => $this->formatMoney((float) $top->gross_revenue),
             'percentage' => $pct,
         ];
     }
@@ -173,20 +185,24 @@ class RevenueService
      */
     private function getTopMovie(Carbon $start, Carbon $end): array
     {
+        $paidOrders = $this->paidOrdersSubquery($start, $end);
+        $orderGross = $this->orderGrossSubquery();
+        $netTicketRevenue = $this->netTicketRevenueExpression();
+
         $top = DB::table('order_items')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->join('payments', 'payments.order_id', '=', 'orders.id')
+            ->joinSub($paidOrders, 'paid_orders', 'paid_orders.order_id', '=', 'orders.id')
+            ->joinSub($orderGross, 'order_gross', 'order_gross.order_id', '=', 'orders.id')
             ->join('showtimes', 'showtimes.id', '=', 'orders.showtime_id')
             ->join('movies', 'movies.id', '=', 'showtimes.movie_id')
             ->where('order_items.item_type', 'App\\Models\\Ticket')
-            ->where('payments.status', Payment::STATUS_SUCCESS)
-            ->whereBetween('payments.paid_at', [$start, $end])
-            ->selectRaw('
+            ->selectRaw("
                 movies.id,
                 movies.title,
-                SUM(order_items.quantity * order_items.unit_price) as revenue,
+                {$netTicketRevenue} as revenue,
+                SUM(order_items.quantity * order_items.unit_price) as gross_revenue,
                 SUM(order_items.quantity) as tickets
-            ')
+            ")
             ->groupBy('movies.id', 'movies.title')
             ->orderByDesc('revenue')
             ->first();
@@ -197,7 +213,8 @@ class RevenueService
 
         return [
             'title'   => $top->title,
-            'revenue' => (string) number_format((float) $top->revenue, 2, '.', ''),
+            'revenue' => $this->formatMoney((float) $top->revenue),
+            'gross_revenue' => $this->formatMoney((float) $top->gross_revenue),
             'tickets' => (int) $top->tickets,
         ];
     }
@@ -258,25 +275,30 @@ class RevenueService
      */
     private function getRevenueByTheater(Carbon $start, Carbon $end): array
     {
+        $paidOrders = $this->paidOrdersSubquery($start, $end);
+        $orderGross = $this->orderGrossSubquery();
+        $netTicketRevenue = $this->netTicketRevenueExpression();
+
         return DB::table('order_items')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->join('payments', 'payments.order_id', '=', 'orders.id')
+            ->joinSub($paidOrders, 'paid_orders', 'paid_orders.order_id', '=', 'orders.id')
+            ->joinSub($orderGross, 'order_gross', 'order_gross.order_id', '=', 'orders.id')
             ->join('showtimes', 'showtimes.id', '=', 'orders.showtime_id')
             ->join('screens', 'screens.id', '=', 'showtimes.screen_id')
             ->join('theaters', 'theaters.id', '=', 'screens.theater_id')
             ->where('order_items.item_type', 'App\\Models\\Ticket')
-            ->where('payments.status', Payment::STATUS_SUCCESS)
-            ->whereBetween('payments.paid_at', [$start, $end])
-            ->selectRaw('
+            ->selectRaw("
                 theaters.name,
-                SUM(order_items.quantity * order_items.unit_price) as revenue
-            ')
+                {$netTicketRevenue} as revenue,
+                SUM(order_items.quantity * order_items.unit_price) as gross_revenue
+            ")
             ->groupBy('theaters.id', 'theaters.name')
             ->orderByDesc('revenue')
             ->get()
             ->map(fn($r) => [
                 'name' => $r->name,
-                'revenue' => (string) number_format((float) $r->revenue, 2, '.', ''),
+                'revenue' => $this->formatMoney((float) $r->revenue),
+                'gross_revenue' => $this->formatMoney((float) $r->gross_revenue),
             ])
             ->toArray();
     }
@@ -286,26 +308,31 @@ class RevenueService
      */
     private function getRevenueByMovie(Carbon $start, Carbon $end): array
     {
+        $paidOrders = $this->paidOrdersSubquery($start, $end);
+        $orderGross = $this->orderGrossSubquery();
+        $netTicketRevenue = $this->netTicketRevenueExpression();
+
         return DB::table('order_items')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->join('payments', 'payments.order_id', '=', 'orders.id')
+            ->joinSub($paidOrders, 'paid_orders', 'paid_orders.order_id', '=', 'orders.id')
+            ->joinSub($orderGross, 'order_gross', 'order_gross.order_id', '=', 'orders.id')
             ->join('showtimes', 'showtimes.id', '=', 'orders.showtime_id')
             ->join('movies', 'movies.id', '=', 'showtimes.movie_id')
             ->where('order_items.item_type', 'App\\Models\\Ticket')
-            ->where('payments.status', Payment::STATUS_SUCCESS)
-            ->whereBetween('payments.paid_at', [$start, $end])
-            ->selectRaw('
+            ->selectRaw("
                 movies.title,
-                SUM(order_items.quantity * order_items.unit_price) as revenue,
+                {$netTicketRevenue} as revenue,
+                SUM(order_items.quantity * order_items.unit_price) as gross_revenue,
                 SUM(order_items.quantity) as tickets
-            ')
+            ")
             ->groupBy('movies.id', 'movies.title')
             ->orderByDesc('revenue')
             ->limit(10)
             ->get()
             ->map(fn($r) => [
                 'title'   => $r->title,
-                'revenue' => (string) number_format((float) $r->revenue, 2, '.', ''),
+                'revenue' => $this->formatMoney((float) $r->revenue),
+                'gross_revenue' => $this->formatMoney((float) $r->gross_revenue),
                 'tickets' => (int) $r->tickets,
             ])
             ->toArray();
@@ -344,5 +371,32 @@ class RevenueService
                 'orders'  => (int) $r->orders,
             ])
             ->toArray();
+    }
+
+    private function paidOrdersSubquery(Carbon $start, Carbon $end)
+    {
+        return DB::table('payments')
+            ->where('status', Payment::STATUS_SUCCESS)
+            ->whereNotNull('paid_at')
+            ->whereBetween('paid_at', [$start, $end])
+            ->selectRaw('order_id, SUM(amount) as paid_amount, MAX(paid_at) as paid_at')
+            ->groupBy('order_id');
+    }
+
+    private function orderGrossSubquery()
+    {
+        return DB::table('order_items')
+            ->selectRaw('order_id, SUM(total_price) as gross_total')
+            ->groupBy('order_id');
+    }
+
+    private function netTicketRevenueExpression(): string
+    {
+        return 'SUM((order_items.quantity * order_items.unit_price) * CASE WHEN order_gross.gross_total > 0 THEN (1.0 * paid_orders.paid_amount) / order_gross.gross_total ELSE 0 END)';
+    }
+
+    private function formatMoney(float $amount): string
+    {
+        return number_format($amount, 2, '.', '');
     }
 }

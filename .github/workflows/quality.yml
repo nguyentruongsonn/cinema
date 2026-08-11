@@ -36,6 +36,7 @@ jobs:
       - run: npm run build
       - run: php artisan test
       - run: npm run test:browser:smoke
+      - run: npm run test:browser:admin-pos
       - run: npm run test:browser:auth-expiry
       - run: composer audit
       - run: npm audit --audit-level=moderate

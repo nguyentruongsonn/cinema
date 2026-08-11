@@ -74,13 +74,6 @@ class RolePermissionController extends Controller
         $this->authorizeAccess('permissions.assign');
         $this->ensureCatalogRole($role);
 
-        if ($role->slug === 'admin' && ! $request->user()?->hasRole('super-admin')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Admin role permissions are read-only for this account.',
-            ], 403);
-        }
-
         $canonicalSlugs = $this->allCanonicalPermissionSlugs();
 
         $validated = $request->validate([

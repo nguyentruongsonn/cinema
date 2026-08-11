@@ -194,10 +194,10 @@
                 return;
             }
 
-            if (order.checkout_url) {
-                window.location.href = order.checkout_url;
+            if (order.checkout_qr_svg) {
+                showQrPayment(order);
             } else {
-                toast('Không tìm thấy link thanh toán PayOS', 'error');
+                toast('Không tìm thấy mã QR thanh toán PayOS', 'error');
             }
         } catch (err) {
             toast(err.message || 'Không thể tạo đơn hàng', 'error');
@@ -287,11 +287,10 @@
 
     // ── QR Payment ────────────────────────────────────────
     function showQrPayment(order) {
-        const qrUrl = order.checkout_url || order.qr_url || '';
         qrAmount.textContent = formatVnd(order.total_amount || order.total || 0);
         
-        if (qrUrl) {
-            qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+        if (order.checkout_qr_svg) {
+            qrImage.src = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(order.checkout_qr_svg)}`;
         } else {
             qrImage.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
         }

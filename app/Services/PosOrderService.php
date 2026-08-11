@@ -216,11 +216,15 @@ class PosOrderService
             ? $showtime->screen->theater
             : ($order->theater_id !== null ? $order->theater : null);
         $paymentMethod = (string) ($order->payment_method ?? $payload['payment_method'] ?? data_get($order->payment, 'method', 'cash'));
+        $checkoutQrSvg = $order->checkout_url
+            ? app(QrCodeService::class)->svg((string) $order->checkout_url)
+            : null;
 
         return [
             'id'             => $order->id,
             'code'           => $order->code,
             'checkout_url'   => $order->checkout_url,
+            'checkout_qr_svg' => $checkoutQrSvg,
             'status'         => $order->payment_status,
             'payment_status' => $order->payment_status,
             'requires_payment' => ! $order->isPaid() && (float) $order->total_amount > 0,

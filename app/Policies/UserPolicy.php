@@ -56,7 +56,7 @@ class UserPolicy
             return true;
         }
 
-        if ($this->isAdministrativeUser($targetUser) && !$user->hasRole('super-admin')) {
+        if (! $this->hasCatalogRole($targetUser)) {
             return false;
         }
 
@@ -80,8 +80,7 @@ class UserPolicy
             return false;
         }
 
-        // Administrative accounts are protected by the role hierarchy.
-        if ($this->isAdministrativeUser($targetUser) && !$user->hasRole('super-admin')) {
+        if (! $this->hasCatalogRole($targetUser)) {
             return false;
         }
 
@@ -101,7 +100,7 @@ class UserPolicy
             return false;
         }
 
-        if ($this->isAdministrativeUser($targetUser) && !$user->hasRole('super-admin')) {
+        if (! $this->hasCatalogRole($targetUser)) {
             return false;
         }
 
@@ -140,7 +139,7 @@ class UserPolicy
             return false;
         }
 
-        if ($this->isAdministrativeUser($targetUser) && !$user->hasRole('super-admin')) {
+        if (! $this->hasCatalogRole($targetUser)) {
             return false;
         }
 
@@ -194,7 +193,7 @@ class UserPolicy
     /**
      * Determine if user can impersonate the target user.
      *
-     * Only super admin with specific permission.
+     * Impersonation is disabled until a dedicated audited workflow exists.
      */
     public function impersonate(User $user, User $targetUser): bool
     {
@@ -203,23 +202,26 @@ class UserPolicy
             return false;
         }
 
-        // Only super admin with impersonation permission
-        return $user->hasRole('super-admin');
+        return false;
     }
 
     private function canResetCredentials(User $user, User $targetUser): bool
     {
-        if ($this->isAdministrativeUser($targetUser)) {
-            return $user->hasRole('super-admin');
+        if (! $this->hasCatalogRole($targetUser)) {
+            return false;
         }
 
         return $user->hasPermission('users.update')
             && (! $user->requiresTheaterScope() || $this->sharesTheater($user, $targetUser));
     }
 
-    private function isAdministrativeUser(User $user): bool
+    private function hasCatalogRole(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->role === null
+            || (
+                array_key_exists($user->role->slug, config('rbac.roles', []))
+                || array_key_exists($user->role->slug, config('rbac.legacy_role_map', []))
+            );
     }
 
     private function sharesTheater(User $user, User $targetUser): bool

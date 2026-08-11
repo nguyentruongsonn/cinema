@@ -78,9 +78,10 @@ class StoreUserRequest extends FormRequest
             }
 
             $role = Role::query()->find($roleId);
-            if ($role?->slug && in_array($role->slug, ['admin', 'super-admin'], true)
-                && !($this->user()?->hasRole('super-admin') ?? false)) {
-                $validator->errors()->add('role_id', 'Chỉ super-admin mới được gán vai trò quản trị.');
+            if ($role?->slug
+                && ! array_key_exists($role->slug, config('rbac.roles', []))
+                && ! array_key_exists($role->slug, config('rbac.legacy_role_map', []))) {
+                $validator->errors()->add('role_id', 'Vai trò đã chọn không được phép gán.');
             }
 
             if ($this->has('theater_ids') && ! $this->user()?->hasPermission('users.create')) {

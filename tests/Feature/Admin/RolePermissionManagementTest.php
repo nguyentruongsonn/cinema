@@ -26,7 +26,7 @@ class RolePermissionManagementTest extends TestCase
         $rolesResponse->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonFragment(['slug' => 'ticket_seller'])
-            ->assertJsonFragment(['is_readonly' => true]);
+            ->assertJsonFragment(['is_readonly' => false]);
 
         $permissionsResponse = $this->actingAs($admin, 'api')
             ->getJson('/api/v1/admin/roles-permissions/permissions');
@@ -82,7 +82,7 @@ class RolePermissionManagementTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_admin_role_permissions_are_locked_for_regular_admin(): void
+    public function test_admin_can_update_admin_role_permissions(): void
     {
         $this->seedRbac();
         $admin = $this->makeUserWithRole('admin');
@@ -90,10 +90,14 @@ class RolePermissionManagementTest extends TestCase
 
         $response = $this->actingAs($admin, 'api')
             ->putJson("/api/v1/admin/roles-permissions/roles/{$adminRole->id}", [
-                'permissions' => ['orders.view'],
+                'permissions' => ['orders.view_all', 'dashboard.view'],
             ]);
 
-        $response->assertForbidden();
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.role.slug', 'admin');
+
+        $this->assertTrue($adminRole->fresh()->permissions()->where('slug', 'orders.view_all')->exists());
     }
 
     public function test_admin_can_view_audit_log_list_and_detail(): void

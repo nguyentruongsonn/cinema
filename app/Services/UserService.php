@@ -403,9 +403,8 @@ class UserService
         $role = Role::query()->findOrFail($roleId);
         $actor = auth()->user();
 
-        if (in_array($role->slug, ['admin', 'super-admin'], true)
-            && !($actor?->hasRole('super-admin') ?? false)) {
-            throw new \DomainException('Only a super-admin may assign administrative roles.');
+        if (! $this->isSupportedRoleSlug($role->slug)) {
+            throw new \DomainException('Selected role is not assignable.');
         }
 
         if ($actor?->requiresTheaterScope()) {
@@ -417,15 +416,24 @@ class UserService
 
     private function ensureActorCanManageAdministrativeUser(User $user): void
     {
-        if ($user->hasAnyRole(['admin', 'super-admin'])
-            && !(auth()->user()?->hasRole('super-admin') ?? false)) {
-            throw new \DomainException('Only a super-admin may manage administrative accounts.');
+        if (! $user->role) {
+            return;
+        }
+
+        if (! $this->isSupportedRoleSlug($user->role->slug)) {
+            throw new \DomainException('Selected user has an unsupported role.');
         }
     }
 
     private function normalizeEmail(string $email): string
     {
         return mb_strtolower(trim($email));
+    }
+
+    private function isSupportedRoleSlug(string $slug): bool
+    {
+        return array_key_exists($slug, config('rbac.roles', []))
+            || array_key_exists($slug, config('rbac.legacy_role_map', []));
     }
 
     public function getActorTheaters(User $actor): Collection

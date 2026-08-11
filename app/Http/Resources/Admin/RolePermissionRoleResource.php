@@ -19,7 +19,7 @@ class RolePermissionRoleResource extends JsonResource
             'slug' => $this->slug,
             'display_name' => $this->display_name,
             'description' => $this->description,
-            'is_readonly' => $this->slug === 'admin',
+            'is_readonly' => false,
             'permissions_count' => $this->whenCounted('permissions'),
         ];
     }

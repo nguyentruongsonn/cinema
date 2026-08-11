@@ -45,9 +45,9 @@ class ShowtimeAuthorizationTest extends TestCase
         $this->assertTrue($policy->delete($user, $showtime));
     }
 
-    public function test_policy_allows_super_admin_role_for_showtime_management(): void
+    public function test_policy_allows_admin_role_for_showtime_management(): void
     {
-        $user = $this->makeUserWithRole('super-admin');
+        $user = $this->makeUserWithRole('admin');
         $showtime = Showtime::factory()->create();
         $policy = new ShowtimePolicy();
 
@@ -55,6 +55,30 @@ class ShowtimeAuthorizationTest extends TestCase
         $this->assertTrue($policy->bulkCreate($user));
         $this->assertTrue($policy->update($user, $showtime));
         $this->assertTrue($policy->delete($user, $showtime));
+    }
+
+    public function test_showtime_list_defaults_to_upcoming_and_accepts_time_scope_filter(): void
+    {
+        $admin = $this->makeAdminUser();
+        $pastShowtime = Showtime::factory()->create(['scheduled_at' => now()->subMinute()]);
+        $upcomingShowtime = Showtime::factory()->create(['scheduled_at' => now()->addMinute()]);
+
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/v1/admin/showtimes')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $upcomingShowtime->id)
+            ->assertJsonPath('pagination.total', 1);
+
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/v1/admin/showtimes?time_scope=past')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $pastShowtime->id)
+            ->assertJsonPath('pagination.total', 1);
+
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/v1/admin/showtimes?time_scope=all')
+            ->assertOk()
+            ->assertJsonPath('pagination.total', 2);
     }
 
     public function test_update_endpoint_accepts_admin_route_id_parameter_for_authorization(): void
