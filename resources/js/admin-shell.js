@@ -1,0 +1,12 @@
+import '../../public/js/shared/security-standalone.js';
+import '../../public/js/core/api-client.js';
+import '../../public/js/users/auth.js';
+import '../../public/js/admin/admin-core.js';
+import '../../public/js/admin/app.js';
+import '../../public/js/admin/components/dialog.js';
+import '../../public/js/admin/components/media-input.js';
+import '../../public/js/admin/order-printing.js';
+import '../../public/js/shared/data-region.js';
+import '../../public/js/shared/tabs.js';
+import '../../public/js/admin/responsive-menu.js';
+import '../../public/js/admin/mobile-search-toggle.js';

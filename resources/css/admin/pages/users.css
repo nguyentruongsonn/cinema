@@ -1,0 +1,83 @@
+﻿.users-actions-cell {
+    min-width: 132px;
+    white-space: nowrap;
+}
+
+.user-row-actions {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 0.28rem;
+    justify-content: center;
+    padding: 0.25rem;
+}
+
+.user-action-btn {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.68);
+    display: inline-flex;
+    height: 32px;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    width: 32px;
+}
+
+.user-action-btn:hover,
+.user-action-btn:focus-visible {
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.user-action-edit:hover,
+.user-action-edit:focus-visible {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: rgba(59, 130, 246, 0.28);
+    color: #93c5fd;
+}
+
+.user-action-reset:hover,
+.user-action-reset:focus-visible {
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.28);
+    color: #fbbf24;
+}
+
+.user-action-delete:hover,
+.user-action-delete:focus-visible {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+.user-action-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 767.98px) {
+    .users-actions-cell {
+        min-width: 116px;
+    }
+
+    .user-action-btn {
+        height: 30px;
+        width: 30px;
+    }
+}
+
+.admin-user-roles-select {
+    min-height: 168px;
+    padding: 0.65rem 0.75rem;
+    width: 100%;
+}
+
+.admin-user-roles-select option {
+    border-radius: 8px;
+    margin-bottom: 0.25rem;
+    padding: 0.45rem 0.55rem;
+}

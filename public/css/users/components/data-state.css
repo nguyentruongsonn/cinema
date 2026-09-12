@@ -1,0 +1,15 @@
+.cinema-data-state {
+    align-items: center;
+    color: var(--cinema-muted, #8b8b92);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 240px;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.cinema-data-state__icon { color: rgba(255,255,255,.35); font-size: 3rem; margin-bottom: 16px; }
+.cinema-data-state__title { color: var(--cinema-text, #fff); font-size: 1.25rem; margin-bottom: 8px; }
+.cinema-data-state__message { line-height: 1.6; margin: 0; max-width: 520px; }
+.cinema-data-state--error .cinema-data-state__icon { color: var(--cinema-danger, #ff1722); }

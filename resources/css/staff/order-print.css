@@ -1,0 +1,263 @@
+:root {
+    color-scheme: light;
+    font-family: "Courier New", Courier, monospace;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: #e8e8e8;
+    color: #111;
+    margin: 0;
+}
+
+.print-toolbar {
+    align-items: center;
+    background: #18181b;
+    color: #fff;
+    display: flex;
+    font-family: Inter, Arial, sans-serif;
+    justify-content: space-between;
+    padding: 12px 18px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.print-toolbar div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.print-toolbar span {
+    color: #a1a1aa;
+    font-size: 12px;
+}
+
+.print-toolbar button {
+    background: #e50914;
+    border: 0;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    min-height: 40px;
+    padding: 0 18px;
+}
+
+.print-document {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 24px 12px;
+}
+
+.thermal-slip {
+    background: #fff;
+    box-shadow: 0 8px 30px rgb(0 0 0 / 12%);
+    overflow: hidden;
+    padding: 6mm;
+    position: relative;
+    width: 72mm;
+}
+
+.slip-watermark {
+    color: #000;
+    font-family: Arial, sans-serif;
+    font-size: 24mm;
+    font-weight: 900;
+    left: 50%;
+    opacity: 0.035;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(-35deg);
+    white-space: nowrap;
+}
+
+.slip-header,
+.slip-section,
+.slip-code {
+    position: relative;
+    z-index: 1;
+}
+
+.slip-header {
+    border-bottom: 1px dashed #555;
+    padding: 2mm 0 4mm;
+    text-align: center;
+}
+
+.slip-brand {
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+}
+
+.slip-header h1 {
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    margin: 10px 0 0;
+}
+
+.reprint-label {
+    border: 1px solid #111;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    margin-top: 8px;
+    padding: 3px 6px;
+}
+
+.slip-section {
+    border-bottom: 1px dashed #555;
+    display: flex;
+    flex-direction: column;
+    font-size: 11px;
+    gap: 4px;
+    line-height: 1.45;
+    padding: 4mm 0;
+}
+
+.block-title,
+.section-heading {
+    font-size: 12px;
+}
+
+.movie-section h2 {
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.2;
+    margin: 0 0 4px;
+    text-transform: uppercase;
+}
+
+.line-item {
+    align-items: flex-start;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.line-item > :first-child {
+    min-width: 0;
+}
+
+.line-item > :last-child {
+    flex: 0 0 auto;
+}
+
+.ticket-seat-grid {
+    display: grid;
+    grid-template-columns: 1fr 30mm;
+    gap: 4mm;
+}
+
+.ticket-seat-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.seat-highlight {
+    align-items: center;
+    border-left: 1px dashed #555;
+    justify-content: center;
+    text-align: center;
+}
+
+.seat-highlight span {
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.seat-highlight strong {
+    font-family: Arial, sans-serif;
+    font-size: 28px;
+    line-height: 1;
+}
+
+.totals-section small {
+    margin-top: 2px;
+    text-align: right;
+}
+
+.grand-total {
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+.slip-code {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    font-size: 9px;
+    gap: 5px;
+    padding-top: 5mm;
+    text-align: center;
+}
+
+.slip-code img {
+    height: 34mm;
+    image-rendering: crisp-edges;
+    width: 34mm;
+}
+
+.slip-code strong {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    overflow-wrap: anywhere;
+}
+
+.concession-item + .concession-item {
+    border-top: 1px dotted #888;
+    margin-top: 3mm;
+    padding-top: 3mm;
+}
+
+.concession-item ul {
+    margin: 5px 0 0;
+    padding-left: 16px;
+}
+
+.item-price {
+    color: #444;
+    font-size: 10px;
+    margin-top: 3px;
+}
+
+@media print {
+    @page {
+        margin: 0;
+        size: 80mm auto;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .print-toolbar {
+        display: none;
+    }
+
+    .print-document {
+        display: block;
+        padding: 0;
+    }
+
+    .thermal-slip {
+        break-after: page;
+        box-shadow: none;
+        margin: 0 auto;
+        min-height: 0;
+    }
+
+    .thermal-slip:last-child {
+        break-after: auto;
+    }
+}
