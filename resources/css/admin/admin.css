@@ -1,0 +1,174 @@
+/*!
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ADMIN PANEL - MODULAR CSS ARCHITECTURE
+ * Cinema Management System
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * This is the main entry point for all admin panel styles.
+ * Organized following component-based architecture for:
+ * - Better maintainability
+ * - Code reusability
+ * - Easier updates
+ * - Smaller file sizes
+ *
+ * @version 2.0.0
+ * @author Cinema Dev Team
+ */
+
+/* ── BASE LAYER ───────────────────────────────────────────────────────────
+   Foundation styles that everything else builds upon */
+
+@import './base/variables.css';
+@import './base/reset.css';
+@import './base/typography.css';
+
+/* ── COMPONENT LAYER ──────────────────────────────────────────────────────
+   Reusable UI components used across all admin pages */
+
+@import './components/buttons.css';
+@import './components/tables.css';
+@import './components/badges.css';
+@import './components/forms.css';
+@import './components/modals.css';
+@import './components/alerts.css';
+@import './components/pagination.css';
+@import './components/skeleton.css';
+@import './components/cards.css';
+
+/* ── LAYOUT LAYER ─────────────────────────────────────────────────────────
+   Page structure and layout components */
+
+/* Layout components to be created:
+@import './layout/admin-layout.css';
+@import './layout/grid.css';
+*/
+
+/* ── PAGE SPECIFIC LAYER ──────────────────────────────────────────────────
+   Styles unique to specific pages */
+
+/* Page-specific styles to be organized:
+@import './pages/dashboard.css';
+@import './pages/stats.css';
+@import './pages/seat-layout.css';
+*/
+
+/* ── TEMPORARY COMPATIBILITY LAYER ────────────────────────────────────────
+   Legacy CSS files - will be refactored and removed */
+
+/* Keep existing files temporarily for backward compatibility */
+@import './admin-common.css';
+@import './admin-modals.css';
+@import './style.css';
+
+/* Keep filter component last so the unified admin filter pattern overrides legacy filter styles. */
+@import './components/filters.css';
+@import './pages/banners.css';
+/* Individual page CSS will be refactored later:
+- branches.css
+- combos.css
+- movies.css
+- orders.css
+- showtimes.css
+- seat-layout-templates.css
+- seat-layout.css
+- stats.css
+*/
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REFACTORING PROGRESS NOTES
+   ═══════════════════════════════════════════════════════════════════════════
+
+   ✅ COMPLETED PHASE 2: CSS ARCHITECTURE
+   
+   Base Layer (Foundation):
+   - base/variables.css       (CSS custom properties & design tokens)
+   - base/reset.css           (Modern CSS reset)
+   - base/typography.css      (Typography system)
+
+   Component Layer (UI Components):
+   - components/buttons.css   (Button components - 9 variants)
+   - components/tables.css    (Table components with sorting, loading, responsive)
+   - components/badges.css    (Badge/status components)
+   - components/forms.css     (Complete form system)
+   - components/modals.css    (Modal dialogs with animations)
+   - components/filters.css   (Filter components)
+   - components/alerts.css    (Alerts, toasts, banners, notifications)
+   - components/pagination.css (Pagination controls)
+   - components/skeleton.css  (Loading skeletons)
+   - components/cards.css     (Card containers & layouts)
+
+   TOTAL: ~3,700 lines of clean, modular, reusable CSS
+
+   🚀 READY FOR PHASE 3: JAVASCRIPT ARCHITECTURE
+   
+   📋 NEXT STEPS:
+   - Create JavaScript base classes (AdminBasePage, AdminTable, AdminForm, AdminModal)
+   - Refactor page-specific JS to use base classes
+   - Apply new architecture to one page as proof of concept
+   - Create layout CSS files
+   - Gradually refactor remaining pages
+   - Remove legacy CSS after full migration
+
+   ═══════════════════════════════════════════════════════════════════════════ */
+@view-transition {
+    navigation: auto;
+}
+
+.turbo-progress-bar {
+    display: none !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+}
+
+::view-transition-group(admin-content) {
+    animation-duration: 200ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(admin-content) {
+    animation: admin-page-out 120ms ease-out both;
+}
+
+::view-transition-new(admin-content) {
+    animation: admin-page-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.admin-navigating .admin-main {
+    cursor: progress;
+    opacity: 0.98;
+    pointer-events: none;
+}
+
+.admin-main {
+    view-transition-name: admin-content;
+    transition-property: opacity;
+    transition-duration: 100ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.table-responsive {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 640px;
+}
+
+@keyframes admin-page-out {
+    to { opacity: 0; transform: translate3d(0, -2px, 0); }
+}
+
+@keyframes admin-page-in {
+    from { opacity: 0; transform: translate3d(0, 3px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(admin-content),
+    ::view-transition-new(admin-content) {
+        animation: none;
+    }
+
+    .admin-main {
+        transition: none;
+    }
+}

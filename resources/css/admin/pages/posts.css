@@ -1,0 +1,68 @@
+.post-image-upload {
+    min-height: 132px;
+}
+
+.note-editor.note-frame {
+    background: #1a1d20 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+}
+
+.note-editor .note-toolbar {
+    background: #212529 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    margin: 0 !important;
+    padding: 8px !important;
+}
+
+.note-editor .note-editing-area .note-editable {
+    background: #1a1d20 !important;
+    color: #fff !important;
+    line-height: 1.6;
+    min-height: 260px;
+}
+
+.note-editor .note-btn {
+    background: #2c3034 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 6px !important;
+    color: #fff !important;
+}
+
+.note-editor .note-btn:hover,
+.note-editor .note-dropdown-item:hover {
+    background: #373b3e !important;
+}
+
+.note-editor .note-btn:hover {
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.note-editor .note-dropdown-menu {
+    background: #212529 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.note-editor .note-dropdown-item,
+.note-modal .modal-content {
+    color: #fff !important;
+}
+
+.note-placeholder {
+    color: #888 !important;
+}
+
+.note-modal .modal-content {
+    background: #212529 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.note-modal .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.note-modal .modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}

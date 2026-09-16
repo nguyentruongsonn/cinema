@@ -1,0 +1,135 @@
+/* ── Combo Management Page ─────────────────────────────────────────────── */
+
+.combo-page-title {
+    flex-shrink: 0;
+}
+
+.combo-search-form {
+    max-width: 400px;
+}
+
+.combo-search-input {
+    border-radius: 8px 0 0 8px !important;
+}
+
+.combo-search-btn {
+    border-radius: 0 8px 8px 0 !important;
+}
+
+.combo-status-filter {
+    width: auto;
+    min-width: 160px;
+}
+
+.combo-col-stt {
+    width: 60px;
+}
+
+.combo-col-image {
+    width: 80px;
+}
+
+.combo-col-status {
+    width: 120px;
+}
+
+.combo-col-actions {
+    width: 140px;
+}
+
+/* ── Modal layout ─────────────────────────────────────────────────────── */
+
+#comboModal .modal-body {
+    max-height: 75vh;
+    overflow-y: auto;
+}
+
+#comboModal .combo-image-upload-box {
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+#comboModal .combo-image-upload-box:hover {
+    border-color: rgba(229, 9, 20, 0.45);
+}
+
+#comboModal .combo-image-preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    display: none;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#comboModal .combo-file-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+#comboModal .combo-upload-hint {
+    font-size: 0.72rem;
+}
+
+#comboModal .combo-clear-image-btn {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #a1a1aa !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 6px !important;
+    font-size: 0.78rem !important;
+}
+
+#comboModal .combo-items-container {
+    min-height: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+#comboModal .combo-stock-alert {
+    background: rgba(13, 110, 253, 0.1);
+    border-color: rgba(13, 110, 253, 0.3);
+}
+
+.combo-item-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.combo-item-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.combo-item-info {
+    flex: 1;
+}
+
+.combo-item-quantity {
+    width: 80px;
+}
+
+.combo-item-remove {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+}

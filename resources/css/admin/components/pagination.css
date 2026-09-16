@@ -1,0 +1,187 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Pagination Components
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Pagination Container ────────────────────────────────────────────── */
+.admin-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--admin-space-lg);
+    padding: var(--admin-space-lg);
+    border-top: 1px solid var(--admin-border);
+    margin-top: var(--admin-space-xl);
+}
+
+.admin-pagination-info {
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-sm);
+}
+
+.admin-pagination-info strong {
+    color: var(--admin-text-secondary);
+    font-weight: var(--admin-font-weight-semibold);
+}
+
+/* ── Pagination Controls ─────────────────────────────────────────────── */
+.admin-pagination-controls {
+    display: flex;
+    gap: var(--admin-space-xs);
+    align-items: center;
+}
+
+.admin-pagination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 var(--admin-space-sm);
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-md);
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-sm);
+    font-weight: var(--admin-font-weight-medium);
+    cursor: pointer;
+    transition: all var(--admin-transition-fast);
+    text-decoration: none;
+}
+
+.admin-pagination-btn:hover:not(.disabled) {
+    background: var(--admin-surface-hover);
+    border-color: var(--admin-primary);
+    color: var(--admin-primary-light);
+}
+
+.admin-pagination-btn.active {
+    background: rgba(229, 9, 20, 0.15);
+    border-color: var(--admin-primary);
+    color: var(--admin-primary-light);
+}
+
+.admin-pagination-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.admin-pagination-btn-prev,
+.admin-pagination-btn-next {
+    padding: 0 var(--admin-space-md);
+}
+
+/* ── Pagination Ellipsis ─────────────────────────────────────────────── */
+.admin-pagination-ellipsis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-sm);
+}
+
+/* ── Pagination Sizes ────────────────────────────────────────────────── */
+.admin-pagination-sm .admin-pagination-btn {
+    min-width: 32px;
+    height: 32px;
+    font-size: var(--admin-font-size-xs);
+}
+
+.admin-pagination-lg .admin-pagination-btn {
+    min-width: 40px;
+    height: 40px;
+    font-size: var(--admin-font-size-base);
+}
+
+/* ── Simple Pagination ───────────────────────────────────────────────── */
+.admin-pagination-simple {
+    justify-content: center;
+}
+
+.admin-pagination-simple .admin-pagination-info {
+    order: -1;
+}
+
+/* ── Per Page Selector ───────────────────────────────────────────────── */
+.admin-pagination-per-page {
+    display: flex;
+    align-items: center;
+    gap: var(--admin-space-sm);
+}
+
+.admin-pagination-per-page-label {
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-sm);
+    white-space: nowrap;
+}
+
+.admin-pagination-per-page-select {
+    min-width: 80px;
+}
+
+/* ── Pagination with Jump ────────────────────────────────────────────── */
+.admin-pagination-jump {
+    display: flex;
+    align-items: center;
+    gap: var(--admin-space-sm);
+}
+
+.admin-pagination-jump-label {
+    color: var(--admin-text-muted);
+    font-size: var(--admin-font-size-sm);
+}
+
+.admin-pagination-jump-input {
+    width: 60px;
+    text-align: center;
+}
+
+/* ── Compact Pagination ──────────────────────────────────────────────── */
+.admin-pagination-compact {
+    padding: var(--admin-space-md);
+}
+
+.admin-pagination-compact .admin-pagination-btn {
+    min-width: 32px;
+    height: 32px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .admin-pagination {
+        flex-direction: column;
+        gap: var(--admin-space-md);
+        padding: var(--admin-space-md);
+    }
+
+    .admin-pagination-controls {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .admin-pagination-info {
+        order: -1;
+        text-align: center;
+    }
+
+    .admin-pagination-per-page {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .admin-pagination-jump {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Hide page numbers on mobile, keep only prev/next */
+    .admin-pagination.mobile-simple .admin-pagination-btn:not(.admin-pagination-btn-prev):not(.admin-pagination-btn-next):not(.active) {
+        display: none;
+    }
+
+    .admin-pagination.mobile-simple .admin-pagination-ellipsis {
+        display: none;
+    }
+}

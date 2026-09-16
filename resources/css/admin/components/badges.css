@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Badge Components
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Base Badge Styles ───────────────────────────────────────────────── */
+.admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--admin-space-xs);
+    padding: var(--admin-space-xs) var(--admin-space-md);
+    border-radius: var(--admin-radius-sm);
+    font-size: var(--admin-font-size-xs);
+    font-weight: var(--admin-font-weight-bold);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    line-height: 1;
+    border: 1px solid transparent;
+}
+
+/* ── Badge with Dot Indicator ────────────────────────────────────────── */
+.admin-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    display: none;
+}
+
+.admin-badge.with-dot::before {
+    display: block;
+}
+
+/* ── Badge Variants ──────────────────────────────────────────────────── */
+.admin-badge-success {
+    background: var(--admin-success-bg);
+    color: var(--admin-success);
+    border-color: var(--admin-success-border);
+}
+
+.admin-badge-warning {
+    background: var(--admin-warning-bg);
+    color: var(--admin-warning);
+    border-color: var(--admin-warning-border);
+}
+
+.admin-badge-danger,
+.admin-badge-error {
+    background: var(--admin-error-bg);
+    color: var(--admin-error);
+    border-color: var(--admin-error-border);
+}
+
+.admin-badge-info {
+    background: var(--admin-info-bg);
+    color: var(--admin-info);
+    border-color: var(--admin-info-border);
+}
+
+.admin-badge-secondary,
+.admin-badge-default {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+    border-color: rgba(148, 163, 184, 0.25);
+}
+
+.admin-badge-primary {
+    background: rgba(229, 9, 20, 0.15);
+    color: var(--admin-primary-light);
+    border-color: rgba(229, 9, 20, 0.3);
+}
+
+/* ── Badge Sizes ─────────────────────────────────────────────────────── */
+.admin-badge-sm {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.65rem;
+}
+
+.admin-badge-lg {
+    padding: 0.5rem 0.9rem;
+    font-size: var(--admin-font-size-sm);
+}
+
+/* ── Outline Badge Variants ──────────────────────────────────────────── */
+.admin-badge-outline {
+    background: transparent;
+}
+
+.admin-badge-outline.admin-badge-success {
+    color: var(--admin-success);
+    border-color: var(--admin-success);
+}
+
+.admin-badge-outline.admin-badge-warning {
+    color: var(--admin-warning);
+    border-color: var(--admin-warning);
+}
+
+.admin-badge-outline.admin-badge-danger {
+    color: var(--admin-error);
+    border-color: var(--admin-error);
+}
+
+.admin-badge-outline.admin-badge-info {
+    color: var(--admin-info);
+    border-color: var(--admin-info);
+}
+
+/* ── Solid Badge Variants ────────────────────────────────────────────── */
+.admin-badge-solid {
+    color: var(--admin-text-primary);
+    border: none;
+}
+
+.admin-badge-solid.admin-badge-success {
+    background: var(--admin-success);
+}
+
+.admin-badge-solid.admin-badge-warning {
+    background: var(--admin-warning);
+}
+
+.admin-badge-solid.admin-badge-danger {
+    background: var(--admin-error);
+}
+
+.admin-badge-solid.admin-badge-info {
+    background: var(--admin-info);
+}
+
+.admin-badge-solid.admin-badge-primary {
+    background: var(--admin-primary);
+}
+
+/* ── Pill Badge (Rounded) ────────────────────────────────────────────── */
+.admin-badge-pill {
+    border-radius: var(--admin-radius-full);
+}
+
+/* ── Badge with Close Button ─────────────────────────────────────────── */
+.admin-badge.closeable {
+    padding-right: var(--admin-space-xs);
+}
+
+.admin-badge .badge-close {
+    margin-left: var(--admin-space-xs);
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background var(--admin-transition-fast);
+    opacity: 0.7;
+}
+
+.admin-badge .badge-close:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* ── Notification Badge (Counter) ────────────────────────────────────── */
+.admin-badge-notification {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 var(--admin-space-xs);
+    border-radius: var(--admin-radius-full);
+    background: var(--admin-error);
+    color: var(--admin-text-primary);
+    font-size: 0.65rem;
+    font-weight: var(--admin-font-weight-bold);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Status Badge Helpers ────────────────────────────────────────────── */
+.status-active,
+.status-published,
+.status-approved,
+.status-completed,
+.status-paid,
+.status-success {
+    background: var(--admin-success-bg);
+    color: var(--admin-success);
+    border-color: var(--admin-success-border);
+}
+
+.status-pending,
+.status-draft,
+.status-review {
+    background: var(--admin-warning-bg);
+    color: var(--admin-warning);
+    border-color: var(--admin-warning-border);
+}
+
+.status-inactive,
+.status-rejected,
+.status-cancelled,
+.status-failed,
+.status-unpaid {
+    background: var(--admin-error-bg);
+    color: var(--admin-error);
+    border-color: var(--admin-error-border);
+}
+
+.status-info,
+.status-processing {
+    background: var(--admin-info-bg);
+    color: var(--admin-info);
+    border-color: var(--admin-info-border);
+}
+
+/* ── Badge in Table Cells ────────────────────────────────────────────── */
+.admin-table td .admin-badge {
+    vertical-align: middle;
+}

@@ -1,0 +1,1130 @@
+/* ── Showtimes Admin - Premium Dark Theme ───────────────── */
+
+/* ── Add Showtime Modal - follows Movie Modal pattern ───────────────── */
+#addShowtimeModal .modal-content,
+#editShowtimeModal .modal-content {
+    background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        0 32px 96px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+    color: #f1f1f3 !important;
+}
+
+#addShowtimeModal .modal-header,
+#editShowtimeModal .modal-header {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+#addShowtimeModal .modal-title,
+#editShowtimeModal .modal-title {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    letter-spacing: 0.02em;
+}
+
+#addShowtimeModal .modal-title i,
+#editShowtimeModal .modal-title i {
+    color: #a1a1aa;
+}
+
+#addShowtimeModal .modal-body,
+#editShowtimeModal .modal-body {
+    background: transparent !important;
+    padding: 1.5rem !important;
+}
+
+#addShowtimeModal .modal-body::-webkit-scrollbar,
+#editShowtimeModal .modal-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+#addShowtimeModal .modal-body::-webkit-scrollbar-track,
+#editShowtimeModal .modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+#addShowtimeModal .modal-body::-webkit-scrollbar-thumb,
+#editShowtimeModal .modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+#addShowtimeModal .form-label,
+#editShowtimeModal .form-label {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.07em !important;
+    text-transform: uppercase !important;
+    color: #71717a !important;
+    margin-bottom: 0.4rem !important;
+}
+
+#addShowtimeModal .form-control,
+#addShowtimeModal .form-select,
+#editShowtimeModal .form-control,
+#editShowtimeModal .form-select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #f1f1f3 !important;
+    border-radius: 8px !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.9rem !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+#addShowtimeModal .form-control:focus,
+#addShowtimeModal .form-select:focus,
+#editShowtimeModal .form-control:focus,
+#editShowtimeModal .form-select:focus {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
+    color: #fff !important;
+    outline: none !important;
+}
+
+#addShowtimeModal .form-control::placeholder,
+#editShowtimeModal .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.2) !important;
+}
+
+#addShowtimeModal .form-select option,
+#editShowtimeModal .form-select option {
+    background: #1e1e24 !important;
+    color: #f1f1f3 !important;
+}
+
+#addShowtimeModal .form-check-input[type="checkbox"][role="switch"],
+#editShowtimeModal .form-check-input[type="checkbox"][role="switch"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    width: 2.4em !important;
+    height: 1.3em !important;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+#addShowtimeModal .form-check-input[type="checkbox"][role="switch"]:checked,
+#editShowtimeModal .form-check-input[type="checkbox"][role="switch"]:checked {
+    background-color: #e50914 !important;
+    border-color: #e50914 !important;
+}
+
+#addShowtimeModal .form-check-input[type="checkbox"][role="switch"]:focus,
+#editShowtimeModal .form-check-input[type="checkbox"][role="switch"]:focus {
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.18) !important;
+}
+
+#addShowtimeModal .form-check-label,
+#editShowtimeModal .form-check-label {
+    color: #a1a1aa !important;
+    font-size: 0.85rem !important;
+}
+
+#editShowtimeModal .modal-footer {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 0 0 16px 16px !important;
+    padding: 1rem 1.5rem !important;
+}
+
+#editShowtimeModal .modal-footer .btn {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #d4d4d8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.25rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    transition: background 0.2s !important;
+}
+
+#editShowtimeModal .modal-footer .btn:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+#addShowtimeModal .btn-primary-custom,
+#editShowtimeModal .btn-primary-custom {
+    background: linear-gradient(135deg, #e50914 0%, #b8070f 100%) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.5rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    box-shadow: 0 4px 16px rgba(229, 9, 20, 0.3) !important;
+    transition: all 0.2s !important;
+}
+
+#addShowtimeModal .btn-primary-custom:hover,
+#editShowtimeModal .btn-primary-custom:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.45) !important;
+}
+
+#addShowtimeModal .combo-tabs {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#addShowtimeModal .combo-tabs .nav-link {
+    background: transparent !important;
+    border: 0 !important;
+    border-bottom: 2px solid transparent !important;
+    color: #71717a !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    padding: 0.75rem 1rem !important;
+    transition: color 0.2s, border-color 0.2s !important;
+}
+
+#addShowtimeModal .combo-tabs .nav-link:hover {
+    color: #d4d4d8 !important;
+}
+
+#addShowtimeModal .combo-tabs .nav-link.active {
+    background: transparent !important;
+    border-color: #e50914 !important;
+    color: #fff !important;
+}
+
+.modal-backdrop.show {
+    opacity: 0.72 !important;
+}
+
+/* Legacy modal ids kept for compatibility */
+#showtimeModalContent {
+    background: linear-gradient(145deg, #18181b 0%, #1e1e24 60%, #212126 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        0 32px 96px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+    color: #f1f1f3 !important;
+}
+
+#showtimeModalHeader {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+#showtimeModalHeader .modal-title {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+    letter-spacing: 0.02em;
+}
+
+#showtimeModalBody {
+    background: transparent !important;
+    padding: 1.5rem !important;
+}
+
+#showtimeModalFooter {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 0 0 16px 16px !important;
+    padding: 1rem 1.5rem !important;
+}
+
+/* Time slot tag chips */
+.time-slot-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.3);
+    color: #c7d2fe;
+    border-radius: 20px;
+    padding: 3px 10px 3px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+
+.time-slot-tag:hover {
+    background: rgba(99,102,241,0.25);
+}
+
+.time-slot-tag .remove-tag {
+    cursor: pointer;
+    color: #a5b4fc;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0 2px;
+    border: none;
+    background: none;
+}
+
+.time-slot-tag .remove-tag:hover { color: #fff; }
+
+/* Single-day slot rows */
+.slot-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    transition: border-color 0.15s;
+}
+
+.slot-row:hover { border-color: rgba(255,255,255,0.15); }
+
+.slot-row .slot-time {
+    font-weight: 700;
+    color: #e4e4e7;
+    font-size: 1rem;
+}
+
+.slot-remove-btn {
+    background: rgba(239,68,68,0.08);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.15);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.slot-remove-btn:hover { background: rgba(239,68,68,0.18); }
+
+/* Preview badges */
+.preview-slot-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #d4d4d8;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-family: 'Courier New', monospace;
+}
+
+/* Add showtime panel toggle button */
+#toggleAddPanelBtn {
+    transition: all 0.2s;
+}
+
+/* Fix dropdown options visibility */
+.filter-input,
+.form-select {
+    background-color: #2a2a2a !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+}
+
+.filter-input option,
+.form-select option {
+    background-color: #1f1f1f;
+    color: #ffffff;
+}
+
+.filter-input option:hover,
+.form-select option:hover {
+    background-color: #2a2a2a;
+}
+
+/* Slot row select options */
+.slot-theater-select,
+.slot-screen-select {
+    background-color: #2a2a2a !important;
+    color: #ffffff !important;
+}
+
+.slot-theater-select option,
+.slot-screen-select option {
+    background-color: #1f1f1f;
+    color: #ffffff;
+}
+
+/* Movie Info Sidebar */
+.movie-info-sidebar {
+    position: sticky;
+    top: 20px;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    text-align: center;
+    min-height: 520px;
+    max-height: 520px;
+    overflow: hidden;
+}
+
+.movie-poster-placeholder {
+    width: 100%;
+    height: 280px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    transition: opacity 0.3s ease;
+}
+
+.movie-poster-sidebar {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    margin-bottom: 1rem;
+    transition: opacity 0.3s ease;
+}
+
+.movie-title-sidebar {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    min-height: 48px;
+    max-height: 48px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.3s ease;
+}
+
+.movie-meta-sidebar {
+    transition: opacity 0.3s ease;
+}
+
+.movie-meta-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #d4d4d8;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    min-height: 38px;
+    max-height: 38px;
+    overflow: hidden;
+}
+
+.meta-item i {
+    color: #6366f1;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.meta-item span {
+    flex: 1;
+    text-align: left;
+}
+
+/* ── Movies Table Styles ────────────────────────────────── */
+.movie-row {
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background-color 0.15s ease;
+}
+
+.movie-row:hover {
+    background-color: rgba(255,255,255,0.03);
+}
+
+.movie-stt {
+    width: 50px;
+}
+
+.movie-info-cell {
+    min-width: 320px;
+}
+
+.showtime-movie-poster-container {
+    width: 60px;
+    height: 90px;
+    min-height: 90px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.showtime-movie-poster-container img,
+.movie-poster-thumb {
+    width: 60px;
+    height: 90px;
+    min-height: 90px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: block;
+}
+
+.showtime-movie-poster-container img {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+}
+
+.movie-text-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.movie-title {
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.movie-release {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+}
+
+.movie-duration {
+    width: 120px;
+}
+
+.movie-categories {
+    min-width: 180px;
+}
+
+/* ── Showtimes Table Styles ─────────────────────────────── */
+.showtime-row {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background-color 0.15s ease;
+}
+
+.showtime-row:hover {
+    background-color: rgba(255,255,255,0.02);
+}
+
+.showtime-time-cell {
+    min-width: 140px;
+}
+
+.showtime-time,
+.admin-table .showtime-time,
+.showtimes-management-page .showtime-time {
+    font-weight: 700;
+    color: #f8f9fa !important;
+    font-size: 1.1rem;
+    margin-bottom: 2px;
+}
+
+.showtime-date {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+}
+
+.showtime-theater-cell {
+    min-width: 200px;
+}
+
+.theater-name {
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.screen-name {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+}
+
+/* ── Action Buttons ─────────────────────────────────────── */
+.btn-edit-showtime {
+    color: var(--text-secondary, #a1a1aa);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.15s ease;
+}
+
+.btn-edit-showtime:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.btn-delete-showtime {
+    color: #ef4444;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    transition: all 0.15s ease;
+}
+
+.btn-delete-showtime:hover {
+    background: rgba(239,68,68,0.2);
+    color: #fff;
+}
+
+/* ── Back Button ────────────────────────────────────────── */
+.back-to-movies-btn {
+    background: linear-gradient(135deg, #e50914 0%, #ff1a1a 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(229, 9, 20, 0.3);
+}
+
+.back-to-movies-btn:hover {
+    background: linear-gradient(135deg, #ff1a1a 0%, #ff3838 100%);
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.5);
+    transform: translateY(-1px);
+}
+
+.back-to-movies-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(229, 9, 20, 0.3);
+}
+
+/* ── Filter Bar Elements ────────────────────────────────── */
+.filter-group {
+    flex-shrink: 0;
+}
+
+.filter-group-branch {
+    max-width: 200px;
+}
+
+.filter-group-theater {
+    max-width: 200px;
+}
+
+.filter-group-date {
+    width: 160px;
+}
+
+.filter-group-status {
+    max-width: 160px;
+}
+
+.filter-search-btn {
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+}
+
+.time-input-label-hint {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.72rem;
+}
+
+.preview-label {
+    color: var(--text-secondary, #a1a1aa);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+/* ── Badge Styles ───────────────────────────────────────── */
+.count-badge {
+    background: rgba(255,255,255,0.08);
+    color: #a1a1aa;
+    font-size: 0.8rem;
+}
+
+/* ── Pagination Styles ──────────────────────────────────── */
+#paginationContainer .pagination {
+    gap: 0.5rem;
+}
+
+#paginationContainer .page-link {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #d4d4d8;
+    padding: 0.65rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    min-width: 45px;
+    text-align: center;
+}
+
+#paginationContainer .page-link:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(229, 9, 20, 0.5);
+    color: #fff;
+}
+
+#paginationContainer .page-item.active .page-link {
+    background: linear-gradient(135deg, #e50914 0%, #ff1a1a 100%);
+    border-color: #e50914;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(229, 9, 20, 0.3);
+}
+
+/* ── Button Styles ──────────────────────────────────────── */
+.btn-preview {
+    background: rgba(255,255,255,0.07);
+    color: #d4d4d8;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: background 0.15s ease;
+}
+
+.btn-preview:hover {
+    background: rgba(255,255,255,0.12);
+}
+
+.btn-add-time {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+}
+
+.btn-add-slot {
+    background: rgba(255,255,255,0.06);
+    color: #a1a1aa;
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 6px;
+    width: 100%;
+    padding: 0.5rem;
+}
+
+.btn-modal-cancel {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* ── Table Styling ──────────────────────────────────────── */
+.table-transparent {
+    background: transparent;
+}
+
+.pagination-border {
+    border-top: 1px solid var(--border-color);
+}
+
+.showtimes-filter-title {
+    min-width: 120px;
+}
+
+.showtimes-panel,
+.showtimes-panel-hidden {
+    display: none;
+}
+
+.showtimes-panel-visible {
+    display: block;
+}
+
+.showtimes-selected-movie-title {
+    color: #f8f9fa;
+}
+
+.showtimes-modal-body {
+    max-height: 75vh;
+    overflow-y: auto;
+}
+
+.showtimes-cancel-btn {
+    background: rgba(255,255,255,0.1);
+}
+
+.skeleton-text-xs-center {
+    width: 30px;
+    margin: 0 auto;
+}
+
+.skeleton-text-sm-center {
+    width: 40px;
+    margin: 0 auto;
+}
+
+.skeleton-text-md-center {
+    width: 50px;
+    margin: 0 auto;
+}
+
+.skeleton-flex-fill {
+    flex: 1;
+}
+
+.skeleton-w-42 {
+    width: 42%;
+}
+
+.skeleton-w-45 {
+    width: 45%;
+}
+
+.skeleton-w-48 {
+    width: 48%;
+}
+
+.skeleton-w-50 {
+    width: 50%;
+}
+
+.skeleton-w-55 {
+    width: 55%;
+}
+
+.skeleton-w-60 {
+    width: 60%;
+}
+
+.skeleton-w-65 {
+    width: 65%;
+}
+
+.skeleton-w-70 {
+    width: 70%;
+}
+
+.skeleton-w-75 {
+    width: 75%;
+}
+
+.skeleton-w-80 {
+    width: 80%;
+}
+
+.skeleton-w-85 {
+    width: 85%;
+}
+
+.skeleton-mb-sm {
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-badge-md {
+    width: 80px;
+}
+
+.skeleton-center {
+    margin: 0 auto;
+}
+
+/* ── Showtimes Table Header Widths ──────────────────────── */
+.showtime-stt-col {
+    width: 50px;
+}
+
+.showtime-time-col {
+    width: 140px;
+}
+
+.showtime-screen-col {
+    min-width: 180px;
+}
+
+.showtime-capacity-col {
+    width: 80px;
+}
+
+.showtime-format-col {
+    min-width: 150px;
+}
+
+.showtime-active-col {
+    width: 100px;
+}
+
+.showtime-actions-col {
+    width: 120px;
+}
+
+/* ── New Table Cell Styles ──────────────────────────────── */
+.screen-name-display {
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.theater-name-sub {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.5);
+}
+
+.format-display {
+    color: #d4d4d8;
+    font-size: 0.9rem;
+}
+
+/* ── Toggle Switch Styling ──────────────────────────────── */
+.status-toggle {
+    cursor: pointer;
+    width: 40px;
+    height: 20px;
+    background-color: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.status-toggle:checked {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+
+.status-toggle:focus {
+    box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25);
+}
+
+.form-check-input:checked[type=checkbox] {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+}
+
+/* ── Form Input Widths ──────────────────────────────────── */
+.time-input-sm {
+    width: 130px;
+}
+
+/* ── Responsive Table Adjustments ───────────────────────── */
+@media (max-width: 1400px) {
+    .movie-info-cell {
+        min-width: 280px;
+    }
+
+    .movie-categories {
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .movie-poster-thumb {
+        width: 40px;
+        height: 60px;
+    }
+
+    .movie-duration,
+    .movie-categories {
+        font-size: 0.9rem;
+    }
+}
+
+/* ── Fix Filter Width Jumping ───────────────────────────── */
+/* Prevent layout shift when filter options load by fixing widths */
+#branchFilter {
+    width: 160px !important;
+    min-width: 160px !important;
+    max-width: 160px !important;
+}
+
+#theaterFilter {
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+}
+
+#statusFilter {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+}
+
+#movieFilter,
+#timeScopeFilter {
+    width: 170px !important;
+    min-width: 170px !important;
+    max-width: 170px !important;
+}
+
+.showtimes-view-switch {
+    display: inline-flex;
+    gap: 2px;
+    margin: 0 0 1rem;
+    padding: 3px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+}
+
+.showtimes-view-switch-btn {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: #a1a1aa;
+    display: inline-flex;
+    font-size: 0.82rem;
+    font-weight: 600;
+    gap: 0.45rem;
+    padding: 0.5rem 0.8rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.showtimes-view-switch-btn:hover,
+.showtimes-view-switch-btn:focus-visible {
+    color: #f4f4f5;
+}
+
+.showtimes-view-switch-btn:focus-visible {
+    outline: 2px solid rgba(229, 9, 20, 0.7);
+    outline-offset: 2px;
+}
+
+.showtimes-view-switch-btn.is-active {
+    background: rgba(229, 9, 20, 0.14);
+    color: #fff;
+}
+
+.showtime-movie-col {
+    min-width: 200px;
+}
+
+.showtime-poster-col,
+.showtime-poster-cell {
+    width: 62px;
+}
+
+.showtime-list-poster {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    display: inline-flex;
+    height: 48px;
+    justify-content: center;
+    overflow: hidden;
+    width: 34px;
+}
+
+.showtime-list-poster img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.showtime-movie-title {
+    color: #f4f4f5;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.showtime-movie-duration {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.78rem;
+    margin-top: 0.2rem;
+}
+
+@media (max-width: 767.98px) {
+    .showtimes-view-switch {
+        display: flex;
+        width: 100%;
+    }
+
+    .showtimes-view-switch-btn {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+}
+
+#dateFilter {
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+}
+
+.showtimes-filter-bar {
+    align-items: flex-end;
+    gap: 0.75rem;
+}
+
+.showtimes-filter-fields {
+    display: grid !important;
+    flex: 1 1 100% !important;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    width: 100%;
+}
+
+.showtimes-filter-fields .admin-filter-group {
+    min-width: 0;
+    width: auto;
+}
+
+.showtimes-filter-fields .admin-filter-group:has(#dateFromFilter) {
+    order: -2;
+}
+
+.showtimes-filter-fields .admin-filter-group:has(#dateToFilter) {
+    order: -1;
+}
+
+.showtimes-filter-fields .admin-filter-input,
+.showtimes-filter-fields .admin-filter-select {
+    max-width: none !important;
+    min-width: 0 !important;
+    width: 100% !important;
+}
+
+.showtimes-filter-fields #branchFilter,
+.showtimes-filter-fields #theaterFilter,
+.showtimes-filter-fields #statusFilter,
+.showtimes-filter-fields #movieFilter,
+.showtimes-filter-fields #timeScopeFilter {
+    max-width: none !important;
+    min-width: 0 !important;
+    width: 100% !important;
+}
+
+.showtimes-filter-actions {
+    flex: 0 0 auto;
+}
+
+.showtimes-primary-action {
+    margin-left: auto;
+}
+
+.showtimes-filter-actions .admin-filter-btn,
+.showtimes-primary-action {
+    min-height: 38px;
+    white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+    .showtimes-filter-fields {
+        flex-basis: 100%;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .showtimes-filter-actions,
+    .showtimes-primary-action {
+        flex: 1 1 calc(50% - 0.375rem);
+        margin-left: 0;
+    }
+
+    .showtimes-filter-actions .admin-filter-btn {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+}

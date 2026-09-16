@@ -1,0 +1,187 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin CSS Variables - Centralized Design Tokens
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+    /* ── Colors ────────────────────────────────────────────────────── */
+
+    /* Primary Brand */
+    --admin-primary: #e50914;
+    --admin-primary-dark: #b8070f;
+    --admin-primary-light: #ff1a1f;
+
+    /* Backgrounds */
+    --admin-bg-primary: #18181b;
+    --admin-bg-secondary: #1e1e24;
+    --admin-bg-tertiary: #212126;
+    --admin-bg-elevated: #27272a;
+
+    /* Surface */
+    --admin-surface: rgba(255, 255, 255, 0.03);
+    --admin-surface-hover: rgba(255, 255, 255, 0.07);
+    --admin-surface-active: rgba(255, 255, 255, 0.12);
+
+    /* Borders */
+    --admin-border: rgba(255, 255, 255, 0.08);
+    --admin-border-light: rgba(255, 255, 255, 0.05);
+    --admin-border-focus: rgba(255, 255, 255, 0.3);
+
+    /* Text */
+    --admin-text-primary: #ffffff;
+    --admin-text-secondary: #f1f1f3;
+    --admin-text-muted: #a1a1aa;
+    --admin-text-disabled: #71717a;
+    --admin-text-placeholder: rgba(255, 255, 255, 0.2);
+
+    /* Status Colors */
+    --admin-success: #22c55e;
+    --admin-success-bg: rgba(34, 197, 94, 0.1);
+    --admin-success-border: rgba(34, 197, 94, 0.25);
+
+    --admin-warning: #f59e0b;
+    --admin-warning-bg: rgba(245, 158, 11, 0.1);
+    --admin-warning-border: rgba(245, 158, 11, 0.25);
+
+    --admin-error: #ef4444;
+    --admin-error-bg: rgba(239, 68, 68, 0.1);
+    --admin-error-border: rgba(239, 68, 68, 0.25);
+
+    --admin-info: #3b82f6;
+    --admin-info-bg: rgba(59, 130, 246, 0.1);
+    --admin-info-border: rgba(59, 130, 246, 0.25);
+
+    /* ── Spacing ───────────────────────────────────────────────────── */
+    --admin-space-xs: 0.25rem;    /* 4px */
+    --admin-space-sm: 0.5rem;     /* 8px */
+    --admin-space-md: 0.75rem;    /* 12px */
+    --admin-space-lg: 1rem;       /* 16px */
+    --admin-space-xl: 1.5rem;     /* 24px */
+    --admin-space-2xl: 2rem;      /* 32px */
+    --admin-space-3xl: 2.5rem;    /* 40px */
+    --admin-space-4xl: 3rem;      /* 48px */
+
+    /* ── Typography ────────────────────────────────────────────────── */
+    --admin-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --admin-font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+    --admin-font-size-xs: 0.72rem;   /* 11.5px */
+    --admin-font-size-sm: 0.8rem;    /* 12.8px */
+    --admin-font-size-base: 0.88rem; /* 14px */
+    --admin-font-size-md: 0.9rem;    /* 14.4px */
+    --admin-font-size-lg: 1rem;      /* 16px */
+    --admin-font-size-xl: 1.05rem;   /* 16.8px */
+    --admin-font-size-2xl: 1.25rem;  /* 20px */
+    --admin-font-size-3xl: 1.5rem;   /* 24px */
+
+    --admin-font-weight-normal: 400;
+    --admin-font-weight-medium: 500;
+    --admin-font-weight-semibold: 600;
+    --admin-font-weight-bold: 700;
+
+    --admin-line-height-tight: 1.25;
+    --admin-line-height-normal: 1.5;
+    --admin-line-height-relaxed: 1.75;
+
+    /* ── Border Radius ─────────────────────────────────────────────── */
+    --admin-radius-sm: 6px;
+    --admin-radius-md: 8px;
+    --admin-radius-lg: 10px;
+    --admin-radius-xl: 12px;
+    --admin-radius-2xl: 16px;
+    --admin-radius-full: 9999px;
+
+    /* ── Shadows ───────────────────────────────────────────────────── */
+    --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --admin-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --admin-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);
+    --admin-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.3);
+    --admin-shadow-2xl: 0 32px 96px rgba(0, 0, 0, 0.75);
+
+    --admin-shadow-primary: 0 4px 16px rgba(229, 9, 20, 0.3);
+    --admin-shadow-primary-lg: 0 6px 20px rgba(229, 9, 20, 0.45);
+
+    /* ── Z-Index ───────────────────────────────────────────────────── */
+    --admin-z-dropdown: 1000;
+    --admin-z-sticky: 1020;
+    --admin-z-fixed: 1030;
+    --admin-z-modal-backdrop: 1040;
+    --admin-z-modal: 1050;
+    --admin-z-popover: 1060;
+    --admin-z-tooltip: 1070;
+
+    /* ── Transitions ───────────────────────────────────────────────── */
+    --admin-transition-fast: 150ms ease-in-out;
+    --admin-transition-base: 200ms ease-in-out;
+    --admin-transition-slow: 300ms ease-in-out;
+
+    /* ── Component Specific ────────────────────────────────────────── */
+
+    /* Buttons */
+    --admin-btn-padding-y: 0.5rem;
+    --admin-btn-padding-x: 1.25rem;
+    --admin-btn-padding-y-sm: 0.35rem;
+    --admin-btn-padding-x-sm: 0.85rem;
+    --admin-btn-padding-y-lg: 0.65rem;
+    --admin-btn-padding-x-lg: 1.5rem;
+
+    /* Inputs */
+    --admin-input-padding-y: 0.55rem;
+    --admin-input-padding-x: 0.85rem;
+    --admin-input-height: 2.5rem;
+
+    /* Tables */
+    --admin-table-header-bg: rgba(255, 255, 255, 0.02);
+    --admin-table-row-hover: rgba(255, 255, 255, 0.03);
+    --admin-table-border: rgba(255, 255, 255, 0.06);
+
+    /* Modals */
+    --admin-modal-backdrop: rgba(0, 0, 0, 0.72);
+    --admin-modal-width: 600px;
+    --admin-modal-width-lg: 900px;
+    --admin-modal-width-sm: 400px;
+
+    /* Sidebar */
+    --admin-sidebar-width: 260px;
+    --admin-sidebar-collapsed-width: 80px;
+
+    /* Header */
+    --admin-header-height: 70px;
+
+    /* ── Scrollbar ─────────────────────────────────────────────────── */
+    --admin-scrollbar-width: 5px;
+    --admin-scrollbar-track: rgba(255, 255, 255, 0.03);
+    --admin-scrollbar-thumb: rgba(255, 255, 255, 0.15);
+    --admin-scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+
+    /* ── Responsive Breakpoints ────────────────────────────────────── */
+    /* Desktop First Approach - Max-width breakpoints */
+    --breakpoint-laptop: 1366px;
+    --breakpoint-tablet: 1024px;
+    --breakpoint-mobile-lg: 768px;
+    --breakpoint-mobile: 480px;
+
+    /* ── Fluid Spacing (Responsive) ────────────────────────────────── */
+    /* These use clamp() for automatic scaling between breakpoints */
+    --fluid-space-xs: clamp(0.25rem, 0.5vw, 0.5rem);     /* 4px - 8px */
+    --fluid-space-sm: clamp(0.5rem, 1vw, 0.75rem);       /* 8px - 12px */
+    --fluid-space-md: clamp(0.75rem, 1.5vw, 1rem);       /* 12px - 16px */
+    --fluid-space-lg: clamp(1rem, 2vw, 1.5rem);          /* 16px - 24px */
+    --fluid-space-xl: clamp(1.5rem, 3vw, 2rem);          /* 24px - 32px */
+    --fluid-space-2xl: clamp(2rem, 4vw, 3rem);           /* 32px - 48px */
+
+    /* ── Fluid Typography (Responsive) ─────────────────────────────── */
+    /* Font sizes that scale smoothly with viewport */
+    --fluid-font-xs: clamp(0.7rem, 0.85vw, 0.875rem);    /* 11.2px - 14px */
+    --fluid-font-sm: clamp(0.8rem, 0.95vw, 1rem);        /* 12.8px - 16px */
+    --fluid-font-base: clamp(0.88rem, 1.05vw, 1.125rem); /* 14px - 18px */
+    --fluid-font-lg: clamp(1rem, 1.2vw, 1.25rem);        /* 16px - 20px */
+    --fluid-font-xl: clamp(1.125rem, 1.4vw, 1.5rem);     /* 18px - 24px */
+    --fluid-font-2xl: clamp(1.25rem, 1.8vw, 2rem);       /* 20px - 32px */
+    --fluid-font-3xl: clamp(1.5rem, 2.5vw, 2.5rem);      /* 24px - 40px */
+
+    /* ── Container Max-widths ──────────────────────────────────────── */
+    --container-desktop: 1920px;
+    --container-laptop: 1366px;
+    --container-tablet: 1024px;
+    --container-mobile: 100%;
+}

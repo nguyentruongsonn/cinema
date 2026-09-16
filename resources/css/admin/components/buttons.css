@@ -1,0 +1,305 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Button Components
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Base Button Styles ──────────────────────────────────────────────── */
+.admin-btn {
+    padding: var(--admin-btn-padding-y) var(--admin-btn-padding-x);
+    border-radius: var(--admin-radius-md);
+    font-size: var(--admin-font-size-base);
+    font-weight: var(--admin-font-weight-bold);
+    font-family: var(--admin-font-family);
+    cursor: pointer;
+    transition: all var(--admin-transition-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--admin-space-sm);
+    white-space: nowrap;
+    border: 1px solid transparent;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.admin-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ── Button Sizes ────────────────────────────────────────────────────── */
+.admin-btn-sm {
+    padding: var(--admin-btn-padding-y-sm) var(--admin-btn-padding-x-sm);
+    font-size: var(--admin-font-size-sm);
+}
+
+.admin-btn-lg {
+    padding: var(--admin-btn-padding-y-lg) var(--admin-btn-padding-x-lg);
+    font-size: var(--admin-font-size-lg);
+}
+
+/* ── Primary Button ──────────────────────────────────────────────────── */
+.admin-btn-primary,
+.admin-primary-btn,
+.admin-action-btn,
+.admin-filter-btn,
+.btn-primary-custom {
+    background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+    border-color: var(--admin-primary);
+    color: var(--admin-text-primary);
+    box-shadow: var(--admin-shadow-primary);
+}
+
+.admin-btn-primary:hover,
+.admin-primary-btn:hover,
+.admin-action-btn:hover,
+.admin-filter-btn:hover,
+.btn-primary-custom:hover {
+    background: linear-gradient(135deg, var(--admin-primary-light) 0%, var(--admin-primary) 100%);
+    transform: translateY(-1px);
+    box-shadow: var(--admin-shadow-primary-lg);
+}
+
+.admin-btn-primary:active,
+.admin-primary-btn:active,
+.admin-action-btn:active,
+.admin-filter-btn:active,
+.btn-primary-custom:active {
+    background: var(--admin-primary-dark);
+    border-color: var(--admin-primary-dark);
+    transform: translateY(0);
+}
+
+.admin-btn-primary:focus,
+.admin-primary-btn:focus,
+.admin-action-btn:focus,
+.admin-filter-btn:focus,
+.btn-primary-custom:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.25);
+}
+
+/* ── Secondary Button ────────────────────────────────────────────────── */
+.admin-btn-secondary {
+    background: var(--admin-surface);
+    border-color: var(--admin-border);
+    color: var(--admin-text-secondary);
+}
+
+.admin-btn-secondary:hover {
+    background: var(--admin-surface-hover);
+    border-color: var(--admin-border-focus);
+    transform: translateY(-1px);
+}
+
+.admin-btn-secondary:active {
+    background: var(--admin-surface-active);
+    transform: translateY(0);
+}
+
+/* ── Outline Button ──────────────────────────────────────────────────── */
+.admin-btn-outline {
+    background: transparent;
+    border-color: var(--admin-border);
+    color: var(--admin-text-secondary);
+}
+
+.admin-btn-outline:hover {
+    background: var(--admin-surface-hover);
+    border-color: var(--admin-primary);
+    color: var(--admin-primary);
+}
+
+/* ── Ghost Button ────────────────────────────────────────────────────── */
+.admin-btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--admin-text-secondary);
+}
+
+.admin-btn-ghost:hover {
+    background: var(--admin-surface-hover);
+    color: var(--admin-text-primary);
+}
+
+/* ── Danger Button ───────────────────────────────────────────────────── */
+.admin-btn-danger {
+    background: linear-gradient(135deg, var(--admin-error) 0%, #dc2626 100%);
+    border-color: var(--admin-error);
+    color: var(--admin-text-primary);
+}
+
+.admin-btn-danger:hover {
+    background: linear-gradient(135deg, #f87171 0%, var(--admin-error) 100%);
+    transform: translateY(-1px);
+}
+
+.admin-btn-danger:active {
+    background: #dc2626;
+    transform: translateY(0);
+}
+
+/* ── Success Button ──────────────────────────────────────────────────── */
+.admin-btn-success {
+    background: linear-gradient(135deg, var(--admin-success) 0%, #16a34a 100%);
+    border-color: var(--admin-success);
+    color: var(--admin-text-primary);
+}
+
+.admin-btn-success:hover {
+    background: linear-gradient(135deg, #4ade80 0%, var(--admin-success) 100%);
+    transform: translateY(-1px);
+}
+
+/* ── Icon Buttons ────────────────────────────────────────────────────── */
+.admin-btn-icon {
+    padding: var(--admin-space-sm);
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-sm);
+    color: var(--admin-text-secondary);
+    font-size: var(--admin-font-size-base);
+    cursor: pointer;
+    transition: all var(--admin-transition-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.admin-btn-icon:hover {
+    background: rgba(229, 9, 20, 0.15);
+    border-color: rgba(229, 9, 20, 0.3);
+    color: var(--admin-primary-light);
+}
+
+.admin-btn-icon.admin-btn-edit:hover {
+    background: rgba(229, 9, 20, 0.15);
+    border-color: rgba(229, 9, 20, 0.3);
+    color: var(--admin-primary-light);
+}
+
+.admin-btn-icon.admin-btn-delete:hover {
+    background: var(--admin-error-bg);
+    border-color: var(--admin-error-border);
+    color: var(--admin-error);
+}
+
+.admin-btn-icon.admin-btn-view:hover {
+    background: var(--admin-info-bg);
+    border-color: var(--admin-info-border);
+    color: var(--admin-info);
+}
+
+/* ── Button Group ────────────────────────────────────────────────────── */
+.admin-btn-group {
+    display: inline-flex;
+    gap: var(--admin-space-sm);
+}
+
+.admin-btn-group > .admin-btn:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.admin-btn-group > .admin-btn:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -1px;
+}
+
+/* ── Loading Button ──────────────────────────────────────────────────── */
+.admin-btn.is-loading {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+}
+
+.admin-btn.is-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: button-spin 0.6s linear infinite;
+}
+
+@keyframes button-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Full Width Button ───────────────────────────────────────────────── */
+.admin-btn-block {
+    width: 100%;
+    display: flex;
+}
+
+/* ── Bootstrap Overrides for Admin Context ───────────────────────────── */
+.admin-page .btn-primary,
+.admin-main .btn-primary,
+.admin-content .btn-primary {
+    background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%) !important;
+    border-color: var(--admin-primary) !important;
+    color: var(--admin-text-primary) !important;
+    box-shadow: var(--admin-shadow-primary);
+}
+
+.admin-page .btn-primary:hover,
+.admin-main .btn-primary:hover,
+.admin-content .btn-primary:hover {
+    background: linear-gradient(135deg, var(--admin-primary-light) 0%, var(--admin-primary) 100%) !important;
+    box-shadow: var(--admin-shadow-primary-lg);
+}
+
+.admin-page .btn-primary:focus,
+.admin-main .btn-primary:focus,
+.admin-content .btn-primary:focus {
+    box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25) !important;
+}
+
+.admin-page .btn-primary:active,
+.admin-main .btn-primary:active,
+.admin-content .btn-primary:active {
+    background: var(--admin-primary-dark) !important;
+    border-color: var(--admin-primary-dark) !important;
+}
+
+/* ── Mobile Button Sizing in Filters ─────────────────────────────────── */
+@media (max-width: 768px) {
+    .admin-filters .admin-btn,
+    .admin-filters .admin-filter-btn,
+    .admin-filters .admin-action-btn,
+    .admin-filters .btn-primary-custom {
+        padding: 0.5rem 0.85rem;
+        font-size: 0.875rem;
+        height: 38px;
+    }
+
+    .admin-filters .admin-btn i {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-filters .admin-btn,
+    .admin-filters .admin-filter-btn,
+    .admin-filters .admin-action-btn,
+    .admin-filters .btn-primary-custom {
+        padding: 0.45rem 0.75rem;
+        font-size: 0.8125rem;
+        height: 36px;
+    }
+
+    .admin-filters .admin-btn i {
+        font-size: 0.8125rem;
+    }
+}

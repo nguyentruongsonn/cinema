@@ -1,0 +1,388 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Skeleton Loading Components
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Base Skeleton ───────────────────────────────────────────────────── */
+.admin-skeleton {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.045) 0%,
+        rgba(255, 255, 255, 0.072) 50%,
+        rgba(255, 255, 255, 0.045) 100%
+    );
+    border-radius: var(--admin-radius-md);
+    animation: skeleton-loading 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes skeleton-loading {
+    from {
+        opacity: 0.74;
+    }
+    to {
+        opacity: 0.96;
+    }
+}
+
+/* ── Skeleton Shapes ─────────────────────────────────────────────────── */
+.admin-skeleton-text {
+    height: 1em;
+    margin-bottom: 0.5em;
+}
+
+.admin-skeleton-text:last-child {
+    margin-bottom: 0;
+}
+
+.admin-skeleton-title {
+    height: 1.5em;
+    width: 60%;
+    margin-bottom: 1em;
+}
+
+.admin-skeleton-paragraph {
+    height: 0.875em;
+}
+
+.admin-skeleton-paragraph:not(:last-child) {
+    margin-bottom: 0.75em;
+}
+
+.admin-skeleton-circle {
+    border-radius: 50%;
+    aspect-ratio: 1/1;
+}
+
+.admin-skeleton-square {
+    aspect-ratio: 1/1;
+}
+
+.admin-skeleton-rect {
+    height: 100px;
+}
+
+.admin-skeleton-chart {
+    width: 100%;
+    min-height: 300px;
+    border-radius: var(--admin-radius-md);
+}
+
+.admin-skeleton-chart-lg {
+    min-height: 350px;
+}
+
+/* ── Skeleton Sizes ──────────────────────────────────────────────────── */
+.admin-skeleton-xs {
+    height: 16px;
+}
+
+.admin-skeleton-sm {
+    height: 24px;
+}
+
+.admin-skeleton-md {
+    height: 32px;
+}
+
+.admin-skeleton-lg {
+    height: 48px;
+}
+
+.admin-skeleton-xl {
+    height: 64px;
+}
+
+/* ── Skeleton Avatar ─────────────────────────────────────────────────── */
+.admin-skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.admin-skeleton-avatar-sm {
+    width: 32px;
+    height: 32px;
+}
+
+.admin-skeleton-avatar-lg {
+    width: 56px;
+    height: 56px;
+}
+
+/* ── Skeleton Card ───────────────────────────────────────────────────── */
+.admin-skeleton-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-xl);
+    padding: var(--admin-space-xl);
+}
+
+.admin-skeleton-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--admin-space-md);
+    margin-bottom: var(--admin-space-lg);
+}
+
+.admin-skeleton-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--admin-space-sm);
+}
+
+/* ── Skeleton Table ──────────────────────────────────────────────────── */
+.admin-skeleton-table {
+    width: 100%;
+}
+
+.admin-skeleton-table-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--admin-space-md);
+    padding: var(--admin-space-md) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.admin-skeleton-table-row:first-child {
+    padding-top: 0;
+}
+
+.admin-skeleton-table-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.admin-skeleton-table-cell {
+    height: 20px;
+}
+
+/* ── Skeleton List ───────────────────────────────────────────────────── */
+.admin-skeleton-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--admin-space-md);
+}
+
+.admin-skeleton-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--admin-space-md);
+}
+
+.admin-skeleton-list-item-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.admin-skeleton-list-item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--admin-space-xs);
+}
+
+/* ── Skeleton Button ─────────────────────────────────────────────────── */
+.admin-skeleton-button {
+    height: 40px;
+    width: 120px;
+    border-radius: var(--admin-radius-md);
+}
+
+.admin-skeleton-button-sm {
+    height: 32px;
+    width: 100px;
+}
+
+.admin-skeleton-button-lg {
+    height: 48px;
+    width: 140px;
+}
+
+/* ── Skeleton Input ──────────────────────────────────────────────────── */
+.admin-skeleton-input {
+    height: 42px;
+    border-radius: var(--admin-radius-md);
+}
+
+/* ── Skeleton Badge ──────────────────────────────────────────────────── */
+.admin-skeleton-badge {
+    height: 24px;
+    width: 80px;
+    border-radius: var(--admin-radius-sm);
+}
+
+/* ── Skeleton Image ──────────────────────────────────────────────────── */
+.admin-skeleton-image {
+    width: 100%;
+    height: 200px;
+    border-radius: var(--admin-radius-lg);
+}
+
+.admin-skeleton-image-sm {
+    height: 120px;
+}
+
+.admin-skeleton-image-lg {
+    height: 300px;
+}
+
+/* ── Skeleton Img Variants (for specific sizes) ──────────────────────── */
+.admin-skeleton-img {
+    border-radius: var(--admin-radius-md);
+}
+
+.admin-skeleton-img-60 {
+    width: 60px;
+    height: 60px;
+}
+
+.admin-skeleton-img-100x60 {
+    width: 100px;
+    height: 60px;
+}
+
+.admin-skeleton-img-movie {
+    width: 60px;
+    height: 90px;
+    min-height: 90px;
+    border-radius: 4px;
+}
+
+/* ── Image Container (prevents layout shift) ─────────────────────────── */
+.movie-poster-container,
+.product-image-container {
+    width: 60px;
+    height: 90px;
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.02);
+    flex-shrink: 0;
+}
+
+.movie-poster-container img,
+.product-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Poster aspect ratio helper */
+.poster-aspect-ratio {
+    aspect-ratio: 2/3;
+    width: 60px;
+}
+
+/* ── Skeleton Dashboard ──────────────────────────────────────────────── */
+.admin-skeleton-stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--admin-space-md);
+    padding: var(--admin-space-xl);
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-xl);
+}
+
+.admin-skeleton-stat-value {
+    height: 32px;
+    width: 50%;
+}
+
+.admin-skeleton-stat-label {
+    height: 16px;
+    width: 40%;
+}
+
+/* ── Skeleton Grid Layout ────────────────────────────────────────────── */
+.admin-skeleton-grid {
+    display: grid;
+    gap: var(--admin-space-lg);
+}
+
+.admin-skeleton-grid-2 {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.admin-skeleton-grid-3 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.admin-skeleton-grid-4 {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+/* ── Animation Variants ──────────────────────────────────────────────── */
+.admin-skeleton.pulse {
+    animation: skeleton-pulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes skeleton-pulse {
+    from {
+        opacity: 0.76;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.admin-skeleton.wave {
+    animation: skeleton-loading 1.8s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-skeleton,
+    .admin-skeleton.pulse,
+    .admin-skeleton.wave {
+        animation: none;
+    }
+}
+
+/* ── Skeleton Width Utilities (replace inline width styles) ──────────── */
+.skeleton-w-30 { width: 30px; }
+.skeleton-w-40 { width: 40px; }
+.skeleton-w-50 { width: 50px; }
+.skeleton-w-60 { width: 60%; }
+.skeleton-w-65 { width: 65%; }
+.skeleton-w-70 { width: 70%; }
+.skeleton-w-75 { width: 75%; }
+.skeleton-w-80 { width: 80%; }
+.skeleton-w-85 { width: 85%; }
+.skeleton-w-90 { width: 90px; }
+.skeleton-w-100 { width: 100px; }
+
+/* ── Skeleton Layout Utilities ────────────────────────────────────────── */
+.skeleton-center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.skeleton-mb-sm {
+    margin-bottom: 8px;
+}
+
+.skeleton-mb-md {
+    margin-bottom: 12px;
+}
+
+/* ── Skeleton Image Utilities ────────────────────────────────────────── */
+.skeleton-img-sm { width: 60px; height: 60px; }
+.skeleton-img-md { width: 100px; height: 60px; }
+.skeleton-img-poster { width: 50px; height: 75px; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .admin-skeleton-card {
+        padding: var(--admin-space-lg);
+    }
+
+    .admin-skeleton-grid-2,
+    .admin-skeleton-grid-3,
+    .admin-skeleton-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
