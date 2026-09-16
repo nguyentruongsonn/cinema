@@ -1,0 +1,202 @@
+/* Skeleton Loading Styles */
+.skeleton {
+    background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Hero Section Skeleton */
+.skeleton-hero {
+    width: 100%;
+    height: 600px;
+    margin-bottom: 2rem;
+    padding-top: 74px; /* match hero-section nav height */
+}
+
+.skeleton-hero-content {
+    padding: 60px 15px; /* match container padding and hero-inner padding */
+    margin: 0 auto;
+    width: 100%;
+    max-width: 1320px; /* match bootstrap container max-width */
+}
+
+.skeleton-hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 600px;
+}
+
+.skeleton-badge {
+    width: 80px;
+    height: 24px;
+}
+
+.skeleton-title {
+    width: 100%;
+    height: 60px;
+}
+
+.skeleton-text {
+    width: 100%;
+    height: 20px;
+}
+
+.skeleton-text-short {
+    width: 70%;
+    height: 20px;
+}
+
+.skeleton-button {
+    width: 150px;
+    height: 48px;
+    border-radius: 24px;
+}
+
+/* Quick Booking Skeleton */
+.skeleton-booking {
+    width: 100%;
+    height: 100px;
+    border-radius: 12px;
+}
+
+/* Movie Card Skeleton */
+.skeleton-movie-card {
+    background: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.skeleton-movie-poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+}
+
+.skeleton-movie-info {
+    padding: 15px;
+}
+
+.skeleton-movie-title {
+    width: 80%;
+    height: 24px;
+    margin-bottom: 10px;
+}
+
+.skeleton-movie-meta {
+    width: 60%;
+    height: 16px;
+}
+
+/* Grid Skeleton */
+.skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+}
+
+@media (max-width: 768px) {
+    .skeleton-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .skeleton-hero-content {
+        padding: 30px;
+    }
+
+    .skeleton-title {
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .skeleton-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Section Skeleton */
+.skeleton-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.skeleton-section-title {
+    width: 200px;
+    height: 36px;
+}
+
+.skeleton-link {
+    width: 100px;
+    height: 20px;
+}
+
+/* Hide content while loading */
+.loading .content-loaded {
+    display: none;
+}
+
+.loaded .skeleton {
+    display: none;
+}
+
+/* Booking Page Skeletons */
+.skel-seat-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+.skel-seat {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background-color: var(--skeleton-bg, rgba(255, 255, 255, 0.05));
+}
+.skel-food-card {
+    background-color: #1a1d24;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.skel-food-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.skel-food-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+}
+.skel-food-title {
+    width: 60%;
+    height: 20px;
+    border-radius: 4px;
+}
+.skel-food-desc {
+    width: 90%;
+    height: 14px;
+    border-radius: 4px;
+}
+.skel-food-price {
+    width: 40%;
+    height: 18px;
+    border-radius: 4px;
+}

@@ -1,0 +1,25 @@
+/**
+ * Auth UI - Prevent Flicker (FOUC Fix)
+ * 
+ * Hide auth UI elements until JavaScript determines correct state
+ * This prevents "Flash of Unstyled Content" when navigating between pages
+ */
+
+/* Hide auth buttons initially - JavaScript will show correct state */
+[data-auth-action="login"],
+#userDropdown {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Show auth UI after JavaScript auth check completes */
+body.auth-checked [data-auth-action="login"],
+body.auth-checked #userDropdown {
+    opacity: 1;
+}
+
+/* Ensure hidden elements don't take up space */
+[data-auth-action="login"].d-none,
+#userDropdown.d-none {
+    display: none !important;
+}
