@@ -1,0 +1,35 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, redis, bcmath, gd, fileinfo
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: composer install --no-interaction --prefer-dist
+      - run: npm install --no-audit
+      - run: cp .env.example .env
+      - run: mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs bootstrap/cache
+      - run: php artisan key:generate
+      - run: composer analyse
+      - run: composer test:modern-format
+      - run: npm run lint
+      - run: npm run build
+      - run: composer audit
+      - run: npm audit --audit-level=moderate

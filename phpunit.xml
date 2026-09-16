@@ -32,6 +32,11 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
-        <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="REDIS_CLIENT" value="predis"/>
+        <env name="JWT_SECRET" value="testing-jwt-secret-key-32-chars-length-min!!"/>
+        <env name="PAYOS_CLIENT_ID" value="testing-payos-client-id"/>
+        <env name="PAYOS_API_KEY" value="testing-payos-api-key"/>
+        <env name="PAYOS_CHECKSUM_KEY" value="testing-payos-checksum-key-64-chars-long-dummy-hex-string-for-hash"/>
+        <env name="PAYOS_WEBHOOK_SECRET" value="testing-payos-webhook-secret"/>
     </php>
 </phpunit>

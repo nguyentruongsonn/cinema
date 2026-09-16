@@ -18,10 +18,14 @@ class PayOSGateway
 
     public function __construct()
     {
+        $clientId = (string) (config('services.payos.client_id') ?: 'dummy-payos-client-id');
+        $apiKey = (string) (config('services.payos.api_key') ?: 'dummy-payos-api-key');
+        $checksumKey = (string) (config('services.payos.checksum_key') ?: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef');
+
         $this->client = new PayOS(
-            config('services.payos.client_id'),
-            config('services.payos.api_key'),
-            config('services.payos.checksum_key'),
+            $clientId,
+            $apiKey,
+            $checksumKey,
         );
     }
 
