@@ -180,22 +180,55 @@ class AuthService
         $googleUser = $this->verifyGoogleIdToken($idToken);
 
         $email = isset($googleUser['email']) ? $this->normalizeEmail($googleUser['email']) : null;
+        $providerId = trim((string) ($googleUser['sub'] ?? ''));
 
-        if (!$email) {
+        if (!$email || $providerId === '') {
             throw new RuntimeException('Google token không hợp lệ.');
         }
 
-        $user = User::firstOrCreate(
-            ['email' => $email],
-            [
+        $user = User::query()
+            ->where('provider_name', 'google')
+            ->where('provider_id', $providerId)
+            ->first();
+
+        if (!$user) {
+            $user = User::query()->where('email', $email)->first();
+        }
+
+        if (!$user) {
+            $user = User::create([
                 'name' => $googleUser['name'] ?? Str::before($email, '@'),
+                'email' => $email,
                 'username' => $this->uniqueUsername(Str::slug(Str::before($email, '@'), '_')),
                 'avatar_url' => $googleUser['picture'] ?? null,
                 'email_verified_at' => now(),
                 'password' => Hash::make(Str::random(32)),
                 'status' => 1,
-            ]
-        );
+            ]);
+
+            $user->forceFill([
+                'provider_id' => $providerId,
+                'provider_name' => 'google',
+                'email_verified_at' => now(),
+            ])->save();
+        } else {
+            if ($user->provider_name && $user->provider_name !== 'google') {
+                throw new RuntimeException('Tài khoản đã liên kết với phương thức đăng nhập khác.');
+            }
+
+            if ($user->provider_name === 'google'
+                && $user->provider_id
+                && !hash_equals((string) $user->provider_id, $providerId)) {
+                throw new RuntimeException('Tài khoản Google không khớp.');
+            }
+
+            $user->forceFill([
+                'provider_id' => $providerId,
+                'provider_name' => 'google',
+                'email_verified_at' => $user->email_verified_at ?? now(),
+                'avatar_url' => $googleUser['picture'] ?? $user->avatar_url,
+            ])->save();
+        }
 
         if (!$user->status) {
             throw new RuntimeException('Tài khoản đã bị khóa.');
@@ -472,8 +505,12 @@ class AuthService
             throw new RuntimeException('Google Client ID không hợp lệ.');
         }
 
-        if (($payload['email_verified'] ?? 'false') !== 'true') {
+        if (filter_var($payload['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN) !== true) {
             throw new RuntimeException('Email Google chưa được xác thực.');
+        }
+
+        if (empty($payload['sub'])) {
+            throw new RuntimeException('Google token không hợp lệ.');
         }
 
         return $payload;

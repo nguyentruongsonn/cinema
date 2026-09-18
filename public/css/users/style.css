@@ -1091,32 +1091,37 @@ img {
 
 .cinema-auth-social {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 0.75rem;
 }
 
-.cinema-auth-social-btn {
+.google-signin-button {
+    align-items: stretch;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    justify-content: stretch;
+    min-height: 44px;
+    overflow: hidden;
     border-radius: 0.5rem;
-    background: transparent;
-    color: #ffffff;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: all 0.2s ease;
+    width: 100%;
 }
 
-.cinema-auth-social-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.25);
+.google-signin-button > div,
+.google-signin-button iframe {
+    flex: 1 1 auto;
+    max-width: 100%;
+    width: 100% !important;
 }
 
-.cinema-auth-social-btn i {
-    font-size: 1.1rem;
+.google-signin-button[aria-busy="true"] {
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+.google-signin-message {
+    align-self: center;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.8rem;
+    text-align: center;
 }
 
 .cinema-auth-check .form-check-input {

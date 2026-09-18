@@ -59,6 +59,7 @@
             appName: @json(config('app.name', 'Cinema')),
             apiUrl: @json('/api/v1'),
             csrfToken: @json(csrf_token()),
+            googleClientId: @json(config('services.google.client_id')),
             auth: {
                 checked: @json(Auth::guard('web')->check() || !request()->hasCookie('refresh_token')),
                 authenticated: @json(Auth::guard('web')->check()),

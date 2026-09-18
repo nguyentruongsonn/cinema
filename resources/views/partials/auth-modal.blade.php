@@ -95,14 +95,7 @@
                         </div>
 
                         <div class="cinema-auth-social">
-                            <button type="button" class="cinema-auth-social-btn" id="googleLoginBtn">
-                                <i class="bi bi-google"></i>
-                                <span>Google</span>
-                            </button>
-                            <button type="button" class="cinema-auth-social-btn" id="facebookLoginBtn">
-                                <i class="bi bi-facebook"></i>
-                                <span>Facebook</span>
-                            </button>
+                            <div class="google-signin-button" id="googleLoginBtn" role="group" aria-label="Đăng nhập bằng Google"></div>
                         </div>
 
                         <div class="alert alert-danger d-none mt-3" id="loginAlert" role="alert"></div>

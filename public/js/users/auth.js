@@ -58,10 +58,7 @@ class AuthManager {
             registerForm.addEventListener('submit', (e) => this.handleRegister(e));
         }
 
-        const googleBtn = document.getElementById('googleLoginBtn');
-        if (googleBtn) {
-            googleBtn.addEventListener('click', () => this.handleGoogleLogin());
-        }
+        this.initializeGoogleSignIn();
 
         document.querySelectorAll('.cinema-auth-toggle-password').forEach(btn => {
             btn.addEventListener('click', (e) => this.togglePassword(e));
@@ -238,9 +235,128 @@ class AuthManager {
         }
     }
 
-    async handleGoogleLogin() {
-        this.showToast('Tính năng đăng nhập Google đang được phát triển', 'info');
+    async initializeGoogleSignIn() {
+        const googleBtn = document.getElementById('googleLoginBtn');
+        const clientId = window.APP_CONFIG?.googleClientId;
 
+        if (!googleBtn || this.googleIdentityInitialized) {
+            return;
+        }
+
+        if (!clientId) {
+            const message = document.createElement('span');
+            message.className = 'google-signin-message';
+            message.textContent = 'Đăng nhập Google chưa được cấu hình';
+            googleBtn.replaceChildren(message);
+            return;
+        }
+
+        try {
+            await this.loadGoogleIdentityScript();
+
+            window.google.accounts.id.initialize({
+                client_id: clientId,
+                context: 'signin',
+                ux_mode: 'popup',
+                auto_select: false,
+                callback: (response) => {
+                    if (response?.credential) {
+                        this.handleGoogleLogin(response.credential);
+                        return;
+                    }
+
+                    this.showAlert('login', 'Không nhận được thông tin xác thực từ Google.');
+                },
+            });
+
+            window.google.accounts.id.renderButton(googleBtn, {
+                type: 'standard',
+                theme: 'outline',
+                size: 'large',
+                text: 'continue_with',
+                shape: 'rect',
+                width: 400,
+                logo_alignment: 'left',
+            });
+
+            this.googleIdentityInitialized = true;
+        } catch (error) {
+            const message = document.createElement('span');
+            message.className = 'google-signin-message';
+            message.textContent = error.message || 'Không thể tải đăng nhập Google.';
+            googleBtn.replaceChildren(message);
+        }
+    }
+
+    async handleGoogleLogin(credential) {
+        const googleBtn = document.getElementById('googleLoginBtn');
+
+        if (this.googleLoginInProgress) {
+            return;
+        }
+
+        this.googleLoginInProgress = true;
+        googleBtn?.setAttribute('aria-busy', 'true');
+
+        try {
+            const response = await this.fetchAPI('/auth/google', {
+                method: 'POST',
+                body: { id_token: credential },
+                skipRefresh: true,
+            });
+
+            if (!response.success || !response.data?.user) {
+                throw new Error(response.message || 'Đăng nhập Google thất bại.');
+            }
+
+            this.setAuthenticatedUser(response.data.user);
+            this.modal?.hide();
+            this.showToast('Đăng nhập Google thành công!', 'success');
+
+            const redirectUrl = response.data.redirect_url || '/';
+            setTimeout(() => {
+                if (redirectUrl === window.location.pathname) {
+                    window.location.reload();
+                } else {
+                    window.location.href = redirectUrl;
+                }
+            }, 300);
+        } catch (error) {
+            this.handleError(error, 'login');
+        } finally {
+            this.googleLoginInProgress = false;
+            googleBtn?.removeAttribute('aria-busy');
+        }
+    }
+
+    loadGoogleIdentityScript() {
+        if (window.google?.accounts?.id) {
+            return Promise.resolve();
+        }
+
+        if (this.googleScriptPromise) {
+            return this.googleScriptPromise;
+        }
+
+        this.googleScriptPromise = new Promise((resolve, reject) => {
+            const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+
+            if (existingScript) {
+                existingScript.addEventListener('load', resolve, { once: true });
+                existingScript.addEventListener('error', () => reject(new Error('Không thể tải Google Sign-In.')), { once: true });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.addEventListener('load', resolve, { once: true });
+            script.addEventListener('error', () => reject(new Error('Không thể tải Google Sign-In.')), { once: true });
+            document.head.appendChild(script);
+        });
+
+        return this.googleScriptPromise;
     }
 
     async handleLogout() {

@@ -57,6 +57,7 @@ class SecurityHeaders
             'https://api-merchant.payos.vn',
             'https://api.payos.vn',
             'https://cdn.jsdelivr.net',
+            'https://accounts.google.com',
         ];
         if ($reverbOrigin) {
             $connectSources[] = $reverbOrigin;
@@ -66,14 +67,14 @@ class SecurityHeaders
 
         $csp = [
             "default-src 'self'",
-            "script-src 'self' 'nonce-{$nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+            "script-src 'self' 'nonce-{$nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com",
             "style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
             "style-src-elem 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
             "style-src-attr 'unsafe-inline'",
             "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
             "img-src 'self' data: https: blob:",
             'connect-src '.implode(' ', $connectSources),
-            "frame-src 'self' https://sandbox.vnpayment.vn",
+            "frame-src 'self' https://sandbox.vnpayment.vn https://accounts.google.com",
             "frame-ancestors 'none'",
             "object-src 'none'",
             "base-uri 'self'",
