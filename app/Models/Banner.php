@@ -14,6 +14,7 @@ class Banner extends Model
         'title',
         'description',
         'link_url',
+        'placement',
         'is_active',
         'start_date',
         'end_date',
@@ -49,6 +50,11 @@ class Banner extends Model
     {
         return $query->orderBy('created_at', 'asc')
                      ->orderBy('id', 'asc');
+    }
+
+    public function scopeForPlacement($query, string $placement)
+    {
+        return $query->whereIn('placement', [$placement, 'all']);
     }
 
     public function incrementClicks()
