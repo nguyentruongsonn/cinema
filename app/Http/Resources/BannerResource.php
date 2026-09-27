@@ -23,6 +23,7 @@ class BannerResource extends JsonResource
             'images' => $images,
             'image_url' => $images->first()['image_url'] ?? null,
             'link_url' => $this->link_url,
+            'placement' => $this->placement ?? 'home',
             'is_active' => (bool) $this->is_active,
             'start_date' => $this->start_date?->format('Y-m-d\TH:i'),
             'end_date' => $this->end_date?->format('Y-m-d\TH:i'),

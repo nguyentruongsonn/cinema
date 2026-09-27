@@ -101,6 +101,7 @@ class BannerController extends Controller
                 'image_paths' => ['required', 'array', 'min:1', 'max:5'],
                 'image_paths.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
                 'link_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//i'],
+                'placement' => ['nullable', 'string', Rule::in(['home', 'theater', 'all'])],
                 'is_active' => ['sometimes', 'boolean'],
                 'start_date' => ['nullable', 'date'],
                 'end_date' => ['nullable', 'date', 'after:start_date'],
@@ -109,6 +110,7 @@ class BannerController extends Controller
             $banner = DB::transaction(function () use ($request, $validated, &$storedPaths) {
                 $baseData = $this->sanitizeBannerData($validated);
                 $baseData['is_active'] = $baseData['is_active'] ?? false;
+                $baseData['placement'] = $baseData['placement'] ?? 'home';
                 unset($baseData['image_paths']);
 
                 $banner = Banner::create($baseData);
@@ -178,6 +180,7 @@ class BannerController extends Controller
                 'image_paths' => ['nullable', 'array', 'min:1', 'max:5'],
                 'image_paths.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
                 'link_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//i'],
+                'placement' => ['nullable', 'string', Rule::in(['home', 'theater', 'all'])],
                 'is_active' => ['sometimes', 'boolean'],
                 'start_date' => ['nullable', 'date'],
                 'end_date' => ['nullable', 'date', 'after:start_date'],

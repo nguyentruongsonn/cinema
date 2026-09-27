@@ -22,12 +22,16 @@ class ContentController extends Controller
 
     public function banners(Request $request): JsonResponse
     {
-        $banners = Banner::query()
+        $query = Banner::query()
             ->with('images')
             ->active()
-            ->ordered()
-            ->limit(5)
-            ->get();
+            ->ordered();
+
+        if ($request->filled('placement')) {
+            $query->forPlacement((string) $request->query('placement'));
+        }
+
+        $banners = $query->limit(10)->get();
 
         return response()->json([
             'data' => BannerResource::collection($banners)->resolve(),

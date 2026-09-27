@@ -36,6 +36,7 @@
         description: document.getElementById('bannerDescription'),
         image: document.getElementById('bannerImage'),
         link: document.getElementById('bannerLink'),
+        placement: document.getElementById('bannerPlacement'),
         startDate: document.getElementById('bannerStartDate'),
         endDate: document.getElementById('bannerEndDate'),
         isActive: document.getElementById('bannerIsActive'),
@@ -131,6 +132,7 @@
         els.form.reset();
         els.formMethod.value = 'POST';
         els.idInput.value = '';
+        if (els.placement) els.placement.value = 'home';
         els.isActive.checked = true;
         els.statusLabel.textContent = 'Đang hoạt động';
         els.image.required = true;
@@ -235,6 +237,7 @@
             selectedFiles = [];
 
             els.link.value = banner.link_url || '';
+            if (els.placement) els.placement.value = banner.placement || 'home';
             els.startDate.value = formatDateTimeLocal(banner.start_date);
             els.endDate.value = formatDateTimeLocal(banner.end_date);
             els.isActive.checked = banner.is_active === 1 || banner.is_active === true;
@@ -281,6 +284,7 @@
             });
 
             if (els.link.value.trim()) formData.append('link_url', els.link.value.trim());
+            if (els.placement && els.placement.value) formData.append('placement', els.placement.value);
             if (els.startDate.value) formData.append('start_date', els.startDate.value);
             if (els.endDate.value) formData.append('end_date', els.endDate.value);
             formData.append('is_active', els.isActive.checked ? '1' : '0');

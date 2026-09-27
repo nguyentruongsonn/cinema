@@ -103,6 +103,15 @@
                                    id="bannerLink" placeholder="https://example.com/promotion">
                         </div>
 
+                        <div class="col-12">
+                            <label class="form-label" for="bannerPlacement">Vị trí hiển thị</label>
+                            <select class="form-select bg-dark border-secondary text-white" id="bannerPlacement">
+                                <option value="home">Trang chủ</option>
+                                <option value="theater">Trang rạp</option>
+                                <option value="all">Tất cả các trang</option>
+                            </select>
+                        </div>
+
                         {{-- Ngày bắt đầu & kết thúc --}}
                         <div class="col-md-6">
                             <label class="form-label" for="bannerStartDate">Ngày bắt đầu</label>
