@@ -41,7 +41,7 @@ Route::view('/movies', 'users.movies.index')->name('movies.index');
 Route::view('/movies/{idOrSlug}', 'users.movies.show')->name('movies.show');
 
 Route::view('/theaters', 'users.theaters.index')->name('theaters.index');
-Route::get('/prices', [PricePageController::class, 'index'])->name('prices.index');
+Route::redirect('/prices', '/theaters', 301)->name('prices.index');
 
 Route::get('/booking/{encryptedShowtimeId}', [BookingController::class, 'show'])
     ->middleware('throttle:booking')

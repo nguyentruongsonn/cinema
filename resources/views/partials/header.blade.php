@@ -19,9 +19,6 @@
                         <a class="nav-link {{ request()->is('theaters*') ? 'active' : '' }}" href="{{ route('theaters.index') }}">Rạp</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->is('prices*') ? 'active' : '' }}" href="{{ route('prices.index') }}">Giá vé</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link {{ request()->is('posts*') ? 'active' : '' }}" href="{{ route('posts.index') }}">
                             Tin tức & Ưu đãi
                         </a>
