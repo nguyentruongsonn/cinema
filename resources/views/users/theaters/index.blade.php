@@ -9,53 +9,64 @@
 @endpush
 
 @section('content')
-    <section class="theaters-hero-slider" id="theatersHeroSlider" aria-label="Hình ảnh rạp chiếu">
-        <div class="theaters-hero-track" id="theatersHeroTrack">
-            <div class="theaters-hero-slide active" id="theatersHeroBackdrop">
-                <div class="theaters-hero-overlay"></div>
-                <div class="container cinema-shell theaters-hero-caption">
-                    <span class="theaters-hero-badge">KHÔNG GIAN RẠP ĐẲNG CẤP</span>
-                    <h1 class="theaters-hero-title" id="theatersHeroTitle">Trải Nghiệm Điện Ảnh Đỉnh Cao</h1>
-                    <p class="theaters-hero-desc" id="theatersHeroDesc">Hệ thống phòng chiếu chuẩn quốc tế với âm thanh vòm sống động và màn chiếu sắc nét.</p>
+    <section class="theater-section theater-secion hero-section" id="theaterSection" aria-label="Hình ảnh rạp chiếu">
+        <div id="heroBackdrop" class="hero-backdrop"></div>
+
+        <div class="hero-gradient-overlay"></div>
+
+        <div class="hero-carousel-controls" aria-label="Điều khiển banner">
+            <button type="button" class="hero-carousel-arrow" id="heroPrevious" aria-label="Banner trước">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button type="button" class="hero-carousel-arrow" id="heroNext" aria-label="Banner tiếp theo">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+
+        <div id="heroContent" class="hero-content">
+            <div class="container cinema-shell">
+                <div class="hero-inner">
+                    <div class="hero-meta-row">
+                        <span class="hero-age-badge">HỆ THỐNG RẠP</span>
+                    </div>
+                    <h1 class="hero-title" id="heroTitle">Trải Nghiệm Điện Ảnh Đỉnh Cao</h1>
+                    <p class="hero-description" id="heroDesc">Hệ thống phòng chiếu chuẩn quốc tế với âm thanh vòm sống động và màn chiếu sắc nét.</p>
                 </div>
             </div>
         </div>
 
-        <button type="button" class="theaters-slider-arrow prev" id="theatersHeroPrev" aria-label="Banner trước">
-            <i class="bi bi-chevron-left"></i>
-        </button>
-        <button type="button" class="theaters-slider-arrow next" id="theatersHeroNext" aria-label="Banner tiếp theo">
-            <i class="bi bi-chevron-right"></i>
-        </button>
-
-        <div class="theaters-slider-dots" id="theatersHeroDots" role="tablist" aria-label="Danh sách banner"></div>
+        <div id="heroDots" class="hero-carousel-dots" role="tablist" aria-label="Danh sách banner"></div>
     </section>
 
-    <section class="theaters-info-bar sticky-top">
+    <section class="theaters-info-section sticky-top">
         <div class="container cinema-shell">
-            <div class="theaters-info-bar-inner">
-                <div class="theater-summary">
-                    <span class="theater-eyebrow">RẠP ĐANG CHỌN</span>
-                    <h2 class="theater-current-name" id="currentTheaterName">Đang tải rạp...</h2>
-                    <div class="theater-meta">
-                        <span id="currentTheaterAddress"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Đang tải địa chỉ...</span>
-                        <span id="currentTheaterPhone"><i class="bi bi-telephone-fill text-danger me-1"></i> Hotline: --</span>
-                    </div>
-                </div>
+            <div class="theaters-info-widget quick-booking-widget">
+                <div class="theaters-info-bar booking-form">
+                    <div class="theaters-info-bar-inner">
+                        <div class="theater-summary">
+                            <span class="theater-eyebrow">RẠP ĐANG CHỌN</span>
+                            <h2 class="theater-current-name" id="currentTheaterName">Đang tải rạp...</h2>
+                            <div class="theater-meta">
+                                <span id="currentTheaterAddress"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Đang tải địa chỉ...</span>
+                                <span id="currentTheaterPhone"><i class="bi bi-telephone-fill text-danger me-1"></i> Hotline: --</span>
+                            </div>
+                        </div>
 
-                <div class="theater-controls">
-                    <div class="control-item">
-                        <label for="citySelect" class="control-label">TỈNH / THÀNH PHỐ</label>
-                        <select id="citySelect" class="form-select theater-select">
-                            <option value="">Tất cả khu vực</option>
-                        </select>
-                    </div>
+                        <div class="theater-controls">
+                            <div class="control-item">
+                                <label for="citySelect" class="control-label">TỈNH / THÀNH PHỐ</label>
+                                <select id="citySelect" class="form-select theater-select">
+                                    <option value="">Tất cả khu vực</option>
+                                </select>
+                            </div>
 
-                    <div class="control-item">
-                        <label for="theaterSelect" class="control-label">CHỌN RẠP KHÁC</label>
-                        <select id="theaterSelect" class="form-select theater-select">
-                            <option value="">Chọn cụm rạp</option>
-                        </select>
+                            <div class="control-item">
+                                <label for="theaterSelect" class="control-label">CHỌN RẠP KHÁC</label>
+                                <select id="theaterSelect" class="form-select theater-select">
+                                    <option value="">Chọn cụm rạp</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -65,7 +76,7 @@
     <section class="theaters-showtimes-section">
         <div class="container cinema-shell">
             <div class="section-title-wrap mb-4">
-                <h3 class="section-heading"><span class="heading-accent"></span> LỊCH CHIẾU PHIM TẠI RẠP</h3>
+                <h3 class="section-heading">LỊCH CHIẾU PHIM TẠI RẠP</h3>
                 <div class="date-tabs-container">
                     <div class="date-tabs-scroll" id="showtimeDateTabs" role="tablist"></div>
                 </div>
@@ -108,7 +119,7 @@
                 <div class="col-lg-7">
                     <div class="pricing-panel" id="theaterPricingContainer">
                         <div class="section-title-wrap mb-3">
-                            <h3 class="section-heading"><span class="heading-accent"></span> BẢNG GIÁ VÉ</h3>
+                            <h3 class="section-heading">BẢNG GIÁ VÉ</h3>
                             <span class="badge bg-secondary">Cập nhật theo rạp</span>
                         </div>
 
@@ -121,7 +132,7 @@
                 <div class="col-lg-5">
                     <div class="details-panel" id="theaterDetailsContainer">
                         <div class="section-title-wrap mb-3">
-                            <h3 class="section-heading"><span class="heading-accent"></span> THÔNG TIN CHI TIẾT</h3>
+                            <h3 class="section-heading">THÔNG TIN CHI TIẾT</h3>
                         </div>
 
                         <div class="details-card">
@@ -144,7 +155,7 @@
                                 <p class="text-secondary mb-0">Hệ thống rạp chiếu phim chất lượng cao với màn chiếu sắc nét, không gian âm thanh chân thực và các tiện nghi dịch vụ cao cấp.</p>
                             </div>
 
-                            <div class="details-amenities pt-3 border-top border-secondary">
+                            <div class="details-amenities pt-3">
                                 <h6 class="text-white mb-3">TIỆN ÍCH TẠI RẠP</h6>
                                 <div class="amenities-tags" id="detailAmenities">
                                     <span class="amenity-tag">Dolby Atmos</span>

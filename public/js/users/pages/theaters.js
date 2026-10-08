@@ -65,9 +65,9 @@
     }
 
     async function initHeroSlider() {
-        const slider = document.getElementById('theatersHeroSlider');
-        const prevBtn = document.getElementById('theatersHeroPrev');
-        const nextBtn = document.getElementById('theatersHeroNext');
+        const slider = document.getElementById('theaterSection') || document.getElementById('theatersHeroSlider');
+        const prevBtn = document.getElementById('heroPrevious') || document.getElementById('theatersHeroPrev');
+        const nextBtn = document.getElementById('heroNext') || document.getElementById('theatersHeroNext');
 
         try {
             const res = await window.apiClient.get('/banners?placement=theater');
@@ -126,15 +126,16 @@
     }
 
     function renderHeroSlide(index) {
-        const backdrop = document.getElementById('theatersHeroBackdrop');
-        const titleEl = document.getElementById('theatersHeroTitle');
-        const descEl = document.getElementById('theatersHeroDesc');
+        const backdrop = document.getElementById('heroBackdrop') || document.getElementById('theatersHeroBackdrop');
+        const titleEl = document.getElementById('heroTitle') || document.getElementById('theatersHeroTitle');
+        const descEl = document.getElementById('heroDesc') || document.getElementById('theatersHeroDesc');
         if (!heroBanners.length) return;
 
         const banner = heroBanners[index];
         const imageUrl = safeImageUrl(banner.image_url || banner.images?.[0]?.url || banner.images?.[0]?.file_url);
 
         if (backdrop && imageUrl) {
+            backdrop.style.setProperty('--hero-backdrop-image', `url("${imageUrl}")`);
             backdrop.style.backgroundImage = `url("${imageUrl}")`;
         }
 
@@ -149,7 +150,7 @@
     }
 
     function renderHeroDots() {
-        const dotsContainer = document.getElementById('theatersHeroDots');
+        const dotsContainer = document.getElementById('heroDots') || document.getElementById('theatersHeroDots');
         if (!dotsContainer) return;
 
         if (heroBanners.length <= 1) {
@@ -158,10 +159,10 @@
         }
 
         dotsContainer.innerHTML = heroBanners.map((_, idx) => `
-            <button type="button" class="theaters-slider-dot ${idx === currentHeroIndex ? 'active' : ''}" data-index="${idx}" aria-label="Chuyển đến banner ${idx + 1}"></button>
+            <button type="button" class="hero-carousel-dot theaters-slider-dot ${idx === currentHeroIndex ? 'active' : ''}" data-index="${idx}" aria-label="Chuyển đến banner ${idx + 1}"></button>
         `).join('');
 
-        dotsContainer.querySelectorAll('.theaters-slider-dot').forEach(dot => {
+        dotsContainer.querySelectorAll('.hero-carousel-dot, .theaters-slider-dot').forEach(dot => {
             dot.addEventListener('click', () => {
                 const idx = parseInt(dot.dataset.index, 10);
                 if (!isNaN(idx)) {
@@ -174,9 +175,9 @@
     }
 
     function updateHeroDots(activeIndex) {
-        const dotsContainer = document.getElementById('theatersHeroDots');
+        const dotsContainer = document.getElementById('heroDots') || document.getElementById('theatersHeroDots');
         if (!dotsContainer) return;
-        const dots = dotsContainer.querySelectorAll('.theaters-slider-dot');
+        const dots = dotsContainer.querySelectorAll('.hero-carousel-dot, .theaters-slider-dot');
         dots.forEach((dot, idx) => {
             dot.classList.toggle('active', idx === activeIndex);
         });

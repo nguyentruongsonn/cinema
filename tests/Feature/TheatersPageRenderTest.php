@@ -10,11 +10,13 @@ class TheatersPageRenderTest extends TestCase
     {
         $response = $this->get('/theaters');
         $response->assertOk();
-        $response->assertSee('theaters-hero-slider', false);
+        $response->assertSee('theater-section', false);
+        $response->assertSee('hero-section', false);
         $response->assertSee('theaters-info-bar', false);
         $response->assertSee('theaters-showtimes-section', false);
         $response->assertSee('theaters-split-section', false);
         $response->assertSee('theaterPricingContainer', false);
         $response->assertSee('theaterDetailsContainer', false);
+        $response->assertDontSee('heading-accent', false);
     }
 }
