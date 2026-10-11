@@ -13,14 +13,17 @@
             <div id="mainNavbar" class="collapse navbar-collapse">
                 <ul class="navbar-nav mx-auto cinema-nav gap-lg-4">
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->is('movies*') ? 'active' : '' }}" href="{{ route('movies.index') }}">Phim</a>
+                        <a class="nav-link {{ request()->is('movies*') ? 'active' : '' }}" href="{{ route('movies.index') }}">PHIM</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->is('theaters*') ? 'active' : '' }}" href="{{ route('theaters.index') }}">Rạp</a>
+                        <a class="nav-link {{ request()->is('theaters*') ? 'active' : '' }}" href="{{ route('theaters.index') }}">RẠP</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">GÓC ĐIỆN ẢNH</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ request()->is('posts*') ? 'active' : '' }}" href="{{ route('posts.index') }}">
-                            Tin tức & Ưu đãi
+                            TIN TỨC & ƯU ĐÃI
                         </a>
                     </li>
                 </ul>

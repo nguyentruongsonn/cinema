@@ -24,6 +24,7 @@ class UnifiedTheatersNavigationTest extends TestCase
         $response = $this->get('/theaters');
         $response->assertOk();
         $response->assertSee('Rạp');
+        $response->assertSee('GÓC ĐIỆN ẢNH');
         $response->assertDontSee('>Giá vé<', false);
     }
 }

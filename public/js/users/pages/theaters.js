@@ -334,17 +334,41 @@
         const detailEmail = document.getElementById('detailEmail');
         const detailDesc = document.getElementById('detailDescription');
         const detailAmenities = document.getElementById('detailAmenities');
+        const detailAmenitiesWrapper = document.getElementById('detailAmenitiesWrapper');
+        const mapAddress = document.getElementById('theaterMapAddress');
+        const mapBox = document.getElementById('theaterMapBox');
 
         if (detailAddr) detailAddr.textContent = theater.address || '--';
-        if (detailPhone) detailPhone.textContent = theater.phone || '1900 2224';
-        if (detailEmail) detailEmail.textContent = theater.email || 'support@cinema.vn';
+        if (detailPhone) detailPhone.textContent = theater.phone || '--';
+        if (detailEmail) detailEmail.textContent = theater.email || '--';
+
         if (detailDesc) {
-            detailDesc.innerHTML = `<p class="text-secondary mb-0">${escapeHtml(theater.description || 'Hệ thống rạp chiếu phim chất lượng cao với màn chiếu sắc nét, không gian âm thanh chân thực và các tiện nghi dịch vụ cao cấp.')}</p>`;
+            if (theater.description) {
+                detailDesc.innerHTML = `<p class="text-secondary mb-0">${escapeHtml(theater.description)}</p>`;
+                detailDesc.classList.remove('d-none');
+            } else {
+                detailDesc.innerHTML = '';
+                detailDesc.classList.add('d-none');
+            }
         }
 
-        if (detailAmenities) {
+        if (detailAmenities && detailAmenitiesWrapper) {
             const badges = getTheaterAmenities(theater);
-            detailAmenities.innerHTML = badges.map(b => `<span class="amenity-tag">${escapeHtml(b)}</span>`).join('');
+            if (badges.length > 0) {
+                detailAmenities.innerHTML = badges.map(b => `<span class="amenity-tag">${escapeHtml(b)}</span>`).join('');
+                detailAmenitiesWrapper.classList.remove('d-none');
+            } else {
+                detailAmenities.innerHTML = '';
+                detailAmenitiesWrapper.classList.add('d-none');
+            }
+        }
+
+        if (mapAddress) {
+            mapAddress.textContent = theater.address || '';
+        }
+
+        if (mapBox && theater.map_embed) {
+            mapBox.innerHTML = theater.map_embed;
         }
 
         loadPricing(theater.id);
@@ -362,13 +386,6 @@
             if (cap.includes('3D')) badges.add('3D Cinema');
             if (cap.includes('LASER')) badges.add('Laser Projection');
         });
-        if (badges.size === 0) {
-            badges.add('Dolby Atmos');
-            badges.add('Laser Projection');
-            badges.add('Ghế VIP & Ghế Đôi');
-            badges.add('Bắp Nước Đa Dạng');
-            badges.add('Bãi Đỗ Xe Tiện Lợi');
-        }
         return Array.from(badges);
     }
 

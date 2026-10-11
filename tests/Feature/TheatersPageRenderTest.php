@@ -17,6 +17,7 @@ class TheatersPageRenderTest extends TestCase
         $response->assertSee('theaters-split-section', false);
         $response->assertSee('theaterPricingContainer', false);
         $response->assertSee('theaterDetailsContainer', false);
+        $response->assertSee('theaterMapContainer', false);
         $response->assertDontSee('heading-accent', false);
     }
 }
