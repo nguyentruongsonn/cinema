@@ -76,7 +76,7 @@
     <section class="theaters-showtimes-section">
         <div class="container">
             <div class="section-title-wrap mb-4">
-                <h3 class="section-heading">LỊCH CHIẾU PHIM TẠI RẠP</h3>
+                <h3 class="section-heading"><span class="heading-accent"></span> LỊCH CHIẾU PHIM TẠI RẠP</h3>
                 <div class="date-tabs-container">
                     <div class="date-tabs-scroll" id="showtimeDateTabs" role="tablist"></div>
                 </div>
@@ -115,10 +115,11 @@
     <section class="theaters-split-section py-5">
         <div class="container">
             <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="pricing-panel" id="theaterPricingContainer">
+                <div class="col-lg-7">
+                    <div id="theaterPricingContainer">
                         <div class="section-title-wrap mb-3">
-                            <h3 class="section-heading">BẢNG GIÁ VÉ</h3>
+                            <h3 class="section-heading"><span class="heading-accent"></span> BẢNG GIÁ VÉ</h3>
+                            <span class="badge-pricing-update">Cập nhật theo rạp</span>
                         </div>
 
                         <div id="pricingContentArea">
@@ -127,53 +128,50 @@
                     </div>
                 </div>
 
-                <div class="col-lg-6">
-                    <div class="details-panel" id="theaterDetailsContainer">
+                <div class="col-lg-5">
+                    <div id="theaterDetailsContainer">
                         <div class="section-title-wrap mb-3">
-                            <h3 class="section-heading">THÔNG TIN CHI TIẾT</h3>
+                            <h3 class="section-heading"><span class="heading-accent"></span> THÔNG TIN CHI TIẾT</h3>
                         </div>
 
-                        <div class="details-card">
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <div class="details-contact-info mb-3">
-                                        <div class="detail-row mb-2">
-                                            <strong class="text-white">Địa chỉ:</strong>
-                                            <span id="detailAddress" class="text-secondary">--</span>
-                                        </div>
-                                        <div class="detail-row mb-2">
-                                            <strong class="text-white">Điện thoại:</strong>
-                                            <span id="detailPhone" class="text-danger fw-bold">--</span>
-                                        </div>
-                                        <div class="detail-row mb-2">
-                                            <strong class="text-white">Email:</strong>
-                                            <span id="detailEmail" class="text-secondary">--</span>
-                                        </div>
-                                    </div>
+                        <div class="theater-details-card">
+                            <div class="detail-group mb-3">
+                                <label class="detail-label">ĐỊA CHỈ</label>
+                                <div class="detail-value text-white fw-semibold" id="detailAddress">Đang tải địa chỉ...</div>
+                            </div>
 
-                                    <div class="details-description mb-3 d-none" id="detailDescription"></div>
+                            <div class="detail-group mb-3">
+                                <label class="detail-label">ĐIỆN THOẠI</label>
+                                <div class="detail-value text-danger fw-bold fs-5" id="detailPhone">--</div>
+                            </div>
 
-                                    <div class="details-amenities d-none" id="detailAmenitiesWrapper">
-                                        <h6 class="text-white mb-2">TIỆN ÍCH TẠI RẠP</h6>
-                                        <div class="amenities-tags" id="detailAmenities"></div>
-                                    </div>
-                                </div>
+                            <div class="detail-group mb-3">
+                                <label class="detail-label">EMAIL HỖ TRỢ</label>
+                                <div class="detail-value text-light-gray" id="detailEmail">--</div>
+                            </div>
 
-                                <div class="col-md-6">
-                                    <div class="theater-map-column" id="theaterMapColumn">
-                                        <h6 class="text-white mb-2">BẢN ĐỒ</h6>
-                                        <div class="theater-map-container" id="theaterMapContainer">
-                                            <div class="theater-map-box" id="theaterMapBox">
-                                                <div class="theater-map-placeholder" id="theaterMapPlaceholder">
-                                                    <i class="bi bi-geo-alt-fill text-danger fs-2 mb-2"></i>
-                                                    <div class="text-white fw-bold mb-1">Vị trí rạp</div>
-                                                    <span class="small text-secondary" id="theaterMapAddress"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div class="detail-group mb-3">
+                                <label class="detail-label">GIỚI THIỆU RẠP</label>
+                                <div class="detail-value detail-desc-text" id="detailDescription">
+                                    Hệ thống rạp chiếu phim chất lượng cao với màn chiếu sắc nét, không gian âm thanh chân thực và các tiện nghi dịch vụ cao cấp, mang lại trải nghiệm xem phim hoàn hảo nhất cho khán giả.
                                 </div>
                             </div>
+
+                            <div class="detail-group mb-4">
+                                <label class="detail-label">TIỆN ÍCH TẠI RẠP</label>
+                                <div class="amenities-tags" id="detailAmenities">
+                                    <span class="amenity-tag">Dolby Atmos</span>
+                                    <span class="amenity-tag">Laser Projection</span>
+                                    <span class="amenity-tag">Ghế VIP & Ghế Đôi</span>
+                                    <span class="amenity-tag">Bắp Nước Đa Dạng</span>
+                                    <span class="amenity-tag">Bãi Đỗ Xe Tiện Lợi</span>
+                                    <span class="amenity-tag">Phòng Chờ VIP Lounge</span>
+                                </div>
+                            </div>
+
+                            <a href="#" id="theaterDirectionsBtn" target="_blank" rel="noopener noreferrer" class="btn-directions">
+                                Chỉ đường tới rạp
+                            </a>
                         </div>
                     </div>
                 </div>

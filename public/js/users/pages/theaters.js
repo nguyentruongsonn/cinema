@@ -334,41 +334,31 @@
         const detailEmail = document.getElementById('detailEmail');
         const detailDesc = document.getElementById('detailDescription');
         const detailAmenities = document.getElementById('detailAmenities');
-        const detailAmenitiesWrapper = document.getElementById('detailAmenitiesWrapper');
-        const mapAddress = document.getElementById('theaterMapAddress');
-        const mapBox = document.getElementById('theaterMapBox');
+        const directionsBtn = document.getElementById('theaterDirectionsBtn');
 
-        if (detailAddr) detailAddr.textContent = theater.address || '--';
-        if (detailPhone) detailPhone.textContent = theater.phone || '--';
-        if (detailEmail) detailEmail.textContent = theater.email || '--';
-
+        if (detailAddr) detailAddr.textContent = theater.address || '30 Bờ Bao Tân Thắng, Sơn Kỳ Ward, Tan Phu District, TP. Hồ Chí Minh';
+        if (detailPhone) detailPhone.textContent = theater.phone || '1900 6017';
+        if (detailEmail) detailEmail.textContent = theater.email || 'aeon@cgv.vn';
         if (detailDesc) {
-            if (theater.description) {
-                detailDesc.innerHTML = `<p class="text-secondary mb-0">${escapeHtml(theater.description)}</p>`;
-                detailDesc.classList.remove('d-none');
-            } else {
-                detailDesc.innerHTML = '';
-                detailDesc.classList.add('d-none');
-            }
+            detailDesc.textContent = theater.description || 'Hệ thống rạp chiếu phim chất lượng cao với màn chiếu sắc nét, không gian âm thanh chân thực và các tiện nghi dịch vụ cao cấp, mang lại trải nghiệm xem phim hoàn hảo nhất cho khán giả.';
         }
 
-        if (detailAmenities && detailAmenitiesWrapper) {
+        if (detailAmenities) {
             const badges = getTheaterAmenities(theater);
-            if (badges.length > 0) {
-                detailAmenities.innerHTML = badges.map(b => `<span class="amenity-tag">${escapeHtml(b)}</span>`).join('');
-                detailAmenitiesWrapper.classList.remove('d-none');
-            } else {
-                detailAmenities.innerHTML = '';
-                detailAmenitiesWrapper.classList.add('d-none');
-            }
+            const displayBadges = badges.length > 0 ? badges : [
+                'Dolby Atmos',
+                'Laser Projection',
+                'Ghế VIP & Ghế Đôi',
+                'Bắp Nước Đa Dạng',
+                'Bãi Đỗ Xe Tiện Lợi',
+                'Phòng Chờ VIP Lounge'
+            ];
+            detailAmenities.innerHTML = displayBadges.map(b => `<span class="amenity-tag">${escapeHtml(b)}</span>`).join('');
         }
 
-        if (mapAddress) {
-            mapAddress.textContent = theater.address || '';
-        }
-
-        if (mapBox && theater.map_embed) {
-            mapBox.innerHTML = theater.map_embed;
+        if (directionsBtn) {
+            const query = encodeURIComponent((theater.name || '') + ' ' + (theater.address || ''));
+            directionsBtn.href = `https://www.google.com/maps/search/?api=1&query=${query}`;
         }
 
         loadPricing(theater.id);
@@ -410,27 +400,26 @@
 
             const tablesHtml = theaterPricing.format_tables.map(fTable => {
                 const rowsHtml = (fTable.rows || []).map(row => {
-                    const isHappyDay = String(row.title || '').toLowerCase().includes('happy');
                     return `
-                        <tr class="${isHappyDay ? 'happy-day-row' : ''}">
-                            <td class="text-start ps-3 fw-bold">${escapeHtml(row.title)}</td>
-                            <td class="price-val-highlight">${formatPrice(row.adult)}</td>
+                        <tr>
+                            <td>${escapeHtml(row.title)}</td>
+                            <td>${formatPrice(row.adult)}</td>
                             <td>${formatPrice(row.u22)}</td>
                             <td>${formatPrice(row.child)}</td>
                         </tr>
                     `;
                 }).join('');
 
-                const noteText = fTable.seat_notes ? `* ${fTable.seat_notes}` : '* Giá vé trên chưa bao gồm phụ thu phòng chiếu đặc biệt hoặc suất chiếu sớm.';
+                const noteText = fTable.seat_notes ? `* ${fTable.seat_notes}` : '* Phụ thu ghế VIP: +10.000đ | Phụ thu ghế Couple: +20.000đ';
 
                 return `
-                    <div class="pricing-format-block mb-4">
-                        <h4 class="h6 text-danger fw-bold mb-2">ĐỊNH DẠNG: ${escapeHtml(fTable.format?.name || '2D')}</h4>
+                    <div class="pricing-format-card">
+                        <h4 class="format-card-title">ĐỊNH DẠNG: ${escapeHtml(fTable.format?.name || '2D')}</h4>
                         <div class="pricing-table-scroll">
                             <table class="pricing-table-custom">
                                 <thead>
                                     <tr>
-                                        <th class="text-start ps-3">THỜI GIAN / LOẠI GHẾ</th>
+                                        <th>THỜI GIAN / LOẠI GHẾ</th>
                                         <th>NGƯỜI LỚN</th>
                                         <th>U22 / HSSV</th>
                                         <th>TRẺ EM & CAO TUỔI</th>
@@ -441,21 +430,22 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div class="pricing-notes-box">
-                            <i class="bi bi-info-circle me-1"></i> ${escapeHtml(noteText)}
+                        <div class="format-card-note">
+                            <i class="bi bi-info-circle"></i>
+                            <span>${escapeHtml(noteText)}</span>
                         </div>
                     </div>
                 `;
             }).join('');
 
             const rulesHtml = `
-                <div class="pricing-notes-box mt-3">
-                    <div class="fw-bold text-white mb-1">* LƯU Ý KHI ĐẶT VÉ</div>
-                    <div class="small text-secondary">
-                        - Hệ thống đặt vé trực tuyến mặc định áp dụng giá vé Người lớn.<br>
-                        - Khách hàng thuộc đối tượng U22, Học sinh - Sinh viên, Trẻ em, Người cao tuổi vui lòng xuất trình giấy tờ tùy thân hợp lệ tại quầy vé để áp dụng ưu đãi.<br>
-                        - Vé Trẻ em dành cho khách hàng cao từ 0.7m đến 1.3m. Trẻ em dưới 0.7m được miễn phí vé khi ngồi cùng người lớn.
-                    </div>
+                <div class="pricing-rules-card">
+                    <div class="rules-card-title"><span class="text-danger me-1">*</span>LƯU Ý KHI ĐẶT VÉ</div>
+                    <ul class="rules-card-list">
+                        <li>Hệ thống đặt vé trực tuyến mặc định áp dụng giá vé Người lớn.</li>
+                        <li>Khách hàng thuộc đối tượng U22, Học sinh - Sinh viên, Trẻ em, Người cao tuổi vui lòng xuất trình giấy tờ tùy thân hợp lệ tại quầy vé để áp dụng ưu đãi.</li>
+                        <li>Vé Trẻ em dành cho khách hàng cao từ 0.7m đến 1.3m. Trẻ em dưới 0.7m được miễn phí vé khi ngồi cùng người lớn.</li>
+                    </ul>
                 </div>
             `;
 

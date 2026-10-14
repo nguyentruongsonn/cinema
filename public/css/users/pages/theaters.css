@@ -259,12 +259,36 @@
     gap: 1rem;
 }
 
+.heading-accent {
+    width: 4px;
+    height: 18px;
+    border-radius: 2px;
+    background: var(--primary-color, #ff141f);
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
 .section-heading {
     font-size: 1.25rem;
     font-weight: 800;
     color: #ffffff;
     margin: 0;
+    display: flex;
+    align-items: center;
     letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.badge-pricing-update {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #1c1c1f;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #a1a1aa;
+    font-size: 0.72rem;
+    font-weight: 600;
 }
 
 .date-tabs-container {
@@ -381,124 +405,202 @@
     transform: translateY(-1px);
 }
 
-.pricing-panel,
-.details-panel {
-    background: #18181b;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
+.pricing-format-card {
+    background: #141416;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+}
+
+.format-card-title {
+    color: var(--primary-color, #ff141f);
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0 0 14px;
 }
 
 .pricing-table-scroll {
     overflow-x: auto;
-    margin-bottom: 1rem;
+    margin-bottom: 12px;
 }
 
 .pricing-table-custom {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
-    text-align: center;
+    font-size: 0.84rem;
 }
 
 .pricing-table-custom th {
-    background: #27272a;
     color: #8e8e93;
     font-weight: 700;
-    padding: 0.75rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: center;
+}
+
+.pricing-table-custom th:first-child {
+    text-align: left;
+    padding-left: 0;
 }
 
 .pricing-table-custom td {
-    padding: 0.75rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 12px 12px;
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    text-align: center;
+    font-weight: 600;
+}
+
+.pricing-table-custom td:first-child {
+    text-align: left;
+    padding-left: 0;
     color: #d1d1d6;
+    font-weight: 600;
 }
 
-.pricing-table-custom tr.happy-day-row {
-    background: rgba(255, 189, 46, 0.04);
+.pricing-table-custom tr:last-child td {
+    border-bottom: none;
 }
 
-.pricing-table-custom tr.happy-day-row td {
-    color: #ffbd2e;
-    font-weight: 700;
+.format-card-note {
+    font-size: 0.78rem;
+    color: #71717a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 6px;
 }
 
-.price-val-highlight {
-    color: var(--primary-color, #ff141f);
-    font-weight: 700;
+.format-card-note i {
+    font-size: 0.85rem;
+    color: #8e8e93;
 }
 
-.pricing-notes-box {
-    margin-top: 1rem;
-    padding: 0.85rem 1rem;
-    background: #27272a;
-    border-radius: 0.5rem;
-    font-size: 0.8rem;
-    color: #a1a1aa;
+.pricing-rules-card {
+    background: #141416;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 20px 22px;
+}
+
+.rules-card-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.rules-card-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rules-card-list li {
+    position: relative;
+    padding-left: 14px;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: #8e8e93;
+}
+
+.rules-card-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #8e8e93;
+}
+
+.theater-details-card {
+    background: #141416;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 24px 26px;
+}
+
+.detail-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8e8e93;
+    margin: 0;
+}
+
+.detail-value {
+    font-size: 0.88rem;
     line-height: 1.5;
 }
 
-.details-card {
-    line-height: 1.6;
-    font-size: 0.875rem;
+.text-light-gray {
+    color: #d1d1d6;
 }
 
-.detail-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+.detail-desc-text {
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: #a1a1aa;
 }
 
 .amenities-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 8px;
+    margin-top: 4px;
 }
 
 .amenity-tag {
     display: inline-block;
-    padding: 0.35rem 0.75rem;
-    border-radius: 0.5rem;
-    background: #27272a;
-    color: #d4d4d8;
-    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: #202024;
+    color: #e4e4e7;
+    font-size: 0.75rem;
     font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.theater-map-column {
-    display: flex;
-    flex-direction: column;
-}
-
-.theater-map-container {
+.btn-directions {
+    display: block;
     width: 100%;
-    flex-grow: 1;
-}
-
-.theater-map-box {
-    background: #27272a;
-    border-radius: 0.5rem;
-    min-height: 200px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    position: relative;
-}
-
-.theater-map-box iframe {
-    width: 100%;
-    height: 100%;
-    min-height: 200px;
-    border: 0;
-    border-radius: 0.5rem;
-}
-
-.theater-map-placeholder {
-    padding: 1.5rem 1rem;
+    padding: 13px 20px;
+    background: var(--primary-color, #ff141f);
+    color: #ffffff;
+    font-size: 0.92rem;
+    font-weight: 700;
     text-align: center;
-    color: #a1a1aa;
+    text-decoration: none;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+    margin-top: 18px;
+}
+
+.btn-directions:hover {
+    background: #d90f18;
+    color: #ffffff;
+    transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {
