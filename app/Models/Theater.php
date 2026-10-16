@@ -20,6 +20,7 @@ class Theater extends Model
         'address',
         'phone',
         'email',
+        'map',
         'status',
         'pricing_profile',
     ];

@@ -19,6 +19,7 @@ class StoreTheaterRequest extends FormRequest
             'city' => ['required', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
+            'map' => ['nullable', 'string'],
             'status' => ['required', 'in:active,inactive'],
             'branch_id' => ['nullable', 'exists:branches,id'],
         ];

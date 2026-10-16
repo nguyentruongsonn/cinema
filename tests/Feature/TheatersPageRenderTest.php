@@ -19,5 +19,10 @@ class TheatersPageRenderTest extends TestCase
         $response->assertSee('theaterDetailsContainer', false);
         $response->assertSee('heading-accent', false);
         $response->assertSee('btn-directions', false);
+        $response->assertSee('theaterMapBox', false);
+        $response->assertSee('showtime-skeleton-card', false);
+        $response->assertDontSee('id="heroContent"', false);
+        $response->assertDontSee('badge-pricing-update', false);
+        $response->assertDontSee('30 Bờ Bao Tân Thắng', false);
     }
 }

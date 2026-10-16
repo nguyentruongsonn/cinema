@@ -19,6 +19,7 @@ class UpdateTheaterRequest extends FormRequest
             'city' => ['sometimes', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
+            'map' => ['nullable', 'string'],
             'status' => ['sometimes', 'in:active,inactive'],
             'branch_id' => ['nullable', 'exists:branches,id'],
         ];

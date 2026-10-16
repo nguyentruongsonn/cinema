@@ -99,6 +99,7 @@ class TheaterController extends Controller
                 'address' => $validated['address'],
                 'phone' => $validated['phone'] ?? null,
                 'email' => $validated['email'] ?? null,
+                'map' => $validated['map'] ?? null,
                 'pricing_profile' => $pricingProfile,
                 'status' => $validated['status'] ?? true,
             ]);
@@ -133,7 +134,7 @@ class TheaterController extends Controller
             $validated = $request->validated();
 
             $changes = [];
-            foreach (['branch_id', 'name', 'address', 'phone', 'email', 'pricing_profile', 'status'] as $field) {
+            foreach (['branch_id', 'name', 'address', 'phone', 'email', 'map', 'pricing_profile', 'status'] as $field) {
                 if (array_key_exists($field, $validated) && $validated[$field] != $theater->$field) {
                     $changes[$field] = [
                         'old' => $theater->$field,
@@ -151,7 +152,7 @@ class TheaterController extends Controller
                 'beta_ten_discount' => -10000,
             ];
 
-            $theater->update([
+            $updateData = [
                 'branch_id' => $validated['branch_id'],
                 'name' => $validated['name'],
                 'address' => $validated['address'],
@@ -159,7 +160,11 @@ class TheaterController extends Controller
                 'email' => $validated['email'] ?? $theater->email,
                 'pricing_profile' => $pricingProfile,
                 'status' => $validated['status'] ?? $theater->status,
-            ]);
+            ];
+            if (array_key_exists('map', $validated)) {
+                $updateData['map'] = $validated['map'];
+            }
+            $theater->update($updateData);
 
             Log::info('Theater updated', [
                 'actor_id' => Auth::id(),

@@ -25,6 +25,7 @@
         isActive: document.getElementById('theaterStatus'),
         phone: document.getElementById('theaterPhone'),
         email: document.getElementById('theaterEmail'),
+        map: document.getElementById('theaterMap'),
         basePrice: document.getElementById('theaterBasePrice'),
         weekendSurcharge: document.getElementById('theaterWeekendSurcharge'),
         holidaySurcharge: document.getElementById('theaterHolidaySurcharge'),
@@ -196,6 +197,7 @@
             els.description.value = theater.description || '';
             els.phone.value = theater.phone || '';
             els.email.value = theater.email || '';
+            if (els.map) els.map.value = theater.map || '';
             els.isActive.checked = theater.status === 1 || theater.status === true;
 
             const pp = theater.pricing_profile || {};

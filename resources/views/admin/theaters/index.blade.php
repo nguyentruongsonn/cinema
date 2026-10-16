@@ -140,6 +140,10 @@
                             <input type="email" class="form-control bg-dark text-white border-secondary" id="theaterEmail" name="email">
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label for="theaterMap" class="form-label text-secondary">Mã bản đồ (Google Maps Iframe hoặc link)</label>
+                        <textarea class="form-control bg-dark text-white border-secondary" id="theaterMap" name="map" rows="3" placeholder="Dán mã thẻ <iframe> hoặc liên kết Google Maps"></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn text-white btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>

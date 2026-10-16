@@ -127,8 +127,6 @@
 
     function renderHeroSlide(index) {
         const backdrop = document.getElementById('heroBackdrop') || document.getElementById('theatersHeroBackdrop');
-        const titleEl = document.getElementById('heroTitle') || document.getElementById('theatersHeroTitle');
-        const descEl = document.getElementById('heroDesc') || document.getElementById('theatersHeroDesc');
         if (!heroBanners.length) return;
 
         const banner = heroBanners[index];
@@ -137,13 +135,6 @@
         if (backdrop && imageUrl) {
             backdrop.style.setProperty('--hero-backdrop-image', `url("${imageUrl}")`);
             backdrop.style.backgroundImage = `url("${imageUrl}")`;
-        }
-
-        if (titleEl && banner.title) {
-            titleEl.textContent = banner.title;
-        }
-        if (descEl) {
-            descEl.textContent = banner.description || 'Hệ thống phòng chiếu chuẩn quốc tế với âm thanh vòm sống động và màn chiếu sắc nét.';
         }
 
         updateHeroDots(index);
@@ -326,7 +317,7 @@
             addrEl.innerHTML = `<i class="bi bi-geo-alt-fill text-danger me-1"></i> ${escapeHtml(theater.address || 'Đang cập nhật địa chỉ')}`;
         }
         if (phoneEl) {
-            phoneEl.innerHTML = `<i class="bi bi-telephone-fill text-danger me-1"></i> Hotline: ${escapeHtml(theater.phone || '1900 2224')}`;
+            phoneEl.innerHTML = `<i class="bi bi-telephone-fill text-danger me-1"></i> Hotline: ${escapeHtml(theater.phone || '--')}`;
         }
 
         const detailAddr = document.getElementById('detailAddress');
@@ -335,25 +326,84 @@
         const detailDesc = document.getElementById('detailDescription');
         const detailAmenities = document.getElementById('detailAmenities');
         const directionsBtn = document.getElementById('theaterDirectionsBtn');
+        const mapBox = document.getElementById('theaterMapBox');
+        const phoneGroup = document.getElementById('detailPhoneGroup');
+        const emailGroup = document.getElementById('detailEmailGroup');
+        const descGroup = document.getElementById('detailDescGroup');
+        const amenitiesGroup = document.getElementById('detailAmenitiesGroup');
 
-        if (detailAddr) detailAddr.textContent = theater.address || '30 Bờ Bao Tân Thắng, Sơn Kỳ Ward, Tan Phu District, TP. Hồ Chí Minh';
-        if (detailPhone) detailPhone.textContent = theater.phone || '1900 6017';
-        if (detailEmail) detailEmail.textContent = theater.email || 'aeon@cgv.vn';
+        if (detailAddr) detailAddr.textContent = theater.address || '--';
+
+        if (detailPhone) {
+            if (theater.phone && theater.phone.trim()) {
+                detailPhone.textContent = theater.phone.trim();
+                if (phoneGroup) phoneGroup.classList.remove('d-none');
+            } else {
+                detailPhone.textContent = '--';
+                if (phoneGroup) phoneGroup.classList.add('d-none');
+            }
+        }
+
+        if (detailEmail) {
+            if (theater.email && theater.email.trim()) {
+                detailEmail.textContent = theater.email.trim();
+                if (emailGroup) emailGroup.classList.remove('d-none');
+            } else {
+                detailEmail.textContent = '--';
+                if (emailGroup) emailGroup.classList.add('d-none');
+            }
+        }
+
         if (detailDesc) {
-            detailDesc.textContent = theater.description || 'Hệ thống rạp chiếu phim chất lượng cao với màn chiếu sắc nét, không gian âm thanh chân thực và các tiện nghi dịch vụ cao cấp, mang lại trải nghiệm xem phim hoàn hảo nhất cho khán giả.';
+            if (theater.description && theater.description.trim()) {
+                detailDesc.textContent = theater.description.trim();
+                if (descGroup) descGroup.classList.remove('d-none');
+            } else {
+                detailDesc.textContent = '';
+                if (descGroup) descGroup.classList.add('d-none');
+            }
         }
 
         if (detailAmenities) {
             const badges = getTheaterAmenities(theater);
-            const displayBadges = badges.length > 0 ? badges : [
-                'Dolby Atmos',
-                'Laser Projection',
-                'Ghế VIP & Ghế Đôi',
-                'Bắp Nước Đa Dạng',
-                'Bãi Đỗ Xe Tiện Lợi',
-                'Phòng Chờ VIP Lounge'
-            ];
-            detailAmenities.innerHTML = displayBadges.map(b => `<span class="amenity-tag">${escapeHtml(b)}</span>`).join('');
+            if (badges.length > 0) {
+                detailAmenities.innerHTML = badges.map(b => `<span class="amenity-tag">${escapeHtml(b)}</span>`).join('');
+                if (amenitiesGroup) amenitiesGroup.classList.remove('d-none');
+            } else {
+                detailAmenities.innerHTML = '';
+                if (amenitiesGroup) amenitiesGroup.classList.add('d-none');
+            }
+        }
+
+        if (mapBox) {
+            if (theater.map && theater.map.trim()) {
+                const rawMap = theater.map.trim();
+                if (rawMap.includes('<iframe')) {
+                    mapBox.innerHTML = rawMap;
+                    const ifr = mapBox.querySelector('iframe');
+                    if (ifr) {
+                        ifr.style.width = '100%';
+                        ifr.style.height = '100%';
+                        ifr.style.border = '0';
+                    }
+                } else if (rawMap.startsWith('http://') || rawMap.startsWith('https://')) {
+                    mapBox.innerHTML = `<iframe src="${escapeHtml(rawMap)}" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
+                } else {
+                    mapBox.innerHTML = rawMap;
+                }
+            } else {
+                const query = encodeURIComponent((theater.name || '') + ' ' + (theater.address || ''));
+                mapBox.innerHTML = `
+                    <div class="theater-map-placeholder d-flex flex-column align-items-center justify-content-center h-100 text-center p-3">
+                        <i class="bi bi-geo-alt-fill text-danger fs-2 mb-2"></i>
+                        <div class="text-white fw-bold mb-1">${escapeHtml(theater.name || 'Vị trí rạp')}</div>
+                        <div class="small text-secondary mb-3">${escapeHtml(theater.address || 'Đang cập nhật địa chỉ')}</div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=${query}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-map me-1"></i> Xem trên Google Maps
+                        </a>
+                    </div>
+                `;
+            }
         }
 
         if (directionsBtn) {

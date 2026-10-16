@@ -16,6 +16,7 @@ class TheaterResource extends JsonResource
             'address' => $this->address,
             'phone' => $this->phone,
             'email' => $this->email,
+            'map' => $this->map,
             'status' => $this->status,
             'pricing_profile' => $this->pricing_profile,
             'branch' => $this->whenLoaded('branch', function () {
