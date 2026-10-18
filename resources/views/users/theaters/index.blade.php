@@ -112,9 +112,22 @@
                             <h3 class="section-heading"><span class="heading-accent"></span> BẢNG GIÁ VÉ</h3>
                         </div>
 
-                        <div id="pricingContentArea">
-                            <div class="text-center py-4 text-secondary">Đang tải bảng giá...</div>
+                        <div id="pricingSkeleton" class="pricing-skeleton-wrapper">
+                            @for ($c = 0; $c < 2; $c++)
+                                <div class="pricing-skeleton-card">
+                                    <div class="skeleton-format-title skeleton"></div>
+                                    <div class="pricing-skeleton-table">
+                                        <div class="skeleton-table-header skeleton"></div>
+                                        @for ($r = 0; $r < 3; $r++)
+                                            <div class="skeleton-table-row skeleton"></div>
+                                        @endfor
+                                    </div>
+                                    <div class="skeleton-table-note skeleton"></div>
+                                </div>
+                            @endfor
                         </div>
+
+                        <div id="pricingContentArea" class="d-none"></div>
                     </div>
                 </div>
 
@@ -127,7 +140,7 @@
                         <div class="theater-details-card">
                             <div class="detail-map-wrapper mb-3" id="theaterMapWrapper">
                                 <div class="theater-map-box" id="theaterMapBox">
-                                    <div class="map-skeleton skeleton" id="mapSkeleton"></div>
+                                    <iframe id="theaterMapIframe" src="" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                                 </div>
                             </div>
 

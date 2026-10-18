@@ -375,35 +375,24 @@
             }
         }
 
-        if (mapBox) {
+        const mapIframe = document.getElementById('theaterMapIframe');
+        if (mapIframe) {
+            let mapSrc = '';
             if (theater.map && theater.map.trim()) {
-                const rawMap = theater.map.trim();
-                if (rawMap.includes('<iframe')) {
-                    mapBox.innerHTML = rawMap;
-                    const ifr = mapBox.querySelector('iframe');
-                    if (ifr) {
-                        ifr.style.width = '100%';
-                        ifr.style.height = '100%';
-                        ifr.style.border = '0';
-                    }
-                } else if (rawMap.startsWith('http://') || rawMap.startsWith('https://')) {
-                    mapBox.innerHTML = `<iframe src="${escapeHtml(rawMap)}" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
+                const raw = theater.map.trim();
+                const match = raw.match(/src=["']([^"']+)["']/i);
+                if (match && match[1]) {
+                    mapSrc = match[1];
+                } else if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('//')) {
+                    mapSrc = raw;
                 } else {
-                    mapBox.innerHTML = rawMap;
+                    mapSrc = raw;
                 }
-            } else {
-                const query = encodeURIComponent((theater.name || '') + ' ' + (theater.address || ''));
-                mapBox.innerHTML = `
-                    <div class="theater-map-placeholder d-flex flex-column align-items-center justify-content-center h-100 text-center p-3">
-                        <i class="bi bi-geo-alt-fill text-danger fs-2 mb-2"></i>
-                        <div class="text-white fw-bold mb-1">${escapeHtml(theater.name || 'Vị trí rạp')}</div>
-                        <div class="small text-secondary mb-3">${escapeHtml(theater.address || 'Đang cập nhật địa chỉ')}</div>
-                        <a href="https://www.google.com/maps/search/?api=1&query=${query}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-map me-1"></i> Xem trên Google Maps
-                        </a>
-                    </div>
-                `;
+            } else if (theater.address) {
+                const query = encodeURIComponent((theater.name || '') + ' ' + theater.address);
+                mapSrc = `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
             }
+            mapIframe.src = mapSrc;
         }
 
         if (directionsBtn) {
@@ -431,7 +420,11 @@
 
     async function loadPricing(theaterId) {
         const pricingArea = document.getElementById('pricingContentArea');
+        const skeleton = document.getElementById('pricingSkeleton');
         if (!pricingArea) return;
+
+        if (skeleton) skeleton.classList.remove('d-none');
+        pricingArea.classList.add('d-none');
 
         try {
             if (!cachedPricing) {
@@ -444,7 +437,9 @@
             const theaterPricing = (cachedPricing || []).find(p => String(p.theater?.id) === String(theaterId)) || (cachedPricing || [])[0];
 
             if (!theaterPricing || !theaterPricing.format_tables || theaterPricing.format_tables.length === 0) {
+                if (skeleton) skeleton.classList.add('d-none');
                 pricingArea.innerHTML = '<div class="text-center py-4 text-secondary">Chưa có bảng giá cho rạp này.</div>';
+                pricingArea.classList.remove('d-none');
                 return;
             }
 
@@ -500,9 +495,13 @@
             `;
 
             pricingArea.innerHTML = tablesHtml + rulesHtml;
+            if (skeleton) skeleton.classList.add('d-none');
+            pricingArea.classList.remove('d-none');
         } catch (e) {
             console.error('Failed to load pricing:', e);
+            if (skeleton) skeleton.classList.add('d-none');
             pricingArea.innerHTML = '<div class="text-center py-4 text-danger">Không thể tải dữ liệu bảng giá lúc này.</div>';
+            pricingArea.classList.remove('d-none');
         }
     }
 

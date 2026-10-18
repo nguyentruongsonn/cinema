@@ -399,7 +399,6 @@
     display: flex;
     gap: 1.5rem;
     background: #141416;
-    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     padding: 1.25rem;
     align-items: flex-start;
@@ -457,9 +456,48 @@
     border-radius: 6px;
 }
 
+.pricing-skeleton-card {
+    background: #141416;
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+}
+
+.skeleton-format-title {
+    width: 140px;
+    height: 18px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.pricing-skeleton-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.skeleton-table-header {
+    width: 100%;
+    height: 28px;
+    border-radius: 4px;
+}
+
+.skeleton-table-row {
+    width: 100%;
+    height: 38px;
+    border-radius: 4px;
+}
+
+.skeleton-table-note {
+    width: 60%;
+    max-width: 320px;
+    height: 14px;
+    border-radius: 4px;
+}
+
 .pricing-format-card {
     background: #141416;
-    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
     padding: 20px 22px;
     margin-bottom: 16px;
@@ -536,7 +574,6 @@
 
 .pricing-rules-card {
     background: #141416;
-    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
     padding: 20px 22px;
 }
@@ -579,7 +616,6 @@
 
 .theater-details-card {
     background: #141416;
-    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 14px;
     padding: 24px 26px;
 }
@@ -589,7 +625,6 @@
     border-radius: 10px;
     overflow: hidden;
     background: #18181b;
-    border: 1px solid rgba(255, 255, 255, 0.06);
     margin-bottom: 1rem;
 }
 
@@ -658,7 +693,6 @@
     color: #e4e4e7;
     font-size: 0.75rem;
     font-weight: 600;
-    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .btn-directions {
