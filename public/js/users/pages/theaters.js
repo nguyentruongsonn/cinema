@@ -309,23 +309,14 @@
         window.history.replaceState({}, '', url);
 
         const nameEl = document.getElementById('currentTheaterName');
-        const addrEl = document.getElementById('currentTheaterAddress');
-        const phoneEl = document.getElementById('currentTheaterPhone');
 
         if (nameEl) nameEl.textContent = theater.name || '';
-        if (addrEl) {
-            addrEl.innerHTML = `<i class="bi bi-geo-alt-fill text-danger me-1"></i> ${escapeHtml(theater.address || 'Đang cập nhật địa chỉ')}`;
-        }
-        if (phoneEl) {
-            phoneEl.innerHTML = `<i class="bi bi-telephone-fill text-danger me-1"></i> Hotline: ${escapeHtml(theater.phone || '--')}`;
-        }
 
         const detailAddr = document.getElementById('detailAddress');
         const detailPhone = document.getElementById('detailPhone');
         const detailEmail = document.getElementById('detailEmail');
         const detailDesc = document.getElementById('detailDescription');
         const detailAmenities = document.getElementById('detailAmenities');
-        const directionsBtn = document.getElementById('theaterDirectionsBtn');
         const mapBox = document.getElementById('theaterMapBox');
         const phoneGroup = document.getElementById('detailPhoneGroup');
         const emailGroup = document.getElementById('detailEmailGroup');
@@ -393,11 +384,6 @@
                 mapSrc = `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
             }
             mapIframe.src = mapSrc;
-        }
-
-        if (directionsBtn) {
-            const query = encodeURIComponent((theater.name || '') + ' ' + (theater.address || ''));
-            directionsBtn.href = `https://www.google.com/maps/search/?api=1&query=${query}`;
         }
 
         loadPricing(theater.id);

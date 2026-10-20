@@ -34,10 +34,6 @@
                         <div class="theater-summary">
                             <span class="theater-eyebrow">RẠP ĐANG CHỌN</span>
                             <h2 class="theater-current-name" id="currentTheaterName">Đang tải rạp...</h2>
-                            <div class="theater-meta">
-                                <span id="currentTheaterAddress"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Đang tải địa chỉ...</span>
-                                <span id="currentTheaterPhone"><i class="bi bi-telephone-fill text-danger me-1"></i> Hotline: --</span>
-                            </div>
                         </div>
 
                         <div class="theater-controls">
@@ -64,7 +60,7 @@
     <section class="theaters-showtimes-section">
         <div class="container">
             <div class="section-title-wrap mb-4">
-                <h3 class="section-heading"><span class="heading-accent"></span> LỊCH CHIẾU PHIM TẠI RẠP</h3>
+                <h3 class="section-heading">LỊCH CHIẾU PHIM TẠI RẠP</h3>
                 <div class="date-tabs-container">
                     <div class="date-tabs-scroll" id="showtimeDateTabs" role="tablist"></div>
                 </div>
@@ -109,7 +105,7 @@
                 <div class="col-lg-7">
                     <div id="theaterPricingContainer">
                         <div class="section-title-wrap mb-3">
-                            <h3 class="section-heading"><span class="heading-accent"></span> BẢNG GIÁ VÉ</h3>
+                            <h3 class="section-heading">BẢNG GIÁ VÉ</h3>
                         </div>
 
                         <div id="pricingSkeleton" class="pricing-skeleton-wrapper">
@@ -134,7 +130,7 @@
                 <div class="col-lg-5">
                     <div id="theaterDetailsContainer">
                         <div class="section-title-wrap mb-3">
-                            <h3 class="section-heading"><span class="heading-accent"></span> THÔNG TIN CHI TIẾT</h3>
+                            <h3 class="section-heading">THÔNG TIN CHI TIẾT</h3>
                         </div>
 
                         <div class="theater-details-card">
@@ -164,14 +160,10 @@
                                 <div class="detail-value detail-desc-text" id="detailDescription"></div>
                             </div>
 
-                            <div class="detail-group mb-4 d-none" id="detailAmenitiesGroup">
+                            <div class="detail-group mb-0 d-none" id="detailAmenitiesGroup">
                                 <label class="detail-label">TIỆN ÍCH TẠI RẠP</label>
                                 <div class="amenities-tags" id="detailAmenities"></div>
                             </div>
-
-                            <a href="#" id="theaterDirectionsBtn" target="_blank" rel="noopener noreferrer" class="btn-directions">
-                                Chỉ đường tới rạp
-                            </a>
                         </div>
                     </div>
                 </div>

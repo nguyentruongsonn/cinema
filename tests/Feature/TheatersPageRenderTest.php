@@ -17,13 +17,14 @@ class TheatersPageRenderTest extends TestCase
         $response->assertSee('theaters-split-section', false);
         $response->assertSee('theaterPricingContainer', false);
         $response->assertSee('theaterDetailsContainer', false);
-        $response->assertSee('heading-accent', false);
-        $response->assertSee('btn-directions', false);
         $response->assertSee('theaterMapBox', false);
         $response->assertSee('theaterMapIframe', false);
         $response->assertSee('showtime-skeleton-card', false);
         $response->assertSee('pricingSkeleton', false);
         $response->assertSee('pricing-skeleton-card', false);
+        $response->assertDontSee('heading-accent', false);
+        $response->assertDontSee('btn-directions', false);
+        $response->assertDontSee('theater-meta', false);
         $response->assertDontSee('id="heroContent"', false);
         $response->assertDontSee('badge-pricing-update', false);
         $response->assertDontSee('30 Bờ Bao Tân Thắng', false);
