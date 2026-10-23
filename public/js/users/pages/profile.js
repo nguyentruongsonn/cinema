@@ -155,6 +155,21 @@ class ProfilePage {
             button.addEventListener('click', () => this.enableFieldEditing(button.dataset.editField));
         });
 
+        document.querySelector('.profile-edit-all-btn')?.addEventListener('click', () => {
+            this.editableFieldIds.forEach((fieldId) => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.disabled = false;
+                    const button = document.querySelector(`[data-edit-field="${fieldId}"]`);
+                    button?.classList.add('is-active');
+                }
+            });
+            const firstField = document.getElementById(this.editableFieldIds[0]);
+            firstField?.focus();
+            if (this.elements.updateBtn) this.elements.updateBtn.disabled = false;
+            if (this.elements.resetBtn) this.elements.resetBtn.disabled = false;
+        });
+
         this.elements.updateForm?.addEventListener('submit', (event) => this.handleUpdateProfile(event));
         this.elements.passwordForm?.addEventListener('submit', (event) => this.handleChangePassword(event));
         this.elements.resetBtn?.addEventListener('click', () => this.populateForms());
@@ -266,6 +281,18 @@ class ProfilePage {
         const field = document.getElementById(fieldId);
         if (!field) return;
 
+        const button = document.querySelector(`[data-edit-field="${fieldId}"]`);
+        if (button?.classList.contains('is-active')) {
+            field.disabled = true;
+            button.classList.remove('is-active');
+            const hasAnyActive = document.querySelector('[data-edit-field].is-active');
+            if (!hasAnyActive) {
+                if (this.elements.updateBtn) this.elements.updateBtn.disabled = true;
+                if (this.elements.resetBtn) this.elements.resetBtn.disabled = true;
+            }
+            return;
+        }
+
         field.disabled = false;
         field.focus();
 
@@ -273,7 +300,6 @@ class ProfilePage {
             field.select();
         }
 
-        const button = document.querySelector(`[data-edit-field="${fieldId}"]`);
         button?.classList.add('is-active');
 
         if (this.elements.updateBtn) this.elements.updateBtn.disabled = false;

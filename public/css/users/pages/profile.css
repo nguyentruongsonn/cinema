@@ -288,7 +288,6 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border: 1px solid rgba(237, 7, 18, 0.3);
     flex-shrink: 0;
 }
 
@@ -413,48 +412,66 @@
 
 .profile-editable-control {
     position: relative;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    width: 100%;
 }
 
 .profile-form-group input,
 .profile-form-group select,
 .profile-form-group textarea {
-    flex: 1;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    width: 100%;
+    padding: 13px 16px;
+    background: #141416 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 8px;
     color: #ffffff !important;
     font-size: 14px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+}
+
+.profile-form-group input[type="date"] {
+    color-scheme: dark;
+}
+
+.profile-editable-control select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: none !important;
+}
+
+.profile-form-group input::placeholder,
+.profile-form-group textarea::placeholder {
+    color: #71717a !important;
+    -webkit-text-fill-color: #71717a !important;
 }
 
 .profile-form-group input:hover:not(:disabled),
 .profile-form-group select:hover:not(:disabled),
 .profile-form-group textarea:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: #18181c !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .profile-form-group input:focus,
 .profile-form-group select:focus,
 .profile-form-group textarea:focus {
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: #18181c !important;
     border-color: #ed0712 !important;
+    box-shadow: 0 0 0 2px rgba(237, 7, 18, 0.25) !important;
     outline: none;
 }
 
 .profile-form-group input:disabled,
 .profile-form-group select:disabled,
 .profile-form-group textarea:disabled {
-    opacity: 0.6;
-    background: rgba(0, 0, 0, 0.3) !important;
-    border-color: transparent !important;
-    color: rgba(255, 255, 255, 0.5) !important;
-    cursor: not-allowed;
+    opacity: 1 !important;
+    background: #141416 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #e4e4e7 !important;
+    -webkit-text-fill-color: #e4e4e7 !important;
+    cursor: default;
     box-shadow: none;
 }
 
@@ -516,30 +533,54 @@
 
 .profile-field-edit-btn {
     position: absolute;
-    right: 16px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    width: auto;
-    height: auto;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
     background: transparent;
-    border: none;
-    color: #5a5a5a;
+    border: 1px solid transparent;
+    color: #8d96a3;
     cursor: pointer;
-    transition: color 0.2s ease;
+    transition: all 0.2s ease;
     padding: 0;
+    z-index: 2;
+}
+
+.profile-field-edit-btn i {
+    font-size: 14px;
+    line-height: 1;
+    pointer-events: none;
 }
 
 .profile-field-edit-btn:hover {
     color: #ffffff;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
 .profile-field-edit-btn.is-active {
-    background: linear-gradient(135deg, #ed0712 0%, #c5060e 100%);
+    background: #ed0712;
     border-color: #ed0712;
     color: #ffffff;
-    box-shadow: 0 6px 16px rgba(237, 7, 18, 0.4);
-    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(237, 7, 18, 0.4);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.profile-editable-control textarea ~ .profile-field-edit-btn {
+    top: 10px;
+    transform: none;
+    right: 10px;
+}
+
+.profile-editable-control textarea ~ .profile-field-edit-btn.is-active {
+    top: 10px;
+    transform: none;
 }
 
 .invalid-feedback {
@@ -1477,16 +1518,7 @@
     flex-wrap: wrap;
 }
 
-.profile-form-group input:disabled,
-.profile-form-group select:disabled,
-.profile-form-group textarea:disabled {
-    color: #7a7a7a !important;
-    background: transparent !important;
-    border-color: transparent !important;
-    cursor: default;
-    opacity: 1;
-    box-shadow: none;
-}
+
 
 @media (max-width: 480px) {
     .profile-avatar-box::after {
@@ -1516,9 +1548,6 @@
     border: 1px solid rgba(255,255,255,0.08);
 }
 
-.profile-support-card {
-    border-left: 3px solid #ed0712;
-}
 
 .skel-avatar { width: 56px; height: 56px; flex-shrink: 0; }
 .skel-cover-avatar { width: 100px; height: 100px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.05); }
@@ -1542,11 +1571,6 @@
 .profile-card-title--split { align-items: center; display: flex; justify-content: space-between; width: 100%; }
 .profile-edit-all-btn { background: none; border: 0; color: #ed0712; cursor: pointer; font-size: 12px; font-weight: 600; padding: 0; }
 .profile-password-submit--full { margin-top: 20px; width: 100%; }
-.profile-support-header { align-items: center; display: flex; gap: 8px; margin-bottom: 12px; }
-.profile-support-icon { color: #ed0712; font-size: 18px; }
-.profile-support-title { color: #fff; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; margin: 0; }
-.profile-support-copy { color: #7a7a7a; font-size: 13px; line-height: 1.7; margin: 0 0 16px; }
-.profile-support-action { font-size: 13px; padding: 10px; width: 100%; }
 .profile-points-total, .profile-points-unit, .profile-points-rank { font-family: 'Inter', sans-serif; }
 .profile-points-progress-meta { color: #7a7a7a; display: flex; font-size: 13px; font-weight: 500; justify-content: space-between; margin-bottom: 8px; }
 .profile-points-progress { background-color: #2a2a2d; border-radius: 4px; height: 6px; }
