@@ -384,6 +384,13 @@ import Toast from '../components/toast.js';
                 }
             });
         }
+
+        const btnBackToTop = document.querySelector('[data-back-to-top]');
+        if (btnBackToTop) {
+            btnBackToTop.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
     }
 
     function copyUrl(text) {

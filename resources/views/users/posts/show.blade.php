@@ -27,7 +27,7 @@
                     <div class="author-info">
                         <span class="author-name d-block">Đăng bởi <strong class="text-white">{{ $post->author_name }}</strong></span>
                         <span class="author-date text-white-50 small">
-                            {{ $post->published_at?->format('d Tháng m, Y') }} &bull; {{ $post->reading_time }} phút đọc
+                            {{ $post->published_at ? $post->published_at->format('d') . ' Tháng ' . $post->published_at->format('m, Y') : '' }} &bull; {{ $post->reading_time }} phút đọc
                         </span>
                     </div>
                 </div>
