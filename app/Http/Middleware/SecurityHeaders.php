@@ -52,6 +52,11 @@ class SecurityHeaders
         $reverbOrigin = $reverbEnabled && $reverbHost !== ''
             ? sprintf('%s://%s:%d', $reverbScheme, $reverbHost, $reverbPort)
             : null;
+        $isLocal = app()->environment('local', 'testing');
+        $viteOrigins = ['http://127.0.0.1:5173', 'http://localhost:5173'];
+        $viteScriptSrc = $isLocal ? ' '.implode(' ', $viteOrigins) : '';
+        $viteStyleSrc = $isLocal ? ' '.implode(' ', $viteOrigins) : '';
+
         $connectSources = [
             "'self'",
             'https://api-merchant.payos.vn',
@@ -59,6 +64,13 @@ class SecurityHeaders
             'https://cdn.jsdelivr.net',
             'https://accounts.google.com',
         ];
+        if ($isLocal) {
+            foreach ($viteOrigins as $origin) {
+                $connectSources[] = $origin;
+                $wsOrigin = str_replace('http://', 'ws://', $origin);
+                $connectSources[] = $wsOrigin;
+            }
+        }
         if ($reverbOrigin) {
             $connectSources[] = $reverbOrigin;
             $reverbWsScheme = $reverbScheme === 'wss' ? 'ws' : 'wss';
@@ -67,9 +79,9 @@ class SecurityHeaders
 
         $csp = [
             "default-src 'self'",
-            "script-src 'self' 'nonce-{$nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com",
-            "style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
-            "style-src-elem 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+            "script-src 'self' 'nonce-{$nonce}'{$viteScriptSrc} https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com",
+            "style-src 'self'{$viteStyleSrc} https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://accounts.google.com",
+            "style-src-elem 'self' 'unsafe-inline'{$viteStyleSrc} https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://accounts.google.com",
             "style-src-attr 'unsafe-inline'",
             "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
             "img-src 'self' data: https: blob:",

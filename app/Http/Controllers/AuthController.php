@@ -26,6 +26,7 @@ class AuthController extends Controller
     ) {
     }
 
+    // Đăng ký tài khoản và cấp cặp token JWT (access + refresh)
     public function register(RegisterRequest $request): JsonResponse
     {
         try {
@@ -49,6 +50,7 @@ class AuthController extends Controller
         }
     }
 
+    // Đăng nhập: kiểm tra thông tin, giới hạn thử và trả về JWT token
     public function login(LoginRequest $request): JsonResponse
     {
         try {
@@ -87,6 +89,7 @@ class AuthController extends Controller
         }
     }
 
+    // Đăng nhập nhanh bằng Google qua id_token
     public function googleLogin(\Illuminate\Http\Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -139,6 +142,7 @@ class AuthController extends Controller
         }
     }
 
+    // Đăng xuất: thu hồi refresh token và xóa sạch cookie xác thực
     public function logout(\Illuminate\Http\Request $request): JsonResponse
     {
         try {
@@ -165,6 +169,7 @@ class AuthController extends Controller
         }
     }
 
+    // Cấp access token mới từ refresh token còn hạn
     public function refresh(\Illuminate\Http\Request $request): JsonResponse
     {
         try {
@@ -221,6 +226,7 @@ class AuthController extends Controller
         }
     }
 
+    // Đổi mật khẩu: xác minh mật khẩu hiện tại và hủy toàn bộ phiên cũ
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         try {
@@ -241,6 +247,7 @@ class AuthController extends Controller
         }
     }
 
+    // Gửi link đặt lại mật khẩu qua email
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
         try {
@@ -252,6 +259,7 @@ class AuthController extends Controller
         return $this->successResponse(null, 'If the email exists, a password reset link will be sent');
     }
 
+    // Đặt lại mật khẩu mới từ link xác thực email
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
         try {
@@ -269,6 +277,7 @@ class AuthController extends Controller
         }
     }
 
+    // Gửi link xác thực tài khoản qua email
     public function sendVerificationEmail(): JsonResponse
     {
         try {
@@ -286,6 +295,7 @@ class AuthController extends Controller
         }
     }
 
+    // Xác minh email người dùng hợp lệ
     public function verifyEmail(VerifyEmailRequest $request): JsonResponse
     {
         try {

@@ -35,6 +35,7 @@ class PaymentService
         private readonly AuditSnapshotService    $auditSnapshots,
     ) {}
 
+    // Khởi tạo thanh toán: tạo đơn hàng, giao dịch và lấy link thanh toán PayOS
     public function initiate(
         User      $user,
         ?Showtime $showtime,
@@ -613,6 +614,7 @@ class PaymentService
         }, self::TRANSACTION_ATTEMPTS);
     }
 
+    // Xử lý webhook: xác minh chữ ký PayOS, cập nhật đơn sang đã thanh toán và xuất vé
     public function handleWebhook(array $rawData): array
     {
         try {

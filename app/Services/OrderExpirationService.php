@@ -27,6 +27,7 @@ class OrderExpirationService
         private readonly AuditSnapshotService $auditSnapshots
     ) {}
 
+    // Quét và giải phóng các đơn hàng chưa thanh toán đã quá hạn (thường là 10-15 phút)
     public function expirePendingOrders(?int $showtimeId = null): int
     {
         $totalExpired = 0;
@@ -95,6 +96,7 @@ class OrderExpirationService
             && $order->expired_at->isPast();
     }
 
+    // Hủy đơn quá hạn, hoàn lại kho sản phẩm, mã voucher, điểm thưởng và giải phóng ghế
     private function expireOrderAtomic(Order $order): void
     {
         $oldOrderValues = $this->auditSnapshots->order($order);

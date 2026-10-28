@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Events\SeatStatusUpdated;
 use App\Exceptions\SeatConflictException;
+use App\Jobs\CleanupExpiredSeatHolds;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Seat;
@@ -161,6 +162,7 @@ class SeatService
         ];
     }
 
+    // Giữ ghế: khóa ghế trong DB transaction kèm unique key chống người khác giữ cùng lúc
     public function lock(array $data, $user): array
     {
         $lockResult = DB::transaction(function () use ($data, $user) {
@@ -291,6 +293,7 @@ class SeatService
         $releasedSeatIds = $lockResult['released_seat_ids'];
 
         try {
+            // Bắn event realtime qua WebSocket để các client khác cập nhật sơ đồ ngay
             foreach ($releasedSeatIds as $seatId) {
                 broadcast(new SeatStatusUpdated(
                     showtimeId: $hold->showtime_id,
@@ -312,6 +315,13 @@ class SeatService
             Log::warning('Seat broadcast failed (non-critical): '.$e->getMessage());
         }
 
+        try {
+            // Đẩy delayed job vào Redis queue để tự động dọn ghế sau 10 phút
+            CleanupExpiredSeatHolds::dispatch($hold->id)->delay($hold->held_until);
+        } catch (\Exception $e) {
+            Log::warning('Failed to dispatch delayed seat hold cleanup (non-critical): '.$e->getMessage());
+        }
+
         return [
             'hold_id' => $hold->id,
             'showtime_id' => $hold->showtime_id,
@@ -321,6 +331,7 @@ class SeatService
         ];
     }
 
+    // Giải phóng ghế chủ động khi khách bỏ chọn hoặc hủy giữ
     public function unlock(int $holdId, $user): array
     {
         $hold = SeatHold::query()->with('items')->find($holdId);
@@ -476,11 +487,16 @@ class SeatService
         return array_merge($result, ['previous_hold_id' => $holdId]);
     }
 
-    public function cleanupExpiredSeatHolds(?int $showtimeId = null, bool $broadcast = true): int
+    public function cleanupExpiredSeatHolds(?int $showtimeId = null, bool $broadcast = true, ?int $seatHoldId = null): int
     {
         $expiredHolds = SeatHold::query()
             ->with('items')
-            ->expired()
+            ->when($seatHoldId, function ($query) use ($seatHoldId) {
+                $query->where('id', $seatHoldId)
+                    ->where('held_until', '<=', now()->addSecond());
+            }, function ($query) {
+                $query->expired();
+            })
             ->when($showtimeId, fn ($query) => $query->where('showtime_id', $showtimeId))
             ->get();
 
@@ -542,7 +558,21 @@ class SeatService
     {
         try {
             foreach ($expiredHolds as $hold) {
-                foreach ($hold->normalizedSeatIds() as $seatId) {
+                $seatIds = [];
+                if ($hold->relationLoaded('items') && $hold->items->isNotEmpty()) {
+                    $seatIds = $hold->items
+                        ->pluck('seat_id')
+                        ->map(fn ($id) => (int) $id)
+                        ->unique()
+                        ->values()
+                        ->all();
+                }
+
+                if (empty($seatIds)) {
+                    $seatIds = array_values(array_unique(array_map('intval', (array) $hold->seat_ids)));
+                }
+
+                foreach ($seatIds as $seatId) {
                     broadcast(new SeatStatusUpdated(
                         showtimeId: (int) $hold->showtime_id,
                         seatId: (int) $seatId,

@@ -27,6 +27,7 @@ class SeatController extends Controller
         private readonly SeatService $seatService
     ) {}
 
+    // Lấy sơ đồ ghế theo suất chiếu kèm trạng thái trống, đang giữ hoặc đã đặt
     public function getByShowtime(GetSeatsRequest $request, string $encryptedShowtimeId)
     {
         try {
@@ -60,6 +61,7 @@ class SeatController extends Controller
         }
     }
 
+    // Giữ ghế tạm trong 10 phút, chặn người khác chọn trùng
     public function lock(LockSeatRequest $request)
     {
         $user = Auth::user();
@@ -121,6 +123,7 @@ class SeatController extends Controller
         }
     }
 
+    // Giải phóng ghế: nhả ghế khi người dùng hủy chọn hoặc chuyển màn
     public function unlock(UnlockSeatsRequest $request, $holdId)
     {
         $user = Auth::user();

@@ -30,6 +30,7 @@ class PaymentController extends Controller
             ->with('warning', 'Trang thanh toán không còn khả dụng. Vui lòng kiểm tra trạng thái đơn hàng.');
     }
 
+    // Xử lý khi khách thanh toán xong và được PayOS chuyển hướng quay về website
     public function payosCallback(PaymentCallbackRequest $request): RedirectResponse
     {
         $orderCode = $request->getOrderCode();
@@ -86,6 +87,7 @@ class PaymentController extends Controller
         ], 302, []);
     }
 
+    // Xử lý khi khách bấm hủy thanh toán trên cổng PayOS
     public function payosCancel(PaymentCallbackRequest $request): RedirectResponse
     {
         $orderCode = $request->getOrderCode();
@@ -130,6 +132,7 @@ class PaymentController extends Controller
         ], 302, []);
     }
 
+    // Webhook nhận thông báo tự động từ PayOS để xác nhận đơn hàng thành công
     public function payosWebhook(PaymentWebhookRequest $request): JsonResponse
     {
         Log::info('PayOS webhook received', [

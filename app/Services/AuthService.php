@@ -105,6 +105,7 @@ class AuthService
         $login = trim((string) ($credentials['login'] ?? $credentials['email'] ?? ''));
         $rateKey = $this->loginRateKey($login, $ipAddress);
 
+        // Chặn brute-force: đếm số lần đăng nhập sai lưu vào Redis, quá 10 lần khóa 15 phút
         if ($this->isRateLimited($rateKey)) {
             throw new RuntimeException('Tài khoản/IP đăng nhập quá nhiều lần. Vui lòng thử lại sau 15 phút.');
         }
@@ -123,6 +124,7 @@ class AuthService
             'status' => 1,
         ];
 
+        // Xác thực thông tin và tạo JWT access token
         $accessToken = $this->jwt->attempt($loginCredentials);
 
         if (!$accessToken) {

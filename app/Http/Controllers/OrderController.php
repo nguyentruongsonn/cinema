@@ -28,6 +28,7 @@ class OrderController extends Controller
     ) {
     }
 
+    // Đặt vé: tạo đơn hàng từ các ghế đang giữ, dùng idempotency chống gửi trùng đơn
     public function store(StoreOrderRequest $request)
     {
         try {
@@ -80,6 +81,7 @@ class OrderController extends Controller
         }
     }
 
+    // Lấy chi tiết đơn hàng của người dùng
     public function show($id)
     {
         try {
