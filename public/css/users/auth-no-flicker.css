@@ -1,0 +1,15 @@
+[data-auth-action="login"],
+#userDropdown {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+body.auth-checked [data-auth-action="login"],
+body.auth-checked #userDropdown {
+    opacity: 1;
+}
+
+[data-auth-action="login"].d-none,
+#userDropdown.d-none {
+    display: none !important;
+}

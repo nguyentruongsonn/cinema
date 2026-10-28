@@ -1,0 +1,89 @@
+@import './base/variables.css';
+@import './base/reset.css';
+@import './base/typography.css';
+
+
+@import './components/buttons.css';
+@import './components/tables.css';
+@import './components/badges.css';
+@import './components/forms.css';
+@import './components/modals.css';
+@import './components/alerts.css';
+@import './components/pagination.css';
+@import './components/skeleton.css';
+@import './components/cards.css';
+
+
+
+
+
+
+@import './admin-common.css';
+@import './admin-modals.css';
+@import './style.css';
+
+@import './components/filters.css';
+@import './pages/banners.css';
+
+@view-transition {
+    navigation: auto;
+}
+
+.turbo-progress-bar {
+    display: none !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+}
+
+::view-transition-group(admin-content) {
+    animation-duration: 200ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(admin-content) {
+    animation: admin-page-out 120ms ease-out both;
+}
+
+::view-transition-new(admin-content) {
+    animation: admin-page-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.admin-navigating .admin-main {
+    cursor: progress;
+    opacity: 0.98;
+    pointer-events: none;
+}
+
+.admin-main {
+    view-transition-name: admin-content;
+    transition-property: opacity;
+    transition-duration: 100ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.table-responsive {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 640px;
+}
+
+@keyframes admin-page-out {
+    to { opacity: 0; transform: translate3d(0, -2px, 0); }
+}
+
+@keyframes admin-page-in {
+    from { opacity: 0; transform: translate3d(0, 3px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(admin-content),
+    ::view-transition-new(admin-content) {
+        animation: none;
+    }
+
+    .admin-main {
+        transition: none;
+    }
+}
