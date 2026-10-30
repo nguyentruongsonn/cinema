@@ -177,7 +177,7 @@ import Toast from '../components/toast.js';
 
                             ${castHtml ? `
                                 <div class="cast-crew-section">
-                                    <h3>Cast & Crew</h3>
+                                    <h3>Diễn viên</h3>
                                     <div class="cast-list">
                                         ${castHtml}
                                     </div>
@@ -187,12 +187,12 @@ import Toast from '../components/toast.js';
                             <div class="movie-detail-actions">
                                 <a href="#showtimes" class="btn-book-tickets">
                                     <i class="bi bi-ticket-perforated-fill"></i>
-                                    Book Tickets
+                                    Mua ngay
                                 </a>
                                 ${movieData.trailer_url ? `
                                     <button class="btn-watch-trailer" data-bs-toggle="modal" data-bs-target="#trailerModal" data-trailer-url="${escapeHtml(movieData.trailer_url)}">
                                         <i class="bi bi-play-circle"></i>
-                                        Watch Trailer
+                                        Xem trailer
                                     </button>
                                 ` : ''}
                             </div>

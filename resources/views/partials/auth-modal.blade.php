@@ -94,8 +94,8 @@
                             <span>HOẶC TIẾP TỤC VỚI</span>
                         </div>
 
-                        <div class="cinema-auth-social">
-                            <div class="google-signin-button" id="googleLoginBtn" role="group" aria-label="Đăng nhập bằng Google"></div>
+                        <div class="cinema-auth-social w-100">
+                            <div class="google-signin-button w-100" id="googleLoginBtn" role="group" aria-label="Đăng nhập bằng Google"></div>
                         </div>
 
                         <div class="alert alert-danger d-none mt-3" id="loginAlert" role="alert"></div>

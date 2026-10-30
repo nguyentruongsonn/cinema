@@ -116,12 +116,12 @@ import Modal from '../components/modal.js';
             <div class="hero-actions">
                 <button class="btn-book-now" type="button" data-scroll-to-booking>
                     <i class="bi bi-ticket-perforated-fill"></i>
-                    Book Now
+                    Mua vé
                 </button>
                 ${movie.trailer_url ? `
                     <a class="btn-trailer" href="${escapeHtml(movie.trailer_url)}" target="_blank" rel="noopener">
                         <i class="bi bi-play-circle"></i>
-                        Watch Trailer
+                        Xem trailer
                     </a>
                 ` : `
                         <button class="btn-trailer btn-trailer--disabled" type="button" disabled>

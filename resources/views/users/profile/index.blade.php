@@ -301,15 +301,6 @@
                             </form>
                         </section>
 
-                        <section class="profile-card profile-support-card">
-                            <header class="profile-support-header">
-                                <i class="bi bi-headset profile-support-icon"></i>
-                                <h3 class="profile-support-title">Cần hỗ trợ?</h3>
-                            </header>
-                            <p class="profile-support-copy">Liên hệ đội ngũ hỗ trợ VIP để được giải quyết nhanh nhất về vé và tài khoản.</p>
-                            <button type="button" class="profile-secondary-btn profile-support-action">Liên hệ ngay</button>
-                        </section>
-
                         </div>
                     </div>
 

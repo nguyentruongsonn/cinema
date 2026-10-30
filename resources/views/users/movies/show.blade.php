@@ -33,15 +33,15 @@
             <div class="content-layout">
                 <div class="main-content">
                     <div class="cinema-section-header">
-                        <h2 class="cinema-section-title">Select Showtime</h2>
+                        <h2 class="cinema-section-title">Tất cả suất chiếu</h2>
 
                         <div id="theaterFilterContainer" class="cinema-theater-filter-container d-none">
                             <label class="cinema-filter-label">
                                 <i class="bi bi-geo-alt"></i>
-                                Select Cinema
+                                Chọn ghế
                             </label>
                             <select id="theaterFilter" class="form-select cinema-theater-filter">
-                                <option value="">All Cinemas</option>
+                                <option value="">Tẩ cả phim</option>
                             </select>
                         </div>
                     </div>
@@ -56,9 +56,8 @@
                     </div>
 
                     <div id="noShowtimes" class="empty-state d-none">
-                        <i class="bi bi-calendar-x"></i>
-                        <h3>No Showtimes Available</h3>
-                        <p>There are currently no showtimes for this movie. Please check back later.</p>
+                        <i class="bi bi-film fs-1 text-secondary mb-3 d-block text-center"></i>
+                        <h3 class="text-center">Không có suất chiếu nào</h3>
                     </div>
                 </div>
 
@@ -66,7 +65,7 @@
                     <div class="trending-section">
                         <div class="trending-header">
                             <i class="bi bi-graph-up-arrow"></i>
-                            <h3>Trending Now</h3>
+                            <h3>Thịnh hành</h3>
                         </div>
 
                         <div id="trendingSkeleton" class="trending-skeleton">
@@ -87,7 +86,7 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content bg-dark">
                 <div class="modal-header border-0">
-                    <h5 class="modal-title text-white" id="trailerModalLabel">Watch Trailer</h5>
+                    <h5 class="modal-title text-white" id="trailerModalLabel">Xem trailer</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">

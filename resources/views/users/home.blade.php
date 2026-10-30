@@ -54,11 +54,11 @@
                 <div id="bookingWidget" class="booking-form d-none">
                     <div class="booking-controls">
                         <div class="booking-control">
-                            <label class="booking-label">SELECT MOVIE</label>
+                            <label class="booking-label">PHIM</label>
                             <input type="hidden" name="movie" id="movieInput">
                             <div class="custom-select" data-select="movie">
                                 <div class="select-trigger">
-                                    <span class="select-value placeholder">Choose movie</span>
+                                    <span class="select-value placeholder">Chọn phim</span>
                                     <i class="bi bi-chevron-down"></i>
                                 </div>
                                 <div class="select-dropdown">
@@ -71,11 +71,11 @@
                         </div>
 
                         <div class="booking-control">
-                            <label class="booking-label">DATE</label>
+                            <label class="booking-label">NGÀY</label>
                             <input type="hidden" name="date" id="dateInput">
                             <div class="custom-select" data-select="date">
                                 <div class="select-trigger">
-                                    <span class="select-value placeholder">Choose date</span>
+                                    <span class="select-value placeholder">Chọn ngày</span>
                                     <i class="bi bi-chevron-down"></i>
                                 </div>
                                 <div class="select-dropdown">
@@ -85,11 +85,11 @@
                         </div>
 
                         <div class="booking-control">
-                            <label class="booking-label">CINEMA</label>
+                            <label class="booking-label">RẠP</label>
                             <input type="hidden" name="cinema" id="cinemaInput">
                             <div class="custom-select" data-select="cinema">
                                 <div class="select-trigger">
-                                    <span class="select-value placeholder">Choose cinema</span>
+                                    <span class="select-value placeholder">Chọn rạp</span>
                                     <i class="bi bi-chevron-down"></i>
                                 </div>
                                 <div class="select-dropdown">
@@ -101,7 +101,7 @@
                         <div class="booking-control-btn">
                             <button type="button" class="btn-find-seats" id="btnFindSeats">
                                 <i class="bi bi-search"></i>
-                                <span>Find Seats</span>
+                                <span>TÌM</span>
                             </button>
                         </div>
                     </div>
@@ -113,9 +113,10 @@
     <section id="movies" class="movies-section" aria-labelledby="moviesTitle">
         <div class="container">
             <div class="section-header">
-                <h2 id="moviesTitle" class="section-title">Now Showing</h2>
+            
+                <h2 id="moviesTitle" class="section-title">ĐANG CHIẾU</h2>
                 <a href="/movies" class="view-all-link">
-                    View All <i class="bi bi-plus"></i>
+                    Tất cả <i class="bi bi-plus"></i>
                 </a>
             </div>
 
@@ -139,8 +140,8 @@
     <section class="home-posts-section content-posts-section py-5" aria-labelledby="postsTitle">
         <div class="container">
             <x-user.content-section-header
-                eyebrow="CINEMA JOURNAL"
-                title="Tin Tức & Ưu Đãi Mới"
+                eyebrow="BÀI VIẾT "
+                title="TIN TỨC VÀ ƯU ĐÃI MỚI"
                 title-id="postsTitle"
                 :href="route('posts.index')"
             />

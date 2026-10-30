@@ -11,7 +11,7 @@
 @section('content')
     <section class="movies-header">
         <div class="container">
-            <h1 class="page-title">Movies</h1>
+            <h1 class="page-title"></h1>
         </div>
     </section>
 
@@ -20,7 +20,7 @@
             
             {{-- Section 1: Suất chiếu đặc biệt (Special Screenings) --}}
             <section class="movie-section special-screenings-section mb-5 d-none" id="specialSection">
-                <h2 class="section-title"><i class="bi bi-star-fill text-danger me-2"></i> Suất chiếu đặc biệt</h2>
+                <h2 class="section-title">Suất chiếu đặc biệt</h2>
                 <div class="horizontal-scroll-container">
                     <div id="specialMoviesGrid" class="special-movies-grid">
                     </div>
@@ -31,7 +31,7 @@
             <section class="movie-section now-showing-section mb-5">
                 <div class="d-flex justify-content-between align-items-end mb-3">
                     <h2 class="section-title mb-0">Phim đang chiếu</h2>
-                    <a href="#" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
+                    <a href="#" class="view-all-link">Xem tất cả <i class="bi bi-plus"></i></a>
                 </div>
                 
                 <div id="nowShowingSkeleton" class="horizontal-scroll-container">

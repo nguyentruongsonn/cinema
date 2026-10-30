@@ -17,7 +17,8 @@
     @if($href)
         <a href="{{ $href }}" class="content-section-link">
             <span>{{ $linkLabel }}</span>
-            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            <i class="bi bi-plus" aria-hidden="true"></i>
+            
         </a>
     @endif
 </header>

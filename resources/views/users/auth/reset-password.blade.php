@@ -49,7 +49,7 @@
             </form>
 
             <div class="alert d-none mt-3" id="resetPasswordAlert" role="status" aria-live="polite"></div>
-            <a href="{{ route('home') }}" class="cinema-auth-back mt-4"><i class="bi bi-arrow-left"></i> Quay về trang chủ</a>
+            <a href="{{ route('home') }}" class="cinema-auth-back mt-4">Quay về trang chủ</a>
         </div>
     </div>
 </section>

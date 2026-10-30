@@ -57,10 +57,10 @@ import Toast from '../components/toast.js';
                     
                     <div class="special-actions">
                         <a href="/movies/${movie.slug}" class="btn btn-danger btn-book-early">
-                            <i class="bi bi-ticket-perforated"></i> Book Early Access
+                            <i class="bi bi-ticket-perforated"></i> Mua vé
                         </a>
                         <a href="/movies/${movie.slug}" class="btn btn-outline-light btn-details">
-                            <i class="bi bi-info-circle"></i> Details
+                            <i class="bi bi-info-circle"></i> Xem chi tiết
                         </a>
                     </div>
                 </div>
@@ -129,7 +129,7 @@ import Toast from '../components/toast.js';
                         <img src="${poster}" alt="${escapeHtml(movie.title)}">
                     </a>
                     <div class="movie-actions-overlay">
-                        <a href="/movies/${movie.slug}" class="btn btn-danger btn-sm w-100 mb-2">Book Now</a>
+                        <a href="/movies/${movie.slug}" class="btn btn-danger btn-sm w-100 mb-2">Mua vé</a>
                         <a href="${movie.trailer_url ? movie.trailer_url : '#'}" target="_blank" class="btn btn-dark btn-sm w-100">Trailer</a>
                     </div>
                     <div class="movie-info-bottom">

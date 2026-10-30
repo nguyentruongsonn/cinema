@@ -274,7 +274,7 @@ class AuthManager {
                 theme: 'outline',
                 size: 'large',
                 text: 'continue_with',
-                shape: 'rect',
+                shape: 'rectangular',
                 width: 400,
                 logo_alignment: 'left',
             });
