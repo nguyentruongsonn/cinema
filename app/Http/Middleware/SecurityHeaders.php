@@ -53,7 +53,18 @@ class SecurityHeaders
             ? sprintf('%s://%s:%d', $reverbScheme, $reverbHost, $reverbPort)
             : null;
         $isLocal = app()->environment('local', 'testing');
-        $viteOrigins = ['http://127.0.0.1:5173', 'http://localhost:5173'];
+        $viteOrigins = [
+            'http://127.0.0.1:5173',
+            'http://localhost:5173',
+            'http://[::1]:5173',
+        ];
+        if ($isLocal && file_exists(public_path('hot'))) {
+            $hotUrl = trim((string) @file_get_contents(public_path('hot')));
+            if ($hotUrl !== '' && filter_var($hotUrl, FILTER_VALIDATE_URL)) {
+                $viteOrigins[] = rtrim($hotUrl, '/');
+            }
+        }
+        $viteOrigins = array_values(array_unique($viteOrigins));
         $viteScriptSrc = $isLocal ? ' '.implode(' ', $viteOrigins) : '';
         $viteStyleSrc = $isLocal ? ' '.implode(' ', $viteOrigins) : '';
 
