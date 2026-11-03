@@ -17,6 +17,7 @@ import Toast from '../components/toast.js';
         if (document.getElementById('postsSpaContainer')) {
             setupSpaEventListeners();
             loadPosts(1, '', '');
+            loadPostsBanners();
         }
     }
 
@@ -397,6 +398,50 @@ import Toast from '../components/toast.js';
         navigator.clipboard.writeText(text)
             .then(() => Toast.success('Đã sao chép liên kết!'))
             .catch(() => Toast.error('Không thể sao chép liên kết.'));
+    }
+
+    async function loadPostsBanners() {
+        const card = document.getElementById('sidebarBannerCard');
+        const img = document.getElementById('sidebarBannerImage');
+        const link = document.getElementById('sidebarBannerLink');
+        if (!card || !img || !link) return;
+
+        try {
+            const resp = await fetch('/api/v1/banners?placement=post', {
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!resp.ok) return;
+            const res = await resp.json();
+            const banners = Array.isArray(res.data) ? res.data : [];
+            if (!banners.length) return;
+
+            let currentIndex = 0;
+            const displayBanner = (b) => {
+                const imageUrl = safeAssetUrl(b.image_url || b.images?.[0]?.url || b.images?.[0]?.image_url || b.images?.[0]?.file_url || '');
+                if (!imageUrl) return;
+                img.src = imageUrl;
+                img.alt = b.title || 'Banner';
+                if (b.link_url) {
+                    link.href = b.link_url;
+                    link.style.pointerEvents = 'auto';
+                } else {
+                    link.removeAttribute('href');
+                    link.style.pointerEvents = 'none';
+                }
+                card.classList.remove('d-none');
+            };
+
+            displayBanner(banners[0]);
+
+            if (banners.length > 1) {
+                setInterval(() => {
+                    currentIndex = (currentIndex + 1) % banners.length;
+                    displayBanner(banners[currentIndex]);
+                }, 5000);
+            }
+        } catch {
+            // non-critical
+        }
     }
 
     if (document.readyState === 'loading') {

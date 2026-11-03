@@ -71,7 +71,7 @@
                         <div class="sidebar-widget mb-5">
                             <div class="sidebar-widget-header mb-3">
                                 <h3 class="sidebar-widget-title mb-0">
-                                    <i class="bi bi-fire text-danger me-2"></i>Dành Cho Bạn
+                                    Dành Cho Bạn
                                 </h3>
                             </div>
                             <div class="sidebar-recommended-list">

@@ -26,6 +26,7 @@
         searchForm: document.getElementById('searchForm'),
         searchInput: document.getElementById('search'),
         statusFilter: document.getElementById('statusFilter'),
+        placementFilter: document.getElementById('placementFilter'),
         btnCreate: document.getElementById('btnCreateBanner'),
         modalEl: document.getElementById('bannerModal'),
         form: document.getElementById('bannerForm'),
@@ -45,7 +46,7 @@
         previewWrap: document.querySelector('.preview-wrap'),
     };
 
-    let currentPage = 1, currentSearch = '', currentStatus = 'all';
+    let currentPage = 1, currentSearch = '', currentStatus = 'all', currentPlacement = 'all';
     let selectedFiles = [];
     const MAX_BANNER_IMAGES = 5;
     const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -63,6 +64,7 @@
             url.searchParams.append('page', page);
             if (currentSearch) url.searchParams.append('search', currentSearch);
             if (currentStatus !== 'all') url.searchParams.append('status', currentStatus);
+            if (currentPlacement !== 'all') url.searchParams.append('placement', currentPlacement);
             const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'banners:list' });
             if (res && res.ok) {
                 const json = await res.json();
@@ -97,12 +99,24 @@
                          class="banner-image-preview admin-banner-thumb">
                 `).join('')
                 : '<span class="text-white-50">Chưa có ảnh</span>';
+
+            const placementLabels = {
+                'home': '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Trang chủ</span>',
+                'theater': '<span class="badge bg-info-subtle text-info border border-info-subtle">Trang rạp</span>',
+                'post': '<span class="badge bg-warning-subtle text-warning border border-warning-subtle">Trang tin tức</span>',
+                'all': '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Tất cả trang</span>',
+            };
+            const placementBadge = placementLabels[banner.placement] || `<span class="badge bg-secondary-subtle text-secondary">${escapeHtml(banner.placement || 'home')}</span>`;
+
             tr.innerHTML = `
                 <td class="text-center text-white-50">${(startIndex || 1) + index}</td>
                 <td><div class="banner-images-row">${imagesHtml}</div></td>
                 <td>
-                    <div class="banner-title">${safeTitle}</div>
-                    ${description ? `<small class="banner-description">${safeDescription}${description.length > 50 ? '...' : ''}</small>` : ''}
+                    <div class="banner-title d-flex align-items-center gap-2">
+                        <span>${safeTitle}</span>
+                        ${placementBadge}
+                    </div>
+                    ${description ? `<small class="banner-description text-white-50">${safeDescription}${description.length > 50 ? '...' : ''}</small>` : ''}
                 </td>
                 <td class="text-center small">${formatDate(banner.start_date)}</td>
                 <td class="text-center small">${formatDate(banner.end_date)}</td>
@@ -299,8 +313,16 @@
     }
 
     if (els.searchForm) {
-        els.searchForm.addEventListener('submit', (e) => { e.preventDefault(); currentSearch = els.searchInput.value.trim(); currentStatus = els.statusFilter.value; currentPage = 1; loadData(currentPage); });
+        els.searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            currentSearch = els.searchInput.value.trim();
+            currentStatus = els.statusFilter ? els.statusFilter.value : 'all';
+            currentPlacement = els.placementFilter ? els.placementFilter.value : 'all';
+            currentPage = 1;
+            loadData(currentPage);
+        });
         if (els.statusFilter) els.statusFilter.addEventListener('change', () => els.searchForm.dispatchEvent(new Event('submit')));
+        if (els.placementFilter) els.placementFilter.addEventListener('change', () => els.searchForm.dispatchEvent(new Event('submit')));
     }
 
     const registerPageLoad = (callback) => {

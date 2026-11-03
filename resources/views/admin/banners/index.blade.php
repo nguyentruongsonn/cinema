@@ -20,6 +20,14 @@
                     <option value="0">Tạm dừng</option>
                 </select>
             </div>
+            <div class="admin-filter-group auto-width">
+                <select id="placementFilter" class="admin-filter-select">
+                    <option value="all">Tất cả vị trí</option>
+                    <option value="home">Trang chủ</option>
+                    <option value="theater">Trang rạp</option>
+                    <option value="post">Trang tin tức</option>
+                </select>
+            </div>
         </div>
 
         <form id="searchForm" class="admin-filter-search">
@@ -108,6 +116,7 @@
                             <select class="form-select bg-dark border-secondary text-white" id="bannerPlacement">
                                 <option value="home">Trang chủ</option>
                                 <option value="theater">Trang rạp</option>
+                                <option value="post">Trang tin tức (Posts)</option>
                                 <option value="all">Tất cả các trang</option>
                             </select>
                         </div>

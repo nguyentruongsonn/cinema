@@ -15,7 +15,6 @@
     <section class="role-permission-hero admin-card">
         <div class="role-hero-copy">
             <h1>Vai trò và quyền truy cập</h1>
-            <p>Quản lý quyền theo từng vai trò nghiệp vụ. Thay đổi sẽ áp dụng ngay cho người dùng thuộc vai trò đó.</p>
         </div>
         <div class="role-permission-actions">
             <div class="role-permission-dirty" id="rolePermissionDirty">Đã lưu</div>

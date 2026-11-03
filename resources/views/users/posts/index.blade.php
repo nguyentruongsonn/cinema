@@ -27,7 +27,6 @@
             <div class="posts-hero-actions">
                 <a href="#" id="heroReadBtn" class="hero-read-btn">
                     <span>Đọc Ngay</span>
-                    <i class="bi bi-arrow-right"></i>
                 </a>
                 <span class="hero-read-time">
                     <i class="bi bi-clock"></i>
@@ -98,7 +97,7 @@
                         {{-- Widget 1: Trailer Thịnh Hành --}}
                         <div class="sidebar-widget-card mb-4">
                             <h3 class="sidebar-widget-title">
-                                <i class="bi bi-film me-2 text-danger"></i>Trailer Thịnh Hành
+                                </i>Trailer Thịnh Hành
                             </h3>
                             <div id="sidebarTrailersSkeleton" class="sidebar-trailers-skeleton">
                                 @for ($j = 0; $j < 2; $j++)
@@ -112,10 +111,17 @@
                         {{-- Widget 2: Chủ Đề Phổ Biến --}}
                         <div class="sidebar-widget-card mb-4">
                             <h3 class="sidebar-widget-title">
-                                <i class="bi bi-tags me-2 text-danger"></i>Chủ Đề Phổ Biến
+                                Chủ Đề Phổ Biến
                             </h3>
                             <div class="sidebar-tags-cloud d-flex flex-wrap gap-2" id="sidebarTagsContainer">
                             </div>
+                        </div>
+
+                        {{-- Widget: Banner Quảng Cáo / Ưu Đãi --}}
+                        <div class="sidebar-widget-card p-0 overflow-hidden mb-4 d-none" id="sidebarBannerCard" style="border: 1px solid rgba(255, 255, 255, 0.08); background: #141416;">
+                            <a href="#" id="sidebarBannerLink" target="_blank" rel="noopener noreferrer">
+                                <img id="sidebarBannerImage" src="" alt="Banner ưu đãi" class="img-fluid w-100 rounded-3" style="object-fit: cover; max-height: 280px; display: block;">
+                            </a>
                         </div>
 
                         <div class="sidebar-widget-card sidebar-newsletter-card">

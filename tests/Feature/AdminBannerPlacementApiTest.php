@@ -15,6 +15,7 @@ class AdminBannerPlacementApiTest extends TestCase
     {
         Banner::create(['title' => 'Home Banner', 'placement' => 'home', 'is_active' => true]);
         Banner::create(['title' => 'Theater Banner', 'placement' => 'theater', 'is_active' => true]);
+        Banner::create(['title' => 'Post Banner', 'placement' => 'post', 'is_active' => true]);
         Banner::create(['title' => 'Universal Banner', 'placement' => 'all', 'is_active' => true]);
 
         $response = $this->getJson('/api/v1/banners?placement=theater');
@@ -24,6 +25,15 @@ class AdminBannerPlacementApiTest extends TestCase
         $this->assertContains('Theater Banner', $titles);
         $this->assertContains('Universal Banner', $titles);
         $this->assertNotContains('Home Banner', $titles);
+        $this->assertNotContains('Post Banner', $titles);
+
+        $postResponse = $this->getJson('/api/v1/banners?placement=post');
+        $postResponse->assertOk();
+        $postTitles = collect($postResponse->json('data'))->pluck('title')->all();
+        $this->assertContains('Post Banner', $postTitles);
+        $this->assertContains('Universal Banner', $postTitles);
+        $this->assertNotContains('Home Banner', $postTitles);
+        $this->assertNotContains('Theater Banner', $postTitles);
     }
 
     public function test_public_banners_api_returns_all_active_when_placement_omitted(): void

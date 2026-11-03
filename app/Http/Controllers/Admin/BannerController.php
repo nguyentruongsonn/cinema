@@ -41,6 +41,7 @@ class BannerController extends Controller
             $filters = $request->validate([
                 'search' => ['nullable', 'string', 'max:100'],
                 'status' => ['nullable', 'string', Rule::in(['all', '1', '0'])],
+                'placement' => ['nullable', 'string', Rule::in(['all', 'home', 'theater', 'post'])],
                 'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
             ]);
 
@@ -56,6 +57,10 @@ class BannerController extends Controller
 
             if (isset($filters['status']) && $filters['status'] !== 'all') {
                 $query->where('is_active', $filters['status'] === '1');
+            }
+
+            if (!empty($filters['placement']) && $filters['placement'] !== 'all') {
+                $query->where('placement', $filters['placement']);
             }
 
             $banners = $query->orderBy('created_at')
@@ -101,7 +106,7 @@ class BannerController extends Controller
                 'image_paths' => ['required', 'array', 'min:1', 'max:5'],
                 'image_paths.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
                 'link_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//i'],
-                'placement' => ['nullable', 'string', Rule::in(['home', 'theater', 'all'])],
+                'placement' => ['nullable', 'string', Rule::in(['home', 'theater', 'post', 'all'])],
                 'is_active' => ['sometimes', 'boolean'],
                 'start_date' => ['nullable', 'date'],
                 'end_date' => ['nullable', 'date', 'after:start_date'],
@@ -180,7 +185,7 @@ class BannerController extends Controller
                 'image_paths' => ['nullable', 'array', 'min:1', 'max:5'],
                 'image_paths.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
                 'link_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//i'],
-                'placement' => ['nullable', 'string', Rule::in(['home', 'theater', 'all'])],
+                'placement' => ['nullable', 'string', Rule::in(['home', 'theater', 'post', 'all'])],
                 'is_active' => ['sometimes', 'boolean'],
                 'start_date' => ['nullable', 'date'],
                 'end_date' => ['nullable', 'date', 'after:start_date'],
