@@ -406,14 +406,28 @@ import Toast from '../components/toast.js';
         const link = document.getElementById('sidebarBannerLink');
         if (!card || !img || !link) return;
 
+        let banners = [];
         try {
             const resp = await fetch('/api/v1/banners?placement=post', {
                 headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             });
-            if (!resp.ok) return;
-            const res = await resp.json();
-            const banners = Array.isArray(res.data) ? res.data : [];
-            if (!banners.length) return;
+            if (resp.ok) {
+                const res = await resp.json();
+                banners = Array.isArray(res.data) ? res.data : [];
+            }
+        } catch {
+            // non-critical
+        }
+
+        if (!banners.length) {
+            banners = [
+                {
+                    title: 'Ưu Đãi Điện Ảnh Thành Viên',
+                    link_url: '/theaters',
+                    image_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop',
+                }
+            ];
+        }
 
             let currentIndex = 0;
             const displayBanner = (b) => {
