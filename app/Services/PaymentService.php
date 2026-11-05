@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Contracts\PaymentGatewayInterface;
 use App\Exceptions\PaymentGatewayException;
 use App\Models\Combo;
 use App\Models\IdempotencyKey;
@@ -29,7 +30,7 @@ class PaymentService
     private const TRANSACTION_ATTEMPTS = 3;
 
     public function __construct(
-        private readonly PayOSGateway            $gateway,
+        private readonly PaymentGatewayFactory   $gatewayFactory,
         private readonly PricingService          $pricing,
         private readonly OrderFulfillmentService $fulfillment,
         private readonly AuditSnapshotService    $auditSnapshots,
@@ -143,16 +144,27 @@ class PaymentService
                     array_flip(['customer_id', 'customer_name', 'customer_phone', 'customer_mode', 'staff_id', 'staff_name'])
                 );
 
+                $requestedMethod = $validated['payment_method'] ?? null;
+                $isVnPay = $requestedMethod === 'vnpay';
+                $provider = match (true) {
+                    $isZeroAmountCheckout || $isPosCashPayment => 'internal',
+                    $isVnPay => 'vnpay',
+                    default => 'payos',
+                };
+                $paymentMethod = $isPosCashPayment
+                    ? 'cash'
+                    : ($isZeroAmountCheckout ? 'zero_amount' : ($requestedMethod ?: 'payos'));
+
                 $order = Order::createPending([
                     'code' => (string) ($validated['order_code'] ?? $this->generateOrderNumber()),
                     'gateway_order_code' => $this->generateOrderCode(),
-                    'payment_provider' => ($isZeroAmountCheckout || $isPosCashPayment) ? 'internal' : 'payos',
+                    'payment_provider' => $provider,
                     'user_id' => $user->id,
                     'showtime_id' => $showtime?->id,
                     'theater_id' => $theaterId,
                     'served_by_user_id' => $validated['served_by_user_id'] ?? null,
                     'source' => $validated['source'] ?? 'web',
-                    'payment_method' => $validated['payment_method'] ?? ($isZeroAmountCheckout ? 'zero_amount' : 'payos'),
+                    'payment_method' => $paymentMethod,
                     'checkout_fingerprint' => $checkoutFingerprint,
                     'total_amount' => $pricing['final_amount'],
                     'payload' => array_merge($orderContext, [
@@ -161,7 +173,7 @@ class PaymentService
                         'source' => $validated['source'] ?? 'web',
                         'theater_id' => $theaterId,
                         'served_by_user_id' => $validated['served_by_user_id'] ?? null,
-                        'payment_method' => $validated['payment_method'] ?? ($isZeroAmountCheckout ? 'zero_amount' : 'payos'),
+                        'payment_method' => $paymentMethod,
                         'subtotal' => $pricing['subtotal'],
                         'seat_total' => $pricing['seat_total'] ?? 0,
                         'product_total' => $pricing['product_total'] ?? 0,
@@ -309,7 +321,7 @@ class PaymentService
 
                 $paymentMethod = $isPosCashPayment
                     ? 'cash'
-                    : ($isZeroAmountCheckout ? 'zero_amount' : 'payos');
+                    : ($isZeroAmountCheckout ? 'zero_amount' : ($requestedMethod ?: 'payos'));
 
                 $payment = Payment::createPending([
                     'order_id' => $order->id,
@@ -386,18 +398,29 @@ class PaymentService
             }
 
             try {
-                $response = $this->gateway->createPaymentLink([
-                'orderCode'   => $order->gateway_order_code,
-                'amount'      => (int) round((float) $order->total_amount),
-                'description' => substr('DH ' . $order->code, 0, 25),
-                'cancelUrl'   => $baseUrl . '/payment/payos/cancel?orderCode=' . $order->gateway_order_code,
-                'returnUrl'   => $baseUrl . '/payment/payos/callback?orderCode=' . $order->gateway_order_code,
-                'items'       => [[
-                    'name'     => 'Don hang ' . $order->code,
-                    'quantity' => 1,
-                    'price'    => (int) round((float) $order->total_amount),
-                ]],
-            ]);
+                $gateway = $this->gatewayFactory->make($order->payment_provider);
+
+                if ($order->payment_provider === 'vnpay') {
+                    $response = $gateway->createPaymentLink([
+                        'orderCode'   => $order->gateway_order_code,
+                        'amount'      => (int) round((float) $order->total_amount),
+                        'description' => substr('DH ' . $order->code, 0, 25),
+                        'returnUrl'   => $baseUrl . '/payment/vnpay/callback',
+                    ], request()?->ip());
+                } else {
+                    $response = $gateway->createPaymentLink([
+                        'orderCode'   => $order->gateway_order_code,
+                        'amount'      => (int) round((float) $order->total_amount),
+                        'description' => substr('DH ' . $order->code, 0, 25),
+                        'cancelUrl'   => $baseUrl . '/payment/payos/cancel?orderCode=' . $order->gateway_order_code,
+                        'returnUrl'   => $baseUrl . '/payment/payos/callback?orderCode=' . $order->gateway_order_code,
+                        'items'       => [[
+                            'name'     => 'Don hang ' . $order->code,
+                            'quantity' => 1,
+                            'price'    => (int) round((float) $order->total_amount),
+                        ]],
+                    ]);
+                }
             } catch (PaymentGatewayException $e) {
                 $this->releaseFailedCheckoutReservations($order);
                 throw $e;
@@ -614,11 +637,16 @@ class PaymentService
         }, self::TRANSACTION_ATTEMPTS);
     }
 
-    // Xử lý webhook: xác minh chữ ký PayOS, cập nhật đơn sang đã thanh toán và xuất vé
-    public function handleWebhook(array $rawData): array
+    public function getGateway(?string $provider = null): PaymentGatewayInterface
+    {
+        return $this->gatewayFactory->make($provider);
+    }
+
+    public function handleWebhook(array $rawData, string $provider = 'payos'): array
     {
         try {
-            $webhookData = $this->gateway->verifyWebhook($rawData);
+            $gateway = $this->gatewayFactory->make($provider);
+            $webhookData = $gateway->verifyWebhook($rawData);
         } catch (PaymentGatewayException) {
             return ['already_processed' => false, 'skipped' => true];
         }
@@ -649,10 +677,67 @@ class PaymentService
         return ['already_processed' => false, 'skipped' => true];
     }
 
+    public function handleVNPayIpn(array $queryParams): array
+    {
+        $gateway = $this->gatewayFactory->make('vnpay');
+
+        if (! $gateway->verifyCallback($queryParams)) {
+            return [
+                'RspCode' => '97',
+                'Message' => 'Invalid Checksum',
+            ];
+        }
+
+        $gatewayOrderCode = (int) ($queryParams['vnp_TxnRef'] ?? 0);
+        $order = Order::query()->where('gateway_order_code', $gatewayOrderCode)->first();
+
+        if (! $order) {
+            return [
+                'RspCode' => '01',
+                'Message' => 'Order Not Found',
+            ];
+        }
+
+        $vnpAmount = isset($queryParams['vnp_Amount']) ? ((float) $queryParams['vnp_Amount']) / 100 : 0.0;
+        if (abs($vnpAmount - (float) $order->total_amount) > 1.0) {
+            return [
+                'RspCode' => '04',
+                'Message' => 'Invalid amount',
+            ];
+        }
+
+        if ($order->isPaid() || (int) $order->status === Order::STATUS_CONFIRMED) {
+            return [
+                'RspCode' => '02',
+                'Message' => 'Order already confirmed',
+            ];
+        }
+
+        $responseCode = (string) ($queryParams['vnp_ResponseCode'] ?? '');
+        if ($responseCode === '00') {
+            $this->fulfillment->finalize($gatewayOrderCode);
+
+            return [
+                'RspCode' => '00',
+                'Message' => 'Confirm Success',
+            ];
+        }
+
+        $gatewayStatus = $responseCode === '24' ? 'CANCELLED' : 'FAILED';
+        $this->markAsUnsuccessful($gatewayOrderCode, $gatewayStatus);
+
+        return [
+            'RspCode' => '00',
+            'Message' => 'Confirm Success',
+        ];
+    }
+
     public function syncFromGateway(Order $order): void
     {
         try {
-            $info   = $this->gateway->getPaymentInfo($order->gateway_order_code);
+            $provider = $order->payment_provider ?: 'payos';
+            $gateway = $this->gatewayFactory->make($provider);
+            $info   = $gateway->getPaymentInfo($order->gateway_order_code);
             $status = $this->extractGatewayStatus($info);
 
             if ($this->isSuccessfulGatewayStatus($status)) {
@@ -663,6 +748,23 @@ class PaymentService
         } catch (Throwable $e) {
             report($e);
         }
+    }
+
+    public function syncVNPayReturn(Order $order, array $params): void
+    {
+        $responseCode = (string) ($params['vnp_ResponseCode'] ?? '');
+        if ($responseCode === '00') {
+            $this->fulfillment->finalize((int) $order->gateway_order_code);
+        } elseif ($responseCode === '24') {
+            $this->markCancelledFromReturn($order);
+        } else {
+            $this->markAsUnsuccessful((int) $order->gateway_order_code, 'FAILED');
+        }
+    }
+
+    public function markFailedFromReturn(Order $order): void
+    {
+        $this->markAsUnsuccessful((int) $order->gateway_order_code, 'FAILED');
     }
 
     public function markCancelledFromReturn(Order $order): void

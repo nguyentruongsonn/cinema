@@ -40,4 +40,11 @@ return [
             : 'https://api-merchant.payos.vn',
     ],
 
+    'vnpay' => [
+        'tmn_code' => env('VNPAY_TMN_CODE', 'SANDBOX_TMN'),
+        'hash_secret' => env('VNPAY_HASH_SECRET', 'SANDBOX_SECRET_KEY'),
+        'url' => env('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
+        'return_url' => env('VNPAY_RETURN_URL', env('APP_URL').'/payment/vnpay/callback'),
+    ],
+
 ];

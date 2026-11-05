@@ -258,8 +258,18 @@
                                     <input type="radio" name="payment_method" value="payos" checked class="payment-method-radio">
                                     <div class="pm-dark-icon-box"><i class="bi bi-bank"></i></div>
                                     <div class="pm-dark-info">
-                                        <div class="pm-dark-title">Chuyển Khoản / Thẻ ATM</div>
+                                        <div class="pm-dark-title">Chuyển Khoản / Thẻ ATM (PayOS)</div>
                                         <div class="pm-dark-desc">Chuyển khoản qua số tài khoản hoặc mã QR</div>
+                                    </div>
+                                    <div class="pm-dark-check"></div>
+                                </label>
+
+                                <label class="payment-method-item">
+                                    <input type="radio" name="payment_method" value="vnpay" class="payment-method-radio">
+                                    <div class="pm-dark-icon-box"><i class="bi bi-qr-code text-primary"></i></div>
+                                    <div class="pm-dark-info">
+                                        <div class="pm-dark-title">VNPAY (VNPAY-QR / ATM / Visa)</div>
+                                        <div class="pm-dark-desc">Cổng thanh toán điện tử VNPAY</div>
                                     </div>
                                     <div class="pm-dark-check"></div>
                                 </label>

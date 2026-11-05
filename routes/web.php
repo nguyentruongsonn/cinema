@@ -61,6 +61,12 @@ Route::get('/payment/payos/cancel', [PaymentController::class, 'payosCancel'])
 Route::post('/payment/payos/webhook', [PaymentController::class, 'payosWebhook'])
     ->middleware('throttle:webhook')
     ->name('payment.payos.webhook');
+Route::get('/payment/vnpay/callback', [PaymentController::class, 'vnpayCallback'])
+    ->middleware('throttle:payments')
+    ->name('payment.vnpay.callback');
+Route::match(['get', 'post'], '/payment/vnpay/ipn', [PaymentController::class, 'vnpayIpn'])
+    ->middleware('throttle:webhook')
+    ->name('payment.vnpay.ipn');
 Route::prefix('admin')->middleware(['admin'])->group(function () {
     Route::get('/', function () {
         $routeName = Auth::user()?->adminLandingRouteName() ?? 'home';

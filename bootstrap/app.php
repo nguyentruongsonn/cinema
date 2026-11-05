@@ -60,6 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             '/payment/payos/webhook',
+            '/payment/vnpay/ipn',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -23,6 +23,7 @@ class CreatePaymentRequest extends FormRequest
             'items.*.quantity' => 'required|integer|min:1|max:20',
             'voucher_code' => 'nullable|string|max:50',
             'points_used' => 'nullable|integer|min:0|max:100000',
+            'payment_method' => 'nullable|string|in:payos,vnpay,cash',
         ];
     }
 }

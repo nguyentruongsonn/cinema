@@ -1480,11 +1480,13 @@ class BookingManager {
                 });
             });
 
+            const selectedMethod = document.querySelector('.payment-method-radio:checked')?.value || 'payos';
             const payload = {
                 showtime_id: this.config.showtimeId,
                 items,
                 voucher_code: this.appliedPromotion?.code || null,
-                points_used: this.appliedPoints || 0
+                points_used: this.appliedPoints || 0,
+                payment_method: selectedMethod
             };
             const intent = this.getOrCreateCheckoutIntent(payload);
 

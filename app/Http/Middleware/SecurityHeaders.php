@@ -97,11 +97,11 @@ class SecurityHeaders
             "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
             "img-src 'self' data: https: blob:",
             'connect-src '.implode(' ', $connectSources),
-            "frame-src 'self' https://sandbox.vnpayment.vn https://accounts.google.com",
+            "frame-src 'self' https://sandbox.vnpayment.vn https://pay.vnpayment.vn https://accounts.google.com",
             "frame-ancestors 'none'",
             "object-src 'none'",
             "base-uri 'self'",
-            "form-action 'self'",
+            "form-action 'self' https://sandbox.vnpayment.vn https://pay.vnpayment.vn",
         ];
 
         $response->headers->set('Content-Security-Policy', implode('; ', $csp));

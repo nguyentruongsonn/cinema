@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Contracts\PaymentGatewayInterface;
 use App\Exceptions\PaymentGatewayException;
 use PayOS\PayOS;
 use Throwable;
 
-class PayOSGateway
+class PayOSGateway implements PaymentGatewayInterface
 {
     private PayOS $client;
 
@@ -25,12 +26,12 @@ class PayOSGateway
         );
     }
 
-    public function createPaymentLink(array $payload): array
+    public function createPaymentLink(array $payload, ?string $clientIp = null): array
     {
         try {
             return $this->client->createPaymentLink($payload);
         } catch (Throwable $e) {
-            throw new PaymentGatewayException('Không thể tạo link thanh toán: ' . $e->getMessage());
+            throw new PaymentGatewayException('Không thể tạo link thanh toán: ' . $e->getMessage(), (int) $e->getCode(), $e);
         }
     }
 
@@ -39,16 +40,21 @@ class PayOSGateway
         try {
             return $this->client->verifyPaymentWebhookData($data);
         } catch (Throwable $e) {
-            throw new PaymentGatewayException('Webhook không hợp lệ: ' . $e->getMessage());
+            throw new PaymentGatewayException('Webhook không hợp lệ: ' . $e->getMessage(), (int) $e->getCode(), $e);
         }
     }
 
-    public function getPaymentInfo(int $orderCode): array
+    public function verifyCallback(array $params): bool
+    {
+        return !empty($params['orderCode']) || !empty($params['code']);
+    }
+
+    public function getPaymentInfo(int|string $orderCode): array
     {
         try {
-            return $this->client->getPaymentLinkInformation($orderCode);
+            return $this->client->getPaymentLinkInformation((int) $orderCode);
         } catch (Throwable $e) {
-            throw new PaymentGatewayException('Không thể lấy thông tin thanh toán: ' . $e->getMessage());
+            throw new PaymentGatewayException('Không thể lấy thông tin thanh toán: ' . $e->getMessage(), (int) $e->getCode(), $e);
         }
     }
 }

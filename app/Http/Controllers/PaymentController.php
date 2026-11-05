@@ -12,6 +12,7 @@ use App\Services\OrderService;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -180,6 +181,122 @@ class PaymentController extends Controller
                 'success' => false,
                 'message' => 'Failed to process webhook',
             ], 500);
+        }
+    }
+
+    public function vnpayCallback(Request $request): RedirectResponse
+    {
+        $orderCode = (string) $request->input('vnp_TxnRef', '');
+
+        Log::info('VNPay callback received', [
+            'order_code_present' => filled($orderCode),
+            'response_code' => $request->input('vnp_ResponseCode'),
+            'transaction_no' => $request->input('vnp_TransactionNo'),
+            'user_id' => Auth::id(),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        $order = $this->resolveOwnedOrderForReturn($orderCode, 'vnpayCallback');
+
+        if (!$order) {
+            return redirect()
+                ->route('home')
+                ->with('warning', 'Không thể xác minh đơn hàng thanh toán VNPay. Vui lòng đăng nhập và kiểm tra lại đơn hàng.');
+        }
+
+        $vnPayGateway = $this->paymentService->getGateway('vnpay');
+
+        if (!$vnPayGateway->verifyCallback($request->all())) {
+            Log::warning('VNPay callback checksum invalid', [
+                'order_id' => $order->id,
+                'gateway_order_code' => $order->gateway_order_code,
+                'ip' => $request->ip(),
+            ]);
+
+            return redirect()
+                ->route('home')
+                ->with('error', 'Chữ ký xác thực thanh toán VNPay không hợp lệ.');
+        }
+
+        try {
+            $this->paymentService->syncVNPayReturn($order, $request->all());
+            $order->refresh();
+        } catch (Throwable $e) {
+            report($e);
+
+            Log::warning('VNPay callback processing failed', [
+                'order_id' => $order->id,
+                'gateway_order_code' => $order->gateway_order_code,
+                'user_id' => Auth::id(),
+            ]);
+        }
+
+        if (str_starts_with($order->code, 'POS-')) {
+            $posStatus = match ($order->payment_status) {
+                'paid' => 'success',
+                'cancelled' => 'cancel',
+                default => 'pending',
+            };
+
+            return redirect()->route('pos.index', [
+                'paymentStatus' => $posStatus,
+                'orderId' => $order->id,
+            ]);
+        }
+
+        $encryptedShowtimeId = $order->showtime?->encrypted_id;
+
+        if (!$encryptedShowtimeId) {
+            return redirect()
+                ->route('home')
+                ->with('warning', 'Không tìm thấy lịch chiếu của đơn hàng. Vui lòng kiểm tra lại đơn hàng.');
+        }
+
+        $paymentStatus = match ($order->payment_status) {
+            'paid' => 'success',
+            'cancelled' => 'cancelled',
+            default => 'pending',
+        };
+
+        return redirect()->route('booking.show', [
+            'encryptedShowtimeId' => $encryptedShowtimeId,
+            'paymentStatus' => $paymentStatus,
+            'orderCode' => $order->gateway_order_code,
+        ], 302, []);
+    }
+
+    public function vnpayIpn(Request $request): JsonResponse
+    {
+        Log::info('VNPay IPN received', [
+            'order_code' => $request->input('vnp_TxnRef'),
+            'response_code' => $request->input('vnp_ResponseCode'),
+            'amount' => $request->input('vnp_Amount'),
+            'ip' => $request->ip(),
+        ]);
+
+        try {
+            $result = $this->paymentService->handleVNPayIpn($request->all());
+
+            Log::info('VNPay IPN processed', [
+                'order_code' => $request->input('vnp_TxnRef'),
+                'result' => $result,
+            ]);
+
+            return response()->json($result);
+        } catch (Throwable $e) {
+            report($e);
+
+            Log::error('VNPay IPN unhandled exception', [
+                'order_code' => $request->input('vnp_TxnRef'),
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'RspCode' => '99',
+                'Message' => 'Unknown error',
+            ]);
         }
     }
 
