@@ -6,6 +6,8 @@ namespace App\Services;
 
 use App\Http\Controllers\HomeController;
 use App\Models\Movie;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -79,6 +81,52 @@ class MovieService
 
     public function getMovies(array $filters): LengthAwarePaginator
     {
+        $sortBy = in_array($filters['sort_by'] ?? null, self::ALLOWED_SORT_COLUMNS, true)
+            ? $filters['sort_by']
+            : 'release_date';
+
+        $sortDir = in_array(strtolower($filters['sort_dir'] ?? ''), self::ALLOWED_SORT_DIRECTIONS, true)
+            ? strtolower($filters['sort_dir'])
+            : 'desc';
+
+        $perPage = min(
+            max((int) ($filters['per_page'] ?? self::DEFAULT_PER_PAGE), 1),
+            self::MAX_PER_PAGE
+        );
+
+        // Tìm kiếm phim bằng Meilisearch (hỗ trợ gõ sai chính tả, không dấu)
+        if (!empty($filters['q'])) {
+            $keyword = trim(mb_substr($filters['q'], 0, self::MAX_SEARCH_LENGTH));
+            try {
+                return Movie::search($keyword)
+                    ->query(function ($query) use ($filters, $sortBy, $sortDir) {
+                        $query->with(['categories'])
+                            ->when(($filters['status'] ?? 'active') !== 'all', function ($query) use ($filters) {
+                                return match ($filters['status'] ?? 'active') {
+                                    'now_showing' => $query->nowShowing(),
+                                    'upcoming' => $query->upcoming(),
+                                    'hidden' => $query->where('is_hidden', 1),
+                                    'published', '1' => $query->where('status', 1),
+                                    'draft', '0' => $query->where('status', 0),
+                                    default => $query->active(),
+                                };
+                            })
+                            ->when($filters['category_id'] ?? null, fn ($query, $categoryId) => $query->byCategory($categoryId))
+                            ->when(array_key_exists('is_hot', $filters), fn ($query) => $query->where('is_hot', $filters['is_hot']))
+                            ->when($filters['age_rating'] ?? null, fn ($query, $ageRating) => $query->where('age_rating', $ageRating))
+                            ->when($filters['release_from'] ?? null, fn ($query, $date) => $query->whereDate('release_date', '>=', $date))
+                            ->when($filters['release_to'] ?? null, fn ($query, $date) => $query->whereDate('release_date', '<=', $date))
+                            ->orderBy($sortBy, $sortDir)
+                            ->orderByDesc('id');
+                    })
+                    ->paginate($perPage)
+                    ->withQueryString();
+            } catch (\Throwable $e) {
+                // Tự động quay về tìm kiếm SQL thông thường nếu Meilisearch có sự cố
+                Log::warning('Meilisearch search failed, falling back to database query: ' . $e->getMessage());
+            }
+        }
+
         $query = Movie::query()
             ->with(['categories'])
             ->when(($filters['status'] ?? 'active') !== 'all', function ($query) use ($filters) {
@@ -86,8 +134,8 @@ class MovieService
                     'now_showing' => $query->nowShowing(),
                     'upcoming' => $query->upcoming(),
                     'hidden' => $query->where('is_hidden', 1),
-                    'published' => $query->where('status', 1),
-                    'draft' => $query->where('status', 0),
+                    'published', '1' => $query->where('status', 1),
+                    'draft', '0' => $query->where('status', 0),
                     default => $query->active(),
                 };
             })
@@ -107,19 +155,6 @@ class MovieService
             ->when($filters['age_rating'] ?? null, fn ($query, $ageRating) => $query->where('age_rating', $ageRating))
             ->when($filters['release_from'] ?? null, fn ($query, $date) => $query->whereDate('release_date', '>=', $date))
             ->when($filters['release_to'] ?? null, fn ($query, $date) => $query->whereDate('release_date', '<=', $date));
-
-        $sortBy = in_array($filters['sort_by'] ?? null, self::ALLOWED_SORT_COLUMNS, true)
-            ? $filters['sort_by']
-            : 'release_date';
-
-        $sortDir = in_array(strtolower($filters['sort_dir'] ?? ''), self::ALLOWED_SORT_DIRECTIONS, true)
-            ? strtolower($filters['sort_dir'])
-            : 'desc';
-
-        $perPage = min(
-            max((int) ($filters['per_page'] ?? self::DEFAULT_PER_PAGE), 1),
-            self::MAX_PER_PAGE
-        );
 
         $movies = $query
             ->orderBy($sortBy, $sortDir)
@@ -179,13 +214,13 @@ class MovieService
         return $movie;
     }
 
-    public function getMovie(string|int $idOrSlug): Movie
+    public function getMovie(string|int $idOrSlug, bool $onlyActive = true): Movie
     {
         $cacheKey = is_numeric($idOrSlug)
             ? "movie:id:{$idOrSlug}"
             : "movie:slug:{$idOrSlug}";
 
-        return Cache::remember($cacheKey, 1800, function () use ($idOrSlug): Movie {
+        $movie = Cache::remember($cacheKey, 1800, function () use ($idOrSlug): Movie {
             $query = Movie::with(['categories', 'showtimes.screen.theater']);
 
             $movie = is_numeric($idOrSlug)
@@ -198,6 +233,17 @@ class MovieService
 
             return $movie;
         });
+
+        if ($onlyActive && (!$movie->status || $movie->is_hidden)) {
+            $canViewDraft = Auth::guard('web')->user()?->can('movies.view')
+                || Auth::guard('api')->user()?->can('movies.view');
+
+            if (!$canViewDraft) {
+                throw new ModelNotFoundException('Movie not found or inactive');
+            }
+        }
+
+        return $movie;
     }
 
     public function updateMovie(int $id, array $data): Movie

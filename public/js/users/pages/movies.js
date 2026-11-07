@@ -48,7 +48,7 @@ import Toast from '../components/toast.js';
                 <div class="special-card-overlay"></div>
                 
                 <div class="special-badge">
-                    <span class="badge bg-danger">EXCLUSIVE PREMIERE</span>
+                    <span class="badge bg-danger">Suất chiếu đặc biệt</span>
                 </div>
                 
                 <div class="special-card-content">

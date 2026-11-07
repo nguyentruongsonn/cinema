@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 
 class Movie extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Searchable;
 
     protected static function boot()
     {
@@ -95,6 +96,36 @@ class Movie extends Model
             return MediaUrl::storage($this->banner_path);
         }
         return null;
+    }
+
+    // Định dạng dữ liệu phim lưu vào Meilisearch để tìm kiếm
+    public function toSearchableArray(): array
+    {
+        $this->loadMissing('categories');
+
+        return [
+            'id' => (int) $this->id,
+            'title' => (string) $this->title,
+            'slug' => (string) $this->slug,
+            'original_title' => (string) ($this->original_title ?? ''),
+            'director' => (string) ($this->director ?? ''),
+            'cast' => (string) ($this->cast ?? ''),
+            'description' => (string) ($this->description ?? ''),
+            'release_date' => $this->release_date ? $this->release_date->format('Y-m-d') : null,
+            'end_date' => $this->end_date ? $this->end_date->format('Y-m-d') : null,
+            'duration' => (int) $this->duration,
+            'age_rating' => (string) ($this->age_rating ?? ''),
+            'status' => (int) $this->status,
+            'is_hidden' => (int) $this->is_hidden,
+            'category_ids' => $this->categories->pluck('id')->all(),
+            'category_names' => $this->categories->pluck('name')->all(),
+        ];
+    }
+
+    // Chỉ tìm kiếm các phim không bị ẩn
+    public function shouldBeSearchable(): bool
+    {
+        return (int) $this->is_hidden === 0;
     }
 
     protected $casts = [

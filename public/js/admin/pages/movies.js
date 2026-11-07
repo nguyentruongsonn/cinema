@@ -96,7 +96,7 @@
             const url = new URL(window.location.origin + '/api/v1/movies');
             url.searchParams.append('page', page);
             if (search) url.searchParams.append('q', search);
-            if (status !== 'all') url.searchParams.append('status', status);
+            if (status) url.searchParams.append('status', status);
 
             const res = await window.AdminCore.apiFetch(url.toString(), { requestKey: 'movies:list' });
             if (res.ok) {

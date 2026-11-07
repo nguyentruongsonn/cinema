@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -35,7 +36,7 @@ class MovieController extends Controller
             $filters = $request->validate([
                 'q' => ['nullable', 'string', 'max:255'],
                 'category_id' => ['nullable', 'integer', 'exists:categories,id'],
-                'status' => ['nullable', Rule::in(['active', 'now_showing', 'upcoming', 'hidden', 'all'])],
+                'status' => ['nullable', Rule::in(['active', 'now_showing', 'upcoming', 'hidden', 'published', 'draft', '1', '0', 'all'])],
                 'is_hot' => ['nullable', 'boolean'],
                 'age_rating' => ['nullable', 'string', 'max:50'],
                 'release_from' => ['nullable', 'date'],
@@ -276,8 +277,12 @@ class MovieController extends Controller
             DB::transaction(function () use ($movie, $oldValues, &$updatedMovie) {
                 $newStatus = $movie->status ? 0 : 1;
                 
-                $movie->lockForUpdate()->update(['status' => $newStatus]);
-                $updatedMovie = $movie->fresh();
+                $locked = Movie::query()->whereKey($movie->id)->lockForUpdate()->firstOrFail();
+                $locked->update(['status' => $newStatus]);
+                $updatedMovie = $locked->fresh();
+
+                Cache::forget("movie:id:{$movie->id}");
+                Cache::forget("movie:slug:{$movie->slug}");
 
                 app(AuditLogService::class)->record(
                     Auth::user(),
@@ -312,8 +317,12 @@ class MovieController extends Controller
             $updatedMovie = null;
 
             DB::transaction(function () use ($movie, $oldValues, &$updatedMovie) {
-                $movie->lockForUpdate()->update(['is_hot' => !$movie->is_hot]);
-                $updatedMovie = $movie->fresh();
+                $locked = Movie::query()->whereKey($movie->id)->lockForUpdate()->firstOrFail();
+                $locked->update(['is_hot' => !$locked->is_hot]);
+                $updatedMovie = $locked->fresh();
+
+                Cache::forget("movie:id:{$movie->id}");
+                Cache::forget("movie:slug:{$movie->slug}");
 
                 app(AuditLogService::class)->record(
                     Auth::user(),

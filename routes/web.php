@@ -38,7 +38,24 @@ Route::view('/reset-password/{token}', 'users.auth.reset-password')
     ->name('password.reset');
 
 Route::view('/movies', 'users.movies.index')->name('movies.index');
-Route::view('/movies/{idOrSlug}', 'users.movies.show')->name('movies.show');
+Route::get('/movies/{idOrSlug}', function ($idOrSlug) {
+    $movie = is_numeric($idOrSlug)
+        ? \App\Models\Movie::find((int) $idOrSlug)
+        : \App\Models\Movie::where('slug', $idOrSlug)->first();
+
+    if (!$movie) {
+        abort(404);
+    }
+
+    if (!$movie->status || $movie->is_hidden) {
+        $canViewDraft = \Illuminate\Support\Facades\Auth::guard('web')->user()?->can('movies.view');
+        if (!$canViewDraft) {
+            abort(404);
+        }
+    }
+
+    return view('users.movies.show');
+})->name('movies.show');
 
 Route::view('/theaters', 'users.theaters.index')->name('theaters.index');
 Route::redirect('/prices', '/theaters', 301)->name('prices.index');

@@ -34,3 +34,6 @@ Homestead.yaml
 Thumbs.db
 /tests/
 /scripts/
+/bin/
+meilisearch.exe
+data.ms/
