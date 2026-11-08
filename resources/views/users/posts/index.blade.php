@@ -124,23 +124,6 @@
                             </a>
                         </div>
 
-                        <div class="sidebar-widget-card sidebar-newsletter-card">
-                            <div class="newsletter-icon-badge mb-3">
-                                <i class="bi bi-envelope-paper-heart"></i>
-                            </div>
-                            <h3 class="sidebar-widget-title mb-2">Bản Tin Trải Nghiệm</h3>
-                            <p class="sidebar-widget-subtitle mb-4">
-                                Đăng ký nhận lịch chiếu sớm, vé mời suất công chiếu và bài cảm nhận phim độc quyền mỗi thứ Sáu.
-                            </p>
-                            <form id="newsletterForm" class="cinema-newsletter-form" novalidate>
-                                <div class="newsletter-input-group mb-3">
-                                    <input type="email" class="cinema-newsletter-input" placeholder="Email của bạn" required aria-label="Email đăng ký nhận bản tin">
-                                </div>
-                                <button type="submit" class="btn-newsletter-submit">
-                                    <span>Đăng Ký Nhận Tin</span>
-                                </button>
-                            </form>
-                        </div>
 
                     </div>
                 </aside>

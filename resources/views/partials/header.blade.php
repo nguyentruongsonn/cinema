@@ -29,9 +29,61 @@
                 </ul>
 
                 <div class="cinema-actions d-flex align-items-center gap-3">
-                    <a href="#search" class="cinema-icon-link" aria-label="Search">
-                        <i class="bi bi-search"></i>
-                    </a>
+                    <div class="fb-search-wrapper" id="fbSearchWrapper">
+                        <button type="button" class="cinema-icon-link fb-search-trigger" id="fbSearchTrigger" aria-label="Tìm kiếm phim">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <div class="fb-search-panel d-none" id="fbSearchPanel">
+                            <div class="fb-search-header">
+                                <div class="fb-search-input-box">
+                                    <i class="bi bi-search fb-search-box-icon"></i>
+                                    <input type="text" id="fbSearchInput" class="fb-search-input" placeholder="Tìm kiếm phim, diễn viên..." autocomplete="off">
+                                    <button type="button" class="fb-search-clear-btn d-none" id="fbSearchClearBtn" aria-label="Xóa từ khóa">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="fb-search-body" id="fbSearchBody">
+                                <div class="fb-search-recent" id="fbSearchRecent">
+                                    <div class="fb-search-section-header">
+                                        <span class="fb-search-section-title">Tìm kiếm gần đây</span>
+                                        <button type="button" class="fb-search-clear-all" id="fbSearchClearAll">Xóa tất cả</button>
+                                    </div>
+                                    <div class="fb-search-recent-list" id="fbSearchRecentList"></div>
+                                </div>
+                                <div class="fb-search-trending" id="fbSearchTrending">
+                                    <div class="fb-search-section-header">
+                                        <span class="fb-search-section-title">Gợi ý phim nổi bật</span>
+                                    </div>
+                                    <div class="fb-search-trending-list" id="fbSearchTrendingList"></div>
+                                </div>
+                                <div class="fb-search-results d-none" id="fbSearchResults">
+                                    <div class="fb-search-results-list" id="fbSearchResultsList"></div>
+                                </div>
+                                <div class="fb-search-loading d-none" id="fbSearchLoading">
+                                    <div class="fb-search-skeleton-item">
+                                        <div class="fb-search-skeleton-avatar"></div>
+                                        <div class="fb-search-skeleton-lines">
+                                            <div class="fb-search-skeleton-line short"></div>
+                                            <div class="fb-search-skeleton-line long"></div>
+                                        </div>
+                                    </div>
+                                    <div class="fb-search-skeleton-item">
+                                        <div class="fb-search-skeleton-avatar"></div>
+                                        <div class="fb-search-skeleton-lines">
+                                            <div class="fb-search-skeleton-line short"></div>
+                                            <div class="fb-search-skeleton-line long"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="fb-search-empty d-none" id="fbSearchEmpty">
+                                    <i class="bi bi-search fb-search-empty-icon"></i>
+                                    <div class="fb-search-empty-text">Không tìm thấy kết quả phù hợp</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="fb-search-backdrop d-none" id="fbSearchBackdrop"></div>
+                    </div>
                     <a href="#notifications" class="cinema-icon-link" aria-label="Notifications">
                         <i class="bi bi-bell"></i>
                     </a>

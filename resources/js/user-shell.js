@@ -8,3 +8,4 @@ import '../../public/js/users/components/skeleton.js';
 import '../../public/js/shared/data-region.js';
 import '../../public/js/shared/tabs.js';
 import '../../public/js/users/auth.js';
+import '../../public/js/users/components/fb-search.js';

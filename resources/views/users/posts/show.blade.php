@@ -93,23 +93,6 @@
                             </div>
                         </div>
 
-                        {{-- Widget 2: Bản Tin Điện Ảnh --}}
-                        <div class="sidebar-widget">
-                            <div class="sidebar-newsletter-card">
-                                <h3 class="newsletter-title mb-2">Bản Tin Điện Ảnh</h3>
-                                <p class="newsletter-subtitle mb-4">
-                                    Nhận những bài viết phân tích chuyên sâu và tin tức độc quyền hàng tuần.
-                                </p>
-                                <form id="detailNewsletterForm" class="newsletter-form">
-                                    <div class="mb-3">
-                                        <input type="email" class="cinema-newsletter-input" placeholder="Email của bạn" required aria-label="Email đăng ký nhận bản tin">
-                                    </div>
-                                    <button type="submit" class="btn-newsletter-submit">
-                                        <span>Đăng Ký</span>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
 
                     </div>
                 </aside>

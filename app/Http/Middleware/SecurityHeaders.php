@@ -90,7 +90,7 @@ class SecurityHeaders
 
         $csp = [
             "default-src 'self'",
-            "script-src 'self' 'nonce-{$nonce}'{$viteScriptSrc} https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'{$viteScriptSrc} https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com",
             "style-src 'self'{$viteStyleSrc} https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://accounts.google.com",
             "style-src-elem 'self' 'unsafe-inline'{$viteStyleSrc} https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://accounts.google.com",
             "style-src-attr 'unsafe-inline'",
@@ -105,14 +105,6 @@ class SecurityHeaders
         ];
 
         $response->headers->set('Content-Security-Policy', implode('; ', $csp));
-
-        $strictStyleCsp = array_map(
-            static fn (string $directive): string => $directive === "style-src-attr 'unsafe-inline'"
-                ? "style-src-attr 'none'"
-                : $directive,
-            $csp,
-        );
-        $response->headers->set('Content-Security-Policy-Report-Only', implode('; ', $strictStyleCsp));
 
         return $response;
     }

@@ -139,9 +139,13 @@ return new class extends Migration
         }
 
         if (!$this->indexExists('tickets', 'tickets_qr_code_unique')) {
-            Schema::table('tickets', function (Blueprint $table) {
-                $table->unique('qr_code', 'tickets_qr_code_unique');
-            });
+            if ($this->databaseDriver() === 'mysql') {
+                DB::statement('CREATE UNIQUE INDEX tickets_qr_code_unique ON tickets (qr_code(255))');
+            } else {
+                Schema::table('tickets', function (Blueprint $table) {
+                    $table->unique('qr_code', 'tickets_qr_code_unique');
+                });
+            }
         }
 
         if ($this->databaseDriver() === 'sqlite' && $this->columnExists('movies', 'deleted_at')) {
